@@ -1,0 +1,6 @@
+Correlator Web :
+
+http://sqlcore.geo.umn.edu/CoreWallDatabase/cwWiki/index.php/Correlator_Tutorial_1.19
+
+
+    *  How to Open a Data Set     * Using Tool Bar     * Data Filtering and Display Preferences     * Mouse Actions     * How to Make Composite Ties     * How to Make Splice Ties     * How to Make Equivalent Log Depth Ties 

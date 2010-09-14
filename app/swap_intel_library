@@ -1,0 +1,4 @@
+rm libcore.dylib
+rm py_correlator.so
+cp ./intel/libcore.dylib .
+cp ./intel/py_correlator.so .

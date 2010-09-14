@@ -1,0 +1,30 @@
+cd ../bin/Correlator.app/Contents/Resources/
+rm -rf app
+mkdir app
+cd app
+pwd
+ls
+cd ../../../../../app
+cd intel
+rm *.*
+cd ../
+cp ../lib/*.dylib ./intel
+cp ../lib/py_correlator* ./intel
+cp *.py ../bin/Correlator.app/Contents/Resources/app
+cp ../lib/*.dylib ../bin/Correlator.app/Contents/Resources/app
+cp ../lib/py_correlator* ../bin/Correlator.app/Contents/Resources/app
+cp -rf ./images ../bin/Correlator.app/Contents/Resources/app/
+cp -rf ./icons ../bin/Correlator.app/Contents/Resources/app/
+cp -rf ./db ../bin/Correlator.app/Contents/Resources/app/
+cp -rf ./help ../bin/Correlator.app/Contents/Resources/app/
+cp -rf ./tmp ../bin/Correlator.app/Contents/Resources/app/
+cp -rf ./ppc ../bin/Correlator.app/Contents/Resources/app/
+cp -rf ./intel ../bin/Correlator.app/Contents/Resources/app/
+cp swap_intel_library ../bin/Correlator.app/Contents/Resources/app/
+cp swap_ppc_library ../bin/Correlator.app/Contents/Resources/app/
+cd ../bin/Correlator.app/Contents/Resources/app/
+pwd
+ls
+cd ../../../../
+pwd
+cd ../app

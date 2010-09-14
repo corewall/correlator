@@ -1,0 +1,54 @@
+cd ../bin/static
+rm correlator.py
+rm dialog.py
+rm canvas.py
+rm frames.py
+rm dbmanager.py
+rm xml_handler.py
+rm *.pyc
+rm py_correlator*
+rm -rf Correlator.app
+rm -rf build 
+rm -rf images
+rm -rf ppc
+pwd
+ls
+cd ../../app
+cp correlator.py ../bin/static/
+cp dialog.py ../bin/static/
+cp frames.py ../bin/static/
+cp canvas.py ../bin/static/
+cp dbmanager.py ../bin/static/
+cp xml_handler.py ../bin/static/
+cp libcore.dylib ../bin/static/
+cp py_correlator.so ../bin/static/
+cp libcore.dylib ../bin/static/intel/
+cp py_correlator.so ../bin/static/intel/
+cp default.cfg ../bin/static/
+cp -r images ../bin/static/
+cp -r help ../bin/static/
+cp -r tmp ../bin/static/
+cp -r db ../bin/static/
+cp -r icons ../bin/static/
+cp -r lib ../bin/static/
+cp -r ppc ../bin/static/
+cd ../bin/static/
+pwd
+ls
+#python setup.py py2app -i xml.sax.drivers2.drv_pyexpat -a
+python setup.py py2app -a
+#python setup.py py2app -a -f libwx_macud-2.8.0.dylib,libwx_macud_gizmos-2.8.0.dylib
+cp -rf ppc ./Correlator.app/Contents/Resources/
+cp -rf intel ./Correlator.app/Contents/Resources/
+cp swap_intel_library ./Correlator.app/Contents/Resources
+cp swap_ppc_library ./Correlator.app/Contents/Resources
+#cp /usr/lib/libwx_macud-2.8.0.1.1.dylib ./Correlator.app/Contents/Frameworks/libwx_macud-2.8.0.dylib
+#cp /usr/lib/libwx_macud_gizmos-2.8.0.1.0.dylib ./Correlator.app/Contents/Frameworks/libwx_macud_gizmos-2.8.0.dylib
+
+cd ../public-export/
+rm -rf correlator-mac-static
+mkdir correlator-mac-static
+cd ../static 
+cp -R Correlator.app ../public-export/correlator-mac-static
+cp -R build ../public-export/correlator-mac-static
+cd ../../app

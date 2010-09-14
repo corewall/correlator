@@ -1,0 +1,1348 @@
+Start of Session: 
+Mon Dec  1 13:00:42 1997
+
+Splicer Input Files:
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984a.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984b.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984c.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984d.dat.mcd
+
+Data Type: SUSCEPTIBILITY
+
+Data File Format: ODP OTHER1
+
+No Affine Table used.
+
+Gaussian Smoothing: 35 Depth (cm)
+Plot Display: Both Smoothed and Unsmoothed
+
+Culling will be done with user set parameters.
+Top 5.0 cm will be removed from core.
+All cores will be used.
+
+Every data point will be used.
+
+Note: multiple data values will be averaged.
+
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984a.dat.mcd (total lines =5477, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984b.dat.mcd (total lines =13927, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984c.dat.mcd (total lines =9242, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984d.dat.mcd (total lines =3617, total errors=0)
+Data : Done reading files. Preparing to process...
+Data : Culling core tops.
+Data : Culling using parameters; hole A.
+Data : Culling using parameters; hole B.
+Data : Culling using parameters; hole C.
+Data : Culling using parameters; hole D.
+Data : Smoothing data hole A.
+Data : Smoothing data hole B.
+Data : Smoothing data hole C.
+Data : Smoothing data hole D.
+
+Splicer Input Files:
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/ngfix_0984a.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/ngfix_0984b.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/ngfix_0984c.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/ngfix_0984d.dat.mcd
+
+Data Type: NATURAL GAMMA
+
+Data File Format: ODP OTHER1
+
+No Affine Table used.
+
+Gaussian Smoothing: 35 Depth (cm)
+Plot Display: Both Smoothed and Unsmoothed
+
+Culling will be done with user set parameters.
+Top 5.0 cm will be removed from core.
+All cores will be used.
+
+Every data point will be used.
+
+Note: multiple data values will be averaged.
+
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/ngfix_0984a.dat.mcd (total lines =1632, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/ngfix_0984b.dat.mcd (total lines =4063, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/ngfix_0984c.dat.mcd (total lines =2691, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/ngfix_0984d.dat.mcd (total lines =1055, total errors=0)
+Data : Done reading files. Preparing to process...
+Data : Culling core tops.
+Data : Culling using parameters; hole A.
+Data : Culling using parameters; hole B.
+Data : Culling using parameters; hole C.
+Data : Culling using parameters; hole D.
+Data : Smoothing data hole A.
+Data : Smoothing data hole B.
+Data : Smoothing data hole C.
+Data : Smoothing data hole D.
+
+Composite;  hole B core 1:    Mon Dec  1 13:03:06 1997
+162 984 A  1 H 3 30.0 30.0  3.30  tied to  162 984 B  1 H 2 139.5 139.5  2.89
+Adjust to best correlation;  corr. coef. 0.759, depth offset: relative 0.31m, cumulative 0.31m ALL
+
+Composite;  hole C core 1:    Mon Dec  1 13:03:18 1997
+162 984 B  1 H 2 139.5 139.5  2.89  tied to  162 984 C  1 H 2 139.4 139.4  2.89
+Adjust to best correlation;  corr. coef. 0.777, depth offset: relative 0.20m, cumulative 0.20m ALL
+
+Composite;  hole D core 1:    Mon Dec  1 13:03:27 1997
+162 984 C  1 H 3 19.4 19.4  3.19  tied to  162 984 D  1 H 3 19.6 19.6  3.20
+Adjust to best correlation;  corr. coef. 0.752, depth offset: relative -0.14m, cumulative -0.14m ALL
+
+Composite;  hole A core 2:    Mon Dec  1 13:03:46 1997
+162 984 B  1 H 5 89.4 89.4  6.89  tied to  162 984 A  2 H 1 39.5 39.5  5.49
+Adjust to best correlation;  corr. coef. 0.901, depth offset: relative 1.71m, cumulative 1.71m ALL
+
+Composite;  hole C core 2:    Mon Dec  1 13:04:10 1997
+162 984 A  2 H 3 79.4 79.4  8.89  tied to  162 984 C  2 H 2 139.4 139.4  9.69
+Adjust to best correlation;  corr. coef. 0.763, depth offset: relative 1.70m, cumulative 1.90m ALL
+
+Composite;  hole B core 2:    Mon Dec  1 13:04:24 1997
+162 984 C  2 H 3 59.5 59.5  10.40  tied to  162 984 B  2 H 2 79.5 79.5  10.80
+Adjust to best correlation;  corr. coef. 0.800, depth offset: relative 0.97m, cumulative 1.28m ALL
+
+Composite;  hole A core 3:    Mon Dec  1 13:04:40 1997
+162 984 B  2 H 6 39.5 39.5  16.40  tied to  162 984 A  3 H 1 119.6 119.6  15.80
+Adjust to best correlation;  corr. coef. 0.654, depth offset: relative 0.17m, cumulative 1.88m ALL
+
+Composite;  hole B core 3:    Mon Dec  1 13:04:55 1997
+162 984 A  3 H 4 69.6 69.6  19.80  tied to  162 984 B  3 H 1 109.5 109.5  19.09
+Adjust to best correlation;  corr. coef. 0.817, depth offset: relative 1.31m, cumulative 2.59m ALL
+
+Composite;  hole C core 3:    Mon Dec  1 13:05:08 1997
+162 984 B  3 H 3 59.6 59.6  21.60  tied to  162 984 C  3 H 4 39.5 39.5  21.19
+Adjust to best correlation;  corr. coef. 0.785, depth offset: relative 1.10m, cumulative 3.00m ALL
+
+Composite;  hole C core 4:    Mon Dec  1 13:05:58 1997
+162 984 B  3 H 7 29.6 29.6  27.30  tied to  162 984 C  4 H 1 39.5 39.5  26.19
+Adjust to best correlation;  corr. coef. 0.751, depth offset: relative 0.70m, cumulative 3.70m ALL
+
+Composite;  hole A core 4:    Mon Dec  1 13:06:07 1997
+162 984 C  4 H 1 109.4 109.4  26.89  tied to  162 984 A  4 H 4 19.6 19.6  28.80
+Adjust to best correlation;  corr. coef. 0.805, depth offset: relative -0.09m, cumulative 1.79m ALL
+
+Composite;  hole B core 4:    Mon Dec  1 13:06:17 1997
+162 984 C  4 H 3 59.5 59.5  29.39  tied to  162 984 B  4 H 2 139.4 139.4  30.39
+Adjust to best correlation;  corr. coef. 0.719, depth offset: relative 0.11m, cumulative 2.70m ALL
+
+Composite;  hole A core 5:    Mon Dec  1 13:06:25 1997
+162 984 C  4 H 6 109.4 109.4  34.39  tied to  162 984 A  5 H 2 9.5 9.5  35.19
+Adjust to best correlation;  corr. coef. 0.963, depth offset: relative 1.11m, cumulative 2.90m ALL
+
+Composite;  hole C core 5:    Mon Dec  1 13:06:43 1997
+162 984 A  5 H 4 59.6 59.6  38.70  tied to  162 984 C  5 H 2 89.4 89.4  37.69
+Adjust to best correlation;  corr. coef. 0.780, depth offset: relative 0.32m, cumulative 4.02m ALL
+
+Composite;  hole B core 5:    Mon Dec  1 13:06:55 1997
+162 984 A  5 H 4 30.0 30.0  38.40  tied to  162 984 B  5 H 1 89.6 89.6  37.90
+Adjust to best correlation;  corr. coef. 0.869, depth offset: relative 0.70m, cumulative 3.40m ALL
+
+Composite;  hole A core 6:    Mon Dec  1 13:07:15 1997
+162 984 B  5 H 6 9.5 9.5  44.60  tied to  162 984 A  6 H 2 9.5 9.5  44.69
+Adjust to best correlation;  corr. coef. 0.663, depth offset: relative 0.41m, cumulative 3.31m ALL
+
+Composite;  hole C core 6:    Mon Dec  1 13:07:32 1997
+162 984 A  6 H 5 39.5 39.5  49.49  tied to  162 984 C  6 H 2 129.5 129.5  47.59
+Adjust to best correlation;  corr. coef. 0.943, depth offset: relative 1.19m, cumulative 5.21m ALL
+
+Composite;  hole B core 6:    Mon Dec  1 13:07:53 1997
+162 984 C  6 H 2 119.6 119.6  47.50  tied to  162 984 B  6 H 2 119.5 119.5  49.19
+Adjust to best correlation;  corr. coef. 0.902, depth offset: relative 0.12m, cumulative 3.52m ALL
+
+Composite;  hole A core 7:    Mon Dec  1 13:08:27 1997
+162 984 B  6 H 7 19.4 19.4  55.69  tied to  162 984 A  7 H 1 69.5 69.5  53.29
+Adjust to best correlation;  corr. coef. 0.801, depth offset: relative 2.61m, cumulative 5.92m ALL
+
+Composite;  hole B core 7:    Mon Dec  1 13:08:55 1997
+162 984 A  7 H 5 139.5 139.5  59.99  tied to  162 984 B  7 H 4 69.4 69.4  61.19
+Adjust to best correlation;  corr. coef. 0.897, depth offset: relative 1.31m, cumulative 4.83m ALL
+
+Composite;  hole C core 7:    Mon Dec  1 13:09:06 1997
+162 984 B  7 H 5 79.4 79.4  62.79  tied to  162 984 C  7 H 5 19.4 19.4  60.49
+Adjust to best correlation;  corr. coef. 0.826, depth offset: relative 1.92m, cumulative 7.13m ALL
+
+Composite;  hole A core 8:    Mon Dec  1 13:09:24 1997
+162 984 B  7 H 6 89.6 89.6  64.40  tied to  162 984 A  8 H 1 49.5 49.5  62.59
+Adjust to best correlation;  corr. coef. 0.889, depth offset: relative 1.71m, cumulative 7.63m ALL
+
+Composite;  hole B core 8:    Mon Dec  1 13:09:36 1997
+162 984 A  8 H 3 19.4 19.4  65.29  tied to  162 984 B  8 H 2 79.6 79.6  67.80
+Adjust to best correlation;  corr. coef. 0.688, depth offset: relative 0.51m, cumulative 5.34m ALL
+
+Composite;  hole C core 8:    Mon Dec  1 13:09:50 1997
+162 984 B  8 H 5 119.6 119.6  72.70  tied to  162 984 C  8 H 5 30.0 30.0  70.10
+Adjust to best correlation;  corr. coef. 0.832, depth offset: relative 0.81m, cumulative 7.94m ALL
+
+Composite;  hole A core 9:    Mon Dec  1 13:10:05 1997
+162 984 B  8 H 7 29.4 29.4  74.79  tied to  162 984 A  9 H 1 99.4 99.4  72.59
+Adjust to best correlation;  corr. coef. 0.962, depth offset: relative -0.09m, cumulative 7.54m ALL
+
+Composite;  hole C core 9:    Mon Dec  1 13:10:53 1997
+162 984 A  9 H 4 59.4 59.4  76.69  tied to  162 984 C  9 H 2 139.5 139.5  76.19
+Adjust to best correlation;  corr. coef. 0.669, depth offset: relative -0.01m, cumulative 7.93m ALL
+
+Composite;  hole B core 9:    Mon Dec  1 13:11:10 1997
+162 984 C  9 H 6 9.5 9.5  80.90  tied to  162 984 B  9 H 6 19.6 19.6  82.70
+Adjust to best correlation;  corr. coef. 0.951, depth offset: relative 0.68m, cumulative 6.02m ALL
+
+Composite;  hole A core 10:    Mon Dec  1 13:11:25 1997
+162 984 B  9 H 6 119.6 119.6  83.70  tied to  162 984 A  10 H 1 30.0 30.0  81.40
+Adjust to best correlation;  corr. coef. 0.906, depth offset: relative 0.78m, cumulative 8.32m ALL
+
+Composite;  hole C core 10:    Mon Dec  1 13:11:51 1997
+162 984 A  10 H 6 9.5 9.5  88.69  tied to  162 984 C  10 H 3 139.5 139.5  87.19
+Adjust to best correlation;  corr. coef. 0.936, depth offset: relative 2.00m, cumulative 9.93m ALL
+
+Composite;  hole B core 10:    Mon Dec  1 13:12:01 1997
+162 984 C  10 H 3 49.6 49.6  86.30  tied to  162 984 B  10 H 3 109.4 109.4  88.59
+Adjust to best correlation;  corr. coef. 0.802, depth offset: relative 1.51m, cumulative 7.53m ALL
+
+Composite;  hole A core 11:    Mon Dec  1 13:12:24 1997
+162 984 C  10 H 7 39.4 39.4  92.19  tied to  162 984 A  11 H 1 109.5 109.5  91.69
+Adjust to best correlation;  corr. coef. 0.952, depth offset: relative 2.11m, cumulative 10.43m ALL
+
+Composite;  hole C core 11:    Mon Dec  1 13:12:36 1997
+162 984 A  11 H 6 59.4 59.4  98.69  tied to  162 984 C  11 H 4 109.4 109.4  97.89
+Adjust to best correlation;  corr. coef. 0.901, depth offset: relative 1.19m, cumulative 11.12m ALL
+
+Composite;  hole B core 11:    Mon Dec  1 13:12:50 1997
+162 984 C  11 H 2 99.5 99.5  94.80  tied to  162 984 B  11 H 3 79.4 79.4  97.79
+Adjust to best correlation;  corr. coef. 0.766, depth offset: relative 0.60m, cumulative 8.13m ALL
+
+Composite;  hole A core 12:    Mon Dec  1 13:13:00 1997
+162 984 C  11 H 7 9.4 9.4  101.39  tied to  162 984 A  12 H 1 59.6 59.6  100.70
+Adjust to best correlation;  corr. coef. 0.901, depth offset: relative 1.38m, cumulative 11.81m ALL
+
+Composite;  hole C core 12:    Mon Dec  1 13:13:22 1997
+162 984 A  12 H 6 119.6 119.6  108.80  tied to  162 984 C  12 H 5 59.4 59.4  108.39
+Adjust to best correlation;  corr. coef. 0.950, depth offset: relative 1.21m, cumulative 12.33m ALL
+
+Composite;  hole B core 12:    Mon Dec  1 13:13:38 1997
+162 984 C  12 H 6 9.5 9.5  109.40  tied to  162 984 B  12 H 6 9.5 9.5  111.10
+Adjust to best correlation;  corr. coef. 0.926, depth offset: relative 2.39m, cumulative 10.52m ALL
+
+Composite;  hole A core 13:    Mon Dec  1 13:15:18 1997
+162 984 C  12 H 6 109.4 109.4  110.39  tied to  162 984 A  13 H 1 79.4 79.4  110.39
+Adjust to best correlation;  corr. coef. 0.592, depth offset: relative 1.40m, cumulative 13.21m ALL
+
+Composite;  hole C core 13:    Mon Dec  1 13:15:44 1997
+162 984 A  13 H 2 39.5 39.5  111.49  tied to  162 984 C  13 H 1 139.5 139.5  112.69
+Adjust to best correlation;  corr. coef. 0.576, depth offset: relative 0.67m, cumulative 13.00m ALL
+
+Composite;  hole B core 13:    Mon Dec  1 13:15:50 1997
+162 984 C  13 H 1 139.5 139.5  112.69  tied to  162 984 B  13 H 1 59.6 59.6  113.60
+Adjust to best correlation;  corr. coef. 0.852, depth offset: relative 1.57m, cumulative 12.09m ALL
+
+Composite;  hole A core 14:    Mon Dec  1 13:16:10 1997
+162 984 B  13 H 6 49.5 49.5  121.00  tied to  162 984 A  14 H 1 30.0 30.0  119.40
+Adjust to best correlation;  corr. coef. 0.880, depth offset: relative 0.92m, cumulative 14.13m ALL
+
+Composite;  hole B core 14:    Mon Dec  1 13:16:27 1997
+162 984 A  14 H 5 69.6 69.6  125.80  tied to  162 984 B  14 H 4 49.4 49.4  127.49
+Adjust to best correlation;  corr. coef. 0.745, depth offset: relative 0.24m, cumulative 12.33m ALL
+
+Composite;  hole C core 14:    Mon Dec  1 13:16:41 1997
+162 984 B  14 H 2 30.0 30.0  124.30  tied to  162 984 C  14 H 2 89.6 89.6  123.20
+Adjust to best correlation;  corr. coef. 0.718, depth offset: relative 0.43m, cumulative 13.43m ALL
+
+Composite;  hole A core 15:    Mon Dec  1 13:17:01 1997
+162 984 B  14 H 6 89.6 89.6  130.90  tied to  162 984 A  15 H 1 39.5 39.5  129.00
+Adjust to best correlation;  corr. coef. 0.570, depth offset: relative 0.10m, cumulative 14.23m ALL
+
+Composite;  hole C core 15:    Mon Dec  1 13:17:10 1997
+162 984 A  15 H 4 89.6 89.6  134.00  tied to  162 984 C  15 H 3 139.4 139.4  134.69
+Adjust to best correlation;  corr. coef. 0.720, depth offset: relative 0.11m, cumulative 13.54m ALL
+
+Composite;  hole B core 15:    Mon Dec  1 13:17:18 1997
+162 984 C  15 H 4 9.5 9.5  134.90  tied to  162 984 B  15 H 3 9.6 9.6  135.10
+Adjust to best correlation;  corr. coef. 0.682, depth offset: relative 1.01m, cumulative 13.34m ALL
+
+Composite;  hole A core 16:    Mon Dec  1 13:17:31 1997
+162 984 B  15 H 6 129.6 129.6  140.80  tied to  162 984 A  16 H 1 99.4 99.4  139.09
+Adjust to best correlation;  corr. coef. 0.873, depth offset: relative 0.82m, cumulative 15.05m ALL
+
+Composite;  hole C core 16:    Mon Dec  1 13:17:38 1997
+162 984 A  16 H 4 59.4 59.4  143.19  tied to  162 984 C  16 H 5 9.6 9.6  145.90
+Adjust to best correlation;  corr. coef. 0.714, depth offset: relative -1.09m, cumulative 12.45m ALL
+
+Composite;  hole C core 16:    Mon Dec  1 13:18:06 1997
+162 984 B  16 H 3 109.4 109.4  145.59  tied to  162 984 C  16 H 4 139.5 139.5  145.70
+Adjust to best correlation;  corr. coef. 0.732, depth offset: relative 0.78m, cumulative 13.23m ALL
+
+Composite:  hole C core 16;  UNDONE    Mon Dec  1 13:18:10 1997
+
+Composite;  hole B core 16:    Mon Dec  1 13:18:17 1997
+162 984 C  16 H 4 129.6 129.6  145.60  tied to  162 984 B  16 H 3 89.4 89.4  145.39
+Adjust to best correlation;  corr. coef. 0.707, depth offset: relative -0.79m, cumulative 12.55m ALL
+
+Composite;  hole B core 17:    Mon Dec  1 13:18:34 1997
+162 984 A  17 H 3 119.5 119.5  151.80  tied to  162 984 B  17 H 2 30.0 30.0  152.80
+Adjust to best correlation;  corr. coef. 0.949, depth offset: relative 1.50m, cumulative 14.05m ALL
+
+Composite:  hole B core 17;  UNDONE    Mon Dec  1 13:18:40 1997
+
+Composite;  hole B core 17:    Mon Dec  1 13:18:48 1997
+162 984 A  17 H 3 79.4 79.4  151.39  tied to  162 984 B  17 H 1 129.5 129.5  152.29
+Adjust to best correlation;  corr. coef. 0.944, depth offset: relative 1.49m, cumulative 14.04m ALL
+
+Composite;  hole C core 17:    Mon Dec  1 13:18:54 1997
+162 984 B  17 H 1 129.5 129.5  152.29  tied to  162 984 C  17 H 3 19.5 19.5  152.50
+Adjust to best correlation;  corr. coef. 0.955, depth offset: relative 1.38m, cumulative 13.83m ALL
+
+Composite;  hole C core 18:    Mon Dec  1 13:19:10 1997
+162 984 B  17 H 6 139.4 139.4  159.89  tied to  162 984 C  18 H 1 49.5 49.5  159.29
+Adjust to best correlation;  corr. coef. 0.985, depth offset: relative 0.81m, cumulative 14.64m ALL
+
+Composite;  hole B core 18:    Mon Dec  1 13:19:37 1997
+162 984 C  18 H 2 139.5 139.5  161.70  tied to  162 984 B  18 H 1 99.4 99.4  161.49
+Adjust to best correlation;  corr. coef. 0.676, depth offset: relative 0.81m, cumulative 14.85m ALL
+
+Composite;  hole A core 18:    Mon Dec  1 13:19:50 1997
+162 984 B  18 H 1 139.5 139.5  161.90  tied to  162 984 A  18 H 3 39.5 39.5  160.50
+Adjust to best correlation;  corr. coef. 0.872, depth offset: relative 1.20m, cumulative 16.25m ALL
+
+Composite;  hole C core 19:    Mon Dec  1 13:20:05 1997
+162 984 B  18 H 6 139.5 139.5  169.40  tied to  162 984 C  19 H 1 119.5 119.5  169.50
+Adjust to best correlation;  corr. coef. 0.787, depth offset: relative 0.11m, cumulative 14.75m ALL
+
+Composite;  hole A core 19:    Mon Dec  1 13:20:29 1997
+162 984 C  19 H 2 49.5 49.5  170.29  tied to  162 984 A  19 H 2 30.0 30.0  168.40
+Adjust to best correlation;  corr. coef. 0.621, depth offset: relative 0.39m, cumulative 16.64m ALL
+
+Composite;  hole B core 19:    Mon Dec  1 13:20:46 1997
+162 984 A  19 H 3 49.4 49.4  170.09  tied to  162 984 B  19 H 1 79.5 79.5  170.79
+Adjust to best correlation;  corr. coef. 0.858, depth offset: relative 1.09m, cumulative 15.94m ALL
+
+Affine table written to /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.test.aff.
+The report file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.rpt has been created.
+
+Start of Session: 
+Thu Jan 22 14:04:44 1998
+
+Splicer Input Files:
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/grfix_0984a.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/grfix_0984b.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/grfix_0984c.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/grfix_0984d.dat.mcd
+
+Data Type: GRAPE
+
+Data File Format: ODP OTHER1
+
+Affine Table: /home/ibex/eqt/splicer/splicer_testdata/926.affine.table
+
+Gaussian Smoothing: 35 Depth (cm)
+Plot Display: Both Smoothed and Unsmoothed
+
+Culling will be done with user set parameters.
+Top 5.0 cm will be removed from core.
+All cores will be used.
+
+Every data point will be used.
+
+Note: multiple data values will be averaged.
+
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/grfix_0984a.dat.mcd (total lines =9214, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/grfix_0984b.dat.mcd (total lines =23736, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/grfix_0984c.dat.mcd (total lines =15759, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/grfix_0984d.dat.mcd (total lines =6101, total errors=0)
+Data : Done reading files. Preparing to process...
+Data : Culling core tops.
+Data : Culling using parameters; hole A.
+Data : Culling using parameters; hole B.
+Data : Culling using parameters; hole C.
+Data : Culling using parameters; hole D.
+Data : Smoothing data hole A.
+Data : Smoothing data hole B.
+Data : Smoothing data hole C.
+Data : Smoothing data hole D.
+Data : Applying affine table for hole A.
+Affine Table /home/ibex/eqt/splicer/splicer_testdata/926.affine.table read
+Data : Applying affine table for hole B.
+Data : Applying affine table for hole C.
+Data : Applying affine table for hole D.
+
+Splicer Input Files:
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984a.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984b.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984c.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984d.dat.mcd
+
+Data Type: SUSCEPTIBILITY
+
+Data File Format: ODP OTHER1
+
+Affine Table: /home/ibex/eqt/splicer/splicer_testdata/926.affine.table
+
+Gaussian Smoothing: 35 Depth (cm)
+Plot Display: Both Smoothed and Unsmoothed
+
+Culling will be done with user set parameters.
+Top 5.0 cm will be removed from core.
+All cores will be used.
+
+Every data point will be used.
+
+Note: multiple data values will be averaged.
+
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984a.dat.mcd (total lines =5477, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984b.dat.mcd (total lines =13927, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984c.dat.mcd (total lines =9242, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984d.dat.mcd (total lines =3617, total errors=0)
+Data : Done reading files. Preparing to process...
+Data : Culling core tops.
+Data : Culling using parameters; hole A.
+Data : Culling using parameters; hole B.
+Data : Culling using parameters; hole C.
+Data : Culling using parameters; hole D.
+Data : Smoothing data hole A.
+Data : Smoothing data hole B.
+Data : Smoothing data hole C.
+Data : Smoothing data hole D.
+Data : Applying affine table for hole A.
+Affine Table /home/ibex/eqt/splicer/splicer_testdata/926.affine.table read
+Data : Applying affine table for hole B.
+Data : Applying affine table for hole C.
+Data : Applying affine table for hole D.
+
+Composite;  hole B core 1:    Thu Jan 22 14:06:30 1998
+162 984 D  1 H 4 4.0 4.0  4.54  tied to  162 984 B  1 H 3 116.4 116.4  4.16
+Adjust to best correlation;  corr. coef. 0.620, depth offset: relative 0.24m, cumulative 0.24m ALL
+
+Composite;  hole A core 2:    Thu Jan 22 14:07:30 1998
+162 984 C  1 H 5 22.4 22.4  6.22  tied to  162 984 A  2 H 1 61.4 61.4  5.71
+Adjust to best correlation;  corr. coef. 0.842, depth offset: relative 0.36m, cumulative 2.69m ALL
+
+Composite;  hole B core 2:    Thu Jan 22 14:07:38 1998
+162 984 A  2 H 4 136.6 136.6  10.97  tied to  162 984 B  2 H 2 139.6 139.6  11.40
+Adjust to best correlation;  corr. coef. 0.976, depth offset: relative 0.63m, cumulative 2.32m ALL
+
+Composite;  hole C core 2:    Thu Jan 22 14:07:41 1998
+162 984 B  2 H 3 49.5 49.5  11.99  tied to  162 984 C  2 H 4 7.6 7.6  11.38
+Adjust to best correlation;  corr. coef. 0.991, depth offset: relative -0.68m, cumulative 2.81m ALL
+
+Composite;  hole A core 3:    Thu Jan 22 14:07:48 1998
+162 984 B  2 H 5 109.4 109.4  15.59  tied to  162 984 A  3 H 1 55.6 55.6  15.16
+Adjust to best correlation;  corr. coef. 0.907, depth offset: relative 0.99m, cumulative 2.84m ALL
+
+Composite;  hole B core 3:    Thu Jan 22 14:07:54 1998
+162 984 A  3 H 6 70.5 70.5  22.81  tied to  162 984 B  3 H 3 67.6 67.6  21.68
+Adjust to best correlation;  corr. coef. 0.929, depth offset: relative 0.35m, cumulative 3.73m ALL
+
+Composite;  hole C core 3:    Thu Jan 22 14:07:58 1998
+162 984 B  3 H 3 97.5 97.5  21.98  tied to  162 984 C  3 H 4 136.6 136.6  22.17
+Adjust to best correlation;  corr. coef. 0.997, depth offset: relative 0.96m, cumulative 4.14m ALL
+
+Composite;  hole C core 3:    Thu Jan 22 14:08:07 1998
+162 984 B  3 H 5 124.4 124.4  25.24  tied to  162 984 C  3 H 6 115.5 115.5  24.95
+Adjust to best correlation;  corr. coef. 0.990, depth offset: relative -0.00m, cumulative 4.14m ALL
+
+Composite;  hole A core 4:    Thu Jan 22 14:08:16 1998
+162 984 C  3 H 6 49.6 49.6  24.30  tied to  162 984 A  4 H 1 61.4 61.4  24.71
+Adjust to best correlation;  corr. coef. 0.896, depth offset: relative -0.85m, cumulative 3.34m ALL
+
+Composite;  hole A core 4:    Thu Jan 22 14:08:21 1998
+162 984 C  4 H 1 112.5 112.5  26.92  tied to  162 984 A  4 H 4 34.4 34.4  28.94
+Adjust to best correlation;  corr. coef. 0.976, depth offset: relative -1.01m, cumulative 2.33m ALL
+
+Composite;  hole A core 4:    Thu Jan 22 14:08:30 1998
+162 984 B  3 H 5 70.4 70.4  24.70  tied to  162 984 A  4 H 1 91.6 91.6  25.02
+Adjust to best correlation;  corr. coef. 0.873, depth offset: relative 1.02m, cumulative 3.35m ALL
+
+Composite;  hole C core 4:    Thu Jan 22 14:08:33 1998
+162 984 A  4 H 4 25.5 25.5  28.85  tied to  162 984 C  4 H 2 10.5 10.5  27.40
+Adjust to best correlation;  corr. coef. 0.970, depth offset: relative 1.02m, cumulative 5.31m ALL
+
+Composite;  hole B core 4:    Thu Jan 22 14:08:37 1998
+162 984 A  4 H 5 139.4 139.4  31.49  tied to  162 984 B  4 H 2 139.5 139.5  30.40
+Adjust to best correlation;  corr. coef. 0.968, depth offset: relative -0.09m, cumulative 4.56m ALL
+
+Composite;  hole A core 5:    Thu Jan 22 14:08:43 1998
+162 984 B  4 H 6 76.6 76.6  35.77  tied to  162 984 A  5 H 2 64.5 64.5  35.74
+Adjust to best correlation;  corr. coef. 0.935, depth offset: relative 0.41m, cumulative 4.71m ALL
+
+Composite;  hole B core 5:    Thu Jan 22 14:08:47 1998
+162 984 A  5 H 4 97.5 97.5  39.07  tied to  162 984 B  5 H 2 28.4 28.4  38.78
+Adjust to best correlation;  corr. coef. 0.960, depth offset: relative 0.52m, cumulative 5.33m ALL
+
+Composite;  hole C core 5:    Thu Jan 22 14:08:50 1998
+162 984 B  5 H 2 25.6 25.6  38.76  tied to  162 984 C  5 H 3 7.5 7.5  38.38
+Adjust to best correlation;  corr. coef. 0.981, depth offset: relative 0.97m, cumulative 5.89m ALL
+
+Composite;  hole A core 6:    Thu Jan 22 14:08:57 1998
+162 984 B  5 H 5 118.6 118.6  44.19  tied to  162 984 A  6 H 2 4.5 4.5  44.64
+Adjust to best correlation;  corr. coef. 0.691, depth offset: relative 0.97m, cumulative 5.12m ALL
+
+Composite;  hole C core 6:    Thu Jan 22 14:09:05 1998
+162 984 A  6 H 5 34.5 34.5  49.44  tied to  162 984 C  6 H 2 136.5 136.5  47.67
+Adjust to best correlation;  corr. coef. 0.964, depth offset: relative -0.16m, cumulative 6.98m ALL
+
+Composite;  hole B core 6:    Thu Jan 22 14:09:12 1998
+162 984 C  6 H 3 28.6 28.6  48.09  tied to  162 984 B  6 H 2 109.5 109.5  49.10
+Adjust to best correlation;  corr. coef. 0.987, depth offset: relative -1.52m, cumulative 5.31m ALL
+
+Composite;  hole A core 7:    Thu Jan 22 14:09:24 1998
+162 984 C  6 H 6 61.5 61.5  52.92  tied to  162 984 A  7 H 1 28.6 28.6  52.89
+Adjust to best correlation;  corr. coef. 0.939, depth offset: relative -0.85m, cumulative 6.80m ALL
+
+Composite;  hole B core 7:    Thu Jan 22 14:09:30 1998
+162 984 A  7 H 5 118.6 118.6  59.79  tied to  162 984 B  7 H 4 46.4 46.4  60.96
+Adjust to best correlation;  corr. coef. 0.983, depth offset: relative -0.32m, cumulative 5.66m ALL
+
+Composite;  hole C core 7:    Thu Jan 22 14:09:35 1998
+162 984 B  7 H 4 49.4 49.4  60.99  tied to  162 984 C  7 H 4 100.5 100.5  59.81
+Adjust to best correlation;  corr. coef. 0.680, depth offset: relative 1.19m, cumulative 7.83m ALL
+
+Composite;  hole A core 8:    Thu Jan 22 14:10:09 1998
+162 984 B  8 H 1 34.4 34.4  65.84  tied to  162 984 A  8 H 2 88.5 88.5  64.49
+Adjust to best correlation;  corr. coef. 0.911, depth offset: relative 0.11m, cumulative 7.19m ALL
+
+Composite;  hole C core 8:    Thu Jan 22 14:10:14 1998
+162 984 B  8 H 4 139.4 139.4  71.39  tied to  162 984 C  8 H 4 58.6 58.6  68.89
+Adjust to best correlation;  corr. coef. 0.917, depth offset: relative 0.63m, cumulative 8.43m ALL
+
+Composite;  hole A core 9:    Thu Jan 22 14:10:22 1998
+162 984 C  8 H 6 103.4 103.4  72.33  tied to  162 984 A  9 H 1 91.5 91.5  72.51
+Adjust to best correlation;  corr. coef. 0.977, depth offset: relative -0.54m, cumulative 7.95m ALL
+
+Composite;  hole B core 9:    Thu Jan 22 14:10:26 1998
+162 984 A  9 H 5 76.5 76.5  78.36  tied to  162 984 B  9 H 4 7.5 7.5  79.57
+Adjust to best correlation;  corr. coef. 0.993, depth offset: relative 0.07m, cumulative 6.80m ALL
+
+Composite;  hole C core 9:    Thu Jan 22 14:10:29 1998
+162 984 B  9 H 4 7.5 7.5  79.57  tied to  162 984 C  9 H 4 7.5 7.5  77.88
+Adjust to best correlation;  corr. coef. 0.974, depth offset: relative -2.02m, cumulative 8.70m ALL
+
+Composite;  hole A core 10:    Thu Jan 22 14:10:39 1998
+162 984 C  9 H 6 142.5 142.5  82.23  tied to  162 984 A  10 H 1 133.4 133.4  82.43
+Adjust to best correlation;  corr. coef. 0.963, depth offset: relative -1.19m, cumulative 8.50m ALL
+
+Composite;  hole B core 10:    Thu Jan 22 14:10:44 1998
+162 984 A  10 H 6 31.6 31.6  88.92  tied to  162 984 B  10 H 4 46.5 46.5  89.46
+Adjust to best correlation;  corr. coef. 0.955, depth offset: relative -2.58m, cumulative 7.72m ALL
+
+Composite;  hole C core 10:    Thu Jan 22 14:10:47 1998
+162 984 B  10 H 4 79.4 79.4  89.79  tied to  162 984 C  10 H 4 37.6 37.6  87.68
+Adjust to best correlation;  corr. coef. 0.974, depth offset: relative 0.72m, cumulative 10.07m ALL
+
+Composite;  hole A core 11:    Thu Jan 22 14:10:52 1998
+162 984 C  10 H 6 145.6 145.6  91.76  tied to  162 984 A  11 H 1 64.6 64.6  91.25
+Adjust to best correlation;  corr. coef. 0.945, depth offset: relative 0.84m, cumulative 10.49m ALL
+
+Composite;  hole B core 11:    Thu Jan 22 14:10:58 1998
+162 984 A  11 H 2 85.6 85.6  92.96  tied to  162 984 B  11 H 1 136.5 136.5  95.36
+Adjust to best correlation;  corr. coef. 0.886, depth offset: relative 0.91m, cumulative 8.18m ALL
+
+Composite;  hole C core 11:    Thu Jan 22 14:11:03 1998
+162 984 A  11 H 3 88.5 88.5  94.49  tied to  162 984 C  11 H 1 133.6 133.6  93.64
+Adjust to best correlation;  corr. coef. 0.972, depth offset: relative -0.02m, cumulative 11.25m ALL
+
+Composite;  hole A core 12:    Thu Jan 22 14:11:09 1998
+162 984 C  11 H 6 112.5 112.5  100.93  tied to  162 984 A  12 H 2 58.6 58.6  102.19
+Adjust to best correlation;  corr. coef. 0.906, depth offset: relative -0.42m, cumulative 10.32m ALL
+
+Composite;  hole B core 12:    Thu Jan 22 14:11:12 1998
+162 984 A  12 H 5 22.5 22.5  106.32  tied to  162 984 B  12 H 3 124.5 124.5  107.75
+Adjust to best correlation;  corr. coef. 0.953, depth offset: relative 0.09m, cumulative 8.92m ALL
+
+Composite;  hole C core 12:    Thu Jan 22 14:11:19 1998
+162 984 A  12 H 4 49.5 49.5  105.10  tied to  162 984 C  12 H 2 85.5 85.5  104.16
+Adjust to best correlation;  corr. coef. 0.992, depth offset: relative -2.49m, cumulative 10.81m ALL
+
+Composite;  hole A core 13:    Thu Jan 22 14:11:34 1998
+162 984 C  12 H 6 136.5 136.5  110.67  tied to  162 984 A  13 H 1 94.5 94.5  110.54
+Adjust to best correlation;  corr. coef. 0.661, depth offset: relative 1.75m, cumulative 11.57m ALL
+
+Composite;  hole A core 13:    Thu Jan 22 14:11:57 1998
+162 984 C  12 H 7 19.6 19.6  111.00  tied to  162 984 A  13 H 1 112.6 112.6  110.73
+Adjust to best correlation;  corr. coef. 0.678, depth offset: relative -0.55m, cumulative 11.02m ALL
+
+Composite;  hole B core 13:    Thu Jan 22 14:12:01 1998
+162 984 A  13 H 2 139.5 139.5  112.49  tied to  162 984 B  13 H 1 148.4 148.4  114.48
+Adjust to best correlation;  corr. coef. 0.970, depth offset: relative 1.25m, cumulative 10.02m ALL
+
+Composite;  hole B core 13:    Thu Jan 22 14:12:04 1998
+162 984 A  13 H 5 31.5 31.5  115.92  tied to  162 984 B  13 H 3 85.4 85.4  116.85
+Adjust to best correlation;  corr. coef. 0.996, depth offset: relative -0.05m, cumulative 9.97m ALL
+
+Composite;  hole C core 13:    Thu Jan 22 14:12:07 1998
+162 984 B  13 H 3 115.4 115.4  117.15  tied to  162 984 C  13 H 4 49.6 49.6  116.30
+Adjust to best correlation;  corr. coef. 0.995, depth offset: relative -0.52m, cumulative 10.79m ALL
+
+Composite;  hole A core 14:    Thu Jan 22 14:12:14 1998
+162 984 B  13 H 7 31.6 31.6  122.32  tied to  162 984 A  14 H 1 112.6 112.6  120.23
+Adjust to best correlation;  corr. coef. 0.947, depth offset: relative -1.04m, cumulative 12.03m ALL
+
+Composite;  hole B core 14:    Thu Jan 22 14:12:17 1998
+162 984 A  14 H 4 130.5 130.5  124.90  tied to  162 984 B  14 H 3 67.5 67.5  126.18
+Adjust to best correlation;  corr. coef. 0.958, depth offset: relative -1.95m, cumulative 10.27m ALL
+
+Composite;  hole C core 14:    Thu Jan 22 14:12:20 1998
+162 984 B  14 H 3 130.6 130.6  126.81  tied to  162 984 C  14 H 4 25.4 25.4  125.55
+Adjust to best correlation;  corr. coef. 0.952, depth offset: relative -1.43m, cumulative 11.26m ALL
+
+Composite;  hole A core 15:    Thu Jan 22 14:12:31 1998
+162 984 B  14 H 6 91.5 91.5  130.91  tied to  162 984 A  15 H 1 16.5 16.5  128.76
+Adjust to best correlation;  corr. coef. 0.943, depth offset: relative -0.87m, cumulative 12.51m ALL
+
+Composite;  hole B core 15:    Thu Jan 22 14:12:37 1998
+162 984 A  15 H 4 94.4 94.4  134.04  tied to  162 984 B  15 H 3 16.4 16.4  135.16
+Adjust to best correlation;  corr. coef. 0.851, depth offset: relative 0.52m, cumulative 11.54m ALL
+
+Composite;  hole C core 15:    Thu Jan 22 14:12:40 1998
+162 984 B  15 H 3 124.5 124.5  136.24  tied to  162 984 C  15 H 4 100.4 100.4  135.80
+Adjust to best correlation;  corr. coef. 0.940, depth offset: relative -0.49m, cumulative 11.77m ALL
+
+Composite;  hole A core 16:    Thu Jan 22 14:12:45 1998
+162 984 B  15 H 7 34.4 34.4  141.34  tied to  162 984 A  16 H 1 130.4 130.4  139.40
+Adjust to best correlation;  corr. coef. 0.994, depth offset: relative -0.47m, cumulative 13.24m ALL
+
+Composite;  hole C core 16:    Thu Jan 22 14:12:49 1998
+162 984 A  16 H 2 118.6 118.6  140.79  tied to  162 984 C  16 H 2 46.4 46.4  141.76
+Adjust to best correlation;  corr. coef. 0.972, depth offset: relative -0.33m, cumulative 12.39m ALL
+
+Composite;  hole B core 16:    Thu Jan 22 14:12:52 1998
+162 984 C  16 H 3 112.6 112.6  143.93  tied to  162 984 B  16 H 2 64.5 64.5  143.65
+Adjust to best correlation;  corr. coef. 0.989, depth offset: relative -0.18m, cumulative 12.61m ALL
+
+Composite;  hole B core 16:    Thu Jan 22 14:13:03 1998
+162 984 A  16 H 6 34.4 34.4  145.94  tied to  162 984 B  16 H 4 70.5 70.5  146.71
+Adjust to best correlation;  corr. coef. 0.980, depth offset: relative 0.01m, cumulative 12.62m ALL
+
+Composite;  hole C core 16:    Thu Jan 22 14:13:06 1998
+162 984 B  16 H 4 49.5 49.5  146.49  tied to  162 984 C  16 H 5 82.4 82.4  146.62
+Adjust to best correlation;  corr. coef. 0.995, depth offset: relative 0.19m, cumulative 12.58m ALL
+
+Composite;  hole A core 17:    Thu Jan 22 14:13:14 1998
+162 984 B  16 H 6 100.6 100.6  150.01  tied to  162 984 A  17 H 1 100.4 100.4  148.60
+Adjust to best correlation;  corr. coef. 0.715, depth offset: relative 0.70m, cumulative 14.39m ALL
+
+Composite;  hole C core 17:    Thu Jan 22 14:13:18 1998
+162 984 A  17 H 3 115.6 115.6  151.76  tied to  162 984 C  17 H 3 61.6 61.6  152.92
+Adjust to best correlation;  corr. coef. 0.974, depth offset: relative -0.07m, cumulative 13.26m ALL
+
+Composite;  hole B core 17:    Thu Jan 22 14:13:21 1998
+162 984 A  17 H 3 145.6 145.6  152.06  tied to  162 984 B  17 H 2 34.4 34.4  152.84
+Adjust to best correlation;  corr. coef. 0.924, depth offset: relative 0.06m, cumulative 13.43m ALL
+
+Composite;  hole D core 2:    Thu Jan 22 14:13:27 1998
+162 984 C  17 H 4 94.5 94.5  154.75  tied to  162 984 D  2 H 2 49.4 49.4  168.19
+Adjust to best correlation;  corr. coef. 0.811, depth offset: relative 0.06m, cumulative 0.06m ALL
+
+Composite;  hole C core 18:    Thu Jan 22 14:13:39 1998
+162 984 B  17 H 6 133.6 133.6  159.84  tied to  162 984 C  18 H 1 88.5 88.5  159.68
+Adjust to best correlation;  corr. coef. 0.905, depth offset: relative 0.23m, cumulative 14.04m ALL
+
+Composite;  hole A core 18:    Thu Jan 22 14:13:44 1998
+162 984 B  17 H 6 127.5 127.5  159.77  tied to  162 984 A  18 H 1 64.5 64.5  157.75
+Adjust to best correlation;  corr. coef. 0.910, depth offset: relative 0.37m, cumulative 16.26m ALL
+
+Composite;  hole A core 18:    Thu Jan 22 14:13:47 1998
+162 984 C  18 H 1 79.5 79.5  159.60  tied to  162 984 A  18 H 1 100.4 100.4  158.10
+Adjust to best correlation;  corr. coef. 0.981, depth offset: relative -0.63m, cumulative 15.63m ALL
+
+Composite;  hole B core 18:    Thu Jan 22 14:13:52 1998
+162 984 A  18 H 3 118.6 118.6  161.29  tied to  162 984 B  18 H 2 43.5 43.5  162.43
+Adjust to best correlation;  corr. coef. 0.969, depth offset: relative -0.58m, cumulative 14.25m ALL
+
+Composite;  hole C core 18:    Thu Jan 22 14:13:54 1998
+162 984 B  18 H 2 127.5 127.5  163.27  tied to  162 984 C  18 H 3 145.5 145.5  163.26
+Adjust to best correlation;  corr. coef. 0.996, depth offset: relative 0.04m, cumulative 14.08m ALL
+
+Composite;  hole C core 19:    Thu Jan 22 14:14:02 1998
+162 984 B  18 H 6 124.4 124.4  169.24  tied to  162 984 C  19 H 1 82.4 82.4  169.12
+Adjust to best correlation;  corr. coef. 0.831, depth offset: relative -0.01m, cumulative 14.52m ALL
+
+Composite;  hole A core 19:    Thu Jan 22 14:14:06 1998
+162 984 C  19 H 1 130.5 130.5  169.60  tied to  162 984 A  19 H 1 100.6 100.6  167.61
+Adjust to best correlation;  corr. coef. 0.945, depth offset: relative -0.50m, cumulative 16.48m ALL
+
+Composite;  hole D core 4:    Thu Jan 22 14:14:16 1998
+162 984 C  19 H 4 142.4 142.4  174.22  tied to  162 984 D  4 H 4 43.5 43.5  190.13
+Adjust to best correlation;  corr. coef. 0.148, depth offset: relative -1.18m, cumulative -1.12m ALL
+
+Composite;  hole C core 20:    Thu Jan 22 14:14:42 1998
+162 984 B  19 H 6 28.5 28.5  177.79  tied to  162 984 C  20 H 1 118.5 118.5  178.99
+Adjust to best correlation;  corr. coef. 0.763, depth offset: relative -0.18m, cumulative 14.34m ALL
+
+Composite:  hole C core 20;  UNDONE    Thu Jan 22 14:15:02 1998
+
+Composite;  hole C core 20:    Thu Jan 22 14:15:39 1998
+162 984 B  19 H 6 97.5 97.5  178.48  tied to  162 984 C  20 H 1 67.5 67.5  178.48
+Adjust to best correlation;  corr. coef. 0.820, depth offset: relative 1.44m, cumulative 15.96m ALL
+
+Composite:  hole C core 20;  UNDONE    Thu Jan 22 14:15:45 1998
+
+Composite;  hole C core 20:    Thu Jan 22 14:16:13 1998
+162 984 A  19 H 5 46.6 46.6  173.07  tied to  162 984 C  20 H 2 43.5 43.5  179.74
+Adjust to best correlation;  corr. coef. 0.834, depth offset: relative -4.74m, cumulative 9.78m ALL
+
+Composite:  hole C core 20;  UNDONE    Thu Jan 22 14:16:23 1998
+
+Composite;  hole B core 20:    Thu Jan 22 14:16:44 1998
+162 984 D  5 H 3 7.6 7.6  197.78  tied to  162 984 B  20 H 1 130.5 130.5  180.80
+Adjust to best correlation;  corr. coef. 0.441, depth offset: relative -2.38m, cumulative 15.62m ALL
+
+Composite:  hole B core 20;  UNDONE    Thu Jan 22 14:16:52 1998
+
+Composite;  hole B core 19:    Thu Jan 22 14:17:15 1998
+162 984 A  19 H 4 4.4 4.4  171.14  tied to  162 984 B  19 H 2 28.4 28.4  171.78
+Adjust to best correlation;  corr. coef. 0.961, depth offset: relative 0.27m, cumulative 15.87m ALL
+
+Composite;  hole C core 19:    Thu Jan 22 14:17:19 1998
+162 984 B  19 H 2 13.4 13.4  171.63  tied to  162 984 C  19 H 4 61.6 61.6  173.42
+Adjust to best correlation;  corr. coef. 0.966, depth offset: relative -0.02m, cumulative 14.50m ALL
+
+Composite;  hole D core 4:    Thu Jan 22 14:17:26 1998
+162 984 A  19 H 4 64.6 64.6  171.75  tied to  162 984 D  4 H 3 130.4 130.4  189.50
+Adjust to best correlation;  corr. coef. 0.418, depth offset: relative -0.09m, cumulative -1.21m ALL
+
+Composite;  hole D core 4:    Thu Jan 22 14:17:37 1998
+162 984 B  18 H 6 4.5 4.5  168.04  tied to  162 984 D  4 H 2 28.6 28.6  186.99
+Adjust to best correlation;  corr. coef. 0.719, depth offset: relative -3.49m, cumulative -4.70m ALL
+
+Composite:  hole D core 4;  UNDONE    Thu Jan 22 14:17:48 1998
+
+Composite;  hole D core 4:    Thu Jan 22 14:18:07 1998
+162 984 C  19 H 5 4.5 4.5  174.35  tied to  162 984 D  4 H 4 46.4 46.4  190.16
+Adjust to best correlation;  corr. coef. 0.143, depth offset: relative 0.08m, cumulative -1.13m ALL
+
+Composite:  hole D core 4;  UNDONE    Thu Jan 22 14:18:10 1998
+
+Composite;  hole D core 2:    Thu Jan 22 14:18:46 1998
+162 984 C  17 H 4 85.5 85.5  154.65  tied to  162 984 D  2 H 2 28.4 28.4  167.98
+Adjust to best correlation;  corr. coef. 0.822, depth offset: relative -0.01m, cumulative 0.05m ALL
+
+Composite:  hole D core 2;  UNDONE    Thu Jan 22 14:18:50 1998
+
+Affine table written to /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.affine.pdem.table.
+The report has been appended to file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.rpt.
+
+Start of Session.  Thu Apr  9 12:48:40 1998
+
+Splicer Input Files:
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984a.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984b.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984c.dat.mcd
+
+Data Type: SUSCEPTIBILITY
+
+Data File Format: ODP OTHER1
+
+Affine Table: /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.affine.pdem.table
+
+No data smoothing.
+
+Culling will be done with user set parameters.
+Top 5.0 cm will be removed from core.
+All cores will be used.
+
+Every data point will be used.
+
+Note: multiple data values will be averaged.
+
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984a.dat.mcd (total lines =5477, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984b.dat.mcd (total lines =13927, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984c.dat.mcd (total lines =9242, total errors=0)
+Data : Done reading files. Preparing to process...
+Data : Culling core tops.
+Data : Culling using parameters; hole A.
+Data : Culling using parameters; hole B.
+Data : Culling using parameters; hole C.
+Data : Applying affine table for hole A.
+Affine Table /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.affine.pdem.table read
+Data : Applying affine table for hole B.
+Data : Applying affine table for hole C.
+
+Splice: Constrained;  hole B core 1;  FIRST CORE OF SPLICE    Thu Apr  9 12:51:03 1998
+
+Splice: Constrained;  hole B core 1;  CORE SPLICE UNDONE    Thu Apr  9 12:52:58 1998
+Last core of splice removed.
+
+Splice: Constrained;  hole C core 1;  FIRST CORE OF SPLICE    Thu Apr  9 12:53:01 1998
+
+Splice: Constrained;  hole A core 2  CORE SPLICED    Thu Apr  9 12:53:23 1998
+splice tie 162 984 C  1 H 5 22.4 22.4  6.22  to  162 984 A  2 H 1 61.4 61.4  5.71
+Tie evaluation; corr. coef. 0.841,  value difference 24.00  REAL TIE
+
+Splice: Constrained;  hole B core 2  CORE SPLICED    Thu Apr  9 12:53:35 1998
+splice tie 162 984 A  2 H 5 130.5 130.5  12.41  to  162 984 B  2 H 3 130.5 130.5  12.81
+Tie evaluation; corr. coef. 0.973,  value difference 10.75  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 3  CORE SPLICED    Thu Apr  9 12:54:06 1998
+splice tie 162 984 B  2 H 6 103.4 103.4  17.03  to  162 984 A  3 H 2 40.5 40.5  16.51
+Tie evaluation; corr. coef. 0.842,  value difference 1.00  REAL TIE
+
+Splice: Constrained;  hole B core 3  CORE SPLICED    Thu Apr  9 12:54:36 1998
+splice tie 162 984 A  3 H 7 7.6 7.6  23.68  to  162 984 B  3 H 4 28.6 28.6  22.79
+Tie evaluation; corr. coef. 0.890,  value difference 16.00  REAL TIE
+
+Splice: Constrained;  hole A core 4  CORE SPLICED    Thu Apr  9 12:55:34 1998
+splice tie 162 984 B  3 H 7 37.6 37.6  27.38  to  162 984 A  4 H 3 67.4 67.4  27.77
+Tie evaluation; corr. coef. 0.877,  value difference -2.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 4  CORE SPLICED    Thu Apr  9 12:55:49 1998
+splice tie 162 984 A  4 H 7 16.4 16.4  33.26  to  162 984 B  4 H 4 7.4 7.4  32.07
+Tie evaluation; corr. coef. 0.989,  value difference -2.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 5  CORE SPLICED    Thu Apr  9 12:56:10 1998
+splice tie 162 984 B  4 H 6 79.5 79.5  35.79  to  162 984 A  5 H 2 55.4 55.4  35.65
+Tie evaluation; corr. coef. 0.906,  value difference 2.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 5  CORE SPLICED    Thu Apr  9 12:56:41 1998
+splice tie 162 984 A  5 H 4 88.4 88.4  38.98  to  162 984 C  5 H 2 100.5 100.5  37.81
+Tie evaluation; corr. coef. 0.939,  value difference -1.50  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 6  CORE SPLICED    Thu Apr  9 12:57:03 1998
+splice tie 162 984 C  5 H 7 37.5 37.5  44.67  to  162 984 A  6 H 2 85.6 85.6  45.46
+Tie evaluation; corr. coef. 0.953,  value difference -8.50  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 6  CORE SPLICED    Thu Apr  9 12:57:22 1998
+splice tie 162 984 A  6 H 7 19.6 19.6  52.30  to  162 984 B  6 H 4 112.5 112.5  52.13
+Tie evaluation; corr. coef. 0.897,  value difference 58.50  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 7  CORE SPLICED    Thu Apr  9 12:57:40 1998
+splice tie 162 984 B  6 H 7 13.5 13.5  55.63  to  162 984 A  7 H 2 4.5 4.5  54.14
+Tie evaluation; corr. coef. 0.923,  value difference -33.00  REAL TIE
+
+Splice: Constrained;  hole C core 7  CORE SPLICED    Thu Apr  9 12:58:46 1998
+splice tie 162 984 A  7 H 6 136.5 136.5  61.47  to  162 984 C  7 H 5 13.6 13.6  60.44
+Tie evaluation; corr. coef. 0.932,  value difference -20.00  REAL TIE
+
+Splice: Constrained;  hole A core 8  CORE SPLICED    Thu Apr  9 12:59:05 1998
+splice tie 162 984 C  7 H 7 28.5 28.5  63.58  to  162 984 A  8 H 2 64.6 64.6  64.25
+Tie evaluation; corr. coef. 0.926,  value difference -19.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 8  CORE SPLICED    Thu Apr  9 12:59:46 1998
+splice tie 162 984 A  8 H 6 139.4 139.4  70.99  to  162 984 B  8 H 5 85.4 85.4  72.35
+Tie evaluation; corr. coef. 0.859,  value difference -19.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 9  CORE SPLICED    Thu Apr  9 13:00:02 1998
+splice tie 162 984 B  8 H 6 145.4 145.4  74.45  to  162 984 A  9 H 1 76.4 76.4  72.36
+Tie evaluation; corr. coef. 0.943,  value difference -1.67  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 9  CORE SPLICED    Thu Apr  9 13:00:18 1998
+splice tie 162 984 A  9 H 6 76.4 76.4  79.86  to  162 984 C  9 H 4 130.5 130.5  79.11
+Tie evaluation; corr. coef. 0.924,  value difference -3.00  REAL TIE
+
+Splice: Constrained;  hole A core 10  CORE SPLICED    Thu Apr  9 13:00:29 1998
+splice tie 162 984 C  9 H 6 100.4 100.4  81.80  to  162 984 A  10 H 1 91.5 91.5  82.01
+Tie evaluation; corr. coef. 0.891,  value difference 12.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 10  CORE SPLICED    Thu Apr  9 13:00:48 1998
+splice tie 162 984 A  10 H 7 31.6 31.6  90.42  to  162 984 C  10 H 5 7.6 7.6  88.88
+Tie evaluation; corr. coef. 0.910,  value difference -1.25  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 11  CORE SPLICED    Thu Apr  9 13:01:19 1998
+splice tie 162 984 C  10 H 7 55.4 55.4  92.35  to  162 984 B  11 H 1 25.5 25.5  94.25
+Tie evaluation; corr. coef. 0.431,  value difference -11.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 12  CORE SPLICED    Thu Apr  9 13:01:55 1998
+splice tie 162 984 B  11 H 7 4.5 4.5  103.04  to  162 984 A  12 H 1 79.6 79.6  100.90
+Tie evaluation; corr. coef. 0.911,  value difference -92.00  REAL TIE
+
+Splice: Constrained;  hole B core 12  CORE SPLICED    Thu Apr  9 13:02:28 1998
+splice tie 162 984 A  12 H 7 10.4 10.4  109.20  to  162 984 B  12 H 5 109.5 109.5  110.60
+Tie evaluation; corr. coef. 0.657,  value difference -66.00  REAL TIE
+
+Splice: Constrained;  hole A core 13  CORE SPLICED    Thu Apr  9 13:02:39 1998
+splice tie 162 984 B  12 H 6 130.6 130.6  112.31  to  162 984 A  13 H 1 61.4 61.4  110.21
+Tie evaluation; corr. coef. 0.782,  value difference -43.00  REAL TIE
+
+Splice: Constrained;  hole B core 13  CORE SPLICED    Thu Apr  9 13:02:55 1998
+splice tie 162 984 A  13 H 7 28.5 28.5  118.89  to  162 984 B  13 H 5 94.4 94.4  119.94
+Tie evaluation; corr. coef. 0.974,  value difference -21.00  REAL TIE
+
+Splice: Constrained;  hole A core 14  CORE SPLICED    Thu Apr  9 13:03:06 1998
+splice tie 162 984 B  13 H 6 145.6 145.6  121.96  to  162 984 A  14 H 1 82.5 82.5  119.92
+Tie evaluation; corr. coef. 0.946,  value difference -3.66  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 15;  CORE APPEND TO SPLICE    Thu Apr  9 13:03:54 1998
+
+Splice: Constrained;  hole B core 15  CORE SPLICED    Thu Apr  9 13:04:26 1998
+splice tie 162 984 A  15 H 6 73.5 73.5  136.84  to  162 984 B  15 H 4 133.4 133.4  137.83
+Tie evaluation; corr. coef. 0.905,  value difference -36.66  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 16  CORE SPLICED    Thu Apr  9 13:04:40 1998
+splice tie 162 984 B  15 H 6 106.5 106.5  140.57  to  162 984 A  16 H 1 79.5 79.5  138.90
+Tie evaluation; corr. coef. 0.966,  value difference -7.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 16  CORE SPLICED    Thu Apr  9 13:04:53 1998
+splice tie 162 984 A  16 H 6 121.5 121.5  146.82  to  162 984 B  16 H 4 145.6 145.6  147.46
+Tie evaluation; corr. coef. 0.941,  value difference -50.64  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 17  CORE SPLICED    Thu Apr  9 13:05:05 1998
+splice tie 162 984 B  16 H 6 133.4 133.4  150.33  to  162 984 A  17 H 1 97.5 97.5  148.58
+Tie evaluation; corr. coef. 0.592,  value difference 5.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 17  CORE SPLICED    Thu Apr  9 13:05:23 1998
+splice tie 162 984 A  17 H 6 91.5 91.5  156.01  to  162 984 B  17 H 5 4.4 4.4  157.04
+Tie evaluation; corr. coef. 0.868,  value difference 56.89  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 18  CORE SPLICED    Thu Apr  9 13:05:35 1998
+splice tie 162 984 B  17 H 7 28.5 28.5  160.29  to  162 984 C  18 H 1 85.5 85.5  159.65
+Tie evaluation; corr. coef. 0.930,  value difference 61.50  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 18  CORE SPLICED    Thu Apr  9 13:05:48 1998
+splice tie 162 984 C  18 H 7 34.5 34.5  168.15  to  162 984 B  18 H 6 4.5 4.5  168.04
+Tie evaluation; corr. coef. 0.963,  value difference -74.99  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 19  CORE SPLICED    Thu Apr  9 13:06:28 1998
+splice tie 162 984 B  18 H 6 100.5 100.5  169.01  to  162 984 C  19 H 1 46.5 46.5  168.76
+Tie evaluation; corr. coef. 0.727,  value difference -6.00  REAL TIE
+
+Splicer table written to /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.splicetable.test.Spliced output data file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.spl.test.
+The report has been appended to file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.rpt.
+
+Start of Session: 
+Mon Aug 31 15:06:27 1998
+
+Splicer Input Files:
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984a.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984b.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984c.dat.mcd
+
+Data Type: SUSCEPTIBILITY
+
+Data File Format: ODP OTHER1
+
+Affine Table: /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.affine.pdem.table
+
+Gaussian Smoothing: 51 Depth (cm)
+Plot Display: Both Smoothed and Unsmoothed
+
+Culling will be done with user set parameters.
+Top 5.0 cm will be removed from core.
+All cores will be used.
+
+Every data point will be used.
+
+Note: multiple data values will be averaged.
+
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984a.dat.mcd (total lines =5477, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984b.dat.mcd (total lines =13927, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984c.dat.mcd (total lines =9242, total errors=0)
+Data : Done reading files. Preparing to process...
+Data : Culling core tops.
+Data : Culling using parameters; hole A.
+Data : Culling using parameters; hole B.
+Data : Culling using parameters; hole C.
+Data : Smoothing data hole A.
+Data : Smoothing data hole B.
+Data : Smoothing data hole C.
+Data : Applying affine table for hole A.
+Affine Table /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.affine.pdem.table read
+Data : Applying affine table for hole B.
+Data : Applying affine table for hole C.
+
+Splice: Constrained;  hole B core 1;  FIRST CORE OF SPLICE    Mon Aug 31 15:07:17 1998
+
+Splice: Constrained;  hole B core 1;  CORE SPLICE UNDONE    Mon Aug 31 15:08:15 1998
+Last core of splice removed.
+
+Splice: Constrained;  hole B core 1;  FIRST CORE OF SPLICE    Mon Aug 31 15:09:55 1998
+
+Splice: Constrained;  hole A core 2  CORE SPLICED    Mon Aug 31 15:10:20 1998
+splice tie 162 984 B  1 H 6 70.5 70.5  8.20  to  162 984 A  2 H 1 67.4 67.4  5.77
+Tie evaluation; corr. coef. 0.789,  value difference 120.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 2  CORE SPLICED    Mon Aug 31 15:10:40 1998
+splice tie 162 984 A  2 H 4 67.4 67.4  10.27  to  162 984 B  2 H 2 64.4 64.4  10.64
+Tie evaluation; corr. coef. 0.972,  value difference -5.00  REAL TIE
+
+Splice: Constrained;  hole A core 3  CORE SPLICED    Mon Aug 31 15:11:06 1998
+splice tie 162 984 B  2 H 7 28.6 28.6  17.79  to  162 984 A  3 H 2 118.6 118.6  17.29
+Tie evaluation; corr. coef. 0.982,  value difference 3.67  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 3  CORE SPLICED    Mon Aug 31 15:11:39 1998
+splice tie 162 984 A  3 H 6 40.4 40.4  22.50  to  162 984 B  3 H 3 61.5 61.5  21.61
+Tie evaluation; corr. coef. 0.896,  value difference -7.00  REAL TIE
+
+Splice: Constrained;  hole A core 4  CORE SPLICED    Mon Aug 31 15:11:59 1998
+splice tie 162 984 B  3 H 6 115.4 115.4  26.65  to  162 984 A  4 H 3 4.5 4.5  27.15
+Tie evaluation; corr. coef. 0.978,  value difference 3.40  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 4  CORE SPLICED    Mon Aug 31 15:12:23 1998
+splice tie 162 984 A  4 H 6 52.5 52.5  32.13  to  162 984 B  4 H 3 43.4 43.4  30.93
+Tie evaluation; corr. coef. 0.956,  value difference 21.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 5  CORE SPLICED    Mon Aug 31 15:12:48 1998
+splice tie 162 984 B  4 H 6 112.5 112.5  36.13  to  162 984 A  5 H 2 88.5 88.5  35.98
+Tie evaluation; corr. coef. 0.956,  value difference 6.00  REAL TIE
+
+Splice: Constrained;  hole C core 5  CORE SPLICED    Mon Aug 31 15:13:13 1998
+splice tie 162 984 A  5 H 5 64.5 64.5  40.24  to  162 984 C  5 H 3 76.6 76.6  39.07
+Tie evaluation; corr. coef. 0.991,  value difference -7.75  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 5;  CORE SPLICE UNDONE    Mon Aug 31 15:13:37 1998
+
+Splice: Constrained;  hole B core 5  CORE SPLICED    Mon Aug 31 15:13:51 1998
+splice tie 162 984 A  5 H 4 40.4 40.4  38.50  to  162 984 B  5 H 1 88.5 88.5  37.88
+Tie evaluation; corr. coef. 0.974,  value difference -11.00  REAL TIE
+
+Splice: Constrained;  hole A core 6  CORE SPLICED    Mon Aug 31 15:14:09 1998
+splice tie 162 984 B  5 H 6 136.4 136.4  45.86  to  162 984 A  6 H 3 4.5 4.5  46.14
+Tie evaluation; corr. coef. 0.855,  value difference 5.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 6  CORE SPLICED    Mon Aug 31 15:14:44 1998
+splice tie 162 984 A  6 H 5 13.5 13.5  49.23  to  162 984 B  6 H 2 103.6 103.6  49.04
+Tie evaluation; corr. coef. 0.981,  value difference 9.00  REAL TIE
+
+Splice: Constrained;  hole A core 7  CORE SPLICED    Mon Aug 31 15:15:13 1998
+splice tie 162 984 B  6 H 6 145.4 145.4  55.45  to  162 984 A  7 H 1 136.6 136.6  53.97
+Tie evaluation; corr. coef. 0.915,  value difference 17.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 7  CORE SPLICED    Mon Aug 31 15:15:51 1998
+splice tie 162 984 A  7 H 5 76.4 76.4  59.36  to  162 984 B  7 H 4 4.4 4.4  60.54
+Tie evaluation; corr. coef. 0.977,  value difference -0.50  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 8  CORE SPLICED    Mon Aug 31 15:16:25 1998
+splice tie 162 984 B  7 H 7 10.6 10.6  65.11  to  162 984 A  8 H 2 4.5 4.5  63.64
+Tie evaluation; corr. coef. 0.847,  value difference -25.60  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 8  CORE SPLICED    Mon Aug 31 15:16:43 1998
+splice tie 162 984 A  8 H 6 109.5 109.5  70.69  to  162 984 C  8 H 4 115.4 115.4  69.45
+Tie evaluation; corr. coef. 0.932,  value difference 3.00  REAL TIE
+
+Splice: Constrained;  hole A core 9  CORE SPLICED    Mon Aug 31 15:16:55 1998
+splice tie 162 984 C  8 H 7 10.6 10.6  72.91  to  162 984 A  9 H 2 31.5 31.5  73.42
+Tie evaluation; corr. coef. 0.965,  value difference -8.25  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 9  CORE SPLICED    Mon Aug 31 15:17:16 1998
+splice tie 162 984 A  9 H 4 91.6 91.6  77.02  to  162 984 B  9 H 3 16.5 16.5  78.17
+Tie evaluation; corr. coef. 0.998,  value difference 1.00  REAL TIE
+
+Splice: Constrained;  hole A core 10  CORE SPLICED    Mon Aug 31 15:17:38 1998
+splice tie 162 984 B  9 H 6 142.4 142.4  83.92  to  162 984 A  10 H 1 112.6 112.6  82.23
+Tie evaluation; corr. coef. 0.906,  value difference 5.67  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 10  CORE SPLICED    Mon Aug 31 15:18:02 1998
+splice tie 162 984 A  10 H 6 58.6 58.6  89.19  to  162 984 C  10 H 4 31.6 31.6  87.62
+Tie evaluation; corr. coef. 0.966,  value difference -7.00  REAL TIE
+
+Splice: Constrained;  hole A core 11  CORE SPLICED    Mon Aug 31 15:18:13 1998
+splice tie 162 984 C  10 H 7 7.6 7.6  91.88  to  162 984 A  11 H 1 88.5 88.5  91.49
+Tie evaluation; corr. coef. 0.898,  value difference 4.25  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 11  CORE SPLICED    Mon Aug 31 15:18:34 1998
+splice tie 162 984 A  11 H 6 70.4 70.4  98.80  to  162 984 C  11 H 4 124.5 124.5  98.05
+Tie evaluation; corr. coef. 0.969,  value difference 10.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 12  CORE SPLICED    Mon Aug 31 15:18:58 1998
+splice tie 162 984 C  11 H 7 55.5 55.5  101.86  to  162 984 B  12 H 1 70.6 70.6  104.21
+Tie evaluation; corr. coef. 0.950,  value difference -13.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 13  CORE SPLICED    Mon Aug 31 15:19:31 1998
+splice tie 162 984 B  12 H 6 136.4 136.4  112.36  to  162 984 A  13 H 1 67.4 67.4  110.27
+Tie evaluation; corr. coef. 0.431,  value difference -6.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 13  CORE SPLICED    Mon Aug 31 15:20:02 1998
+splice tie 162 984 A  13 H 5 13.4 13.4  115.73  to  162 984 B  13 H 3 79.4 79.4  116.79
+Tie evaluation; corr. coef. 0.998,  value difference 18.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 14  CORE SPLICED    Mon Aug 31 15:20:08 1998
+splice tie 162 984 B  13 H 7 7.6 7.6  122.08  to  162 984 A  14 H 1 94.4 94.4  120.04
+Tie evaluation; corr. coef. 0.818,  value difference -6.66  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 14  CORE SPLICED    Mon Aug 31 15:20:42 1998
+splice tie 162 984 A  14 H 4 49.4 49.4  124.09  to  162 984 B  14 H 3 34.5 34.5  125.85
+Tie evaluation; corr. coef. 0.965,  value difference 8.00  REAL TIE
+
+Splice: Constrained;  hole A core 15  CORE SPLICED    Mon Aug 31 15:20:51 1998
+splice tie 162 984 B  14 H 6 97.6 97.6  130.98  to  162 984 A  15 H 1 16.5 16.5  128.76
+Tie evaluation; corr. coef. 0.968,  value difference 80.66  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 15  CORE SPLICED    Mon Aug 31 15:21:09 1998
+splice tie 162 984 A  15 H 4 127.5 127.5  134.38  to  162 984 B  15 H 3 37.5 37.5  135.38
+Tie evaluation; corr. coef. 0.902,  value difference -0.50  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 16  CORE SPLICED    Mon Aug 31 15:21:20 1998
+splice tie 162 984 B  15 H 6 94.5 94.5  140.45  to  162 984 A  16 H 1 67.4 67.4  138.77
+Tie evaluation; corr. coef. 0.996,  value difference 15.58  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 16  CORE SPLICED    Mon Aug 31 15:21:40 1998
+splice tie 162 984 A  16 H 4 67.5 67.5  143.28  to  162 984 B  16 H 2 91.6 91.6  143.92
+Tie evaluation; corr. coef. 0.995,  value difference 2.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 17  CORE SPLICED    Mon Aug 31 15:22:04 1998
+splice tie 162 984 B  16 H 7 34.6 34.6  150.85  to  162 984 A  17 H 2 4.4 4.4  149.14
+Tie evaluation; corr. coef. 0.645,  value difference 97.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 17  CORE SPLICED    Mon Aug 31 15:22:36 1998
+splice tie 162 984 A  17 H 3 145.6 145.6  152.06  to  162 984 B  17 H 2 52.4 52.4  153.02
+Tie evaluation; corr. coef. 0.931,  value difference -4.01  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 18  CORE SPLICED    Mon Aug 31 15:22:57 1998
+splice tie 162 984 B  17 H 6 124.4 124.4  159.74  to  162 984 A  18 H 1 46.5 46.5  157.57
+Tie evaluation; corr. coef. 0.859,  value difference 3.03  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 18  CORE SPLICED    Mon Aug 31 15:23:14 1998
+splice tie 162 984 A  18 H 3 118.6 118.6  161.29  to  162 984 B  18 H 2 67.4 67.4  162.67
+Tie evaluation; corr. coef. 0.989,  value difference 2.00  REAL TIE
+
+Splice: Constrained;  hole C core 19  CORE SPLICED    Mon Aug 31 15:23:50 1998
+splice tie 162 984 B  18 H 6 100.5 100.5  169.01  to  162 984 C  19 H 1 46.5 46.5  168.76
+Tie evaluation; corr. coef. 0.738,  value difference -6.00  REAL TIE
+
+Splice: Constrained;  hole B core 19  CORE SPLICED    Mon Aug 31 15:24:15 1998
+splice tie 162 984 C  19 H 3 142.6 142.6  172.73  to  162 984 B  19 H 1 136.4 136.4  171.36
+Tie evaluation; corr. coef. 0.937,  value difference 2.00  REAL TIE
+
+Splicer table written to /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/982.splicer.table.
+The report has been appended to file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.rpt.
+
+Start of Session.  Mon Sep 28 16:18:07 1998
+
+Splicer Input Files:
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984a.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984b.dat.mcd
+/home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984c.dat.mcd
+
+Data Type: SUSCEPTIBILITY
+
+Data File Format: ODP OTHER1
+
+Affine Table: /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.affine.pdem
+
+Gaussian Smoothing: 31 Depth (cm)
+Plot Display: Both Smoothed and Unsmoothed
+
+Culling will be done with user set parameters.
+Top 5.0 cm will be removed from core.
+All cores will be used.
+
+Every data point will be used.
+
+Note: multiple data values will be averaged.
+
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984a.dat.mcd (total lines =5477, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984b.dat.mcd (total lines =13927, total errors=0)
+Read file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/susfix_0984c.dat.mcd (total lines =9242, total errors=0)
+Data : Done reading files. Preparing to process...
+Data : Culling core tops.
+Data : Culling using parameters; hole A.
+Data : Culling using parameters; hole B.
+Data : Culling using parameters; hole C.
+Data : Smoothing data hole A.
+Data : Smoothing data hole B.
+Data : Smoothing data hole C.
+Data : Applying affine table for hole A.
+Affine Table /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.affine.pdem read
+Data : Applying affine table for hole B.
+Data : Applying affine table for hole C.
+
+Splicer table file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.splicer.table used.
+Splicer : Read splicer table file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.splicer.table (total ties 36)
+
+Splice: Constrained;  hole B core 1;  FIRST CORE OF SPLICE    Mon Sep 28 16:21:15 1998
+
+Splice: Constrained;  hole A core 2  CORE SPLICED    Mon Sep 28 16:22:10 1998
+splice tie 162 984 B  1 H 6 31.5 31.5  7.82  to  162 984 A  2 H 2 79.4 79.4  7.39
+Tie evaluation; corr. coef. 0.678,  value difference 0.67  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 2  CORE SPLICED    Mon Sep 28 16:22:22 1998
+splice tie 162 984 A  2 H 3 79.6 79.6  8.90  to  162 984 B  2 H 1 82.5 82.5  9.32
+Tie evaluation; corr. coef. 0.899,  value difference 0.67  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 3  CORE SPLICED    Mon Sep 28 16:22:34 1998
+splice tie 162 984 B  2 H 6 145.5 145.5  17.45  to  162 984 A  3 H 2 88.5 88.5  16.99
+Tie evaluation; corr. coef. 0.942,  value difference 4.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 3  CORE SPLICED    Mon Sep 28 16:22:54 1998
+splice tie 162 984 A  3 H 4 85.4 85.4  19.95  to  162 984 B  3 H 1 124.5 124.5  19.25
+Tie evaluation; corr. coef. 0.974,  value difference -2.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 4  CORE SPLICED    Mon Sep 28 16:23:09 1998
+splice tie 162 984 B  3 H 6 91.4 91.4  26.41  to  162 984 A  4 H 2 118.5 118.5  26.78
+Tie evaluation; corr. coef. 0.965,  value difference -1.00  REAL TIE
+
+Splice: Constrained;  hole B core 4  CORE SPLICED    Mon Sep 28 16:23:26 1998
+splice tie 162 984 A  4 H 5 46.5 46.5  30.57  to  162 984 B  4 H 2 46.4 46.4  29.46
+Tie evaluation; corr. coef. 0.983,  value difference -11.67  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 5  CORE SPLICED    Mon Sep 28 16:23:51 1998
+splice tie 162 984 B  4 H 6 124.4 124.4  36.24  to  162 984 A  5 H 2 103.5 103.5  36.13
+Tie evaluation; corr. coef. 0.957,  value difference 2.67  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 5  CORE SPLICED    Mon Sep 28 16:24:31 1998
+splice tie 162 984 A  5 H 5 82.4 82.4  40.42  to  162 984 B  5 H 2 130.5 130.5  39.81
+Tie evaluation; corr. coef. 0.965,  value difference 19.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 6  CORE SPLICED    Mon Sep 28 16:24:44 1998
+splice tie 162 984 B  5 H 6 145.6 145.6  45.96  to  162 984 A  6 H 3 7.5 7.5  46.17
+Tie evaluation; corr. coef. 0.862,  value difference -6.00  REAL TIE
+
+Splice: Constrained;  hole B core 6  CORE SPLICED    Mon Sep 28 16:25:10 1998
+splice tie 162 984 A  6 H 5 139.5 139.5  50.49  to  162 984 B  6 H 3 82.5 82.5  50.33
+Tie evaluation; corr. coef. 0.956,  value difference -4.00  REAL TIE
+
+Splice: Constrained;  hole A core 7  CORE SPLICED    Mon Sep 28 16:25:23 1998
+splice tie 162 984 B  6 H 7 4.5 4.5  55.54  to  162 984 A  7 H 1 136.6 136.6  53.97
+Tie evaluation; corr. coef. 0.941,  value difference 9.00  REAL TIE
+
+Splice: Constrained;  hole B core 7  CORE SPLICED    Mon Sep 28 16:26:00 1998
+splice tie 162 984 A  7 H 2 112.4 112.4  55.22  to  162 984 B  7 H 1 28.4 28.4  56.28
+Tie evaluation; corr. coef. 0.993,  value difference 2.00  REAL TIE
+
+Splice: Constrained;  hole A core 8  CORE SPLICED    Mon Sep 28 16:26:12 1998
+splice tie 162 984 B  7 H 7 4.5 4.5  65.04  to  162 984 A  8 H 1 109.5 109.5  63.19
+Tie evaluation; corr. coef. 0.920,  value difference -5.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 8  CORE SPLICED    Mon Sep 28 16:26:28 1998
+splice tie 162 984 A  8 H 3 4.4 4.4  65.14  to  162 984 B  8 H 1 100.5 100.5  66.50
+Tie evaluation; corr. coef. 0.877,  value difference -0.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 9  CORE SPLICED    Mon Sep 28 16:26:47 1998
+splice tie 162 984 B  8 H 7 37.5 37.5  74.88  to  162 984 A  9 H 1 115.6 115.6  72.76
+Tie evaluation; corr. coef. 0.949,  value difference -9.65  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 9  CORE SPLICED    Mon Sep 28 16:27:14 1998
+splice tie 162 984 A  9 H 6 79.5 79.5  79.89  to  162 984 B  9 H 5 4.5 4.5  81.04
+Tie evaluation; corr. coef. 0.984,  value difference 14.25  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 10  CORE SPLICED    Mon Sep 28 16:27:40 1998
+splice tie 162 984 B  9 H 6 145.4 145.4  83.95  to  162 984 A  10 H 1 118.5 118.5  82.28
+Tie evaluation; corr. coef. 0.939,  value difference 7.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 10  CORE SPLICED    Mon Sep 28 16:27:54 1998
+splice tie 162 984 A  10 H 3 61.4 61.4  84.71  to  162 984 B  10 H 1 97.4 97.4  85.47
+Tie evaluation; corr. coef. 0.970,  value difference -2.00  REAL TIE
+
+Splice: Constrained;  hole C core 10  CORE SPLICED    Mon Sep 28 16:28:11 1998
+splice tie 162 984 B  10 H 5 37.4 37.4  90.87  to  162 984 C  10 H 4 121.6 121.6  88.52
+Tie evaluation; corr. coef. 0.925,  value difference 8.00  REAL TIE
+
+Splice: Constrained;  hole A core 11  CORE SPLICED    Mon Sep 28 16:28:31 1998
+splice tie 162 984 C  10 H 6 127.5 127.5  91.58  to  162 984 A  11 H 1 58.5 58.5  91.18
+Tie evaluation; corr. coef. 0.952,  value difference 8.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 11  CORE SPLICED    Mon Sep 28 16:28:56 1998
+splice tie 162 984 A  11 H 3 142.4 142.4  95.02  to  162 984 B  11 H 3 37.4 37.4  97.37
+Tie evaluation; corr. coef. 0.881,  value difference -9.01  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 11  CORE SPLICED    Mon Sep 28 16:29:23 1998
+splice tie 162 984 B  11 H 6 52.4 52.4  102.02  to  162 984 C  11 H 5 58.6 58.6  98.89
+Tie evaluation; corr. coef. 0.985,  value difference -2.00  REAL TIE
+
+Splice: Constrained;  hole A core 12  CORE SPLICED    Mon Sep 28 16:29:46 1998
+splice tie 162 984 C  11 H 7 16.5 16.5  101.47  to  162 984 A  12 H 2 82.4 82.4  102.42
+Tie evaluation; corr. coef. 0.967,  value difference -12.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 12  CORE SPLICED    Mon Sep 28 16:30:17 1998
+splice tie 162 984 A  12 H 5 19.4 19.4  106.29  to  162 984 B  12 H 3 118.5 118.5  107.68
+Tie evaluation; corr. coef. 0.948,  value difference 9.67  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 12  CORE SPLICED    Mon Sep 28 16:30:58 1998
+splice tie 162 984 B  12 H 6 37.4 37.4  111.37  to  162 984 C  12 H 6 19.6 19.6  109.50
+Tie evaluation; corr. coef. 0.980,  value difference 9.25  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 13  CORE SPLICED    Mon Sep 28 16:31:19 1998
+splice tie 162 984 C  12 H 6 73.5 73.5  110.04  to  162 984 A  13 H 1 25.5 25.5  109.85
+Tie evaluation; corr. coef. 0.713,  value difference 15.00  REAL TIE
+
+Splice: Constrained;  hole B core 13  CORE SPLICED    Mon Sep 28 16:31:32 1998
+splice tie 162 984 A  13 H 4 91.4 91.4  115.01  to  162 984 B  13 H 3 4.5 4.5  116.04
+Tie evaluation; corr. coef. 0.986,  value difference -8.00  REAL TIE
+
+Splice: Constrained;  hole A core 14  CORE SPLICED    Mon Sep 28 16:31:49 1998
+splice tie 162 984 B  13 H 7 4.4 4.4  122.04  to  162 984 A  14 H 1 91.5 91.5  120.01
+Tie evaluation; corr. coef. 0.954,  value difference -3.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 14  CORE SPLICED    Mon Sep 28 16:32:33 1998
+splice tie 162 984 A  14 H 4 136.6 136.6  124.97  to  162 984 B  14 H 3 115.5 115.5  126.65
+Tie evaluation; corr. coef. 0.977,  value difference 6.01  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 15  CORE SPLICED    Mon Sep 28 16:32:54 1998
+splice tie 162 984 B  14 H 6 124.4 124.4  131.24  to  162 984 A  15 H 1 40.4 40.4  129.00
+Tie evaluation; corr. coef. 0.970,  value difference -4.50  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 15  CORE SPLICED    Mon Sep 28 16:33:11 1998
+splice tie 162 984 A  15 H 4 73.5 73.5  133.84  to  162 984 B  15 H 2 130.6 130.6  134.81
+Tie evaluation; corr. coef. 0.846,  value difference -13.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole A core 16  CORE SPLICED    Mon Sep 28 16:33:25 1998
+splice tie 162 984 B  15 H 7 34.4 34.4  141.34  to  162 984 A  16 H 2 7.6 7.6  139.68
+Tie evaluation; corr. coef. 0.992,  value difference -2.50  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 16  CORE SPLICED    Mon Sep 28 16:33:44 1998
+splice tie 162 984 A  16 H 4 91.5 91.5  143.51  to  162 984 B  16 H 2 112.4 112.4  144.12
+Tie evaluation; corr. coef. 0.990,  value difference 11.00  REAL TIE
+
+Splice: Constrained;  hole A core 17  CORE SPLICED    Mon Sep 28 16:34:11 1998
+splice tie 162 984 B  16 H 6 145.5 145.5  150.46  to  162 984 A  17 H 1 109.5 109.5  148.70
+Tie evaluation; corr. coef. 0.723,  value difference -9.25  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 17  CORE SPLICED    Mon Sep 28 16:34:24 1998
+splice tie 162 984 A  17 H 4 13.6 13.6  152.24  to  162 984 B  17 H 2 73.5 73.5  153.24
+Tie evaluation; corr. coef. 0.837,  value difference 9.34  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 18  CORE SPLICED    Mon Sep 28 16:35:07 1998
+splice tie 162 984 B  17 H 6 121.4 121.4  159.71  to  162 984 C  18 H 1 31.4 31.4  159.11
+Tie evaluation; corr. coef. 0.902,  value difference 18.00  REAL TIE
+
+Splice: Constrained;  hole B core 18  CORE SPLICED    Mon Sep 28 16:35:32 1998
+splice tie 162 984 C  18 H 3 64.4 64.4  162.44  to  162 984 B  18 H 2 28.4 28.4  162.28
+Tie evaluation; corr. coef. 0.974,  value difference 9.00  REAL TIE
+
+Splice: Constrained;  hole A core 19  CORE SPLICED    Mon Sep 28 16:35:57 1998
+splice tie 162 984 B  18 H 7 7.4 7.4  169.57  to  162 984 A  19 H 1 82.5 82.5  167.43
+Tie evaluation; corr. coef. 0.911,  value difference -6.97  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 19  CORE SPLICED    Mon Sep 28 16:36:33 1998
+splice tie 162 984 A  19 H 3 22.6 22.6  169.83  to  162 984 B  19 H 1 40.6 40.6  170.41
+Tie evaluation; corr. coef. 0.960,  value difference 13.34  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 20  CORE SPLICED    Mon Sep 28 16:37:17 1998
+splice tie 162 984 B  19 H 6 112.5 112.5  178.63  to  162 984 C  20 H 2 58.6 58.6  179.89
+Tie evaluation; corr. coef. 0.757,  value difference 9.00  REAL TIE
+
+Splice: Constrained;  hole B core 20  CORE SPLICED    Mon Sep 28 16:37:33 1998
+splice tie 162 984 C  20 H 3 106.4 106.4  181.86  to  162 984 B  20 H 2 10.4 10.4  181.10
+Tie evaluation; corr. coef. 0.956,  value difference -2.50  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 20;  CORE SPLICE UNDONE    Mon Sep 28 16:38:22 1998
+
+Splice: Constrained;  hole C core 21;  CORE APPEND TO SPLICE    Mon Sep 28 16:38:27 1998
+
+Splice: Constrained;  hole C core 20;  CORE SPLICE UNDONE    Mon Sep 28 16:38:36 1998
+
+Splice: Constrained;  hole C core 21;  CORE APPEND TO SPLICE    Mon Sep 28 16:38:53 1998
+
+Splice: Constrained;  hole B core 21  CORE SPLICED    Mon Sep 28 16:39:12 1998
+splice tie 162 984 C  21 H 4 28.4 28.4  192.08  to  162 984 B  21 H 2 19.4 19.4  190.69
+Tie evaluation; corr. coef. 0.979,  value difference 14.00  REAL TIE
+
+Splice: Constrained;  hole C core 22  CORE SPLICED    Mon Sep 28 16:39:30 1998
+splice tie 162 984 B  21 H 7 25.6 25.6  198.26  to  162 984 C  22 H 2 34.6 34.6  198.65
+Tie evaluation; corr. coef. 0.965,  value difference -3.33  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 22  CORE SPLICED    Mon Sep 28 16:39:50 1998
+splice tie 162 984 C  22 H 4 49.6 49.6  201.80  to  162 984 B  22 H 2 76.4 76.4  200.76
+Tie evaluation; corr. coef. 0.932,  value difference 0.50  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 23  CORE SPLICED    Mon Sep 28 16:40:06 1998
+splice tie 162 984 B  22 H 6 145.5 145.5  207.46  to  162 984 C  23 H 1 118.5 118.5  207.49
+Tie evaluation; corr. coef. 0.929,  value difference 7.00  REAL TIE
+
+Splice: Constrained;  hole B core 23  CORE SPLICED    Mon Sep 28 16:40:33 1998
+splice tie 162 984 C  23 H 4 13.4 13.4  210.93  to  162 984 B  23 H 2 40.5 40.5  209.90
+Tie evaluation; corr. coef. 0.934,  value difference -4.00  REAL TIE
+
+Splice: Constrained;  hole C core 24  CORE SPLICED    Mon Sep 28 16:41:02 1998
+splice tie 162 984 B  23 H 6 103.5 103.5  216.54  to  162 984 C  24 H 1 100.5 100.5  216.81
+Tie evaluation; corr. coef. 0.923,  value difference 25.50  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 24  CORE SPLICED    Mon Sep 28 16:41:50 1998
+splice tie 162 984 C  24 H 3 49.6 49.6  219.30  to  162 984 B  24 H 1 121.6 121.6  218.72
+Tie evaluation; corr. coef. 0.918,  value difference 35.01  INTERPOLATED TIE
+
+Splice: Constrained;  hole C core 25  CORE SPLICED    Mon Sep 28 16:42:48 1998
+splice tie 162 984 B  24 H 7 7.5 7.5  226.57  to  162 984 C  25 H 1 127.6 127.6  226.58
+Tie evaluation; corr. coef. 0.930,  value difference -1.00  INTERPOLATED TIE
+
+Splice: Constrained;  hole B core 25  CORE SPLICED    Mon Sep 28 16:43:14 1998
+splice tie 162 984 C  25 H 4 136.5 136.5  231.17  to  162 984 B  25 H 3 94.5 94.5  230.95
+Tie evaluation; corr. coef. 0.985,  value difference -17.00  REAL TIE
+
+Splicer table written to /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.splicer.table.
+The report has been appended to file /home/ibex/eqt/sagan/sagan_testdata/leg162testdata/984.rpt.

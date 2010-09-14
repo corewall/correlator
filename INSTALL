@@ -1,0 +1,12 @@
+export CORE_DIRECTORY=`pwd`
+
+cd src
+make clean 
+make install
+cd ..
+
+cd app
+rm -rf build
+rm py_correlator*
+sh install
+cd ..

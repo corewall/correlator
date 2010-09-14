@@ -1,0 +1,4 @@
+rm libcore.dylib
+rm py_correlator.so
+cp ./ppc/libcore.dylib .
+cp ./ppc/py_correlator.so .

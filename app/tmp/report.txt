@@ -1,0 +1,10 @@
+Start of Session:
+2008-04-30 12:58:37.785095
+
+Input Files: 
+/Users/hjhur/Project/Correlator/DATA/LEG162/susfix_0984b.dat (format : ODP, type:Susceptibility)
+/Users/hjhur/Project/Correlator/DATA/LEG162/susfix_0984a.dat (format : ODP, type:Susceptibility)
+/Users/hjhur/Project/Correlator/DATA/LEG162/susfix_0984c.dat (format : ODP, type:Susceptibility)
+
+Affine Table: /Users/hjhur/Project/Correlator/DATA/LEG162/984.affine.table
+
