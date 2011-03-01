@@ -53,18 +53,18 @@ DESCRIPTION = "CORRELATOR UI v"+str(VERSION)
 from distutils.core import setup, Distribution
 import sys, glob, os
 
-#####    MAC   ######
+#####	 MAC   ######
 # RUN WITH: python setup.py py2app -a
 #
 if sys.platform == 'darwin':
-    import py2app
-    os.system('export DYLD_LIBRARY_PATH=./lib/xerces/:.:$DYLD_LIBRARY_PATH')
+	import py2app
+	os.system('export DYLD_LIBRARY_PATH=./lib/xerces/:.:$DYLD_LIBRARY_PATH')
 
-    opts = dict(argv_emulation=True,
-                   dist_dir="")
-    setup(app=['correlator.py'],
-          name = NAME,
-          options=dict(py2app=opts),
-          data_files = [(".", ["libwx_macud-2.8.0.dylib", "libwx_macud_gizmos-2.8.0.dylib", "libcore.dylib", "py_correlator.so", "images", "tmp", "help", "db", "icons", "lib"]),
-                        ("images", glob.glob("images\\*.*")), ("db", glob.glob("db\\*.*")), ("tmp", glob.glob("tmp\\*.*")), ("lib", glob.glob("lib\\*.*")), ("icons", glob.glob("icons\\*.*")), ("help", glob.glob("help\\*.*"))],
-          )
+	opts = dict(argv_emulation=True,
+				   dist_dir="")
+	setup(app=['correlator.py'],
+		  name = NAME,
+		  options=dict(py2app=opts),
+		  data_files = [(".", ["libcore.dylib", "py_correlator.so", "images", "tmp", "help", "db", "icons", "lib"]),
+						("images", glob.glob("images\\*.*")), ("db", glob.glob("db\\*.*")), ("tmp", glob.glob("tmp\\*.*")), ("lib", glob.glob("lib\\*.*")), ("icons", glob.glob("icons\\*.*")), ("help", glob.glob("help\\*.*"))],
+		  )

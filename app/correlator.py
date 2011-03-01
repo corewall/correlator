@@ -3,7 +3,6 @@ import site
 import platform
 import os
 import socket
-
 platform_name = platform.uname()
 if platform_name[5] == "i386":
 	os.system('sh swap_intel_library')
@@ -30,18 +29,12 @@ from frames import *
 from dbmanager import *
 
 app = None 
-version = "1.695"
+version = "1.694"
 User_Dir = os.path.expanduser("~")
 
 myPath = User_Dir  + "/Documents/Correlator/" + version + "/"
 if platform_name[0] == "Windows" :
-	# look up 'My Documents'
-	import ctype
-	dll = ctypes.windll.shell32
-	buf = ctypes.create_string_buffer(300)
-	dll.SHGetSpecialFolderPathA(None, buf, 0x0005, False)
-	myPath = buf.value + "\\Correlator\\" + version + "\\"
-	#myPath =  User_Dir  + "\\My Documents\\Correlator\\" + version + "\\"
+	myPath =  User_Dir  + "\\Correlator\\" + version + "\\"
 myTempPath = myPath
 WIN_WIDTH = 800
 WIN_HEIGHT = 600

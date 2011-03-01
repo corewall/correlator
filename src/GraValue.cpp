@@ -25,7 +25,7 @@
 // Direct questions, comments etc about Correlater Lib to hjhur@evl.uic.edu
 //
 
-#include <GraValue.h>
+#include <GRAValue.h>
 #include <Actor.h>
 
 #ifdef DEBUG

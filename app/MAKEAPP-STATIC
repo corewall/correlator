@@ -8,7 +8,7 @@ rm xml_handler.py
 rm *.pyc
 rm py_correlator*
 rm -rf Correlator.app
-rm -rf build 
+rm -rf build
 rm -rf images
 rm -rf ppc
 pwd
@@ -36,8 +36,8 @@ cd ../bin/static/
 pwd
 ls
 #python setup.py py2app -i xml.sax.drivers2.drv_pyexpat -a
-python setup.py py2app -a
-#python setup.py py2app -a -f libwx_macud-2.8.0.dylib,libwx_macud_gizmos-2.8.0.dylib
+#python setup.py py2app -a
+python2.5 setup.py py2app -a -f libwx_macud-2.8.0.dylib,libwx_macud_gizmos-2.8.0.dylib
 cp -rf ppc ./Correlator.app/Contents/Resources/
 cp -rf intel ./Correlator.app/Contents/Resources/
 cp swap_intel_library ./Correlator.app/Contents/Resources
@@ -48,7 +48,7 @@ cp swap_ppc_library ./Correlator.app/Contents/Resources
 cd ../public-export/
 rm -rf correlator-mac-static
 mkdir correlator-mac-static
-cd ../static 
+cd ../static
 cp -R Correlator.app ../public-export/correlator-mac-static
 cp -R build ../public-export/correlator-mac-static
 cd ../../app
