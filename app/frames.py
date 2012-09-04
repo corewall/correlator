@@ -737,6 +737,8 @@ class SplicePanel():
 		sizer34.Add(self.only)
 		self.all = wx.RadioButton(panel3, -1, "All below")
 		sizer34.Add(self.all, 1, wx.TOP, 1)
+		self.selected = wx.RadioButton(panel3, -1, "Selected core")
+		sizer34.Add(self.selected, 1, wx.TOP, 1)
 
 		#buttonsize = 110
 		#if platform_name[0] == "Windows" :
@@ -751,7 +753,6 @@ class SplicePanel():
 		sizer34.Add(self.appendButton, 1, wx.TOP, 5)
 		hbox3.Add(sizer34, 1, wx.RIGHT, 10)
 
-		# HEEEE
 		sizer31_1 = wx.FlexGridSizer(3, 1)
 		sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Depth adjust (meter)'), orient=wx.VERTICAL)
 		self.depth = wx.TextCtrl(panel3, -1, "0.0", size=(buttonsize, 25), style=wx.SUNKEN_BORDER )
@@ -973,15 +974,30 @@ class SplicePanel():
 			
 		type = 0 
 		self.appendall = 0 
-		if self.all.GetValue() == True :
-			type = 1
-			self.appendall = 1 
 		splice_count = len(self.parent.Window.SpliceCore)
-		if splice_count <= 1 :
-			py_correlator.append_at_begin()
+		splice_data = "" 
 
-		self.undoButton.Enable(True)
-		splice_data = py_correlator.append(type, self.parent.smoothDisplay)
+		if self.selected.GetValue() == True :
+			if splice_count <= 2 :
+				py_correlator.append_at_begin()
+
+			l = self.parent.GetSpliceCore()
+			if l != None : 
+				hole = l[0]
+				core = int(l[1])
+				type = l[2]
+				splice_data = py_correlator.append_selected(type, hole, core, self.parent.smoothDisplay)
+		else : 
+			if self.all.GetValue() == True :
+				type = 1
+				self.appendall = 1 
+
+			if splice_count <= 1 :
+				print "append....at begin", splice_count
+				py_correlator.append_at_begin()
+
+			self.undoButton.Enable(True)
+			splice_data = py_correlator.append(type, self.parent.smoothDisplay)
 
 		if splice_data[1] != "" :
 			self.parent.Window.SpliceData = []

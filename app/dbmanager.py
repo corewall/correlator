@@ -302,6 +302,7 @@ class DataFrame(wx.Frame):
 					#print "[DEBUG] " + cmd
 					os.system(cmd)
 					cmd = 'rm \"' + self.parent.DBPath +'db/' + title + '/' + oldfilename + '\"'
+					# not do delete...
 					os.system(cmd)
 
 				tempstamp = str(datetime.today())
@@ -1897,13 +1898,19 @@ class DataFrame(wx.Frame):
 		self.repCount = 0
 
 		if sys.platform == 'win32' :
+			# ------- [NEED TO DO] not delete file, move the directory to backup
 			workingdir = os.getcwd()
 			os.chdir(self.parent.DBPath)
 			os.system('rd /s /q db')
 			os.system('mkdir db')			
 			os.chdir(workingdir)
 		else :
-			os.system('rm -rf ' + self.parent.DBPath + 'db/')
+			# ------- not delete file, move the directory to backup
+			if os.access(self.parent.DBPath + 'backup/' , os.F_OK) == False :
+				os.mkdir(self.parent.DBPath + 'backup/')
+			newdirname = '\'' +self.parent.DBPath + 'backup/' + str(datetime.today()) + '/\''
+			#os.system('rm -rf ' + self.parent.DBPath + 'db/')
+			os.system('mv ' + self.parent.DBPath + 'db/ ' + newdirname)
 			os.system('mkdir '+ self.parent.DBPath + 'db/')
 	
 		self.parent.logFileptr.write("Delete All Dataset \n\n")
@@ -2079,7 +2086,8 @@ class DataFrame(wx.Frame):
 					self.parent.logFileptr.write("Delete " + filename + "\n\n")
 				else :
 					filename = self.parent.DBPath + 'db/' + title + '/' + self.tree.GetItemText(selectItem, 8)
-					os.system('rm \"'+ filename + '\"')
+					#  --- not to delete
+					#os.system('rm \"'+ filename + '\"')
 					self.parent.logFileptr.write("Delete " + filename + "\n\n")
 			else :
 				type = self.tree.GetItemText(selectItem, 0)
@@ -2102,7 +2110,8 @@ class DataFrame(wx.Frame):
 							self.parent.logFileptr.write("Delete " + filename + "\n\n")
 						else :
 							filename = self.parent.DBPath + 'db/' + title + '/' + self.tree.GetItemText(child_item, 8)
-							os.system('rm \"'+ filename + '\"')
+							# ----- not to delete
+							#os.system('rm \"'+ filename + '\"')
 							self.parent.logFileptr.write("Delete " + filename + "\n\n")
 						for k in range(1, totalcount) :
 							child_item = self.tree.GetNextSibling(child_item)
@@ -2115,7 +2124,8 @@ class DataFrame(wx.Frame):
 								self.parent.logFileptr.write("Delete " + filename + "\n\n")
 							else :
 								filename = self.parent.DBPath + 'db/' + title + '/' + self.tree.GetItemText(child_item, 8)
-								os.system('rm \"'+ filename + '\"')
+								# ----- not to delete
+								#os.system('rm \"'+ filename + '\"')
 								self.parent.logFileptr.write("Delete " + filename + "\n\n")
 
 				else :
@@ -2132,7 +2142,8 @@ class DataFrame(wx.Frame):
 						os.chdir(workingdir)
 						self.parent.logFileptr.write("Delete " + self.parent.DBPath + 'db/' + title + "\n\n")
 					else :
-						os.system('rm -rf ' + self.parent.DBPath + 'db/' + title)
+						# ----- not to delete
+						#os.system('rm -rf ' + self.parent.DBPath + 'db/' + title)
 						self.parent.logFileptr.write("Delete " + self.parent.DBPath + 'db/' + title + "\n\n")
 
 
@@ -2200,6 +2211,7 @@ class DataFrame(wx.Frame):
 				cmd = 'del datalist.db'
 				os.chdir(workingdir)				
 			else :	
+				# delete
 				cmd = 'rm \"' + filename + '\"'
 				os.system(cmd)
 

@@ -1494,6 +1494,52 @@ int Correlator::appendSplice( bool allflag )
 }
 
 
+int Correlator::appendSelectedSplice(int type, char* annot, char* hole, int coreid)
+{
+	if(m_dataptr == NULL) return -1;
+	
+	Tie* tieptr = (Tie*) m_ties.back(); 
+	if(tieptr == NULL) return 0;		
+	Tie* tieptrNew = NULL;
+		
+	Core* coreA = tieptr->getTieTo();			// previous core
+	if (coreA == NULL) return -1;
+	Hole* holeA = (Hole*) coreA->getParent();  	// previous hole
+
+	// next core
+	Hole* holeptr = m_dataptr->getHole(hole, type, annot);
+
+	if(holeptr != NULL)
+	{
+		Core* coreptr= NULL;
+		coreptr = holeptr->getCoreByNo(coreid);
+		if(coreptr)
+		{
+			if((strcmp(holeA->getName(), holeptr->getName()) == 0) && (coreA->getNumber() == coreptr->getNumber()))
+				return 1;
+
+			tieptrNew = new Tie(REAL_TIE);
+			if(tieptrNew == NULL) return -1;
+			
+			tieptrNew->setOrder(m_spliceOrder);
+			m_spliceOrder++;
+			m_ties.push_back(tieptrNew);
+			data_range range;
+			tieptrNew->setAppend(true, false);
+			tieptrNew->setTied(coreA, 'x', "0", range);	
+			tieptrNew->setTieTo(coreptr, 'x', "0", range);	
+			coreA->addTie(tieptrNew);
+#ifdef DEBUG
+			//std::cout << coreA << " " << coreA->getName() << coreA->getNumber() << " " << holeA->getType() << " " << coreA->getNumOfTies() << std::endl;
+
+			cout << "[Splice] append one core below : " << coreptr->getName() << coreptr->getNumber()  << endl;
+#endif						
+		}
+	}
+		
+	return 1;	
+}
+
 int Correlator::undoAppendSplice(void)
 {
 	if(m_dataptr == NULL) return -1;
@@ -5839,19 +5885,41 @@ Value* Correlator::findValueWithMbsf( Core* coreptr, double top, int idx  )
 {
 	if(coreptr == NULL) return NULL;	
 	
+	Value* valueptr = NULL;	
+	double valueX, valueY;
+	int i=0;
+
 	// find value
  	int size = coreptr->getNumOfValues();
 	if(size > 0)
 	{
-		if(coreptr->getValue(0)->getMbsf() > top)
-			return NULL;
-		if(coreptr->getValue(size -1)->getMbsf() < top)
+		// ---------- UPDATE
+		valueptr = coreptr->getValue(0);
+		if(valueptr->getMbsf() > top) {
+			Value* newValue = coreptr->createValue(size+1, top);
+			newValue->copy(valueptr);
+			newValue->setValueType(INTERPOLATED_VALUE);
+			newValue->setDepth(top);
+			newValue->applyAffine(coreptr->getDepthOffset(), valueptr->getType());
+			newValue->update();
+			return newValue;
+			//return NULL;
+		}
+
+		valueptr = coreptr->getValue(size -1);		
+		if(valueptr->getMbsf() < top) {
+			Value* newValue = coreptr->createValue(size+1, top);
+			newValue->copy(valueptr);
+			newValue->setValueType(INTERPOLATED_VALUE);
+			newValue->setDepth(top);
+			newValue->applyAffine(coreptr->getDepthOffset(), valueptr->getType());
+			newValue->update();
+			return newValue;
 			return NULL;	
+		}
+		// ---------- UPDATE
 	}
 	
-	Value* valueptr = NULL;	
-	double valueX, valueY;
-	int i=0;
 	
 	int left = (size- idx) % 2;
 	size--;

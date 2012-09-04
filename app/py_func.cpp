@@ -83,6 +83,7 @@ static PyObject* getAveDepStep(PyObject *self, PyObject *args);
 static PyObject* getMudline(PyObject *self, PyObject *args);
 static PyObject* append(PyObject *self, PyObject *args);
 static PyObject* append_at_begin(PyObject *self, PyObject *args);
+static PyObject* append_selected(PyObject *self, PyObject *args);
 static PyObject* undoAppend(PyObject *self, PyObject *args);
 static PyObject* setAgeOrder(PyObject *self, PyObject *args);
 static PyObject* createNewAge(PyObject *self, PyObject *args);
@@ -261,6 +262,9 @@ static PyMethodDef PyCoreMethods[] = {
 
     {"append_at_begin", append_at_begin, METH_VARARGS,
      "Append Core after the first spliced core."},
+
+    {"append_selected", append_selected, METH_VARARGS,
+     "Append Selected Core"},
 
     {"undoAppend", undoAppend, METH_VARARGS,
      "Undo Append Splice."},
@@ -1761,6 +1765,51 @@ static PyObject* append(PyObject *self, PyObject *args)
 		ret = correlator.appendSplice(false);
 	}
 
+	correlator.generateSpliceHole();
+
+	g_data = "";
+	if(ret > 0 ) 
+	{
+		if (smooth == 2)
+       		correlator.getTuple(g_data, SPLICESMOOTH);
+		else
+			correlator.getTuple(g_data, SPLICEDATA);
+	}
+
+	return Py_BuildValue("is", ret, g_data.c_str());
+}
+
+static PyObject* append_selected(PyObject *self, PyObject *args)
+{
+	char* type;
+	char* hole;
+	int coreid; 
+	int smooth;
+	if (!PyArg_ParseTuple(args, "ssii", &type, &hole, &coreid, &smooth))
+		return NULL;
+
+	int coretype = USERDEFINEDTYPE;
+	char* annot = NULL;
+	if (strcmp(type, "Bulk Density(GRA)") == 0)
+		coretype = GRA; 
+	else if (strcmp(type, "PWave") == 0)
+		coretype = PWAVE; 
+	else if (strcmp(type, "Pwave") == 0)
+		coretype = PWAVE; 
+	else if (strcmp(type, "Susceptibility") == 0)
+		coretype = SUSCEPTIBILITY; 
+	else if (strcmp(type, "Natural Gamma") == 0)
+		coretype = NATURALGAMMA; 
+	else if (strcmp(type, "NaturalGamma") == 0)
+		coretype = NATURALGAMMA; 
+	else if (strcmp(type, "Reflectance") == 0)
+		coretype = REFLECTANCE; 
+	else if (strcmp(type, "OtherType") == 0)
+		coretype = OTHERTYPE; 
+	else 
+		annot = type;
+
+	int ret = correlator.appendSelectedSplice(coretype, annot, hole, coreid);
 	correlator.generateSpliceHole();
 
 	g_data = "";

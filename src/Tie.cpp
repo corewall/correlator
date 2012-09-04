@@ -301,6 +301,8 @@ void Tie::getTuple( string& data, int type )
 		
 			sprintf(info, "%f,%f,", valueptr->getSpliceMcd(), valueptr->getELD());	
 			//std::cout << info << std::endl;
+		} else {
+			printf( "error.......for tie.... NULL\n");
 		}
 	} else if(type == TIE_SHIFT)
 	{

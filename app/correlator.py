@@ -29,7 +29,7 @@ from frames import *
 from dbmanager import *
 
 app = None 
-version = "1.694"
+version = "1.696"
 User_Dir = os.path.expanduser("~")
 
 myPath = User_Dir  + "/Documents/Correlator/" + version + "/"
@@ -798,6 +798,10 @@ class MainFrame(wx.Frame):
 		if idx == 3 :
 			self.eldPanel.OnUpdate()
 
+
+	def GetSpliceCore(self):
+		l = self.Window.GetSpliceCore()
+		return l 
 
 	def OnSplice(self):
 		self.Window.OnSpliceCore()

@@ -68,6 +68,7 @@ public:
 	int splice( void);
 	
 	int appendSplice( bool allflag );
+	int appendSelectedSplice(int type, char* annot, char* hole, int coreid);
 	int undoAppendSplice(void);
 	int deleteSplice(int tieid);
 	void deleteAllSplice(void);

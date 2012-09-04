@@ -4190,6 +4190,22 @@ class DataCanvas(wxBufferedWindow):
 		elif typeA == "Pwave" :
 			type = 31
 		return type
+		
+	def GetSpliceCore(self):
+		lastTie = len(self.SpliceCore) -1 
+		if lastTie >= 0 :
+			lastCore = self.SpliceCore[lastTie]
+			for s in self.DrawData["CoreInfo"]:
+				data = s
+				for r in data:
+					if r[0] == lastCore :
+	 					hole = r[3]
+	 					core = r[4]
+	 					type = r[10]
+	 					l = hole, core, type
+						return l 
+
+		return None
 
 	def OnSpliceCore(self):
 		self.parent.splicePanel.OnButtonEnable(0, False)
