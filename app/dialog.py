@@ -503,6 +503,7 @@ class ColorTableDialog(wx.Dialog):
 		self.colorPicker01 = wx.ColourPickerCtrl(panel2, 1)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker01)
 		grid2.Add(self.colorPicker01)
+		
 		if platform_name[0] == "Windows" :	
 			grid2.Add(wx.StaticText(panel2, -1, 'mbsf             '))	
 		else :
@@ -600,39 +601,40 @@ class ColorTableDialog(wx.Dialog):
 
 		sizer3 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'Overlapped hole color'), orient=wx.VERTICAL)
 		grid3 = wx.FlexGridSizer(10, 2)
-		self.holePicker01 = wx.ColourPickerCtrl(panel2, 1)
+		# 9/17/2012 brg: start holePicker IDs at 101 to avoid collision with colorPicker IDs
+		self.holePicker01 = wx.ColourPickerCtrl(panel2, 101)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker01)
 		grid3.Add(self.holePicker01, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '1st hole             '))
-		self.holePicker02 = wx.ColourPickerCtrl(panel2, 2)
+		self.holePicker02 = wx.ColourPickerCtrl(panel2, 102)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker02)
 		grid3.Add(self.holePicker02, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '2nd hole'))
-		self.holePicker03 = wx.ColourPickerCtrl(panel2, 3)
+		self.holePicker03 = wx.ColourPickerCtrl(panel2, 103)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker03)
 		grid3.Add(self.holePicker03, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '3rd hole'))
-		self.holePicker04 = wx.ColourPickerCtrl(panel2, 4)
+		self.holePicker04 = wx.ColourPickerCtrl(panel2, 104)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker04)
 		grid3.Add(self.holePicker04, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '4th hole'))
-		self.holePicker05 = wx.ColourPickerCtrl(panel2, 5)
+		self.holePicker05 = wx.ColourPickerCtrl(panel2, 105)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker05)
 		grid3.Add(self.holePicker05, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '5th hole'))
-		self.holePicker06 = wx.ColourPickerCtrl(panel2, 6)
+		self.holePicker06 = wx.ColourPickerCtrl(panel2, 106)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker06)
 		grid3.Add(self.holePicker06, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '6th hole'))
-		self.holePicker07 = wx.ColourPickerCtrl(panel2, 7)
+		self.holePicker07 = wx.ColourPickerCtrl(panel2, 107)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker07)
 		grid3.Add(self.holePicker07, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '7th hole'))
-		self.holePicker08 = wx.ColourPickerCtrl(panel2, 8)
+		self.holePicker08 = wx.ColourPickerCtrl(panel2, 108)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker08)
 		grid3.Add(self.holePicker08, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '8th hole'))
-		self.holePicker09 = wx.ColourPickerCtrl(panel2, 9)
+		self.holePicker09 = wx.ColourPickerCtrl(panel2, 109)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker09)
 		grid3.Add(self.holePicker09, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '9th hole'))
@@ -665,24 +667,24 @@ class ColorTableDialog(wx.Dialog):
 
 	def updateItem(self):
 		if self.initiated == 0 :
-			self.colorPicker01.SetColour(self.parent.Window.colorList[0])
-			self.colorPicker02.SetColour(self.parent.Window.colorList[1])
-			self.colorPicker03.SetColour(self.parent.Window.colorList[2])
-			self.colorPicker04.SetColour(self.parent.Window.colorList[3])
-			self.colorPicker05.SetColour(self.parent.Window.colorList[4])
-			self.colorPicker06.SetColour(self.parent.Window.colorList[5])
-			self.colorPicker07.SetColour(self.parent.Window.colorList[6])
-			self.colorPicker08.SetColour(self.parent.Window.colorList[7])
-			self.colorPicker09.SetColour(self.parent.Window.colorList[8])
-			self.colorPicker10.SetColour(self.parent.Window.colorList[9])
-			self.colorPicker11.SetColour(self.parent.Window.colorList[10])
-			self.colorPicker12.SetColour(self.parent.Window.colorList[11])
-			self.colorPicker13.SetColour(self.parent.Window.colorList[12])
-			self.colorPicker14.SetColour(self.parent.Window.colorList[13])
-			self.colorPicker15.SetColour(self.parent.Window.colorList[14])
-			self.colorPicker16.SetColour(self.parent.Window.colorList[15])
-			self.colorPicker17.SetColour(self.parent.Window.colorList[16])
-			self.colorPicker18.SetColour(self.parent.Window.colorList[17])
+			self.colorPicker01.SetColour(self.parent.Window.colorDict['mbsf'])
+			self.colorPicker02.SetColour(self.parent.Window.colorDict['mcd'])
+			self.colorPicker03.SetColour(self.parent.Window.colorDict['eld'])
+			self.colorPicker04.SetColour(self.parent.Window.colorDict['smooth'])
+			self.colorPicker05.SetColour(self.parent.Window.colorDict['splice'])
+			self.colorPicker06.SetColour(self.parent.Window.colorDict['log'])
+			self.colorPicker07.SetColour(self.parent.Window.colorDict['mudlineAdjust'])
+			self.colorPicker08.SetColour(self.parent.Window.colorDict['fixedTie'])
+			self.colorPicker09.SetColour(self.parent.Window.colorDict['shiftTie'])
+			self.colorPicker10.SetColour(self.parent.Window.colorDict['paleomag'])
+			self.colorPicker11.SetColour(self.parent.Window.colorDict['diatom'])
+			self.colorPicker12.SetColour(self.parent.Window.colorDict['rad'])
+			self.colorPicker13.SetColour(self.parent.Window.colorDict['foram'])
+			self.colorPicker14.SetColour(self.parent.Window.colorDict['nano'])
+			self.colorPicker15.SetColour(self.parent.Window.colorDict['background'])
+			self.colorPicker16.SetColour(self.parent.Window.colorDict['foreground'])
+			self.colorPicker17.SetColour(self.parent.Window.colorDict['corrWindow'])
+			self.colorPicker18.SetColour(self.parent.Window.colorDict['guide'])
 
 			self.holePicker01.SetColour(self.parent.Window.overlapcolorList[0])
 			self.holePicker02.SetColour(self.parent.Window.overlapcolorList[1])
@@ -694,8 +696,8 @@ class ColorTableDialog(wx.Dialog):
 			self.holePicker08.SetColour(self.parent.Window.overlapcolorList[7])
 			self.holePicker09.SetColour(self.parent.Window.overlapcolorList[8])
 
-			for i in range(18) :
-				self.colorList.insert(i, self.parent.Window.colorList[i])
+			for key in self.parent.Window.colorDictKeys :
+				self.colorList.append(self.parent.Window.colorDict[key])
 
 			for i in range(9) :
 				self.overlapcolorList.insert(i, self.parent.Window.overlapcolorList[i])
@@ -737,9 +739,10 @@ class ColorTableDialog(wx.Dialog):
 			wx.Color(0, 255, 0), wx.Color(255, 0, 0), wx.Color(255, 255, 255), \
 			wx.Color(155, 205, 155), wx.Color(255, 20, 147), wx.Color(100, 149, 237), wx.Color(205, 85, 85), wx.Color(255, 231, 186), wx.Color(30, 144, 255), wx.Color(224, 255, 255)] 
 		elif self.colorSet.GetValue() == "Custom" :
-			for i in range(18) :
-				self.colorList.insert(i, self.parent.Window.colorList[i])
+			for key in self.parent.Window.colorDictKeys :
+				self.colorList.append(self.parent.Window.colorDict[key])
 
+		# 9/12/2012 brgtodo: list of colorPickers?
 		self.colorPicker01.SetColour(self.colorList[0])
 		self.colorPicker02.SetColour(self.colorList[1])
 		self.colorPicker03.SetColour(self.colorList[2])
@@ -770,7 +773,7 @@ class ColorTableDialog(wx.Dialog):
 		self.holePicker09.SetColour(self.overlapcolorList[8])
 
 	def ChangeHoleColor(self, event):
-		idx = event.GetId() - 1
+		idx = event.GetId() - 101 # see 9/17/2012 brg
 		self.overlapcolorList.pop(idx)
 		if idx == 0 :
 			self.overlapcolorList.insert(idx, self.holePicker01.GetColour())
@@ -833,9 +836,10 @@ class ColorTableDialog(wx.Dialog):
 			self.colorList.insert(idx, self.colorPicker18.GetColour())
 
 	def OnApplyColor(self, event):
-		self.parent.Window.colorList = []
-		for i in range(18) :
-			self.parent.Window.colorList.insert(i, self.colorList[i])
+		i = 0
+		for key in self.parent.Window.colorDictKeys :
+			self.parent.Window.colorDict[key] = self.colorList[i]
+			i = i + 1
 
 		self.parent.Window.overlapcolorList = []
 		for i in range(9) :

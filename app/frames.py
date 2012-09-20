@@ -3528,6 +3528,8 @@ class PreferencesPanel():
 			return
 		self.parent.Window.UpdateDrawing()
 
+	# 9/12/2012 brgtodo: rename slider2 to something meaningful,
+	# update tie edit fields when slider moves  
 	def OnRulerOneScale(self, event):
 		# 1 --> 400 
 		# start -> 62 : 60 + (idx * 2) 

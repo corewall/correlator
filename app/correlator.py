@@ -771,7 +771,7 @@ class MainFrame(wx.Frame):
 
 	def OnUpdateDepthStep(self):
 		self.depthStep = py_correlator.getAveDepStep()
-		self.origin_depthStep= int(10000.0 * float(self.depthStep)) / 10000.0;
+		self.origin_depthStep = int(10000.0 * float(self.depthStep)) / 10000.0;
 		#print "[DEBUG] Update Depth Step " + str(self.origin_depthStep)
 
 		self.compositePanel.OnUpdateDepthStep(self.depthStep)
@@ -3163,7 +3163,7 @@ class MainFrame(wx.Frame):
 				self.Window.SPrulerStartDepth = 0.0
 
 
-	def MakeNewData(self,cfgfile, new_flag):
+	def MakeNewData(self, cfgfile, new_flag):
 		self.positions= [ (77,32) , (203,32), (339,32),
 						 (77,152) , (203,152), (339,152),
 						 (77,270) , (203,270), (339,270),

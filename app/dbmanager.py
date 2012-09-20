@@ -73,7 +73,7 @@ class DataFrame(wx.Frame):
 		self.sideNote.SetBackgroundColour(wx.Color(255, 255, 255))
 
 		self.treeListPanel = wx.Panel(self.sideNote, -1)
-		self.tree = gizmos.TreeListCtrl(self.treeListPanel, -1, style = wx.TR_DEFAULT_STYLE| wx.TR_FULL_ROW_HIGHLIGHT)
+		self.tree = gizmos.TreeListCtrl(self.treeListPanel, -1, style = wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT)
 
 		self.tree.AddColumn(" ")
 		self.tree.SetColumnWidth(0, 200)
@@ -498,7 +498,7 @@ class DataFrame(wx.Frame):
 		idx, flags, col = self.tree.HitTest(pos)
 		if col >= 0 :
 			self.selectedIdx = idx
-			popupMenu = wx.Menu()	
+			popupMenu = wx.Menu()
 
 			str_name = self.tree.GetItemText(self.selectedIdx, 8)
 			if str_name != "" :
@@ -5170,6 +5170,7 @@ class DataFrame(wx.Frame):
 
 		root_f.close()
 		self.tree.SortChildren(self.root)
+		self.tree.Expand(self.root)
 
 
 	def OnDISMISS(self, event):
