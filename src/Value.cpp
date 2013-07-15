@@ -407,25 +407,25 @@ void Value::getTuple( string& data, int type )
 	{
 		//cout << "not culled " << m_eld << " " <<  m_section << " " << getTop() << endl;
 
-		char info[25];
+		char info[64];
 		if(type == SMOOTH)  
 		{
 			if(m_valuetype == INTERPOLATED_VALUE) return; 
-			sprintf(info, "%.2f,%.2f,", m_eld, m_data[1]);    
+			sprintf(info, "%f,%f,", m_eld, m_data[1]);    
 		} else 	if(type == SPLICESMOOTH)  
 		{
-			sprintf(info, "%.2f,%.2f,", m_mcd_splicer, m_data[1]);    
+			sprintf(info, "%f,%f,", m_mcd_splicer, m_data[1]);    
 		} else 	if(type == LOGSMOOTH)  
 		{
-			sprintf(info, "%.2f,%.2f,", m_eld, m_data[1]);
+			sprintf(info, "%f,%f,", m_eld, m_data[1]);
 		} else if (type == SPLICEDATA)
 		{
 			//cout << m_mcd_splicer << endl;
-			sprintf(info, "%.2f,%.2f,", m_mcd_splicer, m_data[0]);    		
+			sprintf(info, "%f,%f,", m_mcd_splicer, m_data[0]);    		
 		} else  
 		{
 			if(m_valuetype == INTERPOLATED_VALUE) return;
-			sprintf(info, "%.2f,%.2f,", m_eld, m_data[0]);    
+			sprintf(info, "%f,%f,", m_eld, m_data[0]);
 		}
 		data += info; 
 		//cout << "mcd : " << m_mcd << " eld : " << m_eld << endl;	
