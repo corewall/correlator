@@ -114,7 +114,7 @@ class TopMenuFrame(wx.Frame):
 
 		self.SetSizer(vbox)
 
-		self.SetBackgroundColour(wx.Color(255, 255, 255))
+		self.SetBackgroundColour(wx.Colour(255, 255, 255))
 		wx.EVT_CLOSE(self, self.OnHide)
 
 	def OnHide(self, event):
@@ -176,8 +176,17 @@ class TopMenuFrame(wx.Frame):
 				self.parent.midata.Check(True)
 			else :
 				self.parent.dataFrame.Raise()
+
 			#self.parent.OnOpenData(event)
-			self.parent.Show(False)
+			
+			# brg 7/11/2013: Gross workarounds for behavior changes in wx 2.9. Hiding of the display window on
+			# "Go to Data Manager" causes data manager and toolbar to hide (i.e. all windows vanish).
+			# Commenting Show(False) causes data manager to appear, but tool bar doesn't rise to the top
+			# (despite being an always on top window, also a source of much frustration in Corelyzer). Calling
+			# Hide()/Show() brings it to the top.
+			#self.parent.Show(False)
+			self.Hide()
+			self.Show()
 			self.dbbtn.SetLabel("Go to Display")
 		else :
 			self.parent.dataFrame.propertyIdx = None
@@ -398,7 +407,7 @@ class CompositePanel():
 
 		#self.wxpcPlotCanvas.SetEnableZoom( True )
 		self.wxpcPlotCanvas.SetEnableGrid( True )
-		self.wxpcPlotCanvas.SetBackgroundColour("Black")
+		self.wxpcPlotCanvas.SetBackgroundColour("White")
 		#self.wxpcPlotCanvas.Centre(wxBOTH)
 		self.wxpcPlotCanvas.Show(True)
 
@@ -708,7 +717,7 @@ class SplicePanel():
 
 		#self.wxpcPlotCanvas.SetEnableZoom( True )
 		self.wxpcPlotCanvas.SetEnableGrid( True )
-		self.wxpcPlotCanvas.SetBackgroundColour("Black")
+		self.wxpcPlotCanvas.SetBackgroundColour("White")
 		#self.wxpcPlotCanvas.Centre(wxBOTH)
 		self.wxpcPlotCanvas.Show(True)
 
@@ -788,7 +797,7 @@ class SplicePanel():
 		sizer33.Add(self.unconst, 1, wx.TOP, 1)
 		hbox3.Add(sizer33)
 
-		sizer32 = wx.GridSizer(2, 1)
+		sizer32 = wx.GridSizer(3, 1)
 		self.spliceButton = wx.Button(panel3, -1, "Splice To Tie", size=(buttonsize, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSplice, self.spliceButton)
 		self.spliceButton.Enable(False)
@@ -1230,7 +1239,7 @@ class AutoPanel():
 		panel2 = wx.Panel(self.mainPanel, -1)
 		sizer2 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'LD recommanded depth matching'), orient=wx.VERTICAL)
 
-		grid2 = wx.FlexGridSizer(2, 2)
+		grid2 = wx.FlexGridSizer(3, 2)
 		self.valueD1 = wx.TextCtrl(panel2, -1, "", size=(80, 25), style=wx.SUNKEN_BORDER )
 		self.valueD1.SetEditable(False)
 		grid2.Add(self.valueD1)
@@ -1644,7 +1653,7 @@ class ELDPanel():
 
 		#self.wxpcPlotCanvas.SetEnableZoom( True )
 		self.wxpcPlotCanvas.SetEnableGrid( True )
-		self.wxpcPlotCanvas.SetBackgroundColour("Black")
+		self.wxpcPlotCanvas.SetBackgroundColour("White")
 		#self.wxpcPlotCanvas.Centre(wxBOTH)
 		self.wxpcPlotCanvas.Show(True)
 
@@ -1699,7 +1708,7 @@ class ELDPanel():
 		if platform_name[0] == "Windows" :
 			buttonsize = 135
 			
-		sizer32 = wx.GridSizer(3, 1)
+		sizer32 = wx.GridSizer(4, 1)
 		clearBtn = wx.Button(panel3, -1, "Remove", size=(buttonsize, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnClear, clearBtn)
 		sizer32.Add(clearBtn)
@@ -1992,7 +2001,7 @@ class AgeDepthPanel():
 		grid2 = wx.GridSizer(1, 2)
 
 		sizer21 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'User define age'), orient=wx.VERTICAL)
-		grid21 = wx.FlexGridSizer(3, 2)
+		grid21 = wx.FlexGridSizer(4, 2)
 	
 		if platform_name[0] == "Windows" :					
 			self.depth_label = wx.StaticText(panel2, -1, "Mcd(m)")
@@ -2026,7 +2035,7 @@ class AgeDepthPanel():
 			sizer21.Add(grid21)			
 		grid2.Add(sizer21)
 
-		grid22 = wx.GridSizer(3, 1)
+		grid22 = wx.GridSizer(4, 1)
 		removeBtn = wx.Button(panel2, -1, "Remove", size =(120, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnRemoveAge, removeBtn)
 		grid22.Add(removeBtn, 0, wx.TOP, 1)
@@ -3435,10 +3444,10 @@ class PreferencesPanel():
 
 	def OnActivateScroll(self, event):
 		if self.opt2.IsChecked() == True : 
-			self.parent.SetScrollOption(1)
+			self.parent.SetSecondScroll(1)
 			self.parent.miscroll.Check(True)
 		else :
-			self.parent.SetScrollOption(0)
+			self.parent.SetSecondScroll(0)
 			self.parent.miscroll.Check(False)
 
 	#def OnActivateText(self, event):

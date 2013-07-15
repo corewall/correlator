@@ -49,7 +49,7 @@ class DataFrame(wx.Frame):
 		self.selectBackup = None
 		self.selectedDataType = ""
 		self.selectedDepthType = ""
-		self.SetBackgroundColour(wx.Color(255, 255, 255))
+		self.SetBackgroundColour(wx.Colour(255, 255, 255))
 		self.parser = xml.sax.make_parser()
 		self.handler = XML_Handler()
 		self.parser.setContentHandler(self.handler)
@@ -70,7 +70,7 @@ class DataFrame(wx.Frame):
 		self.Bind(wx.EVT_BUTTON, self.OnDISMISS, self.okbtn)
 
 		self.sideNote = wx.Notebook(self, -1, style=wx.NB_TOP)
-		self.sideNote.SetBackgroundColour(wx.Color(255, 255, 255))
+		self.sideNote.SetBackgroundColour(wx.Colour(255, 255, 255))
 
 		self.treeListPanel = wx.Panel(self.sideNote, -1)
 		self.tree = gizmos.TreeListCtrl(self.treeListPanel, -1, style = wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT)
@@ -137,16 +137,18 @@ class DataFrame(wx.Frame):
 		self.repCount = 0
 		wx.EVT_SIZE(self, self.OnSize)
 		wx.EVT_CLOSE(self, self.OnHide)
-		wx.EVT_MOVE(self, self.OnMOVE)
+		#wx.EVT_MOVE(self, self.OnMOVE)
 
 
 	def OnHide(self,event):
 		self.Show(False)
 		self.parent.midata.Check(False)
 
-	def OnMOVE(self,event):
-		pos = self.GetPosition()
-		self.parent.SetPosition(pos)
+	# brg 7/11/2013: in wx 2.9, the SetPosition() call triggers the parent's OnMOVE which re-triggers
+	# this OnMOVE and so on ad infinitum, causing the Window to run offscreen in short order.
+	#def OnMOVE(self,event):
+		#pos = self.GetPosition()
+		#self.parent.SetPosition(pos)
 
 	def OnSize(self,event):
 		winx, winy = self.GetClientSizeTuple()

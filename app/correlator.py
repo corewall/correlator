@@ -29,7 +29,7 @@ from frames import *
 from dbmanager import *
 
 app = None 
-version = "1.696"
+version = "1.697"
 User_Dir = os.path.expanduser("~")
 
 myPath = User_Dir  + "/Documents/Correlator/" + version + "/"
@@ -597,9 +597,9 @@ class MainFrame(wx.Frame):
 
 	def SHOWScroll(self, event):
 		if self.miscroll.IsChecked() == True :
-			self.SetScrollOption(1)
+			self.SetSecondScroll(1)
 		else :
-			self.SetScrollOption(0)
+			self.SetSecondScroll(0)
 
 	def OnUpdateHelp(self):
 		self.Window.helpText.Clear()
@@ -968,27 +968,27 @@ class MainFrame(wx.Frame):
 
 	def OnActivateWindow(self, event):
 		if self.Window.spliceWindowOn == 1 :
-			self.Window.ScrollBackOpt = self.Window.ScrollOpt 
-			self.Window.ScrollOpt = 0
+			self.Window.isSecondScrollBackup = self.Window.isSecondScroll 
+			self.Window.isSecondScroll = 0
 			self.Window.spliceWindowOn = 0
 			self.Window.splicerBackX = self.Window.splicerX
 			self.Window.splicerX = self.Window.Width + 45 
 			self.optPanel.opt1.SetValue(False)
 			self.optPanel.opt2.Enable(False)
 		else :
-			self.Window.ScrollOpt = self.Window.ScrollBackOpt 
+			self.Window.isSecondScroll = self.Window.isSecondScrollBackup 
 			self.Window.spliceWindowOn = 1 
 			self.Window.splicerX = self.Window.splicerBackX
 			self.optPanel.opt1.SetValue(True)
 			self.optPanel.opt2.Enable(True)
 		self.Window.UpdateDrawing()
 
-	def SetScrollOption(self, event):
-		if self.Window.ScrollOpt == 1 : 
-			self.Window.ScrollOpt = 0 
+	def SetSecondScroll(self, event):
+		if self.Window.isSecondScroll == 1 : 
+			self.Window.isSecondScroll = 0 
 			self.optPanel.opt2.SetValue(False)
 		else :
-			self.Window.ScrollOpt = 1 
+			self.Window.isSecondScroll = 1 
 			self.optPanel.opt2.SetValue(True)
 
 
@@ -1317,8 +1317,11 @@ class MainFrame(wx.Frame):
 						cmd = "copy tmp\\*.* \"" + path + "\\tmp\""
 					os.system(cmd)
 				
-			if os.access(path + '/log/', os.F_OK) == False :
-				os.mkdir(path + '/log/')
+			#if os.access(path + "/log", os.F_OK) == False :
+			if os.path.exists(path + "/log") == False :
+				#os.mkdir(path + "/log")
+				print "no log dir, trying to create..."
+				os.makedirs(path + "/log")
 
 			if self.logFileptr != None :
 				self.logFileptr.close()
@@ -2149,7 +2152,7 @@ class MainFrame(wx.Frame):
 		#s = "dmheight: " + str(height) + "\n"
 		#f.write(s)
 
-		s = "secondscroll: " + str(self.Window.ScrollOpt) + "\n"
+		s = "secondscroll: " + str(self.Window.isSecondScroll) + "\n"
 		f.write(s)
 		if (width - self.Window.splicerX) < 10 :
 			self.Window.splicerX = width /2
@@ -3322,10 +3325,10 @@ class MainFrame(wx.Frame):
 			if len(str_temp) > 0 :
 				conf_value = int ( str_temp )
 			if conf_value == 0:
-				self.Window.ScrollOpt = 0 
+				self.Window.isSecondScroll = 0 
 				self.optPanel.opt2.SetValue(False)
 			else :
-				self.Window.ScrollOpt =1 
+				self.Window.isSecondScroll =1 
 				self.optPanel.opt2.SetValue(True)
 
 		if self.config.has_option("applications", "colors"):
@@ -3337,7 +3340,7 @@ class MainFrame(wx.Frame):
 					r = int(conf_array[i*3])
 					g = int(conf_array[i*3+1]) 
 					b = int(conf_array[i*3+2]) 
-					self.Window.colorList.insert(i, wx.Color(r, g, b))
+					self.Window.colorList.insert(i, wx.Colour(r, g, b))
 
 		if self.config.has_option("applications", "overlapcolors"):
 			conf_str = self.config.get("applications", "overlapcolors") 
@@ -3348,7 +3351,7 @@ class MainFrame(wx.Frame):
 					r = int(conf_array[i*3])
 					g = int(conf_array[i*3+1]) 
 					b = int(conf_array[i*3+2]) 
-					self.Window.overlapcolorList.insert(i, wx.Color(r, g, b))
+					self.Window.overlapcolorList.insert(i, wx.Colour(r, g, b))
 
 		if self.config.has_option("applications", "fontsize"):
 			str_temp = self.config.get("applications", "fontsize")
@@ -3683,6 +3686,11 @@ class CorrelatorApp(wx.App):
 if __name__ == "__main__":
 
 	new = False
+
+	tempstamp = str(datetime.today())
+	last = tempstamp.find(" ", 0)
+	stamp = tempstamp[0:last] + "-"  
+
 	if platform_name[0] == "Windows" :
 		if os.access(User_Dir  + "\\Correlator\\", os.F_OK) == False :
 			os.mkdir(User_Dir  + "\\Correlator\\")
@@ -3722,13 +3730,13 @@ if __name__ == "__main__":
 		if platform_name[0] == "Windows" :
 			cmd = "copy tmp\\*.* \"" + myTempPath + "\""
 		os.system(cmd)
-	
+
 	if os.access(myPath + '/log/', os.F_OK) == False :
 		os.mkdir(myPath + '/log/')
 
-	tempstamp = str(datetime.today())
-	last = tempstamp.find(" ", 0)
-	stamp = tempstamp[0:last] + "-"
+#	tempstamp = str(datetime.today())
+#	last = tempstamp.find(" ", 0)
+#	stamp = tempstamp[0:last] + "-"
 
 	start = last+ 1 
 	last = tempstamp.find(":", start)

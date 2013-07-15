@@ -709,35 +709,35 @@ class ColorTableDialog(wx.Dialog):
 		#"ODP", "Corporate", "Maritime", "Earth", "Santa Fe", "Custom"
 		self.colorList = []
 		if self.colorSet.GetValue() == "ODP" :
-			self.colorList = [ wx.Color(255, 215, 0), wx.Color(30, 144, 255), \
-			wx.Color(127, 255, 212), wx.Color(255, 246, 143), wx.Color(30, 144, 255), \
-			wx.Color(255, 0, 0), wx.Color(155, 48, 255), wx.Color(139, 0, 0), \
-			wx.Color(0, 139, 0), wx.Color(139, 0, 0), wx.Color(173, 255, 47), \
-			wx.Color(255, 255, 255), wx.Color(255, 140, 0), wx.Color(0, 245, 255), wx.Color(0, 0, 0), wx.Color(255, 255, 255), wx.Color(30, 144, 255), wx.Color(224, 255, 255)] 
+			self.colorList = [ wx.Colour(255, 215, 0), wx.Colour(30, 144, 255), \
+			wx.Colour(127, 255, 212), wx.Colour(255, 246, 143), wx.Colour(30, 144, 255), \
+			wx.Colour(255, 0, 0), wx.Colour(155, 48, 255), wx.Colour(139, 0, 0), \
+			wx.Colour(0, 139, 0), wx.Colour(139, 0, 0), wx.Colour(173, 255, 47), \
+			wx.Colour(255, 255, 255), wx.Colour(255, 140, 0), wx.Colour(0, 245, 255), wx.Colour(0, 0, 0), wx.Colour(255, 255, 255), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
 		elif self.colorSet.GetValue() == "Corporate" :
-			self.colorList = [ wx.Color(34, 139, 34), wx.Color(0, 0, 255), \
-			wx.Color(0, 255, 255), wx.Color(205, 133, 63), wx.Color(139, 76, 57), \
-			wx.Color(125, 38, 205), wx.Color(105, 139, 105), wx.Color(139, 0, 0), \
-			wx.Color(0, 139, 0), wx.Color(30, 144, 255), wx.Color(255, 255, 255), \
-			wx.Color(143, 188, 143), wx.Color(255, 20, 147), wx.Color(72, 61, 139), wx.Color(220, 220, 220), wx.Color(0, 0, 0), wx.Color(30, 144, 255), wx.Color(224, 255, 255)] 
+			self.colorList = [ wx.Colour(34, 139, 34), wx.Colour(0, 0, 255), \
+			wx.Colour(0, 255, 255), wx.Colour(205, 133, 63), wx.Colour(139, 76, 57), \
+			wx.Colour(125, 38, 205), wx.Colour(105, 139, 105), wx.Colour(139, 0, 0), \
+			wx.Colour(0, 139, 0), wx.Colour(30, 144, 255), wx.Colour(255, 255, 255), \
+			wx.Colour(143, 188, 143), wx.Colour(255, 20, 147), wx.Colour(72, 61, 139), wx.Colour(220, 220, 220), wx.Colour(0, 0, 0), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
 		elif self.colorSet.GetValue() == "Maritime" :
-			self.colorList = [ wx.Color(60, 179, 113), wx.Color(250, 128, 114), \
-			wx.Color(72, 61, 139), wx.Color(92, 92, 92), wx.Color(25, 25, 112), \
-			wx.Color(125, 38, 205), wx.Color(255, 99, 71), wx.Color(255, 0, 0), \
-			wx.Color(0, 255, 0), wx.Color(255, 0, 0), wx.Color(0, 255, 0), \
-			wx.Color(255, 255, 255), wx.Color(255, 192, 203), wx.Color(191, 239, 255), wx.Color(102, 205, 170), wx.Color(54, 100, 139), wx.Color(30, 144, 255), wx.Color(224, 255, 255)] 
+			self.colorList = [ wx.Colour(60, 179, 113), wx.Colour(250, 128, 114), \
+			wx.Colour(72, 61, 139), wx.Colour(92, 92, 92), wx.Colour(25, 25, 112), \
+			wx.Colour(125, 38, 205), wx.Colour(255, 99, 71), wx.Colour(255, 0, 0), \
+			wx.Colour(0, 255, 0), wx.Colour(255, 0, 0), wx.Colour(0, 255, 0), \
+			wx.Colour(255, 255, 255), wx.Colour(255, 192, 203), wx.Colour(191, 239, 255), wx.Colour(102, 205, 170), wx.Colour(54, 100, 139), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
 		elif self.colorSet.GetValue() == "Earth" :
-			self.colorList = [ wx.Color(112, 128, 144), wx.Color(85, 107, 47), \
-			wx.Color(0, 255, 255), wx.Color(150, 150, 150), wx.Color(135, 206, 235), \
-			wx.Color(238, 130, 238), wx.Color(165, 42, 42), wx.Color(255, 0, 0), \
-			wx.Color(0, 255, 0), wx.Color(0, 0, 255), wx.Color(0, 255, 127), \
-			wx.Color(255, 255, 255), wx.Color(255, 105, 180), wx.Color(165, 42, 42), wx.Color(255, 222, 173), wx.Color(165, 42, 42), wx.Color(30, 144, 255), wx.Color(224, 255, 255)] 
+			self.colorList = [ wx.Colour(112, 128, 144), wx.Colour(85, 107, 47), \
+			wx.Colour(0, 255, 255), wx.Colour(150, 150, 150), wx.Colour(135, 206, 235), \
+			wx.Colour(238, 130, 238), wx.Colour(165, 42, 42), wx.Colour(255, 0, 0), \
+			wx.Colour(0, 255, 0), wx.Colour(0, 0, 255), wx.Colour(0, 255, 127), \
+			wx.Colour(255, 255, 255), wx.Colour(255, 105, 180), wx.Colour(165, 42, 42), wx.Colour(255, 222, 173), wx.Colour(165, 42, 42), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
 		elif self.colorSet.GetValue() == "Santa Fe" :
-			self.colorList = [ wx.Color(0, 100, 0), wx.Color(99, 184, 255), \
-			wx.Color(0, 255, 255), wx.Color(255, 228, 225), wx.Color(255, 105, 180), \
-			wx.Color(160, 32, 240), wx.Color(255, 192, 203), wx.Color(255, 0, 0), \
-			wx.Color(0, 255, 0), wx.Color(255, 0, 0), wx.Color(255, 255, 255), \
-			wx.Color(155, 205, 155), wx.Color(255, 20, 147), wx.Color(100, 149, 237), wx.Color(205, 85, 85), wx.Color(255, 231, 186), wx.Color(30, 144, 255), wx.Color(224, 255, 255)] 
+			self.colorList = [ wx.Colour(0, 100, 0), wx.Colour(99, 184, 255), \
+			wx.Colour(0, 255, 255), wx.Colour(255, 228, 225), wx.Colour(255, 105, 180), \
+			wx.Colour(160, 32, 240), wx.Colour(255, 192, 203), wx.Colour(255, 0, 0), \
+			wx.Colour(0, 255, 0), wx.Colour(255, 0, 0), wx.Colour(255, 255, 255), \
+			wx.Colour(155, 205, 155), wx.Colour(255, 20, 147), wx.Colour(100, 149, 237), wx.Colour(205, 85, 85), wx.Colour(255, 231, 186), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
 		elif self.colorSet.GetValue() == "Custom" :
 			for key in self.parent.Window.colorDictKeys :
 				self.colorList.append(self.parent.Window.colorDict[key])
@@ -905,7 +905,7 @@ class OpenFrame(wx.Dialog):
 		#picture.SetBitmap(wx.Bitmap('images/corewall_suite.jpg'))
 		wx.StaticText(self, -1, 'COMPOSITE, SPLICE, CORE-LOG INTEGRATION, AGE MODEL', (60, 30))
 
-		#self.SetBackgroundColour(wx.Color(255, 255, 255))
+		#self.SetBackgroundColour(wx.Colour(255, 255, 255))
 
 		wx.StaticText(self, -1, 'User Name : ', (250, 220))
 		self.name = wx.TextCtrl(self, -1, user, (340, 220), size=(150, 25))

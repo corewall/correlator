@@ -123,7 +123,7 @@ class DataCanvas(wxBufferedWindow):
 		self.Floating = False 
 		self.hole_sagan = -1 
 		self.sagan_type = "" 
-		self.fg = wx.Color(255, 255, 255)
+		self.fg = wx.Colour(255, 255, 255)
 		# 1 = Composite, 2 = Splice, 3 = Sagan
 		self.mode = 1 
 		self.statusStr = "Composite"
@@ -158,8 +158,8 @@ class DataCanvas(wxBufferedWindow):
 		# 0 , 1 - Composite, 2 - Splice
 		self.Process = 0 
 		self.Constrained = 1 
-		self.ScrollOpt = 1 
-		self.ScrollBackOpt = 1 
+		self.isSecondScroll = 1 # if 1, composite and splice windows scroll separately
+		self.isSecondScrollBackup = 1 # appears to backup isSecondScroll value 
 		self.ScrollUpdate = 0
 		self.isLogMode = 0 
 		self.closeFlag = True 
@@ -195,32 +195,32 @@ class DataCanvas(wxBufferedWindow):
 		self.colorDictKeys = [ 'mbsf', 'mcd', 'eld', 'smooth', 'splice', 'log', 'mudlineAdjust', \
 								'fixedTie', 'shiftTie', 'paleomag', 'diatom', 'rad', 'foram', \
 								'nano', 'background', 'foreground', 'corrWindow', 'guide' ] 
-		self.colorDict = { 'mbsf': wx.Color(238, 238, 0), 'mcd': wx.Color(0, 139, 0), \
-							'eld': wx.Color(0, 255, 255), 'smooth': wx.Color(238, 216, 174), \
-							'splice': wx.Color(30, 144, 255), 'log': wx.Color(64, 224, 208), \
-							'mudlineAdjust': wx.Color(0, 255, 0), 'fixedTie': wx.Color(139, 0, 0), \
-							'shiftTie': wx.Color(0, 139, 0), 'paleomag': wx.Color(30, 144, 255), \
-							'diatom': wx.Color(218, 165, 32), 'rad': wx.Color(147, 112, 219), \
-							'foram': wx.Color(84, 139, 84), 'nano': wx.Color(219, 112, 147), \
-							'background': wx.Color(0, 0, 0), 'foreground': wx.Color(255, 255, 255), \
-							'corrWindow': wx.Color(178, 34, 34), 'guide': wx.Color(224, 255, 255) }
+		self.colorDict = { 'mbsf': wx.Colour(238, 238, 0), 'mcd': wx.Colour(0, 139, 0), \
+							'eld': wx.Colour(0, 255, 255), 'smooth': wx.Colour(238, 216, 174), \
+							'splice': wx.Colour(30, 144, 255), 'log': wx.Colour(64, 224, 208), \
+							'mudlineAdjust': wx.Colour(0, 255, 0), 'fixedTie': wx.Colour(139, 0, 0), \
+							'shiftTie': wx.Colour(0, 139, 0), 'paleomag': wx.Colour(30, 144, 255), \
+							'diatom': wx.Colour(218, 165, 32), 'rad': wx.Colour(147, 112, 219), \
+							'foram': wx.Colour(84, 139, 84), 'nano': wx.Colour(219, 112, 147), \
+							'background': wx.Colour(0, 0, 0), 'foreground': wx.Colour(255, 255, 255), \
+							'corrWindow': wx.Colour(178, 34, 34), 'guide': wx.Colour(224, 255, 255) }
 		
 		# mbsf, mcd, eld, smooth, splice, log, mudline adjust, fixed tie, shift tie
 		# paleomag, diatom, rad, foram, nano
-		self.colorList = [ wx.Color(238, 238, 0), wx.Color(0, 139, 0), \
-			wx.Color(0, 255, 255), wx.Color(238, 216, 174), wx.Color(30, 144, 255), \
-			wx.Color(64, 224, 208), wx.Color(0, 255, 0), wx.Color(139, 0, 0), \
-			wx.Color(0, 139, 0), wx.Color(30, 144, 255), wx.Color(218, 165, 32), \
-			wx.Color(147, 112, 219), wx.Color(84, 139, 84), wx.Color(219, 112, 147), \
-			wx.Color(0, 0, 0), wx.Color(255, 255, 255), \
-			wx.Color(178, 34, 34), wx.Color(224, 255, 255)] 
+		self.colorList = [ wx.Colour(238, 238, 0), wx.Colour(0, 139, 0), \
+			wx.Colour(0, 255, 255), wx.Colour(238, 216, 174), wx.Colour(30, 144, 255), \
+			wx.Colour(64, 224, 208), wx.Colour(0, 255, 0), wx.Colour(139, 0, 0), \
+			wx.Colour(0, 139, 0), wx.Colour(30, 144, 255), wx.Colour(218, 165, 32), \
+			wx.Colour(147, 112, 219), wx.Colour(84, 139, 84), wx.Colour(219, 112, 147), \
+			wx.Colour(0, 0, 0), wx.Colour(255, 255, 255), \
+			wx.Colour(178, 34, 34), wx.Colour(224, 255, 255)] 
 
-		self.overlapcolorList = [ wx.Color(238, 0, 0), wx.Color(0, 139, 0), \
-				wx.Color(0, 255, 255), wx.Color(238, 216, 174), wx.Color(30, 144, 255), \
-				wx.Color(147, 112, 219), wx.Color(84, 139, 84), wx.Color(219, 112, 147), \
-				wx.Color(30, 144, 255)]
+		self.overlapcolorList = [ wx.Colour(238, 0, 0), wx.Colour(0, 139, 0), \
+				wx.Colour(0, 255, 255), wx.Colour(238, 216, 174), wx.Colour(30, 144, 255), \
+				wx.Colour(147, 112, 219), wx.Colour(84, 139, 84), wx.Colour(219, 112, 147), \
+				wx.Colour(30, 144, 255)]
 
-		self.compositeX = 50	
+		self.compositeX = 40
 		self.splicerX = 700	
 		self.splicerBackX = 700
 		self.tieline_width = 1
@@ -364,10 +364,10 @@ class DataCanvas(wxBufferedWindow):
 		wxBufferedWindow.__init__(self, parent, id)
 
 		self.sidePanel = wx.Panel(self, -1)
-		self.sidePanel.SetBackgroundColour(wx.Color(255, 255, 255))
+		self.sidePanel.SetBackgroundColour(wx.Colour(255, 255, 255))
 
 		self.sideNote = wx.Notebook(self.sidePanel, -1, style=wx.NB_RIGHT | wx.NB_MULTILINE)
-		self.sideNote.SetBackgroundColour(wx.Color(255, 255, 255))
+		self.sideNote.SetBackgroundColour(wx.Colour(255, 255, 255))
 
 		self.closePanel = wx.Panel(self.sideNote, -1, (0, 50), (45, 500), style=wx.NO_BORDER)
 
@@ -384,10 +384,10 @@ class DataCanvas(wxBufferedWindow):
 			start_pos = 0
 
 		self.eldPanel = wx.Panel(self.sideNote, -1, (0, start_pos), (300, 500), style=wx.NO_BORDER)
-		self.eldPanel.SetBackgroundColour(wx.Color(255, 255, 255))
+		self.eldPanel.SetBackgroundColour(wx.Colour(255, 255, 255))
 
 		self.subSideNote = wx.Notebook(self.eldPanel, -1, style=wx.NB_TOP | wx.NB_MULTILINE)
-		self.subSideNote.SetBackgroundColour(wx.Color(255, 255, 255))
+		self.subSideNote.SetBackgroundColour(wx.Colour(255, 255, 255))
 
 		self.manualPanel = wx.Panel(self.subSideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
 		self.parent.eldPanel = ELDPanel(self.parent, self.manualPanel)
@@ -752,21 +752,18 @@ class DataCanvas(wxBufferedWindow):
 
 		dc.DrawText("Depth", self.compositeX - 35, self.startAgeDepth - 45)
 		dc.DrawText(" (m)", self.compositeX - 35, self.startAgeDepth - 35)
-
-		#temppos = self.rulerStartAgeDepth % (self.gap / 2)
-		#dc.DrawLines(((self.compositeX - 10, depth), (self.compositeX, depth)))
 		
 		# Draw depth scale ticks
-		rulerRange = (self.rulerHeight / self.ageYLength) * 2;
+		rulerRange = (self.rulerHeight / (self.ageYLength / self.ageGap))
 		self.ageRulerTickRate = self.CalcTickRate(rulerRange)
 
 		while True :
 			dc.DrawLines(((self.compositeX - 10, depth), (self.compositeX, depth)))
 			extraSpace = (len(str(pos)) - 3) * 5 # adjust position of longer numbers to avoid overlap with ticks
 			dc.DrawText(str(pos), self.compositeX - 35 - extraSpace, depth - 5)
-			depth = depth + (self.ageRulerTickRate * self.ageYLength) / 2
+			depth = depth + (self.ageRulerTickRate * self.ageYLength / self.ageGap)
 			dc.DrawLines(((self.compositeX - 5, depth), (self.compositeX, depth)))
-			depth = depth + (self.ageRulerTickRate * self.ageYLength) / 2 
+			depth = depth + (self.ageRulerTickRate * self.ageYLength / self.ageGap) 
 			pos = pos + self.ageRulerTickRate * 2
 			if depth > self.Height :
 				break
@@ -1406,16 +1403,16 @@ class DataCanvas(wxBufferedWindow):
 			dc.SetPen(wx.Pen(self.colorDict['log'], 1))
 			log_number = 1 
 		elif smoothed == 4 :
-			dc.SetPen(wx.Pen(wx.Color(0, 139, 0), 1))
+			dc.SetPen(wx.Pen(wx.Colour(0, 139, 0), 1))
 			log_number = 2 
 		elif smoothed == 5 :
-			dc.SetPen(wx.Pen(wx.Color(255, 184, 149), 1))
+			dc.SetPen(wx.Pen(wx.Colour(255, 184, 149), 1))
 			log_number = 1 
 		elif smoothed == 6 :
-			dc.SetPen(wx.Pen(wx.Color(255, 184, 149), 1))
+			dc.SetPen(wx.Pen(wx.Colour(255, 184, 149), 1))
 			log_number = 2 
 		elif smoothed == 7 :
-			dc.SetPen(wx.Pen(wx.Color(0, 139, 0), 1))
+			dc.SetPen(wx.Pen(wx.Colour(0, 139, 0), 1))
 			log_number = 2 
 
 		splicelines = []
@@ -1559,10 +1556,10 @@ class DataCanvas(wxBufferedWindow):
 			#		for r in splicelines :
 			#			px, py, x, y, f = r
 			#			if f == 1 :
-			#				dc.SetPen(wx.Pen(wx.Color(0, 191, 255), 1))
+			#				dc.SetPen(wx.Pen(wx.Colour(0, 191, 255), 1))
 			#			else :
 			#				#dc.SetPen(wx.Pen(self.colorDict['mudlineAdjust'], 1))
-			#				dc.SetPen(wx.Pen(wx.Color(255, 184, 149), 1))
+			#				dc.SetPen(wx.Pen(wx.Colour(255, 184, 149), 1))
 			#			dc.DrawLines(((self.lastSpliceX, self.lastSpliceY), (px, py))) 
 			#			break
 			#	self.lastSpliceX = spx 
@@ -1572,19 +1569,19 @@ class DataCanvas(wxBufferedWindow):
 				for r in splicelines :
 					px, py, x, y, f = r
 					if f == 1 :
-						dc.SetPen(wx.Pen(wx.Color(0, 191, 255), 1))
+						dc.SetPen(wx.Pen(wx.Colour(0, 191, 255), 1))
 					else :
 						#dc.SetPen(wx.Pen(self.colorDict['mudlineAdjust'], 1))
-						dc.SetPen(wx.Pen(wx.Color(255, 184, 149), 1))
+						dc.SetPen(wx.Pen(wx.Colour(255, 184, 149), 1))
 					dc.DrawLines(((px, py), (x, y))) 
 			else :
 				for r in splicelines :
 					px, py, x, y, f = r
 					if f == 1 :
-						dc.SetPen(wx.Pen(wx.Color(0, 191, 255), 1))
+						dc.SetPen(wx.Pen(wx.Colour(0, 191, 255), 1))
 					else :
 						#dc.SetPen(wx.Pen(self.colorDict['mudlineAdjust'], 1))
-						dc.SetPen(wx.Pen(wx.Color(255, 184, 149), 1))
+						dc.SetPen(wx.Pen(wx.Colour(255, 184, 149), 1))
 					dc.DrawCircle(px, py, self.DiscretetSize)			
 
 		hole = '-'
@@ -1823,7 +1820,7 @@ class DataCanvas(wxBufferedWindow):
 		logsmoothed = smoothed
 
 		if smoothed == 3 :
-			dc.SetPen(wx.Pen(wx.Color(238, 216, 174), 1))
+			dc.SetPen(wx.Pen(wx.Colour(238, 216, 174), 1))
 			smoothed = 1
 		elif smoothed == 2 :
 			dc.SetPen(wx.Pen(self.colorDict['smooth'], 1))
@@ -1836,7 +1833,7 @@ class DataCanvas(wxBufferedWindow):
 			log_number = 2
 			smoothed = 2
 		elif smoothed == 7 :
-			dc.SetPen(wx.Pen(wx.Color(238, 216, 174), 1))
+			dc.SetPen(wx.Pen(wx.Colour(238, 216, 174), 1))
 			log_number = 2
 			smoothed = 2
 
@@ -1846,14 +1843,14 @@ class DataCanvas(wxBufferedWindow):
 				dc.SetPen(wx.Pen(self.colorDict['eld'], 1))
 			# BLOCK
 			#else :
-			#dc.SetPen(wx.Pen(wx.Color(238, 216, 174), 1))
+			#dc.SetPen(wx.Pen(wx.Colour(238, 216, 174), 1))
 
 		if self.continue_flag == False :
-			#dc.SetPen(wx.Pen(wx.Color(255, 193, 193), 1))
-			dc.SetPen(wx.Pen(wx.Color(105, 105, 105), 1))
+			#dc.SetPen(wx.Pen(wx.Colour(255, 193, 193), 1))
+			dc.SetPen(wx.Pen(wx.Colour(105, 105, 105), 1))
 
 		if quality == "1" :
-			dc.SetPen(wx.Pen(wx.Color(105, 105, 105), 1))
+			dc.SetPen(wx.Pen(wx.Colour(105, 105, 105), 1))
 
 		if smoothed == -1 :
 			dc.SetPen(wx.Pen(self.overlapcolorList[self.selectedCount], 1))
@@ -1995,7 +1992,7 @@ class DataCanvas(wxBufferedWindow):
 
 		lines = []
 
-		dc.SetPen(wx.Pen(wx.Color(255, 130, 71), 1))
+		dc.SetPen(wx.Pen(wx.Colour(255, 130, 71), 1))
 		y = 0
 		for r in splicelines :
 			px, py, x, y = r
@@ -2057,7 +2054,7 @@ class DataCanvas(wxBufferedWindow):
 					if f == 1 : 
 						dc.SetPen(wx.Pen(self.colorDict['corrWindow'], 1))
 					else : 
-						#dc.SetPen(wx.Pen(wx.Color(0, 139, 0), 1))
+						#dc.SetPen(wx.Pen(wx.Colour(0, 139, 0), 1))
 						dc.SetPen(wx.Pen(self.colorDict['guide'], 1))
 					dc.DrawLines(((px, py), (x, y))) 
 
@@ -2065,7 +2062,7 @@ class DataCanvas(wxBufferedWindow):
 
 		if self.guideSPCore == index : 
 			dc.SetBrush(wx.TRANSPARENT_BRUSH)
-			dc.SetPen(wx.Pen(wx.Color(224, 255, 255), 1))
+			dc.SetPen(wx.Pen(wx.Colour(224, 255, 255), 1))
 			i = 0	
 			px = 0
 			py = 0
@@ -2104,10 +2101,10 @@ class DataCanvas(wxBufferedWindow):
 			for r in lines :
 				px, py, x, y, f = r
 				if f == 1 : 
-					#dc.SetPen(wx.Pen(wx.Color(0, 191, 255), 1))
+					#dc.SetPen(wx.Pen(wx.Colour(0, 191, 255), 1))
 					dc.SetPen(wx.Pen(self.colorDict['corrWindow'], 1))
 				else : 
-					#dc.SetPen(wx.Pen(wx.Color(224, 255, 255), 1))
+					#dc.SetPen(wx.Pen(wx.Colour(224, 255, 255), 1))
 					dc.SetPen(wx.Pen(self.colorDict['guide'], 1))
 				dc.DrawLines(((px, py), (x, y))) 
 
@@ -2141,7 +2138,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetTextBackground(self.colorDict['background'])
 		dc.SetTextForeground(self.colorDict['foreground'])
 		dc.SetFont(self.font2)
-		dc.SetPen(wx.Pen(wx.Color(0, 255, 0), 1))
+		dc.SetPen(wx.Pen(wx.Colour(0, 255, 0), 1))
 
 		x = self.splicerX - 270
 		if flag == 2 :
@@ -2205,7 +2202,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetTextBackground(self.colorDict['background'])
 		dc.SetTextForeground(self.colorDict['foreground'])
 		dc.SetFont(self.font2)
-		dc.SetPen(wx.Pen(wx.Color(0, 255, 0), 1))
+		dc.SetPen(wx.Pen(wx.Colour(0, 255, 0), 1))
 		y = 0
 		if line == 1 :
 			y = self.Height - 90
@@ -2261,8 +2258,8 @@ class DataCanvas(wxBufferedWindow):
 			self.DrawAgeDepthView(dc)
 
 		# horizontal scroll bar
-		dc.SetBrush(wx.Brush(wx.Color(205, 201, 201)))
-		dc.SetPen(wx.Pen(wx.Color(205, 201, 201), 1))
+		dc.SetBrush(wx.Brush(wx.Colour(205, 201, 201)))
+		dc.SetPen(wx.Pen(wx.Colour(205, 201, 201), 1))
 
 		if self.spliceWindowOn == 1 :
 			dc.DrawRectangle(self.compositeX, self.Height - self.ScrollSize, self.splicerX - 60 - self.compositeX, self.ScrollSize)
@@ -2360,8 +2357,8 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawText("splice", start, y)
 				start = start + paintgap
 				paintgap = paintgap * 2.5 
-				dc.SetPen(wx.Pen(wx.Color(0, 139, 0), 1))
-				dc.SetBrush(wx.Brush(wx.Color(0, 139, 0)))
+				dc.SetPen(wx.Pen(wx.Colour(0, 139, 0), 1))
+				dc.SetBrush(wx.Brush(wx.Colour(0, 139, 0)))
 				dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
 				dc.DrawText("sedimentation rate", start, y)
 
@@ -2524,8 +2521,8 @@ class DataCanvas(wxBufferedWindow):
 				#dc.DrawLines(((x, y),(x, y2)))
 				index = index + 1
 
-		dc.SetBrush(wx.Brush(wx.Color(255, 215, 0)))
-		dc.SetPen(wx.Pen(wx.Color(255, 215, 0), 1))
+		dc.SetBrush(wx.Brush(wx.Colour(255, 215, 0)))
+		dc.SetPen(wx.Pen(wx.Colour(255, 215, 0), 1))
 		for data in self.UserdefStratData :
 			for r in data:
 				name, start, rawstart, age, comment = r
@@ -2546,8 +2543,8 @@ class DataCanvas(wxBufferedWindow):
 						dc.DrawText(str(age), x + 15, y - 15)
 						dc.SetTextForeground(wx.BLACK)
 				else :
-					dc.SetBrush(wx.Brush(wx.Color(255, 215, 0)))
-					dc.SetPen(wx.Pen(wx.Color(255, 215, 0), 1))
+					dc.SetBrush(wx.Brush(wx.Colour(255, 215, 0)))
+					dc.SetPen(wx.Pen(wx.Colour(255, 215, 0), 1))
 
 				if x >= self.compositeX and x <= self.splicerX :
 					dc.DrawCircle(x, y, 12)
@@ -2570,8 +2567,8 @@ class DataCanvas(wxBufferedWindow):
 		self.DrawAgeModelRuler(dc)
 
 		# Draw ORIGIN
-		dc.SetBrush(wx.Brush(wx.Color(255, 215, 0)))
-		dc.SetPen(wx.Pen(wx.Color(255, 215, 0), 1))
+		dc.SetBrush(wx.Brush(wx.Colour(255, 215, 0)))
+		dc.SetPen(wx.Pen(wx.Colour(255, 215, 0), 1))
 		x = self.compositeX + ((self.firstPntAge - self.minAgeRange) * self.ageLength) + self.AgeShiftX
 		y = self.startAgeDepth + (self.firstPntDepth - self.rulerStartAgeDepth) * (self.ageYLength / self.ageGap) + self.AgeShiftY
 		if x >= self.compositeX and x <= self.splicerX :
@@ -2693,7 +2690,7 @@ class DataCanvas(wxBufferedWindow):
 
 
 	def DrawAgeYRate(self, dc):
-		dc.SetPen(wx.Pen(wx.Color(255, 215, 0), 1, style=wx.DOT))
+		dc.SetPen(wx.Pen(wx.Colour(255, 215, 0), 1, style=wx.DOT))
 		width = self.holeWidth 
 		sx = self.splicerX + 50 
 		y = (self.firstPntAge / self.AgeUnit) * self.AgeSpliceGap 
@@ -2725,11 +2722,11 @@ class DataCanvas(wxBufferedWindow):
 
 			agey = (age / self.AgeUnit) * self.AgeSpliceGap 
 			sy = self.startAgeDepth + (agey - self.SPrulerStartAgeDepth) * (self.spliceYLength / self.gap)
-			dc.SetPen(wx.Pen(wx.Color(255, 215, 0), 1, style=wx.DOT))
+			dc.SetPen(wx.Pen(wx.Colour(255, 215, 0), 1, style=wx.DOT))
 			dc.DrawLines(((sx, sy), (sx + width, sy)))
 
 			# at age ruler, point the position
-			dc.SetPen(wx.Pen(wx.Color(255, 255, 255), 1))
+			dc.SetPen(wx.Pen(wx.Colour(255, 255, 255), 1))
 			dc.DrawLines(((self.splicerX - 5, sy), (self.splicerX, sy)))
 			dc.DrawText(label + "(" + str(age) + ")", sx + width + 10, sy - 5)
 
@@ -2744,7 +2741,7 @@ class DataCanvas(wxBufferedWindow):
 			self.AgeDataList.pop(count)
 			self.AgeDataList.insert(count, ((n, mcd, mbsf, age, name, label, type, sedrate100)))
 			
-			dc.SetPen(wx.Pen(wx.Color(0, 139, 0), 1))
+			dc.SetPen(wx.Pen(wx.Colour(0, 139, 0), 1))
 			sedx = sx + width + sedrate_width + sedrate * sedrate_size
 
 			tempsedx = int(100.0 * float(sedrate)) / 100.0;
@@ -4435,21 +4432,21 @@ class DataCanvas(wxBufferedWindow):
 		rot = event.GetWheelRotation() 
 		pos = event.GetPositionTuple()
 
-		if pos[0] <= self.splicerX or self.ScrollOpt == 0:
+		if pos[0] <= self.splicerX or self.isSecondScroll == 0:
 			if self.parent.ScrollMax > 0 :
 				if rot < 0 :
 					self.rulerStartDepth += self.rulerTickRate
-					if self.ScrollOpt == 0 : 
+					if self.isSecondScroll == 0 : 
 						self.SPrulerStartDepth = self.rulerStartDepth 
 				else : 
 					self.rulerStartDepth -= self.rulerTickRate
 					if self.rulerStartDepth < 0 :
 						self.rulerStartDepth = 0.0
-					if self.ScrollOpt == 0 : 
+					if self.isSecondScroll == 0 : 
 						self.SPrulerStartDepth = self.rulerStartDepth 
 				self.UpdateScroll(1)
 		else :
-			if self.ScrollOpt == 1 and self.parent.ScrollMax > 0 : 
+			if self.isSecondScroll == 1 and self.parent.ScrollMax > 0 : 
 				if rot < 0 :
 					self.SPrulerStartDepth += self.rulerTickRate
 				else : 
@@ -4506,7 +4503,7 @@ class DataCanvas(wxBufferedWindow):
 				_depth = (self.rulerStartDepth + self.rulerEndDepth) / 2.0
 				self.parent.client.send("jump_to_depth\t" + str(_depth) + "\n")
 
-		if self.ScrollOpt == 0 : # if composite/splice windows scroll together, scroll splice too
+		if self.isSecondScroll == 0 : # if composite/splice windows scroll together, scroll splice too
 			scroll_flag = 2
 
 		if scroll_flag == 2 :
@@ -4556,7 +4553,6 @@ class DataCanvas(wxBufferedWindow):
 			self.TieData = [] 
 			self.GuideCore = []
 			self.UpdateDrawing()
-			self.UpdateDrawing() # #9/20/2012 brgtodo: why twice? probably a mistake
 		elif keyid == 72 :
 			if self.hideTie == 1 :
 				self.hideTie = 0
@@ -4577,7 +4573,7 @@ class DataCanvas(wxBufferedWindow):
 			self.UpdateDrawing()
 		elif keyid == wx.WXK_DOWN and self.parent.ScrollMax > 0 :
 			if self.activeTie == -1 and self.activeSPTie == -1 and self.activeSATie == -1:
-				if self.ScrollOpt == 0:
+				if self.isSecondScroll == 0:
 					self.rulerStartDepth += self.rulerTickRate
 					if self.rulerStartDepth > self.parent.ScrollMax :
 						self.rulerStartDepth = self.parent.ScrollMax
@@ -4595,7 +4591,7 @@ class DataCanvas(wxBufferedWindow):
 			self.UpdateDrawing()
 		elif keyid == wx.WXK_UP and self.parent.ScrollMax > 0 :
 			if self.activeTie == -1 and self.activeSPTie == -1 and self.activeSATie == -1:
-				if self.ScrollOpt == 0:
+				if self.isSecondScroll == 0:
 					self.rulerStartDepth -= self.rulerTickRate
 					if self.rulerStartDepth < 0 :
 						self.rulerStartDepth = 0.0
@@ -5045,9 +5041,9 @@ class DataCanvas(wxBufferedWindow):
 				reg = wx.Rect(x, y, w, h)
 				if reg.Inside(wx.Point(pos[0], pos[1])):				 
 					#self.parent.OnScroll(dir)
-					if self.ScrollOpt == 1 :
+					if self.isSecondScroll == 1 :
 						self.grabScrollB = 1	
-					elif self.ScrollOpt == 0 :
+					elif self.isSecondScroll == 0 :
 						self.grabScrollA = 1	
 					self.UpdateDrawing()
 			elif key == "MovableInterface":
@@ -5735,7 +5731,7 @@ class DataCanvas(wxBufferedWindow):
 				_depth = (self.rulerStartDepth + self.rulerEndDepth) / 2.0
 				self.parent.client.send("jump_to_depth\t" + str(_depth) + "\n")
 
-			if self.ScrollOpt == 0 : 
+			if self.isSecondScroll == 0 : 
 				for key, data in self.DrawData.items():
 					if key == "Interface":
 						im, dir, x, y = data[0]
@@ -6767,7 +6763,7 @@ class DataCanvas(wxBufferedWindow):
 				self.rulerStartAgeDepth = tempDepth * 10
 				self.SPrulerStartAgeDepth = tempDepth * 10
 
-			if self.ScrollOpt == 0 : 
+			if self.isSecondScroll == 0 : 
 				for key, data in self.DrawData.items():
 					if key == "Interface":
 						im, dir, x, y = data[0]
