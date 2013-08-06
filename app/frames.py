@@ -439,7 +439,7 @@ class CompositePanel():
 			buttonsize = 145
 		
 		sizer31.Add(self.coreBelow, wx.BOTTOM, 9)
-		self.actionType = wx.ComboBox(panel3, -1, "To tie", (0,0), (buttonsize,30), ("To best correlation", "To tie", "To given"), wx.CB_DROPDOWN) 
+		self.actionType = wx.ComboBox(panel3, -1, "To tie", (0,0),(buttonsize,-1), ("To best correlation", "To tie", "To given"), wx.CB_DROPDOWN)
 		self.actionType.SetForegroundColour(wx.BLACK)
 		self.actionType.SetEditable(False)
 		sizer31.Add(self.actionType, 0, wx.TOP, 9)
@@ -2697,7 +2697,7 @@ class FilterPanel():
 		if platform_name[0] == "Windows" :
 			buttonsize = 280
 			
-		self.all = wx.ComboBox(self.mainPanel, -1, "", (0,0), (buttonsize,30), (""), wx.CB_DROPDOWN)
+		self.all = wx.ComboBox(self.mainPanel, -1, "", (0,0), (buttonsize,-1), (""), wx.CB_DROPDOWN)
 
 		self.all.SetForegroundColour(wx.BLACK)
 		self.all.SetEditable(False)
@@ -2747,7 +2747,7 @@ class FilterPanel():
 		else :
 			grid2.Add(wx.StaticText(panel2, -1, "Type            "), 0, wx.RIGHT, 5)
 				
-		self.smoothcmd = wx.ComboBox(panel2, -1, "Gaussian", (0,0), (180, 30), \
+		self.smoothcmd = wx.ComboBox(panel2, -1, "Gaussian", (0,0), (180, -1), \
 				("None", "Gaussian"), wx.CB_DROPDOWN)
 		self.smoothcmd.SetForegroundColour(wx.BLACK)
 		self.smoothcmd.SetEditable(False)
@@ -2764,10 +2764,10 @@ class FilterPanel():
 		grid2.Add(self.width, 0, wx.BOTTOM, 3)
 
 		if platform_name[0] == "Windows" :
-			self.unitscmd = wx.ComboBox(panel2, -1, "Points", (167, 50), (110, 30), \
+			self.unitscmd = wx.ComboBox(panel2, -1, "Points", (167, 50), (110, -1), \
 					("Points", "Depth(cm)"), wx.CB_DROPDOWN)
 		else :
-			self.unitscmd = wx.ComboBox(panel2, -1, "Points", (167, 55), (110, 30), \
+			self.unitscmd = wx.ComboBox(panel2, -1, "Points", (167, 55), (110, -1), \
 					("Points", "Depth(cm)"), wx.CB_DROPDOWN)
 				
 		self.unitscmd.SetForegroundColour(wx.BLACK)
@@ -2779,7 +2779,7 @@ class FilterPanel():
 			grid2.Add(wx.StaticText(panel2, -1, "Display	         "), 0, wx.RIGHT | wx.LEFT, 5)
 		else :
 			grid2.Add(wx.StaticText(panel2, -1, "Display	      "), 0, wx.RIGHT, 5)
-		self.plotcmd = wx.ComboBox(panel2, -1, "Smoothed&Unsmoothed", (0,0), (180, 30), \
+		self.plotcmd = wx.ComboBox(panel2, -1, "Smoothed&Unsmoothed", (0,0), (180, -1), \
 				("UnsmoothedOnly", "SmoothedOnly", "Smoothed&Unsmoothed"), wx.CB_DROPDOWN)
 		self.plotcmd.SetForegroundColour(wx.BLACK)
 		self.plotcmd.SetEditable(False)
@@ -2831,7 +2831,7 @@ class FilterPanel():
 
 		grid31 = wx.FlexGridSizer(2, 4)
 		grid31.Add(wx.StaticText(panel3, -1, ""), 0, wx.RIGHT, 3)
-		self.cmd = wx.ComboBox(panel3, -1, ">", (0,0), (50,30), ("<", ">"), wx.CB_DROPDOWN)
+		self.cmd = wx.ComboBox(panel3, -1, ">", (0,0), (50,-1), ("<", ">"), wx.CB_DROPDOWN)
 		self.cmd.SetForegroundColour(wx.BLACK)
 		self.cmd.SetEditable(False)
 
@@ -2845,7 +2845,7 @@ class FilterPanel():
 		grid31.Add(self.onlyCheck, 0, wx.BOTTOM, 9)
 
 		grid31.Add(wx.StaticText(panel3, -1, "                     "), 0, wx.RIGHT, 3)
-		self.signcmd = wx.ComboBox(panel3, -1, "<", (0,0), (50,30), ("<", ">"), wx.CB_DROPDOWN) 
+		self.signcmd = wx.ComboBox(panel3, -1, "<", (0,0), (50,-1), ("<", ">"), wx.CB_DROPDOWN) 
 		self.signcmd.SetForegroundColour(wx.BLACK)
 		self.signcmd.SetEditable(False)
 		grid31.Add(self.signcmd, 0, wx.RIGHT, 9)
@@ -2865,7 +2865,7 @@ class FilterPanel():
 			buttonsize = 140
 			
 		grid32 = wx.FlexGridSizer(1, 2)
-		self.optcmd = wx.ComboBox(panel3, -1, "Use all cores", (0,0), (buttonsize, 30), \
+		self.optcmd = wx.ComboBox(panel3, -1, "Use all cores", (0,0), (buttonsize, -1), \
 				("Use all cores", "Use cores numbered <="), wx.CB_DROPDOWN)
 		self.optcmd.SetEditable(False)	
 		grid32.Add(self.optcmd, 0, wx.RIGHT, 5)
@@ -3641,7 +3641,7 @@ class PreferencesPanel():
 		panel1 = wx.Panel(self.mainPanel, -1)
 		sizer1 = wx.StaticBoxSizer(wx.StaticBox(panel1, -1, 'Set Display Range'), orient=wx.VERTICAL)
 
-		self.all = wx.ComboBox(panel1, -1, "", (0,0), (270,30), (""), wx.CB_DROPDOWN)
+		self.all = wx.ComboBox(panel1, -1, "", (0,0), (270,-1), (""), wx.CB_DROPDOWN)
 		panel1.Bind(wx.EVT_COMBOBOX, self.SetTYPE, self.all)
 
 		self.all.SetForegroundColour(wx.BLACK)
