@@ -1179,6 +1179,7 @@ class DataCanvas(wxBufferedWindow):
 			type = "Multiple data type"
 
 
+		# draw graph tick marks
 		# 0 : unsmoothed, 1 : smoothed, 2 : both
 		if smoothed == 0 or smoothed == 1 :
 			rangeMax = self.splicerX + 50
@@ -6861,8 +6862,6 @@ class DataCanvas(wxBufferedWindow):
 			self.OnAgeDepthMotion(event)
 
 	def OnAgeDepthMotion(self, event):
-		if platform_name[0] != "Windows" :
-			self.SetFocusFromKbd()
 		pos = event.GetPositionTuple()
 		got = 0
 
@@ -6902,10 +6901,6 @@ class DataCanvas(wxBufferedWindow):
 
 
 	def OnMainMotion(self, event):
-		#self.SetFocusFromKbd()
-		if platform_name[0] != "Windows" :
-			self.SetFocusFromKbd()
-
 		if self.showMenu == True :
 			return
 
