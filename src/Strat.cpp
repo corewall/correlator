@@ -292,7 +292,7 @@ void Strat::setBotInterval( double interval )
 
 void Strat::getTuple( string& data, int type )
 {
-	char info[75];
+	char info[75]; info[0] = 0;
 	// code, start_depth, stop_depth
 	sprintf(info, "%d,%s,%s,%.2f,%.2f,%.2f,%.2f,%.2f,%d,", m_order, m_name.c_str(), m_code.c_str(), m_mbsf[0], m_mbsf[1], m_rawmbsf[0], m_rawmbsf[1], m_age[0], m_dataType);
 	data += info;

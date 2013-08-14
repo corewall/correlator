@@ -407,7 +407,7 @@ void Value::getTuple( string& data, int type )
 	{
 		//cout << "not culled " << m_eld << " " <<  m_section << " " << getTop() << endl;
 
-		char info[64];
+		char info[64]; info[0] = 0;
 		if(type == SMOOTH)  
 		{
 			if(m_valuetype == INTERPOLATED_VALUE) return; 

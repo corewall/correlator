@@ -244,7 +244,7 @@ void Hole::getTuple( std::string& data, int type )
 		data += ":";
 	} else if(type == SECTION)
 	{
-		char info[25];
+		char info[25]; info[0] = 0;
 		sprintf(info, "%s,%s,%s,", getSite(), getLeg(), m_name.c_str());
 		data += info;	
 			
@@ -310,7 +310,7 @@ void Hole::getTuple( std::string& data, int type )
 		}
 
 		// "154", "926", 0.09, 323.1, 84, 365, "A", 3,
-		char info[255];
+		char info[255]; info[0] = 0;
 		sprintf(info, "%s,%s,%s,%.2f,%.2f,%.2f,%.2f,%s,%d,", getSite(), getLeg(),coretype.c_str(), 
 			m_range.top, m_range.bottom, m_range.realminvar, m_range.realmaxvar, m_name.c_str(), m_cores.size());
 

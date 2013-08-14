@@ -1546,10 +1546,6 @@ int Correlator::undoAppendSplice(void)
 	
 	Tie* tieptr = (Tie*) m_ties.back(); 
 	if(tieptr == NULL) return 0;	
-	//tieptr->setAppend(false, false);
-
-	TieInfo* info = tieptr->getInfoTieTo();
-	//if((info->m_top == 0.0f) && (info->m_bottom <= -9999.0))
 
 	if((tieptr->isAppend() == true) && (tieptr->isAll() == false))
 	{
@@ -2755,7 +2751,7 @@ void Correlator::generateAltSpliceHole( string& data )
 	//m_mainHole->debugPrintOut();
 
 	data_range* range = newSpliceHole->getRange();
-	char info[25];
+	char info[25]; info[0] = 0;
 	sprintf(info, "%.2f,%.2f,", range->mindepth, range->maxdepth);
 	data = info;
 
@@ -2888,7 +2884,7 @@ void Correlator::getTuple( string& data, int type )
 	if(holeptr) 
 	{
 		data_range* range = m_dataptr->getRange();
-		char info[25];
+		char info[25]; info[0] = 0;
 		sprintf(info, "%.2f,%.2f,", range->mindepth, range->maxdepth);
 		data = info;
 
@@ -2908,7 +2904,7 @@ void Correlator::getTuple( std::string& data, int hole_no, int type )
 		if(i == hole_no)
 		{
 			data_range* range = m_dataptr->getRange();
-			char info[25];
+			char info[25]; info[0] = 0;
 			sprintf(info, "%.2f,%.2f,", range->mindepth, range->maxdepth);
 			data = info;
 
@@ -2981,7 +2977,7 @@ void Correlator::getSpliceTuple( string& data )
 	Hole* holeptr = NULL;
 	Core* coreptr = NULL;
 	Core* coreA= NULL;
-	char info[125];
+	char info[125]; info[0] = 0;
 	char* annotation = NULL;
 	//cout << "m_splicerties = " << m_splicerties.size() << endl;
 	
@@ -3035,13 +3031,13 @@ void Correlator::getSpliceTuple( string& data )
 
 void Correlator::getCoefList( string& data )
 {
-        char info[25];
-        int size = m_coeflist.size();
-        for(int i =0; i < size; i++)
-        {
-                sprintf(info, "%.4f,", m_coeflist[i]);
-                data += info;
-        }
+	char info[25]; info[0] = 0;
+	int size = m_coeflist.size();
+	for (int i = 0; i < size; i++)
+	{
+		sprintf(info, "%.4f,", m_coeflist[i]);
+		data += info;
+	}
 }
 
 void Correlator::squish(char* hole, int coreid, double squish )

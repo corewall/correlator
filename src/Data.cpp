@@ -212,7 +212,7 @@ void Data::getTypeRange(  int type, char* annot, double& min, double& max )
 
 void Data::getTuple( string& data, int type ) 
 {
-	char info[25];
+	char info[25]; info[0] = 0;
 	if((type != STRAT_TABLE) && (type != SECTION) && (type != SAGAN_TIE) && (type!= TIE_SHIFT))
 	{
 		sprintf(info, "%.2f,%.2f,", m_range.mindepth, m_range.maxdepth);

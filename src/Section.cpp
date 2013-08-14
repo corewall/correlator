@@ -64,7 +64,7 @@ void Section::getTuple( std::string& data, int type )
 	if(m_startValueptr == NULL) return;
 	if(m_endValueptr == NULL) return;
 
-	char info[255];	
+	char info[255];	info[0] = 0;
 	if(type == SECTION)
 	{
 		// <leg> <site> <hole> <core> <type> <section> <depth>

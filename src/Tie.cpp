@@ -268,7 +268,7 @@ bool Tie::isAll(void)
 	
 void Tie::getTuple( string& data, int type )
 {
-	char info[125];
+	char info[125];  info[0] = 0;
 	Core* coreA = m_tieTocore.m_coreptr;
 	Core* coreB = m_tiedcore.m_coreptr;	
 	if(coreA == NULL || coreB == NULL) return;

@@ -514,7 +514,7 @@ void Core::update( void )
 	
 void Core::getTuple( std::string& data, int type )
 {
-	char info[255];
+	char info[255]; info[0] = 0;
 	if(type == SPLICE)
 	{
 		vector<Tie*>::iterator iterTie;
