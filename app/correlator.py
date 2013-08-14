@@ -29,7 +29,7 @@ from frames import *
 from dbmanager import *
 
 app = None 
-version = "1.697"
+version = "1.7"
 User_Dir = os.path.expanduser("~")
 
 myPath = User_Dir  + "/Documents/Correlator/" + version + "/"
@@ -851,6 +851,10 @@ class MainFrame(wx.Frame):
 				break
 
 		bestdata = [ (best, -0.05),( best, 0.05) ]
+
+		if len(l) <= 1:
+			l = [ (-1.0, -1.0), (0, 0), (1.0, 1.0) ]
+
 		if self.showCompositePanel == 1 :
 			self.compositePanel.OnAddFirstData(l, bestdata, best)
 		elif self.showSplicePanel == 1 : 
