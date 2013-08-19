@@ -2946,18 +2946,20 @@ class FilterPanel():
 				self.OnDecimate(1)
 				return
 
-	def OnRegisterClear(self):
-		if self.locked == False :
-			self.prevSelected = self.all.GetCurrentSelection();
-			if self.prevSelected == -1 :
-				self.prevSelected = 0			
-			self.all.Clear()
-			self.all.Append("All Holes")
-			#self.all.Append("Log")
-			self.all.SetSelection(self.prevSelected)
-			if platform_name[0] == "Windows":
-				self.all.SetValue(self.all.GetString(self.prevSelected))			
-			self.parent.optPanel.OnRegisterClear()
+
+# 	def OnRegisterClear(self):
+# 		if self.locked == False :
+# 			self.prevSelected = self.all.GetCurrentSelection();
+# 			if self.prevSelected == -1 :
+# 				self.prevSelected = 0			
+# 			self.all.Clear()
+# 			self.all.Append("All Holes")
+# 			self.all.SetSelection(0)
+# 			#self.all.Append("Log")
+			
+# 			if platform_name[0] == "Windows":
+# 				self.all.SetValue(self.all.GetString(self.prevSelected))			
+# 			self.parent.optPanel.OnRegisterClear()
 
 
 	def OnRegisterSplice(self):
@@ -2968,9 +2970,6 @@ class FilterPanel():
 		name = "Spliced Records"
 		self.all.Append(name)
 		self.parent.optPanel.OnRegisterHole(name)
-		self.all.SetSelection(self.prevSelected)
-		if platform_name[0] == "Windows":
-			self.all.SetValue(self.all.GetString(self.prevSelected))			
 		return True 
 
 	def OnRegisterHole(self, holename):
@@ -2982,9 +2981,6 @@ class FilterPanel():
 
 			self.all.Append(holename)
 			self.parent.optPanel.OnRegisterHole(holename)
-			self.all.SetSelection(self.prevSelected)
-			if platform_name[0] == "Windows":
-				self.all.SetValue(self.all.GetString(self.prevSelected))			
 
 
 	def SetTYPE(self, event):
@@ -3373,7 +3369,6 @@ class FilterPanel():
 
 		else :
 			self.parent.dataFrame.UpdateCULL(type, bcull, cullValue, cullNumber, value1, value2, sign1, sign2, join)
-
 			py_correlator.cull(type, bcull, cullValue, cullNumber, cullStrength, value1, value2, sign1, sign2, join)
 
 		if type != "Log" :
@@ -3408,16 +3403,16 @@ class PreferencesPanel():
 		self.prevSelected = 0
 		self.depthmax = 20.0
 
-	def OnRegisterClear(self):
-		self.prevSelected = self.all.GetCurrentSelection();
-		if self.prevSelected == -1 :
-			self.prevSelected = 0
-		self.all.Clear()
-		self.all.Append("All Holes")
-		#self.all.Append("Log")
-		self.all.SetSelection(self.prevSelected)
-		if platform_name[0] == "Windows":
-			self.all.SetValue(self.all.GetString(self.prevSelected))
+# 	def OnRegisterClear(self):
+# 		self.prevSelected = self.all.GetCurrentSelection();
+# 		if self.prevSelected == -1 :
+# 			self.prevSelected = 0
+# 		self.all.Clear()
+# 		self.all.Append("All Holes")
+# 		#self.all.Append("Log")
+# 		self.all.SetSelection(self.prevSelected)
+# 		if platform_name[0] == "Windows":
+# 			self.all.SetValue(self.all.GetString(self.prevSelected))
 
 	def OnRegisterHole(self, holename):
 		self.all.Append(holename)

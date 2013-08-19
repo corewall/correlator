@@ -996,6 +996,46 @@ class MainFrame(wx.Frame):
 			self.optPanel.opt2.SetValue(True)
 
 
+	def RebuildComboBox(self, comboBox, typeNames, hasSpliceData, hasLogData):
+		prevSelected = comboBox.GetCurrentSelection()
+		if prevSelected == -1 :
+			prevSelected = 0
+
+		comboBox.Clear()
+		comboBox.Append("All Holes")
+		for type in typeNames:
+			typeStr = "All " + type
+			if comboBox.FindString(typeStr) == wx.NOT_FOUND:
+				comboBox.Append(typeStr)
+
+		if hasSpliceData == True:
+			comboBox.Append("Spliced Records")
+		if hasLogData == True:
+			comboBox.Append("Log")
+
+		comboBox.SetSelection(prevSelected)
+		if platform_name[0] == "Windows":
+			comboBox.SetValue(comboBox.GetString(prevSelected))
+
+		return prevSelected
+
+
+	def RefreshTypeComboBoxes(self):
+		if self.filterPanel.locked == False:
+			holeData = self.Window.HoleData
+			hasSpliceData = (self.Window.SpliceData != [])
+			hasLogData = (self.Window.LogData != [])
+
+			# extract type names
+			typeNames = []
+			if len(holeData) > 0:
+				for holeIdx in range(len(holeData)):
+					typeNames.append(holeData[holeIdx][0][0][2])
+
+			self.filterPanel.prevSelected = self.RebuildComboBox(self.filterPanel.all, typeNames, hasSpliceData, hasLogData)
+			self.optPanel.prevSelected = self.RebuildComboBox(self.optPanel.all, typeNames, hasSpliceData, hasLogData)
+
+
 	def UpdateSECTION(self):
 		self.Window.SectionData = []
 		ret = py_correlator.getData(18)
@@ -1006,19 +1046,14 @@ class MainFrame(wx.Frame):
 		self.Window.HoleData = []
 		ret = py_correlator.getData(0)
 		if ret != "" :
-			self.filterPanel.OnRegisterClear()
 			self.LOCK = 0
 			self.PrevDataType = ""
 			self.ParseData(ret, self.Window.HoleData)
-			#self.OnUpdateDepthStep()
 			self.UpdateMinMax()
 			self.LOCK = 1
-			ret =""
-			if self.Window.SpliceData != [] :
-				self.filterPanel.OnRegisterHole("Spliced Records")
-			# HYEJUNG
-			if self.Window.LogData != [] :
-				self.filterPanel.OnRegisterHole("Log")
+			ret = ""
+
+			self.RefreshTypeComboBoxes()
 
 	def UpdateSMOOTH_CORE(self):
 		self.Window.SmoothData = []
@@ -1911,56 +1946,57 @@ class MainFrame(wx.Frame):
 		self.OnDisableMenu(0, False)
 		self.Window.UpdateDrawing()
 
+		# 8/18/2013 brg: Unused, commenting
 		# HYEJUNG
-	def OnClearCoreType(self, event):
-		dlg =  ClearDataDialog(self, self.filterPanel.all)
-		#self.UpdateData()
+# 	def OnClearCoreType(self, event):
+# 		dlg =  ClearDataDialog(self, self.filterPanel.all)
+# 		#self.UpdateData()
 		
-		self.Window.HoleData = []
-		ret = "" 
-		if self.smoothDisplay == 1 or self.smoothDisplay == 3 : 
-			ret = py_correlator.getData(0)
-		elif self.smoothDisplay == 2 : 
-			ret = py_correlator.getData(1)
+# 		self.Window.HoleData = []
+# 		ret = "" 
+# 		if self.smoothDisplay == 1 or self.smoothDisplay == 3 : 
+# 			ret = py_correlator.getData(0)
+# 		elif self.smoothDisplay == 2 : 
+# 			ret = py_correlator.getData(1)
 
-		if ret != "" :
-			self.RawData =ret
-			#self.filterPanel.OnLock()
-			self.filterPanel.OnRegisterClear()
- 			self.PrevDataType = ""
- 			self.LOCK = 0
-			self.ParseData(self.RawData, self.Window.HoleData)
-			self.LOCK = 1
-			#self.filterPanel.OnRelease()
-			self.UpdateMinMax()
-		self.RawData = ""
-		ret =""
+# 		if ret != "" :
+# 			self.RawData =ret
+# 			#self.filterPanel.OnLock()
+# 			self.filterPanel.OnRegisterClear()
+#  			self.PrevDataType = ""
+#  			self.LOCK = 0
+# 			self.ParseData(self.RawData, self.Window.HoleData)
+# 			self.LOCK = 1
+# 			#self.filterPanel.OnRelease()
+# 			self.UpdateMinMax()
+# 		self.RawData = ""
+# 		ret =""
 
-		if self.Window.SmoothData != [] : 
-			self.Window.SmoothData = []
-			self.SmoothData = py_correlator.getData(1)
-			if self.SmoothData != "" :
-				self.filterPanel.OnLock()
-				self.ParseData(self.SmoothData, self.Window.SmoothData)
-				self.filterPanel.OnRelease()
-			self.SmoothData = ""
+# 		if self.Window.SmoothData != [] : 
+# 			self.Window.SmoothData = []
+# 			self.SmoothData = py_correlator.getData(1)
+# 			if self.SmoothData != "" :
+# 				self.filterPanel.OnLock()
+# 				self.ParseData(self.SmoothData, self.Window.SmoothData)
+# 				self.filterPanel.OnRelease()
+# 			self.SmoothData = ""
 
-		if self.Window.SpliceData != [] and self.Window.SmoothData != [] : 
-			self.Window.SpliceSmoothData = []
-			splice_data = py_correlator.getData(4)
-			if splice_data != "" :
-				self.filterPanel.OnLock()
-				self.ParseData(splice_data, self.Window.SpliceSmoothData)
-				self.filterPanel.OnRelease()
+# 		if self.Window.SpliceData != [] and self.Window.SmoothData != [] : 
+# 			self.Window.SpliceSmoothData = []
+# 			splice_data = py_correlator.getData(4)
+# 			if splice_data != "" :
+# 				self.filterPanel.OnLock()
+# 				self.ParseData(splice_data, self.Window.SpliceSmoothData)
+# 				self.filterPanel.OnRelease()
 
-		if self.Window.StratData != [] :
-			self.UpdateStratData()
+# 		if self.Window.StratData != [] :
+# 			self.UpdateStratData()
 		
-		self.Window.UpdateDrawing()
+# 		self.Window.UpdateDrawing()
 
 		
-		#dlg.ShowModal()	
-		#dlg.Destroy()	
+# 		#dlg.ShowModal()	
+# 		#dlg.Destroy()	
 
 	def OnClearAllData(self, event):
 		self.OnClearData()
@@ -2252,36 +2288,10 @@ class MainFrame(wx.Frame):
 
 
 	def OnInitDataUpdate(self):
-		self.filterPanel.OnRegisterClear()
-		self.PrevDataType = ""
 		self.UpdateCORE()
 		self.UpdateSMOOTH_CORE()
 		self.Window.UpdateDrawing()
 		return
-
-		ret = py_correlator.getData(0)
-		if len(ret) > 0 : 
-			self.RawData = ret
-			self.Window.HoleData = []
-			self.filterPanel.OnRegisterClear()
-			self.PrevDataType = ""
-			self.ParseData(self.RawData, self.Window.HoleData)
-			#print "[DEBUG] Min : " + str(self.Window.minRange) + ", Max : " + str(self.Window.maxRange) 
-			#self.OnUpdateDepthStep()
-
-			self.RawData = "" 
-			self.OnDisableMenu(1, True)
-			self.UpdateMinMax()
-
-			self.autoPanel.SetCoreList(0, self.Window.HoleData)
-
-		#if len(self.SmoothData) > 0 : 
-		#	self.Window.SmoothData = []
-		#	self.filterPanel.OnLock()
-		#	self.ParseData(self.SmoothData, self.Window.SmoothData)
-		#	self.filterPanel.OnRelease()
-		#	self.SmoothData = "" 
-		self.Window.UpdateDrawing()
 
 	def UndoSpliceSectionSend(self):
 		if self.client == None :
@@ -2727,7 +2737,7 @@ class MainFrame(wx.Frame):
 
 
 	def ParseHole(self, start, last, data, output):
-		hole = [] 
+		hole = [] # a global used throughout this file
 		# site 
 		last = data.find(",", start)
 		site = data[start:last] 
