@@ -483,11 +483,9 @@ class ColorTableDialog(wx.Dialog):
 
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
 
-		vbox_top.Add(wx.StaticLine(self, -1, size=(480,1)), 0, wx.TOP | wx.LEFT, 9)
-
 		panel1 = wx.Panel(self, -1)
 		sizer1 = wx.StaticBoxSizer(wx.StaticBox(panel1, -1, 'Color set'), orient=wx.VERTICAL)
-		self.colorSet = wx.ComboBox(panel1, -1, "Custom", (0,0), (270,30), ("ODP", "Corporate", "Maritime", "Earth", "Santa Fe", "Custom"), wx.CB_DROPDOWN)
+		self.colorSet = wx.ComboBox(panel1, -1, "Custom", (0,0), (270,-1), ("ODP", "Corporate", "Maritime", "Earth", "Santa Fe", "Custom"), wx.CB_DROPDOWN)
 		self.colorSet.SetForegroundColour(wx.BLACK)
 		self.Bind(wx.EVT_COMBOBOX, self.SetColorSet, self.colorSet)
 		self.colorSet.SetEditable(False)
@@ -499,7 +497,7 @@ class ColorTableDialog(wx.Dialog):
 		grid1 = wx.GridSizer(1, 2)
 
 		sizer2 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'Customize color'), orient=wx.VERTICAL)
-		grid2 = wx.FlexGridSizer(16, 4)
+		grid2 = wx.FlexGridSizer(9, 4)
 		self.colorPicker01 = wx.ColourPickerCtrl(panel2, 1)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker01)
 		grid2.Add(self.colorPicker01)
@@ -511,7 +509,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker02 = wx.ColourPickerCtrl(panel2, 2)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker02)
-		grid2.Add(self.colorPicker02, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker02, 0, wx.LEFT, 10)
 		if platform_name[0] == "Windows" :		
 			grid2.Add(wx.StaticText(panel2, -1, 'mcd               '))
 		else :
@@ -523,7 +521,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker04 = wx.ColourPickerCtrl(panel2, 4)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker04)
-		grid2.Add(self.colorPicker04, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker04, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'Smooth'))
 
 		self.colorPicker05 = wx.ColourPickerCtrl(panel2, 5)
@@ -533,7 +531,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker06 = wx.ColourPickerCtrl(panel2, 6)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker06)
-		grid2.Add(self.colorPicker06, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker06, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'log'))
 
 		self.colorPicker07 = wx.ColourPickerCtrl(panel2, 7)
@@ -543,7 +541,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker08 = wx.ColourPickerCtrl(panel2, 8)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker08)
-		grid2.Add(self.colorPicker08, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker08, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'fixed tie'))
 
 		self.colorPicker09 = wx.ColourPickerCtrl(panel2, 9)
@@ -553,7 +551,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker10 = wx.ColourPickerCtrl(panel2, 10)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker10)
-		grid2.Add(self.colorPicker10, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker10, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'paleomag'))
 
 		self.colorPicker11 = wx.ColourPickerCtrl(panel2, 11)
@@ -563,7 +561,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker12 = wx.ColourPickerCtrl(panel2, 12)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker12)
-		grid2.Add(self.colorPicker12, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker12, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'rad'))
 
 		self.colorPicker13 = wx.ColourPickerCtrl(panel2, 13)
@@ -573,7 +571,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker14 = wx.ColourPickerCtrl(panel2, 14)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker14)
-		grid2.Add(self.colorPicker14, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker14, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'nano'))
 
 		self.colorPicker15 = wx.ColourPickerCtrl(panel2, 15)
@@ -583,7 +581,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker16 = wx.ColourPickerCtrl(panel2, 16)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker16)
-		grid2.Add(self.colorPicker16, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker16, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'labels'))
 
 		self.colorPicker17 = wx.ColourPickerCtrl(panel2, 17)
@@ -593,7 +591,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker18 = wx.ColourPickerCtrl(panel2, 18)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker18)
-		grid2.Add(self.colorPicker18, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker18, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'guide'))
 
 		sizer2.Add(grid2)
@@ -640,7 +638,7 @@ class ColorTableDialog(wx.Dialog):
 		grid3.Add(wx.StaticText(panel2, -1, '9th hole'))
 		sizer3.Add(grid3)
 
-		grid1.Add(sizer3, 0, wx.LEFT, 10)
+		grid1.Add(sizer3, 0, wx.LEFT, 30)
 		panel2.SetSizer(grid1)
 		vbox_top.Add(panel2, 0, wx.TOP | wx.LEFT, 9)
 
@@ -653,7 +651,7 @@ class ColorTableDialog(wx.Dialog):
 		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Dismiss", size=(120, 30))
 		grid4.Add(cancelBtn, 0, wx.LEFT, 25)		
 
-		vbox_top.Add(grid4, 0, wx.LEFT | wx.TOP, 15)		
+		vbox_top.Add(grid4, 0, wx.LEFT | wx.TOP, 0)
 
 		self.SetSizer(vbox_top)
 		self.updateItem()
