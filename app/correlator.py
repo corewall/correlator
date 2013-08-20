@@ -3618,8 +3618,6 @@ class CorrelatorApp(wx.App):
 		wx.App.__init__(self,0)
 		
 	def OnInit(self):
-		wx.InitAllImageHandlers()
-
 		user = getpass.getuser()
 		#if platform_name[0] != "Windows" :
 		openframe = OpenFrame(None, -1, user, version)
