@@ -177,7 +177,7 @@ class StratTypeDialog(wx.Dialog):
 
 		self.Center()
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
-		self.types = wx.ComboBox(self, -1, "Diatoms", (0,0), (250, 30), ("Diatoms", "Radioloria", "Foraminifera", "Nannofossils", "Paleomag"), wx.CB_DROPDOWN)
+		self.types = wx.ComboBox(self, -1, "Diatoms", (0,0), (250, -1), ("Diatoms", "Radioloria", "Foraminifera", "Nannofossils", "Paleomag"), wx.CB_DROPDOWN)
 
 		vbox_top.Add(self.types, 0, wx.LEFT | wx.TOP, 25)
 
@@ -424,7 +424,7 @@ class AltSpliceDialog(wx.Dialog):
 		panel = wx.Panel ( self, -1, (15, 15), size=(330, 100), style=wx.BORDER)
 		wx.StaticText(panel, -1, 'Data Type', (10, 20))
 		wx.StaticText(panel, -1, 'Splice', (10, 60))
-		self.all = wx.ComboBox(panel, -1, "", (90,20), (220,30), (""), wx.CB_DROPDOWN)
+		self.all = wx.ComboBox(panel, -1, "", (90,20), (220,-1), (""), wx.CB_DROPDOWN)
 		for types in parent.Window.range :
 			if types[0] != "splice" and types[0] != "altsplice" :
 				self.all.Append(types[0])
@@ -435,7 +435,7 @@ class AltSpliceDialog(wx.Dialog):
 		self.all.SetEditable(False)
 		#self.Bind(wx.EVT_COMBOBOX, self.SetTYPE, self.all)
 
-		self.splice = wx.ComboBox(panel, -1, "", (90,60), (220,70), (""), wx.CB_DROPDOWN)
+		self.splice = wx.ComboBox(panel, -1, "", (90,60), (220,-1), (""), wx.CB_DROPDOWN)
 		parent.dataFrame.Update_PROPERTY_ITEM(parent.dataFrame.selectBackup)
 		property = parent.dataFrame.propertyIdx
 		totalcount = parent.dataFrame.tree.GetChildrenCount(property, False)
