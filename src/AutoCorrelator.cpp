@@ -664,7 +664,7 @@ double AutoCorrelator::evalCore( Core* coreA, Core* coreB, Value* valueA, Value*
 
 
 	bnum = nx;
-	// calculate the standard deviation and the correlation coeficiant
+	// calculate the standard deviation and the correlation coefficient
 	double coef =0.0;
 	double stdevX, stdevY;
 	if(nx > 1)
@@ -867,7 +867,7 @@ int AutoCorrelator::correlate_backup( void )
 						tieptr->applyAffine(ioffset);
 						
 						// update
-						tieptr->calcCoeficiantUpdate();
+						tieptr->calcCoefficientUpdate();
 
 						// get coef
 						coef += tieptr->getCoef();

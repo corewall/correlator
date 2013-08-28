@@ -5295,7 +5295,7 @@ double Correlator::evalCore(Core* fixedCore, Value* fixedValue, double fixedStar
 		nx++;
 	}
 	
-	// calculate the standard deviation and the correlation coeficiant
+	// calculate the standard deviation and the correlation coefficient
 	double coef =0.0;
 	double stdevX, stdevY;
 	if(nx > 1)
@@ -5421,7 +5421,7 @@ double Correlator::evalCore( Core* coreA, Core* coreB, Value* valueA, Value* val
 	}
 
 
-	// calculate the standard deviation and the correlation coeficiant
+	// calculate the standard deviation and the correlation coefficient
 	double coef =0.0;
 	double stdevX, stdevY;
 	if(nx > 1)
