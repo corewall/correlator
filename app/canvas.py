@@ -3560,125 +3560,107 @@ class DataCanvas(wxBufferedWindow):
 		self.LogTieData.insert(index - 1, data1)
 		self.LogselectedTie = index 
 
-	def OnSpliceTieSelectionCb(self, event) :
-		opId = event.GetId() 
-		self.activeSPTie = -1
-		self.showMenu = False
-		if opId == 1 :
-			if len(self.SpliceTieData) > 2 :
-				if self.SPselectedTie < 2 :
-					self.OnUndoSplice()
+	# 8/28/2013 brg: Better name?
+	def ApplySplice(self, tieIndex) :
+		if tieIndex >= 0:
+			tieNo = 0
+			coreidA = coreidB = 0
+			depth = 0
+			corexB = 0
+			x1 = x2 = y1 = y2 = 0
+			
+			# 8/28/2013 brg: Previously for-looped through a list of tie tuples. Since we're just assigning,
+			# use the last tuple and be done with it.
+			dataA = self.SpliceTieData[tieIndex]
+			dataATuple = dataA[-1]
+
+			coreidB = dataATuple[2]
+			y1 = dataATuple[6]
+			x1 = dataATuple[4]
+
+			dataB = self.SpliceTieData[tieIndex - 1]
+			dataBTuple = dataB[-1]
+			coreidA = dataBTuple[2]
+			depth = dataBTuple[6]
+			y2 = dataBTuple[6]
+			tieNo = dataBTuple[8]
+			x2 = dataBTuple[4]
+
+			reversed = False 
+			if x2 > x1 :
+				reversed = True
+
+			holeA = holeB = '-'
+			coreA = coreB = -1
+			typeA = typeB = ''
+			count = 0
+			for s in self.DrawData["CoreInfo"]:
+				data = s
+				for r in data:
+					if r[0] == coreidA :
+						holeA = r[3]
+						coreA = r[4]
+						typeA = r[10]
+						count = count + 1
+					if r[0] == coreidB :
+						holeB = r[3]
+						coreB = r[4]
+						typeB = r[10]
+						count = count + 1
+					if count >= 2:
+						break
+				if count >= 2 :
+					break
+
+			type_a = self.GetTypeID(typeA)
+			type_b = self.GetTypeID(typeB)
+			if type_a != type_b :
+				self.multipleType = True 
+
+			if holeA != '-' and holeB != '-' :
+				if reversed == False :
+					splice_data = py_correlator.splice(typeB, holeB, int(coreB), y1, typeA, holeA, int(coreA), y2, tieNo, self.parent.smoothDisplay, 0)
 				else :
-					self.OnClearTies(1)
-			else :
-				if self.SpliceTieFromFile != len(self.RealSpliceTie) :
-					self.OnUndoSplice()
-				else :
-					self.OnClearTies(1)
-		elif opId == 2 :
-			if self.SPselectedTie >= 0 :
-				tieNo = 0
-				dataA = self.SpliceTieData[self.SPselectedTie]
-				coreidA = 0
-				coreidB = 0
-				depth = 0
-				corexB = 0
-				y1 = 0
-				y2 = 0
-				x1 = 0
-				x2 = 0
-				
-				for r in dataA :
-					coreidB = r[2]
-					y1 = r[6]
-					#y1 = (r[1] - self.startDepth) / ( self.length / self.gap ) + self.SPrulerStartDepth
-					x1 = r[4]
-				dataB = self.SpliceTieData[self.SPselectedTie - 1]
-				for r in dataB :
-					coreidA = r[2]
-					depth = r[6]
-					y2 = r[6]
-					#y2 = (r[1] - self.startDepth) / ( self.length / self.gap ) + self.SPrulerStartDepth
-					tieNo = r[8]
-					x2 = r[4]
+					splice_data = py_correlator.splice(typeA, holeA, int(coreA), y2, typeB, holeB, int(coreB), y1, tieNo, self.parent.smoothDisplay, 0)
+				self.parent.SpliceChange = True
+				py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
 
-				reversed = False 
-				if x2 > x1 :
-					reversed = True
+				if tieNo <= 0 and splice_data[0] > 0 : 
+					self.spliceCount = self.spliceCount + 1
+					self.RealSpliceTie.append(dataB)
+					self.RealSpliceTie.append(dataA)
+				if splice_data[0] == -1 : 
+					self.parent.OnShowMessage("Error", "It can not find value point.", 1)
+					self.parent.splicePanel.OnButtonEnable(0, True)
+					self.parent.splicePanel.OnButtonEnable(1, False)
+					return
 
-				holeA = '-'
-				holeB = '-'
-				coreA = -1
-				coreB = -1
-				typeA = ''
-				typeB = ''
-				count = 0
-				for s in self.DrawData["CoreInfo"]:
-					data = s
-					for r in data:
-					 if r[0] == coreidA :
-						 holeA = r[3]
-						 coreA = r[4]
-						 typeA = r[10]
-						 count = count + 1
-					 if r[0] == coreidB :
-						 holeB = r[3]
-						 coreB = r[4]
-						 typeB = r[10]
-						 count = count + 1
-					 if count >= 2:
-						 break
-					if count >= 2 :
-					 break
+				data = self.SpliceTieData[tieIndex]
+				for rtie in data :
+					x, y, n, f, startx, m, d, splicex, i, mode = rtie
+					data.remove(rtie)
+					if mode == 1 :
+						d = splice_data[2]
+					news = (x, y, n, f, startx, m, d, splicex, splice_data[0], mode)
+					data.insert(0, news)
+				data = self.SpliceTieData[tieIndex - 1]
+				for rtie in data : 
+					x, y, n, f, startx, m, d, splicex, i, mode = rtie
+					data.remove(rtie)
+					if mode == 1 :
+						d = splice_data[2]
+					news = (x, y, n, f, startx, m, d, splicex, splice_data[0], mode)
+					data.insert(0, news)
 
-				type_a = self.GetTypeID(typeA)
-				type_b = self.GetTypeID(typeB)
-				if type_a != type_b :
-					self.multipleType = True 
+				if splice_data[1] != "" :
+					self.SpliceData = []
+					self.parent.filterPanel.OnLock()
+					self.parent.ParseData(splice_data[1], self.SpliceData)
+					self.parent.filterPanel.OnRelease()
+					self.parent.UpdateSMOOTH_SPLICE(False)
 
-				if holeA != '-' and holeB != '-' :
-					if reversed == False :
-						splice_data = py_correlator.splice(typeB, holeB, int(coreB), y1, typeA, holeA, int(coreA), y2, tieNo, self.parent.smoothDisplay, 0)
-					else :
-						splice_data = py_correlator.splice(typeA, holeA, int(coreA), y2, typeB, holeB, int(coreB), y1, tieNo, self.parent.smoothDisplay, 0)
-					self.parent.SpliceChange = True
-					py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
-
-					if tieNo <= 0 and splice_data[0] > 0 : 
-						self.spliceCount = self.spliceCount + 1
-						self.RealSpliceTie.append(dataB)
-						self.RealSpliceTie.append(dataA)
-					if splice_data[0] == -1 : 
-						self.parent.OnShowMessage("Error", "It can not find value point.", 1)
-						self.parent.splicePanel.OnButtonEnable(0, True)
-						self.parent.splicePanel.OnButtonEnable(1, False)
-						return
-
-					data = self.SpliceTieData[self.SPselectedTie]
-					for rtie in data :
-						x, y, n, f, startx, m, d, splicex, i, mode = rtie
-						data.remove(rtie)
-						if mode == 1 :
-							d = splice_data[2]
-						news = (x, y, n, f, startx, m, d, splicex, splice_data[0], mode)
-						data.insert(0, news)
-					data = self.SpliceTieData[self.SPselectedTie - 1]
-					for rtie in data : 
-						x, y, n, f, startx, m, d, splicex, i, mode = rtie
-						data.remove(rtie)
-						if mode == 1 :
-							d = splice_data[2]
-						news = (x, y, n, f, startx, m, d, splicex, splice_data[0], mode)
-						data.insert(0, news)
-
-
-					if splice_data[1] != "" :
-						self.SpliceData = []
-						self.parent.filterPanel.OnLock()
-						self.parent.ParseData(splice_data[1], self.SpliceData)
-						self.parent.filterPanel.OnRelease()
-						self.parent.UpdateSMOOTH_SPLICE(False)
-
+					# brg 8/28/2013: Necessary? Logic in button splice, not right-click splice.
+					# Still don't understand why there'd be any difference at all.
 					self.parent.splicePanel.OnButtonEnable(0, False)
 					self.parent.splicePanel.OnButtonEnable(1, True)
 
@@ -3706,6 +3688,24 @@ class DataCanvas(wxBufferedWindow):
 		self.drag = 0 
 		self.UpdateDrawing()
 
+
+	def OnSpliceTieSelectionCb(self, event) :
+		opId = event.GetId() 
+		self.activeSPTie = -1
+		self.showMenu = False
+		if opId == 1 :
+			if len(self.SpliceTieData) > 2 :
+				if self.SPselectedTie < 2 :
+					self.OnUndoSplice()
+				else :
+					self.OnClearTies(1)
+			else :
+				if self.SpliceTieFromFile != len(self.RealSpliceTie) :
+					self.OnUndoSplice()
+				else :
+					self.OnClearTies(1)
+		elif opId == 2 :
+			self.ApplySplice(self.SPselectedTie)
 
 	def OnClearTies(self, mode) :
 		if mode == 0 :
@@ -4176,142 +4176,8 @@ class DataCanvas(wxBufferedWindow):
 		self.parent.splicePanel.OnButtonEnable(0, False)
 		self.parent.splicePanel.OnButtonEnable(1, True)
 		lastTie = len(self.SpliceTieData) - 1
-
-		#print "[DEBUG] length of Splice Ties " + str(len(self.SpliceTieData)) 
-
-		if lastTie >= 0 :
-			tieNo = 0
-			dataA = self.SpliceTieData[lastTie]
-			coreidA = 0
-			coreidB = 0
-			depth = 0
-			corexB = 0
-			y1 = 0
-			y2 = 0
-			x1 = 0
-			x2 = 0
-			for r in dataA :
-				coreidB = r[2]
-				y1 = r[6]
-				#y1 = (r[1] - self.startDepth) / ( self.length / self.gap ) + self.SPrulerStartDepth
-				x1 = r[4]
-			dataB = self.SpliceTieData[lastTie - 1]
-			for r in dataB :
-				coreidA = r[2]
-				depth = r[6]
-				y2 = r[6]
-				#y2 = (r[1] - self.startDepth) / ( self.length / self.gap ) + self.SPrulerStartDepth
-				tieNo = r[8]
-				x2 = r[4]
-
-			reversed = False
-			if x2 > x1 :
-				reversed = True
-
-			holeA = '-'
-			holeB = '-'
-			coreA = -1
-			coreB = -1
-			typeA = ''
-			typeB = ''
-			count = 0
-			for s in self.DrawData["CoreInfo"]:
-				data = s
-				for r in data:
-					if r[0] == coreidA :
-					 holeA = r[3]
-					 coreA = r[4]
-					 typeA = r[10]
-					 count = count + 1
-					if r[0] == coreidB :
-					 holeB = r[3]
-					 coreB = r[4]
-					 typeB = r[10]
-					 count = count + 1
-					if count >= 2:
-					 break
-				if count >= 2 :
-					 break
-
-			appendflag = 0
-			#if self.isAppend == True :
-			#	appendflag = 1
-
-			type_a = self.GetTypeID(typeA)
-			type_b = self.GetTypeID(typeB)
-			if type_a != type_b :
-				self.multipleType = True
-
-			if holeA != '-' and holeB != '-' :
-
-				if reversed == False : 
-					splice_data = py_correlator.splice(typeB, holeB, int(coreB), y1, typeA, holeA, int(coreA), y2, tieNo, self.parent.smoothDisplay, appendflag)
-				else :
-					splice_data = py_correlator.splice(typeA, holeA, int(coreA), y2, typeB, holeB, int(coreB), y1, tieNo, self.parent.smoothDisplay, appendflag)
-
-				self.parent.SpliceChange = True
-				py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
-
-				if tieNo <= 0 and splice_data[0] > 0 :
-					self.spliceCount = self.spliceCount + 1
-					self.RealSpliceTie.append(dataB)
-					self.RealSpliceTie.append(dataA)
-				if splice_data[0] == -1 :
-					self.isAppend = False 
-					self.parent.OnShowMessage("Error", "It can not find value point.", 1)
-					self.parent.splicePanel.OnButtonEnable(0, True)
-					self.parent.splicePanel.OnButtonEnable(1, False)
-					return
-
-				data = self.SpliceTieData[lastTie]
-				for rtie in data :
-					x, y, n, f, startx, m, d, splicex, i, mode = rtie
-					data.remove(rtie)
-					if mode == 1 :
-						d = splice_data[2]
-					news = (x, y, n, f, startx, m, d, splicex, splice_data[0], mode)
-					data.insert(0, news)
-				data = self.SpliceTieData[lastTie - 1]
-				for rtie in data :
-					x, y, n, f, startx, m, d, splicex, i, mode = rtie
-					data.remove(rtie)
-					if mode == 1 :
-						d = splice_data[2]
-					news = (x, y, n, f, startx, m, d, splicex, splice_data[0], mode)
-					data.insert(0, news)
-
-				if splice_data[1] != "" :
-					self.SpliceData = []
-					self.parent.filterPanel.OnLock()
-					self.parent.ParseData(splice_data[1], self.SpliceData)
-					self.parent.filterPanel.OnRelease()
-					self.parent.UpdateSMOOTH_SPLICE(False)
-
-				s = "Constrained Splice: "	
-				if self.Constrained == 0 :
-					s = "Unconstrained Splice: "
-						
-				s = s + "hole " + holeB + " core " + coreB + ": " + str(datetime.today()) + "\n"
-				self.parent.logFileptr.write(s)
-				s = holeA + " " + coreA + " " + str(y1) + " tied to " + holeB + " " + coreB + " " + str(y2) + "\n\n"
-				self.parent.SpliceSectionSend(holeA, coreA, y1, "split", tieNo)
-				self.parent.SpliceSectionSend(holeB, coreB, y2, None, tieNo)
-				if tieNo > 0 :
-					self.parent.SpliceSectionSend(holeA, coreA, y1, "split", -1)
-					self.parent.SpliceSectionSend(holeB, coreB, y2, None, -1)
-
-				self.parent.logFileptr.write(s)
-				if self.parent.showReportPanel == 1 :
-					self.parent.OnUpdateReport()
-
-				self.SpliceTieData = []
-				self.SpliceTieData.append(dataB)
-				self.SpliceTieData.append(dataA)
-				self.SPselectedTie = -1
-				self.SPGuideCore = []
-
-		self.drag = 0
-		self.UpdateDrawing()
+		# print "[DEBUG] length of Splice Ties " + str(len(self.SpliceTieData)) 
+		self.ApplySplice(lastTie)
 
 	def OnUndoSplice(self):
 		lastTie = len(self.RealSpliceTie) - 1
