@@ -3704,6 +3704,10 @@ class DataCanvas(wxBufferedWindow):
 					self.OnUndoSplice()
 				else :
 					self.OnClearTies(1)
+			self.SPselectedTie = -1
+			self.SPGuideCore = []
+			self.drag = 0 
+			self.UpdateDrawing()
 		elif opId == 2 :
 			self.ApplySplice(self.SPselectedTie)
 
