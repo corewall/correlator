@@ -2133,7 +2133,7 @@ class DataCanvas(wxBufferedWindow):
 		return affine
 
 
-	def DrawGraphInfo(self, dc, index, flag):
+	def DrawGraphInfo(self, dc, curCoreData, flag):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
@@ -2146,27 +2146,21 @@ class DataCanvas(wxBufferedWindow):
 			x = self.Width - 220
 
 		self.minData = -1 
-		for key, data in self.DrawData.items():
-			if key == "CoreInfo":
-				for s in data :
-					info = s 
-					for r in info:
-						n, leg, site, hole, core, min, max, dmin, dmax, squish, type, quality, holeth = r
-						if n == index :
-							dc.DrawText("Hole: " + hole + " Core: " + core, x, self.startDepth) 
-							self.statusStr = self.statusStr + "Hole: " + hole + " Core: " + core
-							dc.DrawText("Min: " + str(min) + " Max: " + str(max), x, self.startDepth + 20) 
-							dc.DrawText("Stretched Ratio: " + str(squish) + "%", x, self.startDepth + 40) 
-							if quality == '0' :
-								dc.DrawText("Quality: Good", x, self.startDepth + 60) 
-							else :
-								dc.DrawText("Quality: Bad", x, self.startDepth + 60) 
-							self.minData = min 
-							return (type, holeth)
-		return None 
+		n, leg, site, hole, core, min, max, dmin, dmax, squish, type, quality, holeth = curCoreData
+		self.statusStr = self.statusStr + "Hole: " + hole + " Core: " + core
+		dc.DrawText("Hole: " + hole + " Core: " + core, x, self.startDepth) 
+		dc.DrawText("Min: " + str(min) + " Max: " + str(max), x, self.startDepth + 20) 
+		dc.DrawText("Stretched Ratio: " + str(squish) + "%", x, self.startDepth + 40) 
+
+		qualityStr = "Quality: "
+		qualityStr += "Good" if quality == '0' else "Bad"
+		dc.DrawText(qualityStr, x, self.startDepth + 60) 
+
+		self.minData = min 
+		return (type, holeth)
 
 
-	def DrawMouseInfo(self, dc, x, y, startx, flag, type):
+	def DrawMouseInfo(self, dc, curCoreData, x, y, startx, flag, type):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
@@ -2195,7 +2189,9 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawText(str(tempx), x, self.startDepth - 15)
 				break
 
-		self.statusStr = self.statusStr + " Depth:" + str(ycoord) + " Data: " + str(tempx) 
+		section = self.parent.GetSectionAtDepth(curCoreData[3], int(curCoreData[4]), type, ycoord)
+		self.statusStr += " Section: " + str(section)
+		self.statusStr += " Depth:" + str(ycoord) + " Data: " + str(tempx)
 
 	def DrawAnnotation(self, dc, info, line):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
@@ -2369,9 +2365,7 @@ class DataCanvas(wxBufferedWindow):
 				for r in data:
 					im, x, y = r
 					dc.DrawBitmap(im, self.Width + x - 1, y, 1)
-
-		for key, data in self.DrawData.items():
-			if key == "HScroll":
+			elif key == "HScroll":
 				for r in data:
 					im, x, y = r
 					dc.DrawBitmap(im, x, self.Height + y, 1)
@@ -2399,12 +2393,22 @@ class DataCanvas(wxBufferedWindow):
 		for key, data in self.DrawData.items():
 			if key == "MouseInfo":
 				for r in data:
-					n, x, y, startx, flag = r
-					ret = self.DrawGraphInfo(dc, n, flag)
-					if ret != None :
-						type, holeth = ret
+					coreIndex, x, y, startx, flag = r
+					coreFound = False
+					curCoreData = []
+					for dataList in self.DrawData["CoreInfo"]:
+						for coreData in dataList:
+								if coreData[0] == coreIndex:
+									curCoreData = coreData
+									coreFound = True
+									break
+						if coreFound == True:
+							break
+
+					if coreFound == True:
+						type, holeth = self.DrawGraphInfo(dc, curCoreData, flag)
 						self.selectedHoleType = type
-						self.DrawMouseInfo(dc, x, y, startx, flag, type)
+						self.DrawMouseInfo(dc, curCoreData, x, y, startx, flag, type)
 			if type != "" :
 				break
 		self.parent.statusBar.SetStatusText(self.statusStr)

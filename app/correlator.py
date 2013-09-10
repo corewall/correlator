@@ -2584,6 +2584,9 @@ class MainFrame(wx.Frame):
 				break
 		return idx, type
 
+	def GetSectionAtDepth(self, hole, core, type, depth):
+		return py_correlator.getSectionAtDepth(hole, core, type, depth)
+
 
 	def ShiftSectionSend(self, hole, core, offset, type):
 		if self.client != None :

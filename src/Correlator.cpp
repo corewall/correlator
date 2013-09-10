@@ -579,6 +579,15 @@ double Correlator::getDataAtDepth( char* hole, int coreid, double depth, int cor
 	return valueptr->getData();
 }
 
+int Correlator::getSectionAtDepth( char *hole, int coreid, int coretype, double depth )
+{
+	Core* coreptr = findCore(coretype, hole, coreid, NULL);
+	if(coreptr == NULL) return -1;
+	Value* valueptr = findValue(coreptr, depth);
+	if (valueptr == NULL) return -1;
+	
+	return atoi(valueptr->getSection());
+}
 
 // relativepos --> 0 to 1
 /*int Correlator::composite(int coreidA, double relativeposA, int coreidB, double relativeposB)

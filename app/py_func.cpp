@@ -90,6 +90,7 @@ static PyObject* createNewAge(PyObject *self, PyObject *args);
 static PyObject* formatChange(PyObject *self, PyObject *args);
 static PyObject* setCoreQuality(PyObject *self, PyObject *args);
 static PyObject* getMcdRate(PyObject *self, PyObject *args);
+static PyObject* getSectionAtDepth(PyObject *self, PyObject *args);
 PyMODINIT_FUNC initpy_correlator(void);
 
 // all the methods callable from Python have to be
@@ -280,6 +281,9 @@ static PyMethodDef PyCoreMethods[] = {
 
     {"setCoreQuality", setCoreQuality, METH_VARARGS,
      "Set Core Quality."},
+
+    {"getSectionAtDepth", getSectionAtDepth, METH_VARARGS,
+     "Given a hole and core, get section number at provided depth." },
 
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
@@ -2482,3 +2486,41 @@ static PyObject* cleanData(PyObject *self, PyObject *args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
+static PyObject* getSectionAtDepth(PyObject *self, PyObject *args)
+{
+	char *holeName = NULL;
+	char *typeName = NULL;
+	int coreIndex = -1;
+	float depth = 0.0f;
+
+	if (!PyArg_ParseTuple(args, "sisf", &holeName, &coreIndex, &typeName, &depth))
+		return NULL;
+
+	// 9/9/2013 brgtodo: duplication: string type <-> integer type conversion all over
+	// this file.
+	int coreType = USERDEFINEDTYPE;
+	if (strcmp(typeName, "Bulk Density(GRA)") == 0)
+		coreType = GRA; 
+	else if (strcmp(typeName, "PWave") == 0)
+		coreType = PWAVE; 
+	else if (strcmp(typeName, "Pwave") == 0)
+		coreType = PWAVE; 
+	else if (strcmp(typeName, "Susceptibility") == 0)
+		coreType = SUSCEPTIBILITY; 
+	else if (strcmp(typeName, "Natural Gamma") == 0)
+		coreType = NATURALGAMMA; 
+	else if (strcmp(typeName, "NaturalGamma") == 0)
+		coreType = NATURALGAMMA; 
+	else if (strcmp(typeName, "Reflectance") == 0)
+		coreType = REFLECTANCE; 
+	else if (strcmp(typeName, "OtherType") == 0)
+		coreType = OTHERTYPE;
+	else
+		return NULL;
+
+	const int sectionNumber = correlator.getSectionAtDepth(holeName, coreIndex, coreType, (double)depth);
+
+	return Py_BuildValue("i", sectionNumber);
+}
+
