@@ -27,6 +27,11 @@ Data* logdataptr = NULL;
 
 using namespace std;
 
+// local utility functions
+static bool getTypeAndAnnot(char *typeStr, int &outType, char **outAnnot);
+static int getType(char *typeStr);
+
+
 // prototypes
 static PyObject* initialize(PyObject *self, PyObject *args);
 static PyObject* openHoleFile(PyObject *self, PyObject *args);
@@ -499,30 +504,7 @@ static PyObject* decimate(PyObject *self, PyObject *args)
 	{
 		int coretype = USERDEFINEDTYPE;
 		char* annotation = NULL;
-		if(strcmp(type, "All Holes") == 0)
-			coretype = ALL;
-		else if (strcmp(type, "All Bulk Density(GRA)") == 0)
-			coretype = GRA; 
-		else if (strcmp(type, "All PWave") == 0)
-			coretype = PWAVE; 
-		else if (strcmp(type, "All Pwave") == 0)
-			coretype = PWAVE; 
-		else if (strcmp(type, "All Susceptibility") == 0)
-			coretype = SUSCEPTIBILITY; 
-		else if (strcmp(type, "All Natural Gamma") == 0)
-			coretype = NATURALGAMMA; 
-		else if (strcmp(type, "All NaturalGamma") == 0)
-			coretype = NATURALGAMMA; 
-		else if (strcmp(type, "All Reflectance") == 0)
-			coretype = REFLECTANCE; 
-		else if (strcmp(type, "All OtherType") == 0)
-			coretype = OTHERTYPE; 
-		else if (strcmp(type, "Log") == 0)
-			coretype = LOGTYPE; 
-		else 
-			annotation = type;
-
-		//cout << "type "  << type << " type-id = " << coretype << endl;
+		getTypeAndAnnot(type, coretype, &annotation);
 
 		DecimateFilter* decifilter = NULL;
 		filter_manager.setData(dataptr);
@@ -548,49 +530,13 @@ static PyObject* smooth(PyObject *self, PyObject *args)
 	{
 		int coretype = USERDEFINEDTYPE;
 		char* annotation = NULL;
-		if(strcmp(type, "All Holes") == 0)
-			coretype = ALL;
-		else if (strcmp(type, "All Bulk Density(GRA)") == 0)
-			coretype = GRA; 
-		else if (strcmp(type, "Bulk Density(GRA)") == 0)
-			coretype = GRA; 
-		else if (strcmp(type, "All Pwave") == 0)
-			coretype = PWAVE; 
-		else if (strcmp(type, "Pwave") == 0)
-			coretype = PWAVE; 
-		else if (strcmp(type, "All PWave") == 0)
-			coretype = PWAVE; 
-		else if (strcmp(type, "PWave") == 0)
-			coretype = PWAVE; 
-		else if (strcmp(type, "All Susceptibility") == 0)
-			coretype = SUSCEPTIBILITY; 
-		else if (strcmp(type, "Susceptibility") == 0)
-			coretype = SUSCEPTIBILITY; 
-		else if (strcmp(type, "All Natural Gamma") == 0)
-			coretype = NATURALGAMMA; 
-		else if (strcmp(type, "Natural Gamma") == 0)
-			coretype = NATURALGAMMA; 
-		else if (strcmp(type, "All NaturalGamma") == 0)
-			coretype = NATURALGAMMA; 
-		else if (strcmp(type, "NaturalGamma") == 0)
-			coretype = NATURALGAMMA; 
-		else if (strcmp(type, "All Reflectance") == 0)
-			coretype = REFLECTANCE; 
-		else if (strcmp(type, "Reflectance") == 0)
-			coretype = REFLECTANCE; 
-		else if (strcmp(type, "All OtherType") == 0)
-			coretype = OTHERTYPE; 
-		else if (strcmp(type, "Log") == 0)
-			coretype = LOGTYPE; 
-		else if (strcmp(type, "Spliced Records") == 0)
+		getTypeAndAnnot(type, coretype, &annotation);
+
+		if (coretype == SPLICE)
 		{
-			coretype = SPLICE; 
 			filter_manager.setSpliceHole(correlator.getSpliceHole());
 			filter_manager.setSaganHole(correlator.getHolePtr(ELD_RECORD));
-		} else 
-			annotation = type;
-
-		//cout << "smooth = type "  << type << " type-id = " << coretype << endl;
+		}
 
 		GaussianFilter* smoothfilter = NULL;
 		filter_manager.setData(dataptr);
@@ -727,26 +673,8 @@ static PyObject* setCorrelate(PyObject *self, PyObject *args)
 	{
 		int coretype = USERDEFINEDTYPE;
 		char* annotation = NULL;
-		if (strcmp(type, "Bulk Density(GRA)") == 0)
-			coretype = GRA; 
-		else if (strcmp(type, "Pwave") == 0)
-			coretype = PWAVE; 
-		else if (strcmp(type, "PWave") == 0)
-			coretype = PWAVE; 
-		else if (strcmp(type, "Susceptibility") == 0)
-			coretype = SUSCEPTIBILITY; 
-		else if (strcmp(type, "NaturalGamma") == 0)
-			coretype = NATURALGAMMA; 
-		else if (strcmp(type, "Natural Gamma") == 0)
-			coretype = NATURALGAMMA; 
-		else if (strcmp(type, "Reflectance") == 0)
-			coretype = REFLECTANCE; 
-		else if (strcmp(type, "OtherType") == 0)
-			coretype = OTHERTYPE; 
-		else if (strcmp(type, "Log") == 0)
-			coretype = LOGTYPE; 
-		else 
-			annotation = type;
+		getTypeAndAnnot(type, coretype, &annotation);
+
 		autocorrelator.addHole(hole_name, coretype, annotation);
 	}
 
@@ -837,29 +765,7 @@ static PyObject* cull(PyObject *self, PyObject *args)
 
 	int coretype = USERDEFINEDTYPE;
 	char* annotation = NULL;
-	if(strcmp(type, "All Holes") == 0)
-		coretype = ALL;
-	else if (strcmp(type, "All Bulk Density(GRA)") == 0)
-		coretype = GRA; 
-	else if (strcmp(type, "All Pwave") == 0)
-		coretype = PWAVE; 
-	else if (strcmp(type, "All PWave") == 0)
-		coretype = PWAVE; 
-	else if (strcmp(type, "All Susceptibility") == 0)
-		coretype = SUSCEPTIBILITY; 
-	else if (strcmp(type, "All Natural Gamma") == 0)
-		coretype = NATURALGAMMA; 
-	else if (strcmp(type, "All NaturalGamma") == 0)
-		coretype = NATURALGAMMA; 
-	else if (strcmp(type, "All Reflectance") == 0)
-		coretype = REFLECTANCE; 
-	else if (strcmp(type, "All OtherType") == 0)
-		coretype = OTHERTYPE; 
-	else if (strcmp(type, "Log") == 0)
-		coretype = LOGTYPE; 
-	else 
-		annotation = type;
-	//cout << "[DEBUG] CULL : type --> " << coretype << " " << type << endl;
+	getTypeAndAnnot(type, coretype, &annotation);
 
 	filter_manager.setData(dataptr);
 	if (cull == 1)
@@ -950,28 +856,7 @@ static PyObject* saveCullTable(PyObject *self, PyObject *args)
 	{
 		int coretype = USERDEFINEDTYPE;
 		char* annotation = NULL;
-		if (strcmp(type, "Bulk Density(GRA)") == 0)
-			coretype = GRA; 
-		else if (strcmp(type, "Pwave") == 0)
-			coretype = PWAVE; 
-		else if (strcmp(type, "PWave") == 0)
-			coretype = PWAVE; 
-		else if (strcmp(type, "Susceptibility") == 0)
-			coretype = SUSCEPTIBILITY; 
-		else if (strcmp(type, "NaturalGamma") == 0)
-			coretype = NATURALGAMMA; 
-		else if (strcmp(type, "Natural Gamma") == 0)
-			coretype = NATURALGAMMA; 
-		else if (strcmp(type, "Reflectance") == 0)
-			coretype = REFLECTANCE; 
-		else if (strcmp(type, "OtherType") == 0)
-			coretype = OTHERTYPE; 
-		else if (strcmp(type, "Log") == 0)
-			coretype = LOGTYPE; 
-		else 
-			annotation = type;
-
-		//cout << " type ==> " << type << " " << coretype << endl;
+		getTypeAndAnnot(type, coretype, &annotation);
 
 		CullFilter* cullfilter = NULL;
 		filter_manager.setData(dataptr);
@@ -1131,28 +1016,7 @@ static PyObject* getRatio(PyObject *self, PyObject *args)
 
 	int coretype = USERDEFINEDTYPE;
 	char* annotation = NULL;
-	if (strcmp(type, "Bulk Density(GRA)") == 0)
-		coretype = GRA;
-	else if (strcmp(type, "Pwave") == 0)
-		coretype = PWAVE;
-	else if (strcmp(type, "PWave") == 0)
-		coretype = PWAVE;
-	else if (strcmp(type, "Susceptibility") == 0)
-		coretype = SUSCEPTIBILITY;
-	else if (strcmp(type, "NaturalGamma") == 0)
-		coretype = NATURALGAMMA;
-	else if (strcmp(type, "Natural Gamma") == 0)
-		coretype = NATURALGAMMA;
-	else if (strcmp(type, "Reflectance") == 0)
-		coretype = REFLECTANCE;
-	else if (strcmp(type, "OtherType") == 0)
-		coretype = OTHERTYPE;
-	else if (strcmp(type, "Log") == 0)
-		coretype = LOGTYPE;
-	else if (strcmp(type, "Splice") == 0)
-		coretype = SPLICE;
-	else 
-		annotation = type;
+	getTypeAndAnnot(type, coretype, &annotation);
 
 	float ratio =0.0f;
 	if (coretype == LOGTYPE) 
@@ -1195,26 +1059,7 @@ static PyObject* getRange(PyObject *self, PyObject *args)
 
 	int coretype = USERDEFINEDTYPE;
 	char* annotation = NULL;
-	if (strcmp(type, "Bulk Density(GRA)") == 0)
-		coretype = GRA;
-	else if (strcmp(type, "Pwave") == 0)
-		coretype = PWAVE;
-	else if (strcmp(type, "PWave") == 0)
-		coretype = PWAVE;
-	else if (strcmp(type, "Susceptibility") == 0)
-		coretype = SUSCEPTIBILITY;
-	else if (strcmp(type, "NaturalGamma") == 0)
-		coretype = NATURALGAMMA;
-	else if (strcmp(type, "Natural Gamma") == 0)
-		coretype = NATURALGAMMA;
-	else if (strcmp(type, "Reflectance") == 0)
-		coretype = REFLECTANCE;
-	else if (strcmp(type, "OtherType") == 0)
-		coretype = OTHERTYPE;
-	else if (strcmp(type, "Log") == 0)
-		coretype = LOGTYPE;
-	else 
-		annotation = type;
+	getTypeAndAnnot(type, coretype, &annotation);
 
 	double min, max;
 	if (coretype == LOGTYPE) 
@@ -1255,24 +1100,7 @@ static PyObject* getDataAtDepth(PyObject *self, PyObject *args)
 
 	char* annotation = NULL;
 	int coretype = USERDEFINEDTYPE;
-	if (strcmp(type, "Bulk Density(GRA)") == 0)
-		coretype = GRA; 
-	else if (strcmp(type, "PWave") == 0)
-		coretype = PWAVE; 
-	else if (strcmp(type, "Pwave") == 0)
-		coretype = PWAVE; 
-	else if (strcmp(type, "Susceptibility") == 0)
-		coretype = SUSCEPTIBILITY; 
-	else if (strcmp(type, "Natural Gamma") == 0)
-		coretype = NATURALGAMMA; 
-	else if (strcmp(type, "NaturalGamma") == 0)
-		coretype = NATURALGAMMA; 
-	else if (strcmp(type, "Reflectance") == 0)
-		coretype = REFLECTANCE; 
-	else if (strcmp(type, "OtherType") == 0)
-		coretype = OTHERTYPE; 
-	else 
-		annotation = type;
+	getTypeAndAnnot(type, coretype, &annotation);
 
 	float ret = (float)(correlator.getDataAtDepth(hole, coreid, pos, coretype, annotation));
 	return Py_BuildValue("f", ret);
@@ -1424,24 +1252,7 @@ static PyObject* composite(PyObject *self, PyObject *args)
 
 	char* annotation = NULL;
 	int coretype = USERDEFINEDTYPE;
-	if (strcmp(type, "Bulk Density(GRA)") == 0)
-		coretype = GRA; 
-	else if (strcmp(type, "PWave") == 0)
-		coretype = PWAVE; 
-	else if (strcmp(type, "Pwave") == 0)
-		coretype = PWAVE; 
-	else if (strcmp(type, "Susceptibility") == 0)
-		coretype = SUSCEPTIBILITY; 
-	else if (strcmp(type, "Natural Gamma") == 0)
-		coretype = NATURALGAMMA; 
-	else if (strcmp(type, "NaturalGamma") == 0)
-		coretype = NATURALGAMMA; 
-	else if (strcmp(type, "Reflectance") == 0)
-		coretype = REFLECTANCE; 
-	else if (strcmp(type, "OtherType") == 0)
-		coretype = OTHERTYPE; 
-	else 
-		annotation = type;
+	getTypeAndAnnot(type, coretype, &annotation);
 
 	float ret=0.0;
 	if(opt == 2)
@@ -1476,45 +1287,11 @@ static PyObject* evalcoef(PyObject *self, PyObject *args)
 
 	int coretypeA = USERDEFINEDTYPE;
 	char* annotationA = NULL;
-	if (strcmp(typeA, "Bulk Density(GRA)") == 0)
-		coretypeA = GRA; 
-	else if (strcmp(typeA, "PWave") == 0)
-		coretypeA = PWAVE; 
-	else if (strcmp(typeA, "Pwave") == 0)
-		coretypeA = PWAVE; 
-	else if (strcmp(typeA, "Susceptibility") == 0)
-		coretypeA = SUSCEPTIBILITY; 
-	else if (strcmp(typeA, "Natural Gamma") == 0)
-		coretypeA = NATURALGAMMA; 
-	else if (strcmp(typeA, "NaturalGamma") == 0)
-		coretypeA = NATURALGAMMA; 
-	else if (strcmp(typeA, "Reflectance") == 0)
-		coretypeA = REFLECTANCE; 
-	else if (strcmp(typeA, "OtherType") == 0)
-		coretypeA = OTHERTYPE; 
-	else 
-		annotationA = typeA;
+	getTypeAndAnnot(typeA, coretypeA, &annotationA);
 
 	int coretypeB = USERDEFINEDTYPE;
 	char* annotationB = NULL;
-	if (strcmp(typeB, "Bulk Density(GRA)") == 0)
-		coretypeB = GRA; 
-	else if (strcmp(typeB, "PWave") == 0)
-		coretypeB = PWAVE; 
-	else if (strcmp(typeB, "Pwave") == 0)
-		coretypeB = PWAVE; 
-	else if (strcmp(typeB, "Susceptibility") == 0)
-		coretypeB = SUSCEPTIBILITY; 
-	else if (strcmp(typeB, "Natural Gamma") == 0)
-		coretypeB = NATURALGAMMA; 
-	else if (strcmp(typeB, "NaturalGamma") == 0)
-		coretypeB = NATURALGAMMA; 
-	else if (strcmp(typeB, "Reflectance") == 0)
-		coretypeB = REFLECTANCE; 
-	else if (strcmp(typeB, "OtherType") == 0)
-		coretypeB = OTHERTYPE; 
-	else 
-		annotationB = typeB;
+	getTypeAndAnnot(typeB, coretypeB, &annotationB);
 
 	int ret=0;
 	ret = correlator.evalCore(coretypeA, annotationA, holeA, coreidA, posA, coretypeB, annotationB, holeB, coreidB, posB);
@@ -1540,24 +1317,7 @@ static PyObject* evalcoef_splice(PyObject *self, PyObject *args)
 
 	int coretypeA = USERDEFINEDTYPE;
 	char* annotationA = NULL;
-	if (strcmp(typeA, "Bulk Density(GRA)") == 0)
-		coretypeA = GRA; 
-	else if (strcmp(typeA, "PWave") == 0)
-		coretypeA = PWAVE; 
-	else if (strcmp(typeA, "Pwave") == 0)
-		coretypeA = PWAVE; 
-	else if (strcmp(typeA, "Susceptibility") == 0)
-		coretypeA = SUSCEPTIBILITY; 
-	else if (strcmp(typeA, "Natural Gamma") == 0)
-		coretypeA = NATURALGAMMA; 
-	else if (strcmp(typeA, "NaturalGamma") == 0)
-		coretypeA = NATURALGAMMA; 
-	else if (strcmp(typeA, "Reflectance") == 0)
-		coretypeA = REFLECTANCE; 
-	else if (strcmp(typeA, "OtherType") == 0)
-		coretypeA = OTHERTYPE; 
-	else 
-		annotationA = typeA;
+	getTypeAndAnnot(typeA, coretypeA, &annotationA);
 
 	int ret=0;
 	ret = correlator.evalSpliceCore(coretypeA, annotationA, holeA, coreidA, posA, posB);
@@ -1606,24 +1366,7 @@ static PyObject* first_splice(PyObject *self, PyObject *args)
 	//cout << " type = " << type << endl;
 	int coretype = USERDEFINEDTYPE;
 	char* annotation = NULL;
-	if (strcmp(type, "Bulk Density(GRA)") == 0)
-		coretype = GRA; 
-	else if (strcmp(type, "PWave") == 0)
-		coretype = PWAVE; 
-	else if (strcmp(type, "Pwave") == 0)
-		coretype = PWAVE; 
-	else if (strcmp(type, "Susceptibility") == 0)
-		coretype = SUSCEPTIBILITY; 
-	else if (strcmp(type, "Natural Gamma") == 0)
-		coretype = NATURALGAMMA; 
-	else if (strcmp(type, "NaturalGamma") == 0)
-		coretype = NATURALGAMMA; 
-	else if (strcmp(type, "Reflectance") == 0)
-		coretype = REFLECTANCE; 
-	else if (strcmp(type, "OtherType") == 0)
-		coretype = OTHERTYPE; 
-	else 
-		annotation = type;
+	getTypeAndAnnot(type, coretype, &annotation);
 
 	int ret;
 	if (append == 0)
@@ -1694,25 +1437,7 @@ static PyObject* setCoreQuality(PyObject *self, PyObject *args)
 
 	int coretype = USERDEFINEDTYPE;
 	char* annotation = NULL;
-	if (strcmp(type, "Bulk Density(GRA)") == 0)
-		coretype = GRA; 
-	else if (strcmp(type, "Pwave") == 0)
-		coretype = PWAVE; 
-	else if (strcmp(type, "PWave") == 0)
-		coretype = PWAVE; 
-	else if (strcmp(type, "Susceptibility") == 0)
-		coretype = SUSCEPTIBILITY; 
-	else if (strcmp(type, "NaturalGamma") == 0)
-		coretype = NATURALGAMMA; 
-	else if (strcmp(type, "Natural Gamma") == 0)
-		coretype = NATURALGAMMA; 
-	else if (strcmp(type, "Reflectance") == 0)
-		coretype = REFLECTANCE; 
-	else if (strcmp(type, "OtherType") == 0)
-		coretype = OTHERTYPE; 
-	else 
-		annotation = type;
-
+	getTypeAndAnnot(type, coretype, &annotation);
 	correlator.setCoreQuality(hole, coreid, coretype, quality, annotation);
 
 	//cout << " type ==> " << type << " " << coretype << endl;
@@ -1794,24 +1519,7 @@ static PyObject* append_selected(PyObject *self, PyObject *args)
 
 	int coretype = USERDEFINEDTYPE;
 	char* annot = NULL;
-	if (strcmp(type, "Bulk Density(GRA)") == 0)
-		coretype = GRA; 
-	else if (strcmp(type, "PWave") == 0)
-		coretype = PWAVE; 
-	else if (strcmp(type, "Pwave") == 0)
-		coretype = PWAVE; 
-	else if (strcmp(type, "Susceptibility") == 0)
-		coretype = SUSCEPTIBILITY; 
-	else if (strcmp(type, "Natural Gamma") == 0)
-		coretype = NATURALGAMMA; 
-	else if (strcmp(type, "NaturalGamma") == 0)
-		coretype = NATURALGAMMA; 
-	else if (strcmp(type, "Reflectance") == 0)
-		coretype = REFLECTANCE; 
-	else if (strcmp(type, "OtherType") == 0)
-		coretype = OTHERTYPE; 
-	else 
-		annot = type;
+	getTypeAndAnnot(type, coretype, &annot);
 
 	int ret = correlator.appendSelectedSplice(coretype, annot, hole, coreid);
 	correlator.generateSpliceHole();
@@ -1850,45 +1558,11 @@ static PyObject* splice(PyObject *self, PyObject *args)
 	//cout << "[DEBUG] type A = " << typeA << " type B = " << typeB << " " << posA << " " << posB << endl;
 	int coretypeA = USERDEFINEDTYPE;
 	char* annotA = NULL;
-	if (strcmp(typeA, "Bulk Density(GRA)") == 0)
-		coretypeA = GRA; 
-	else if (strcmp(typeA, "PWave") == 0)
-		coretypeA = PWAVE; 
-	else if (strcmp(typeA, "Pwave") == 0)
-		coretypeA = PWAVE; 
-	else if (strcmp(typeA, "Susceptibility") == 0)
-		coretypeA = SUSCEPTIBILITY; 
-	else if (strcmp(typeA, "Natural Gamma") == 0)
-		coretypeA = NATURALGAMMA; 
-	else if (strcmp(typeA, "NaturalGamma") == 0)
-		coretypeA = NATURALGAMMA; 
-	else if (strcmp(typeA, "Reflectance") == 0)
-		coretypeA = REFLECTANCE; 
-	else if (strcmp(typeA, "OtherType") == 0)
-		coretypeA = OTHERTYPE; 
-	else 
-		annotA = typeA;
+	getTypeAndAnnot(typeA, coretypeA, &annotA);
 
 	int coretypeB = USERDEFINEDTYPE;
 	char* annotB = NULL;
-	if (strcmp(typeB, "Bulk Density(GRA)") == 0)
-		coretypeB = GRA; 
-	else if (strcmp(typeB, "PWave") == 0)
-		coretypeB = PWAVE; 
-	else if (strcmp(typeB, "Pwave") == 0)
-		coretypeB = PWAVE; 
-	else if (strcmp(typeB, "Susceptibility") == 0)
-		coretypeB = SUSCEPTIBILITY; 
-	else if (strcmp(typeB, "Natural Gamma") == 0)
-		coretypeB = NATURALGAMMA; 
-	else if (strcmp(typeB, "NaturalGamma") == 0)
-		coretypeB = NATURALGAMMA; 
-	else if (strcmp(typeB, "Reflectance") == 0)
-		coretypeB = REFLECTANCE; 
-	else if (strcmp(typeB, "OtherType") == 0)
-		coretypeB = OTHERTYPE; 
-	else 
-		annotB = typeB;
+	getTypeAndAnnot(typeB, coretypeB, &annotB);
 
 	int ret  = correlator.splice(tieNo, coretypeA, annotA, holeA, coreidA, posA, coretypeB, annotB, holeB, coreidB, posB, appendflag);
 	dataptr->update();
@@ -2258,24 +1932,7 @@ static PyObject* loadAltSpliceFile(PyObject *self, PyObject *args)
 
 		int coretype = USERDEFINEDTYPE;
 		char* annotation = NULL;
-		if (strcmp(type, "Bulk Density(GRA)") == 0)
-			coretype = GRA; 
-		else if (strcmp(type, "PWave") == 0)
-			coretype = PWAVE; 
-		else if (strcmp(type, "Pwave") == 0)
-			coretype = PWAVE; 
-		else if (strcmp(type, "Susceptibility") == 0)
-			coretype = SUSCEPTIBILITY; 
-		else if (strcmp(type, "Natural Gamma") == 0)
-			coretype = NATURALGAMMA; 
-		else if (strcmp(type, "NaturalGamma") == 0)
-			coretype = NATURALGAMMA; 
-		else if (strcmp(type, "Reflectance") == 0)
-			coretype = REFLECTANCE; 
-		else if (strcmp(type, "OtherType") == 0)
-			coretype = OTHERTYPE; 
-		else 
-			annotation = type;
+		getTypeAndAnnot(type, coretype, &annotation);
 
 		g_data = ""; 
 		if (dataptr != NULL)
@@ -2497,30 +2154,60 @@ static PyObject* getSectionAtDepth(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "sisf", &holeName, &coreIndex, &typeName, &depth))
 		return NULL;
 
-	// 9/9/2013 brgtodo: duplication: string type <-> integer type conversion all over
-	// this file.
-	int coreType = USERDEFINEDTYPE;
-	if (strcmp(typeName, "Bulk Density(GRA)") == 0)
-		coreType = GRA; 
-	else if (strcmp(typeName, "PWave") == 0)
-		coreType = PWAVE; 
-	else if (strcmp(typeName, "Pwave") == 0)
-		coreType = PWAVE; 
-	else if (strcmp(typeName, "Susceptibility") == 0)
-		coreType = SUSCEPTIBILITY; 
-	else if (strcmp(typeName, "Natural Gamma") == 0)
-		coreType = NATURALGAMMA; 
-	else if (strcmp(typeName, "NaturalGamma") == 0)
-		coreType = NATURALGAMMA; 
-	else if (strcmp(typeName, "Reflectance") == 0)
-		coreType = REFLECTANCE; 
-	else if (strcmp(typeName, "OtherType") == 0)
-		coreType = OTHERTYPE;
-	else
-		return NULL;
-
+	const int coreType = getType(typeName);
 	const int sectionNumber = correlator.getSectionAtDepth(holeName, coreIndex, coreType, (double)depth);
 
 	return Py_BuildValue("i", sectionNumber);
 }
 
+static int getType(char *typeStr)
+{
+	int coreType = -1;
+
+	if (strcmp(typeStr, "All Holes") == 0)
+		coreType = ALL;
+	else if ((strcmp(typeStr, "All Bulk Density(GRA)") == 0) || (strcmp(typeStr, "Bulk Density(GRA)") == 0))
+		coreType = GRA; 
+	else if ((strcmp(typeStr, "All Pwave") == 0) || (strcmp(typeStr, "Pwave") == 0) || (strcmp(typeStr, "All PWave") == 0) || (strcmp(typeStr, "PWave") == 0))
+		coreType = PWAVE;
+	else if ((strcmp(typeStr, "All Susceptibility") == 0) || (strcmp(typeStr, "Susceptibility") == 0))
+		coreType = SUSCEPTIBILITY; 
+	else if ((strcmp(typeStr, "All Natural Gamma") == 0) || (strcmp(typeStr, "Natural Gamma") == 0) || (strcmp(typeStr, "All NaturalGamma") == 0) || (strcmp(typeStr, "NaturalGamma") == 0))
+		coreType = NATURALGAMMA; 
+	else if ((strcmp(typeStr, "All Reflectance") == 0) || (strcmp(typeStr, "Reflectance") == 0))
+		coreType = REFLECTANCE; 
+	else if ((strcmp(typeStr, "All OtherType") == 0) || (strcmp(typeStr, "OtherType") == 0))
+		coreType = OTHERTYPE; 
+	else if (strcmp(typeStr, "Log") == 0)
+		coreType = LOGTYPE; 
+	else if (strcmp(typeStr, "Spliced Records") == 0)
+		coreType = SPLICE; 
+	else
+		coreType = USERDEFINEDTYPE;
+
+	return coreType;
+}
+
+// 9/9/2013 brg
+// Given typeStr, attempt to find an integer type - if none can be found,
+// set outAnnot = to typeStr. This logic is duplicated throughout py_func.cpp.
+// I'm not in love with using parameters for output, but it's less offensive
+// than the duplication by a long shot.
+static bool getTypeAndAnnot(char *typeStr, int &outType, char **outAnnot)
+{
+	bool foundType = false;
+	const int type = getType(typeStr);
+	if (type != -1)
+	{
+		outType = type;
+		*outAnnot = NULL;
+		foundType = true;
+	}
+	else
+	{
+		outType = USERDEFINEDTYPE;
+		*outAnnot = typeStr;
+	}
+
+	return foundType;
+}
