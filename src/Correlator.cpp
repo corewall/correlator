@@ -460,7 +460,7 @@ int Correlator::undo(void)
 			{
 				if (strcmp(holeptr->getAnnotation(), annot) == 0)
 					continue;
-			} else if(holeptr->getType() == coretype)
+			} else if (holeptr->getType() == coretype)
 				continue;
 						
 			numCores =  holeptr->getNumOfCores();
@@ -723,7 +723,7 @@ int Correlator::composite(char* holeA, int coreidA, double offset, int coretype,
 	//cout << " core type = " << coretype << endl;
 	//cout << "------------------------" << endl;
     Core* coreptr = findCore(coretype, holeA, coreidA, annot);
-    if(coreptr == NULL) 
+    if (coreptr == NULL) 
 	{
 #ifdef DEBUG
         cout << "[Composite] Error : can not find core" << endl;
@@ -749,7 +749,7 @@ int Correlator::composite(char* holeA, int coreidA, double offset, int coretype,
 			{
 				if (strcmp(holeptr->getAnnotation(), annot) == 0)
 					continue;
-			} else if(holeptr->getType() == coretype)
+			} else if (holeptr->getType() == coretype)
 				continue;
 						
 			numCores =  holeptr->getNumOfCores();
@@ -777,7 +777,7 @@ int Correlator::composite(char* holeA, int coreidA, double offset, int coretype,
 int Correlator::compositeBelow(char* holeA, int coreidA, double offset, int coretype, char* annot)
 {
     Core* coreptr = findCore(coretype, holeA, coreidA, annot);
-    if(coreptr == NULL) 
+    if (coreptr == NULL) 
 	{
 #ifdef DEBUG
         cout << "[Composite] Error : can not find core" << endl;
@@ -846,7 +846,7 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 	Core* coreptrA = findCore(coretype, holeA, coreidA, annot);
 	Core* coreptrB = findCore(coretype, holeB, coreidB, annot);
 		
-    if(coreptrA == NULL || coreptrB == NULL) 
+    if (coreptrA == NULL || coreptrB == NULL) 
 	{
 #ifdef DEBUG
         cout << "[Composite] Error : can not find core" << endl;
@@ -880,7 +880,7 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 			{
 				if (strcmp(holeptr->getAnnotation(), annot) == 0)
 					continue;
-			} else if(holeptr->getType() == coretype)
+			} else if (holeptr->getType() == coretype)
 				continue;
 				
 			numCores =  holeptr->getNumOfCores();
@@ -1756,12 +1756,12 @@ void Correlator::generateSpliceHole(Hole* newSpliceHole) {
 	for(int i=0; i < numHoles; i++)
 	{
 		holeptr = m_dataptr->getHole(i);
-        if(holeptr == NULL) continue;
+        if (holeptr == NULL) continue;
         numCores =  holeptr->getNumOfCores();
         for(int j=0; j <= numCores; j++)
         {
 			coreptr = holeptr->getCore(j);
-            if(coreptr == NULL) continue;
+            if (coreptr == NULL) continue;
 			numTies = coreptr->getNumOfTies();
 			
             for(int k=0; k < numTies; k++)
@@ -1980,7 +1980,7 @@ void Correlator::generateSpliceHole(Hole* newSpliceHole) {
 				continue;
 			}
 
-		} else if((tieptr->isAppend() == true) && tieptr->isAll() == true)
+		} else if ((tieptr->isAppend() == true) && tieptr->isAll() == true)
 		{
 			if(append == true) 
 			{
@@ -2133,7 +2133,7 @@ void Correlator::generateSpliceHole(Hole* newSpliceHole) {
 				if((tieptr->isAppend() == true)  && (tieptr->isAll() == false))
 				{
 					assignBelowValues(coreptr, coreA1, infoTieToA->m_valueptr, lastvalue, tieptr->isConstrained(), infoTieToA->m_mcd, 0);
-				} else if((tieptr->isAppend() == true)  && (tieptr->isAll() == true))
+				} else if ((tieptr->isAppend() == true)  && (tieptr->isAll() == true))
 				{ 
 #ifdef DEBUG
 					cout << lastvalue->getELD() << " "  << infoTieToA->m_valueptr->getELD() << " " << infoTiedA->m_valueptr->getELD() << endl;
@@ -2198,7 +2198,7 @@ void Correlator::generateSpliceHole(Hole* newSpliceHole) {
 				coreptr->updateRange();	
 				//cout << "5. ----------append " << annotation << " " << coreB1->getType() << " " << coreptr->getType()  << endl;
 			}
-		} else if((tieptr->isAppend() == true) && (tieptr->isAll() == true)) 
+		} else if ((tieptr->isAppend() == true) && (tieptr->isAll() == true)) 
 		{
 			//cout << "end part " << coreA1->getName()  << coreA1->getNumber() << endl;
 			holeptr = m_dataptr->getHole((char*)coreA1->getName());
@@ -2273,12 +2273,12 @@ void Correlator::initiateAltSplice( void )
 	for(int i=0; i < numHoles; i++)
 	{
 		holeptr = m_dataptr->getHole(i);
-        if(holeptr == NULL) continue;
+        if (holeptr == NULL) continue;
         numCores =  holeptr->getNumOfCores();
         for(int j=0; j <= numCores; j++)
         {
 			coreptr = holeptr->getCore(j);
-            if(coreptr == NULL) continue;
+            if (coreptr == NULL) continue;
 			numTies = coreptr->getNumOfTies();
             for(int k=0; k < numTies; k++)
 			{
@@ -2323,12 +2323,12 @@ void Correlator::generateAltSpliceHole( string& data )
 	for(int i=0; i < numHoles; i++)
 	{
 		holeptr = m_dataptr->getHole(i);
-        if(holeptr == NULL) continue;
+        if (holeptr == NULL) continue;
         numCores =  holeptr->getNumOfCores();
         for(int j=0; j <= numCores; j++)
         {
 			coreptr = holeptr->getCore(j);
-            if(coreptr == NULL) continue;
+            if (coreptr == NULL) continue;
 			numTies = coreptr->getNumOfTies();
             for(int k=0; k < numTies; k++)
 			{
@@ -2529,7 +2529,7 @@ void Correlator::generateAltSpliceHole( string& data )
 				continue;
 			}
 
-		} else if((tieptr->isAppend() == true) && tieptr->isAll() == true)
+		} else if ((tieptr->isAppend() == true) && tieptr->isAll() == true)
 		{
 			if(append == true) 
 			{
@@ -2680,7 +2680,7 @@ void Correlator::generateAltSpliceHole( string& data )
 				if((tieptr->isAppend() == true)  && (tieptr->isAll() == false))
 				{
 					assignBelowValues(coreptr, coreA1, infoTieToA->m_valueptr, lastvalue, tieptr->isConstrained(), infoTieToA->m_mcd, 0);
-				} else if((tieptr->isAppend() == true)  && (tieptr->isAll() == true))
+				} else if ((tieptr->isAppend() == true)  && (tieptr->isAll() == true))
 				{ 
 					//cout << lastvalue->getELD() << " "  << infoTieToA->m_valueptr->getELD() << " " << infoTiedA->m_valueptr->getELD() << endl;
 					assignBelowValues(coreptr, coreA1, infoTieToA->m_valueptr, lastvalue, tieptr->isConstrained(), infoTieToA->m_mcd, 0);
@@ -2723,7 +2723,7 @@ void Correlator::generateAltSpliceHole( string& data )
 				coreptr->setAnnotation(&annotation[0]);
 				//cout << "5. ----------append " << annotation << " " << coreB1->getType() << " " << coreptr->getType()  << endl;
 			}
-		} else if((tieptr->isAppend() == true) && (tieptr->isAll() == true)) 
+		} else if ((tieptr->isAppend() == true) && (tieptr->isAll() == true)) 
 		{
 			//cout << "end part " << coreA1->getName()  << coreA1->getNumber() << endl;
 			holeptr = m_dataptr->getHole((char*)coreA1->getName());
@@ -2774,12 +2774,12 @@ void Correlator::generateAltSpliceHole( string& data )
 	for(int i=0; i < numHoles; i++)
 	{
 		holeptr = m_dataptr->getHole(i);
-        if(holeptr == NULL) continue;
+        if (holeptr == NULL) continue;
         numCores =  holeptr->getNumOfCores();
         for(int j=0; j <= numCores; j++)
         {
 			coreptr = holeptr->getCore(j);
-            if(coreptr == NULL) continue;
+            if (coreptr == NULL) continue;
 			numTies = coreptr->getNumOfTies();
 			//cout << coreptr->getName() << " " << coreptr->getNumber() << " " << numTies << endl;
             for(int k=0; k < numTies; k++)
@@ -2828,7 +2828,7 @@ void Correlator::setAgeSeries(int idx, double depth, char* code)
 		for(int i=0; i < numHoles; i++)
 		{
 			 holeptr = m_dataptr->getHole(i);
-			 if(holeptr == NULL) continue;
+			 if (holeptr == NULL) continue;
 			 numCores =  holeptr->getNumOfCores();
 			 for(int j=0; j < numCores; j++)
 			 {
@@ -2854,7 +2854,7 @@ void Correlator::setAgeSeries(int idx, double depth, char* code)
 		for(int i=0; i < numHoles; i++)
 		{
 			 holeptr = m_dataptr->getHole(i);
-			 if(holeptr == NULL) continue;
+			 if (holeptr == NULL) continue;
 			 numCores =  holeptr->getNumOfCores();
 			 for(int j=0; j < numCores; j++)
 			 {
@@ -2885,7 +2885,7 @@ void Correlator::getTuple( string& data, int type )
 		 holeptr = m_mainHole[1];
 		 type = DATA;
 	}
-	else if(type == LOGSMOOTH)
+	else if (type == LOGSMOOTH)
 	{
 		 holeptr = m_mainHole[1];
 		 type = LOGSMOOTH;
@@ -3051,11 +3051,11 @@ void Correlator::getCoefList( string& data )
 
 void Correlator::squish(char* hole, int coreid, double squish )
 {
-        if(m_dataptr == NULL) return;
+        if (m_dataptr == NULL) return;
 
         Core* coreptr = findCore(hole, coreid);
 
-        if(coreptr == NULL)
+        if (coreptr == NULL)
 	{
 #ifdef DEBUG
                 cout << "[Squish] Error : can not find core" << endl;
@@ -3091,11 +3091,11 @@ void Correlator::interporlate()
   double coredepth1, corevalue1, coredepth2, corevalue2;
 
   n = data[ds]->holes[h]->core[c]->numgood;
-  if(n < 2) {
+  if (n < 2) {
     return 1;
   }
   *place = -1;
-  if(dep < data[ds]->holes[h]->core[c]->value[data[ds]->holes[h]->core[c]->good[0]]->mbsf ||
+  if (dep < data[ds]->holes[h]->core[c]->value[data[ds]->holes[h]->core[c]->good[0]]->mbsf ||
      dep > data[ds]->holes[h]->core[c]->value[data[ds]->holes[h]->core[c]->good[n-1]]->mbsf) {
     return 1;
   }
@@ -3104,12 +3104,12 @@ void Correlator::interporlate()
     k = data[ds]->holes[h]->core[c]->good[i+1];
     coredepth1 = data[ds]->holes[h]->core[c]->value[j]->mbsf;
     coredepth2 = data[ds]->holes[h]->core[c]->value[k]->mbsf;
-    if(dep >= coredepth1 && dep <= coredepth2) {
-      if(sm == YES) {
+    if (dep >= coredepth1 && dep <= coredepth2) {
+      if (sm == YES) {
         corevalue1 = data[ds]->holes[h]->core[c]->value[j]->sm_data;;
         corevalue2 = data[ds]->holes[h]->core[c]->value[k]->sm_data;;
       }
-      else if(sm == NO) {
+      else if (sm == NO) {
         corevalue1 = *data[ds]->holes[h]->core[c]->value[j]->data;
         corevalue2 = *data[ds]->holes[h]->core[c]->value[k]->data;
       }
@@ -4170,7 +4170,7 @@ void Correlator::generateSagan(void)
 						assignRateToValues(holeptr, infoTiedA->m_coreptr, infoTiedB->m_coreptr, valueTiedA, valueTiedB, a, b);
 						//std::cout << "a= " << a << " b= " << b << std::endl;	
 					}	
-				} else if(m_floating == false)
+				} else if (m_floating == false)
 				{
 					if(valueTieToB && valueTiedB)
 					{
@@ -4249,7 +4249,7 @@ Tie* Correlator::createTie( int type, Core* coreA, double posA, Core* coreB, dou
 		if(type == COMPOSITED_TIE) 
 		{
 			cout << "[Composite] ";
-		} else if(type == REAL_TIE)
+		} else if (type == REAL_TIE)
 		{
 			cout << "[Splice] ";
 		} else 
@@ -4294,10 +4294,10 @@ Tie* Correlator::createTie( int type, Core* coreA, double posA, Core* coreB, dou
 	if(type == COMPOSITED_TIE) 
 	{
 		cout << "[Composite] ";
-	} else if(type == REAL_TIE)
+	} else if (type == REAL_TIE)
 	{
 		cout << "[Splice] ";
-	} else if(type == SAGAN_TIE)
+	} else if (type == SAGAN_TIE)
 	{
 		cout << "[Core-Log Integration] ";
 	} else 
@@ -4366,7 +4366,7 @@ Tie* Correlator::createTie( int type, int tieindex, int coreidA, double relative
 	if(type == COMPOSITED_TIE) 
 	{
 		cout << "[Composite] ";
-	} else if(type == REAL_TIE)
+	} else if (type == REAL_TIE)
 	{
 		cout << "[Splice] ";
 	} else 
@@ -5459,7 +5459,7 @@ double Correlator::evalCore( Core* coreA, Core* coreB, Value* valueA, Value* val
 
 Core* Correlator::findCore( int index )
 {
-	 if(m_dataptr == NULL) return NULL;
+	 if (m_dataptr == NULL) return NULL;
 
 	int numHoles = m_dataptr->getNumOfHoles();
 	int numCores;
@@ -5469,7 +5469,7 @@ Core* Correlator::findCore( int index )
 	for(int i=0; i < numHoles; i++)
 	{
 		 holeptr = m_dataptr->getHole(i);
-		 if(holeptr == NULL) continue;
+		 if (holeptr == NULL) continue;
 		 numCores =  holeptr->getNumOfCores();
 		 for(int j=0; j < numCores; j++)
 		 {
@@ -5558,7 +5558,7 @@ Core* Correlator::findCore( int type, const char* holeName, int coreId, const ch
 					}
 					count++;
 				}
-			} else if(holeptr->getType() == type)
+			} else if (holeptr->getType() == type)
 			{
 				if(index == count)
 				{
@@ -5618,13 +5618,13 @@ Tie* Correlator::findTie( int order, bool alternative )
     for(int i=0; i < numHoles; i++)
     {
 		holeptr = m_dataptr->getHole(i);
-        if(holeptr == NULL) continue;
+        if (holeptr == NULL) continue;
 		
         numCores =  holeptr->getNumOfCores();
         for(int j=0; j <= numCores; j++)
         {
 			coreptr = holeptr->getCore(j);
-            if(coreptr == NULL) continue;
+            if (coreptr == NULL) continue;
 
 			numTies = coreptr->getNumOfTies(tie_type);
 			//cout << coreptr->getName() << "  " << coreptr->getNumber() << " " << numTies << endl;

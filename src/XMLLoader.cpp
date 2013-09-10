@@ -54,11 +54,11 @@ CXMLLoader::~CXMLLoader()
 
 void CXMLLoader::endDocument()
 {
-	if( _ulWarnings > 0 )
+	if ( _ulWarnings > 0 )
 	{
 	}
 
-	if( _ulErrors > 0 )
+	if ( _ulErrors > 0 )
 	{
 	}
 }
@@ -70,7 +70,7 @@ void CXMLLoader::endElement(const XMLCh* const name)
 
 	CXMLElement *pElem = _stackEelementStack.top();
 	_stackEelementStack.pop();
-	if(!_stackEelementStack.empty())
+	if (!_stackEelementStack.empty())
 	{
 		pParent = _stackEelementStack.top();
 	}
@@ -112,52 +112,52 @@ void CXMLLoader::startElement(const XMLCh* const name, AttributeList& attributes
 
 	strElementName = binToChar( name );
 
-	if( stricmp(strElementName, "Correlator") == 0 )
+	if ( stricmp(strElementName, "Correlator") == 0 )
 	{
 		pNewElement = new CXMLElement(strElementName, &attributes, XML_CORRELATOR);
 		double valuef;
-		if( pNewElement->getValue( "version", valuef ) )	
+		if ( pNewElement->getValue( "version", valuef ) )	
 		{
 			// version 1.0
 			//std::cout << "version : " << valuef << std::endl;
 		}		
 		_stackEelementStack.push(pNewElement);	
 	}
-	else if( stricmp(strElementName, "Data") == 0 )
+	else if ( stricmp(strElementName, "Data") == 0 )
 	{
 		pNewElement = new CXMLElement(strElementName, &attributes, XML_DATA);
 		char *value;	
 		char* leg;
 		char* site;
 		double mudlineoffset, stretch;
-		if( pNewElement->getValue( "type", &value ) )
+		if ( pNewElement->getValue( "type", &value ) )
 		{
-			if( strcmp(value, "affine table") == 0)
+			if ( strcmp(value, "affine table") == 0)
 			{
 				_datatype = AFFINE_TABLE;
-			} else if( strcmp(value, "splice table") == 0)
+			} else if ( strcmp(value, "splice table") == 0)
 			{
 				_datatype = SPLICE_TABLE;			
-			} else if( strcmp(value, "eld table") == 0)
+			} else if ( strcmp(value, "eld table") == 0)
 			{
 				_datatype = EQLOGDEPTH_TABLE;			
 			}
 			// CORE_DATA
 		}
-		if( pNewElement->getValue( "leg", &leg ) )
+		if ( pNewElement->getValue( "leg", &leg ) )
 		{
 		}		
-		if( pNewElement->getValue( "site", &site ) )
+		if ( pNewElement->getValue( "site", &site ) )
 		{
 		}
-		/*if( pNewElement->getValuef( "mudlineoffset", mudlineoffset ) )
+		/*if ( pNewElement->getValuef( "mudlineoffset", mudlineoffset ) )
 		{
 		}
-		if( pNewElement->getValuef( "stretchrate", stretch ) )
+		if ( pNewElement->getValuef( "stretchrate", stretch ) )
 		{
 		}*/
 						
-		if((strcmp(_dataptr->getSite(),site)==0) && (strcmp(_dataptr->getLeg(),leg)==0))
+		if ((strcmp(_dataptr->getSite(),site)==0) && (strcmp(_dataptr->getLeg(),leg)==0))
 		{
 			_found = true;
 			//std::cout << "data : " << site << " " << leg << std::endl;
@@ -166,52 +166,52 @@ void CXMLLoader::startElement(const XMLCh* const name, AttributeList& attributes
 		_stackEelementStack.push(pNewElement);	
 			
 	}
-	else if( stricmp(strElementName, "Hole") == 0 )
+	else if ( stricmp(strElementName, "Hole") == 0 )
 	{
 		pNewElement = new CXMLElement(strElementName, &attributes, XML_HOLE);
 		char *value;
 		_holeptr = NULL;
-		if( pNewElement->getValue( "value", &value ) )
+		if ( pNewElement->getValue( "value", &value ) )
 		{
 			_holeptr = _dataptr->getHole(value[0]);
 			//std::cout << "hole : " << value[0] << std::endl;
 		}
 		_stackEelementStack.push(pNewElement);	
 	}
-	else if( stricmp(strElementName, "Core") == 0 )
+	else if ( stricmp(strElementName, "Core") == 0 )
 	{	
 		pNewElement = new CXMLElement(strElementName, &attributes, XML_CORE);
 		_coreptr = NULL;
-		if(_found == true)
+		if (_found == true)
 		{	
-			if(_datatype == AFFINE_TABLE)
+			if (_datatype == AFFINE_TABLE)
 			{
 				loadAffineCoreData(pNewElement);	
-			} else if(_datatype == SPLICE_TABLE)
+			} else if (_datatype == SPLICE_TABLE)
 			{
 				loadSpliceCoreData(pNewElement);	
-			}else if(_datatype == EQLOGDEPTH_TABLE)
+			}else if (_datatype == EQLOGDEPTH_TABLE)
 			{
 				loadAffineCoreData(pNewElement);
 			}	
 		}
 		_stackEelementStack.push(pNewElement);		
 	}
-	else if( stricmp(strElementName, "TIE") == 0 )
+	else if ( stricmp(strElementName, "TIE") == 0 )
 	{
 		pNewElement = new CXMLElement(strElementName, &attributes, XML_TIE);
-		if(_found == true && _datatype == SPLICE_TABLE)
+		if (_found == true && _datatype == SPLICE_TABLE)
 		{	
 			_tieptr = NULL;
 			int tie_id;
-			if( pNewElement->getValuei( "id", tie_id ) )
+			if ( pNewElement->getValuei( "id", tie_id ) )
 			{
 				_tieid = tie_id;
 			}		
 		}
 		_stackEelementStack.push(pNewElement);	
 	}
-	else if( stricmp(strElementName, "LogTie") == 0 )
+	else if ( stricmp(strElementName, "LogTie") == 0 )
 	{
 		pNewElement = new CXMLElement(strElementName, &attributes, XML_TIE);
 		loadELDCoreData(pNewElement);	
@@ -231,33 +231,33 @@ void CXMLLoader::loadAffineCoreData(CXMLElement *elem)
 	char *value_type;
 	char *applied;
 	
-	if( elem->getValuei( "id", valuei ) )
+	if ( elem->getValuei( "id", valuei ) )
 	{
 	}
 
-	if( elem->getValue( "type", &value_type ) )
+	if ( elem->getValue( "type", &value_type ) )
 	{
 	}
 	
-	if( elem->getValue( "applied", &applied ) )
+	if ( elem->getValue( "applied", &applied ) )
 	{
 	}
 		
-	if( elem->getValue( "offset", valuef ) )
+	if ( elem->getValue( "offset", valuef ) )
 	{
 	}	
 		
-	if(_holeptr != NULL)
+	if (_holeptr != NULL)
 	{
 		_coreptr = _holeptr->getCoreByNo(valuei);
 		double depth_offset = valuef;
-		if(_coreptr != NULL) 
+		if (_coreptr != NULL) 
 		{
 			//std::cout << "core : " << valuei << ", " << depth_offset << std::endl;
-			if(applied[0] == 'Y')
+			if (applied[0] == 'Y')
 			{ 
 				_coreptr->setDepthOffset(depth_offset, value_type[0], true, true);
-			} else if(applied[0] == 'N')
+			} else if (applied[0] == 'N')
 			{
 				_coreptr->setDepthOffset(depth_offset, value_type[0], false, true);
 			}	
@@ -284,16 +284,16 @@ void CXMLLoader::loadSpliceCoreData(CXMLElement *elem)
 	bool appendflag = false;
 	bool allflag = false;
 	
-	if( elem->getValuei( "id", valuei ) )
+	if ( elem->getValuei( "id", valuei ) )
 	{
 		coreid = valuei;
 	}
-	if( elem->getValue( "tietype", &value ) )
+	if ( elem->getValue( "tietype", &value ) )
 	{
-		if(strcmp(value, "tied") == 0)
+		if (strcmp(value, "tied") == 0)
 		{
 			tied= true;
-		} else if(strcmp(value, "append") == 0)
+		} else if (strcmp(value, "append") == 0)
 		{
 			//std::cout << "append " << std::endl;
 			appendflag = true;
@@ -301,58 +301,58 @@ void CXMLLoader::loadSpliceCoreData(CXMLElement *elem)
 			tied= true;
 		}
 	}
-	if( elem->getValue( "hole", &value ) )
+	if ( elem->getValue( "hole", &value ) )
 	{
 		holeno = value[0];
 	}
-	if( elem->getValue( "type", &value ) )
+	if ( elem->getValue( "type", &value ) )
 	{
 		coretype = value[0];
 	}	
-	if( elem->getValue( "section", &value ) )
+	if ( elem->getValue( "section", &value ) )
 	{
 		//strcpy(section, value);
 		section[0] = value[0];
 		section[1] =  value[1];
 	}
-	if( elem->getValue( "top", valuef ) )
+	if ( elem->getValue( "top", valuef ) )
 	{
 		range.top = valuef;
 	}	
-	if( elem->getValue( "bottom", valuef ) )
+	if ( elem->getValue( "bottom", valuef ) )
 	{
 		range.bottom = valuef;
 	}		
 
-	if( elem->getValue( "mbsf", valuef ) )
+	if ( elem->getValue( "mbsf", valuef ) )
 	{
 		mbsf = valuef;
 	}
 	
-	if( elem->getValue( "mcd", valuef ) )
+	if ( elem->getValue( "mcd", valuef ) )
 	{
 		mcd = valuef;
 	}		
 	
 	_holeptr = _dataptr->getHole(holeno);
 	_coreptr = NULL;
-	if(_holeptr != NULL)
+	if (_holeptr != NULL)
 	{
 		_coreptr = _holeptr->getCoreByNo(coreid);
 	}
 	
-	if(appendflag == true)
+	if (appendflag == true)
 	{
 		//std::cout << "range ..... " << range.top << " " << range.bottom << std::endl;
-		if((range.top >= 9999.0) && (range.bottom <= -9999.0))
+		if ((range.top >= 9999.0) && (range.bottom <= -9999.0))
 		{
 			allflag = false;
 		}
 	}
 
-	if(_coreptr != NULL)
+	if (_coreptr != NULL)
 	{
-		if(tied == false)
+		if (tied == false)
 		{
 			//std::cout <<  _coreptr->getName() << ":"  << _coreptr->getNumber() << " , " << section <<  "- tie-core : " << _tieid << " top : " << range.top << "," <<  range.bottom << " : " << "(" <<  mbsf << "," <<  mcd << ")" << coreid ;
 			
@@ -360,10 +360,10 @@ void CXMLLoader::loadSpliceCoreData(CXMLElement *elem)
 			_tieptr->setOrder(_tieid);	
 		} else 
 		{
-			if(_tieptr != NULL)
+			if (_tieptr != NULL)
 			{
 				//std::cout << " ---" <<  _coreptr->getName() << ":"  << _coreptr->getNumber()  << " , " << section << " top : " << range.top << "," <<  range.bottom << " : "  << "(" <<  mbsf << "," <<  mcd << ")" << std::endl;
-				if((appendflag == true) && (allflag == false))
+				if ((appendflag == true) && (allflag == false))
 				{
 					data_range range;
 					Core* newcoreptr = _tieptr->getTied();
@@ -379,7 +379,7 @@ void CXMLLoader::loadSpliceCoreData(CXMLElement *elem)
 					_tieptr->setTieTo(_coreptr, coretype, section, range, mbsf, mcd);
 					TieInfo* tiedInfo = _tieptr->getInfoTied();
 					tiedInfo->m_coreptr->addTie(_tieptr);
-					if(tiedInfo->m_mcd != mcd)
+					if (tiedInfo->m_mcd != mcd)
 					{
 						_tieptr->setConstrained(false);
 					}				
@@ -415,7 +415,7 @@ char *CXMLLoader::binToChar(const XMLCh * const string)
 	char *buffer;
 	int i = 0;
 
-	if( string==NULL )
+	if ( string==NULL )
 		return NULL;
 
 	while( string[i] != 0 )
@@ -448,11 +448,11 @@ CXMLElement::CXMLElement(char *name, AttributeList *attrib, XML_ELEMTYPE type, b
 
 CXMLElement::~CXMLElement()
 {
-	if(_strName)
+	if (_strName)
 		delete []_strName;
-	if(_pDeleteObj)
+	if (_pDeleteObj)
 	{
-		if(_pObject)
+		if (_pObject)
 			delete []_pObject;
 	}
 }
@@ -460,7 +460,7 @@ CXMLElement::~CXMLElement()
 bool CXMLElement::getValue( char *name, unsigned long &value )
 {
 	char *val = CXMLLoader::binToChar( _attributeList->getValue( name ) );
-	if( val != NULL )
+	if ( val != NULL )
 	{
 		value = atoi( val );
 		delete []val;
@@ -473,7 +473,7 @@ bool CXMLElement::getValue( char *name, unsigned long &value )
 bool CXMLElement::getValuei( char *name, int &value )
 {
 	char *val = CXMLLoader::binToChar( _attributeList->getValue( name ) );
-	if( val != NULL )
+	if ( val != NULL )
 	{
 		value = atoi( val );
 		delete []val;
@@ -486,7 +486,7 @@ bool CXMLElement::getValuei( char *name, int &value )
 bool CXMLElement::getValue( char *name, double &value )
 {
 	char *val = CXMLLoader::binToChar( _attributeList->getValue( name ) );
-	if( val != NULL )
+	if ( val != NULL )
 	{
 		value = atof( val );
 		delete []val;
@@ -499,7 +499,7 @@ bool CXMLElement::getValue( char *name, double &value )
 bool CXMLElement::getValue( char *name, char ** value )
 {
 	char *val = CXMLLoader::binToChar( _attributeList->getValue( name ) );
-	if( val != NULL )
+	if ( val != NULL )
 	{
 		*value = val;
 	}
@@ -510,7 +510,7 @@ bool CXMLElement::getValue( char *name, char ** value )
 bool CXMLElement::getValueb( char *name, bool &value )
 {
 	char *val = CXMLLoader::binToChar( _attributeList->getValue( name ) );
-	if( val != NULL )
+	if ( val != NULL )
 	{
 		value = stricmp(val, "true") == 0 ? true : false;
 	}

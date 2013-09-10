@@ -137,7 +137,7 @@ CullFilter* FilterManager::getCullFilter( const char* leg, const char* site, int
 					//cout << "[DEBUG] found type == user defined " << endl;
 					return cullFilter;
 				}
-			} else if(cullFilter->getCoreType() == type)
+			} else if (cullFilter->getCoreType() == type)
 			{
 					return cullFilter;
 			}	
@@ -194,7 +194,7 @@ DecimateFilter* FilterManager::getDeciFilter( const char* leg, const char* site,
 					//cout << "[DEBUG] found type == user defined " << endl;				
 					return deciFilter;
 				}
-			} else if(deciFilter->getCoreType() == type)
+			} else if (deciFilter->getCoreType() == type)
 			{
 					return deciFilter;
 			}		
@@ -250,7 +250,7 @@ GaussianFilter* FilterManager::getSmoothFilter( const char* leg, const char* sit
 					//cout << "[DEBUG] found type == user defined " << endl;				
 					return smoothFilter;
 				}
-			} else if(smoothFilter->getCoreType() == type)
+			} else if (smoothFilter->getCoreType() == type)
 			{
 					return smoothFilter;
 			}			

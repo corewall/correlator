@@ -131,7 +131,7 @@ void Core::init( int type, bool fromFile )
 	{
 		cleanTies(COMPOSITED_TIE, fromFile);
 		cleanTies(REAL_TIE, fromFile);
-	} else if(type != STRETCH)
+	} else if (type != STRETCH)
 	{
 		cleanTies(type, fromFile);
 		if(fromFile == true)
@@ -308,7 +308,7 @@ void Core::cleanTies( int type, bool fromFile )
 					}
 				}
 			}
-			else if(type == REAL_TIE)
+			else if (type == REAL_TIE)
 			{
 				if(tempTie->getType() == REAL_TIE)
 				{
@@ -389,7 +389,7 @@ void Core::accept( Actor* flt )
 	if(flt->getDataType() == CORE) 
 	{
 		flt->visitor(this);
-	} else if(flt->getDataType() == TIE)
+	} else if (flt->getDataType() == TIE)
 	{
 		vector<Tie*>::iterator iterTie;
 		Tie* tempTie = NULL;
@@ -525,7 +525,7 @@ void Core::getTuple( std::string& data, int type )
 			tempTie->getTuple(data, type);
 		}
 		return;
-	} else if(type == STRAT_TABLE)
+	} else if (type == STRAT_TABLE)
 	{
 		//cout << "STRAT_TABLE " << m_strats.size() << endl;
 		vector<Strat*>::iterator iterStrat;
@@ -540,7 +540,7 @@ void Core::getTuple( std::string& data, int type )
 			}
 		}
 		return;
-	} else if(type == SECTION)
+	} else if (type == SECTION)
 	{
 		vector<Section*>::iterator iterSection;
 		Section* tempSection = NULL;
@@ -557,7 +557,7 @@ void Core::getTuple( std::string& data, int type )
 			data += info;
 		}
 		return;
-	} else if(type == SAGAN_TIE)
+	} else if (type == SAGAN_TIE)
 	{
 		vector<Tie*>::iterator iterTie;
 		Tie* tempTie = NULL;
@@ -573,7 +573,7 @@ void Core::getTuple( std::string& data, int type )
 			}
 		}	
 		return;
-	} else if(type == TIE_SHIFT)
+	} else if (type == TIE_SHIFT)
 	{
 		vector<Tie*>::iterator iterTie;
 		Tie* tempTie = NULL;
@@ -1143,7 +1143,7 @@ int Core::findAveDepth( int off )
 	//cout << "pavedt= " << pavedt << " size= " << size << endl;
 
 	nave = size - 1.0;
-    if(nave >= 1.0)
+    if (nave >= 1.0)
 	{
 		pavedt = pavedt / nave;
     } else

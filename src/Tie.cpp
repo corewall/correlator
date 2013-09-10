@@ -304,7 +304,7 @@ void Tie::getTuple( string& data, int type )
 		} else {
 			printf( "error.......for tie.... NULL\n");
 		}
-	} else if(type == TIE_SHIFT)
+	} else if (type == TIE_SHIFT)
 	{
 		if (m_active == true)
 		{
@@ -422,7 +422,7 @@ void Tie::calcEquation( Tie* tieptr )
 	if(m_corr_status == YES)
 	{
 		tempdepth[0] = m_tieTocore.m_eld;
-	} else if(m_affine_status == YES)
+	} else if (m_affine_status == YES)
 	{
 		tempdepth[0] = m_tieTocore.m_mcd;
 	} else 
@@ -434,7 +434,7 @@ void Tie::calcEquation( Tie* tieptr )
 		if(m_corr_status == YES)
 		{
 			tempdepth[1] = tieptr->m_tieTocore.m_eld;
-		} else if(m_affine_status == YES)
+		} else if (m_affine_status == YES)
 		{
 			tempdepth[1] = tieptr->m_tieTocore.m_mcd;	
 		} else 
@@ -1207,10 +1207,10 @@ void Tie::debugPrintOut( void )
 		if(m_tietype == COMPOSITED_TIE)
 		{
 			cout << "  type: composite" << endl;
-		} else if(m_tietype == REAL_TIE)
+		} else if (m_tietype == REAL_TIE)
 		{
 			cout << "  type : splice" << endl;
-		} else if(m_tietype == INTERPOLATED_TIED)
+		} else if (m_tietype == INTERPOLATED_TIED)
 		{
 			cout << " type : interporate" << endl;
 		}

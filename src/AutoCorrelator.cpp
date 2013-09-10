@@ -493,14 +493,14 @@ int AutoCorrelator::applyToAll( double appliedOffset, double stretch, double mud
 	for(int i=0; i < numHoles; i++)
 	{
 		holeptr = dataptr->getHole(i);
-        if(holeptr == NULL) continue;
+        if (holeptr == NULL) continue;
 		if(holeptr->getELDStatus() == doflag) continue;
 		
         numCores =  holeptr->getNumOfCores();
         for(int j=0; j <= numCores; j++)
         {
 			coreptr = holeptr->getCore(j);
-            if(coreptr == NULL) continue;
+            if (coreptr == NULL) continue;
 
 			//offset = coreptr->getDepthOffset() - appliedOffset;
 			//coreptr->setDepthOffset(offset, true);

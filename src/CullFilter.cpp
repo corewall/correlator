@@ -237,7 +237,7 @@ void CullFilter::visitor( CoreObject* object )
 					}
 				}
 				//cout << "top : " << valueptr->getTop() << " : " << m_hashtable[i]->m_top << endl;
-				else if(fabs(valueptr->getTop() - m_hashtable[i]->m_top) <= CULL_TABLE_DEPTH_CHECK)
+				else if (fabs(valueptr->getTop() - m_hashtable[i]->m_top) <= CULL_TABLE_DEPTH_CHECK)
 				{
 					//cout << "inside = " << i  << endl;
 					quality = quality | BAD_CULLTABLE;
@@ -319,7 +319,7 @@ int CullFilter::create( char* filename)
 #ifdef DEBUG				
 				cout << "[DEBUG] Cull top: " << m_top << endl;
 #endif
-			} else if(strcmp(token, "Range") == 0)
+			} else if (strcmp(token, "Range") == 0)
 			{
 				float x, y;
 				ret = sscanf (line, "# Range %c %f %c %f", &sign0, &x, &sign1, &y);
@@ -329,7 +329,7 @@ int CullFilter::create( char* filename)
 				{
 					if(sign0 == '<')
 						m_cull_equation.m_sign[0] = LESS_THAN;
-					else if(sign0 == '>')
+					else if (sign0 == '>')
 						m_cull_equation.m_sign[0] = GREATER_THAN;
 #ifdef DEBUG						
 					cout << "[DEBUG] Cull range: " << m_cull_equation.m_value[0] << " " <<  sign0 << " " << m_cull_equation.m_sign[0] << endl;	
@@ -340,7 +340,7 @@ int CullFilter::create( char* filename)
 				{
 					if(sign1 == '<')
 						m_cull_equation.m_sign[1] = LESS_THAN;
-					else if(sign1 == '>')
+					else if (sign1 == '>')
 						m_cull_equation.m_sign[1] = GREATER_THAN;
 #ifdef DEBUG						
 					cout << "[DEBUG] " << m_cull_equation.m_value[1] << " " << sign1 << " " << m_cull_equation.m_sign[1] << endl;	
@@ -349,13 +349,13 @@ int CullFilter::create( char* filename)
 				}
 				equation_info= true;
 				
-			} else if(strcmp(token, "Core") == 0)
+			} else if (strcmp(token, "Core") == 0)
 			{
 				ret = sscanf (line, "# Core %d", &m_byNumber);
 #ifdef DEBUG				
 				cout << "[DEBUG] Cull coore no : " << m_byNumber << endl;
 #endif
-			} else if(strcmp(token, "Type") == 0)
+			} else if (strcmp(token, "Type") == 0)
 			{
 				//char type_buff[125];
 				//ret = sscanf (line, "# Type %s", &type_buff[0]);
@@ -592,16 +592,16 @@ int	CullFilter::evalEquation(double data, Equation* cull_equation)
 	if((cull_equation->m_sign[0] == LESS_THAN) && (data < cull_equation->m_value[0]))
 	{
 		qual1 =BAD_CULL1;
-	} else if((cull_equation->m_sign[0] == LESS_THAN_OR_EQUAL_TO) && (data <= cull_equation->m_value[0]))
+	} else if ((cull_equation->m_sign[0] == LESS_THAN_OR_EQUAL_TO) && (data <= cull_equation->m_value[0]))
 	{
 		qual1 =BAD_CULL1;
-	} else if((cull_equation->m_sign[0] == GREATER_THAN) && (data > cull_equation->m_value[0]))
+	} else if ((cull_equation->m_sign[0] == GREATER_THAN) && (data > cull_equation->m_value[0]))
 	{
 		qual1 =BAD_CULL1;
-	} else if((cull_equation->m_sign[0] == GREATER_THAN_OR_EQUAL_TO) && (data >= cull_equation->m_value[0]))
+	} else if ((cull_equation->m_sign[0] == GREATER_THAN_OR_EQUAL_TO) && (data >= cull_equation->m_value[0]))
 	{
 		qual1 =BAD_CULL1;
-	} else if((cull_equation->m_sign[0] == EQUAL_TO) && (data == cull_equation->m_value[0]))
+	} else if ((cull_equation->m_sign[0] == EQUAL_TO) && (data == cull_equation->m_value[0]))
 	{
 		qual1 =BAD_CULL1;
 	}
@@ -614,16 +614,16 @@ int	CullFilter::evalEquation(double data, Equation* cull_equation)
 		if((cull_equation->m_sign[1] == LESS_THAN) && (data < cull_equation->m_value[1]))
 		{
 			qual2 =BAD_CULL2;
-		} else if((cull_equation->m_sign[1] == LESS_THAN_OR_EQUAL_TO) && (data <= cull_equation->m_value[1]))
+		} else if ((cull_equation->m_sign[1] == LESS_THAN_OR_EQUAL_TO) && (data <= cull_equation->m_value[1]))
 		{
 			qual2 =BAD_CULL2;
-		} else if((cull_equation->m_sign[1] == GREATER_THAN) && (data > cull_equation->m_value[1]))
+		} else if ((cull_equation->m_sign[1] == GREATER_THAN) && (data > cull_equation->m_value[1]))
 		{
 			qual2 =BAD_CULL2;
-		} else if((cull_equation->m_sign[1] == GREATER_THAN_OR_EQUAL_TO) && (data >= cull_equation->m_value[1]))
+		} else if ((cull_equation->m_sign[1] == GREATER_THAN_OR_EQUAL_TO) && (data >= cull_equation->m_value[1]))
 		{
 			qual2 =BAD_CULL2;
-		} else if((cull_equation->m_sign[1] == EQUAL_TO) && (data == cull_equation->m_value[1]))
+		} else if ((cull_equation->m_sign[1] == EQUAL_TO) && (data == cull_equation->m_value[1]))
 		{
 			qual2 =BAD_CULL2;
 		}
@@ -673,16 +673,16 @@ int	CullFilter::evalEquationAlt(double data, Equation* cull_equation)
 	if((cull_equation->m_sign[0] == LESS_THAN) && (data < cull_equation->m_value[0]))
 	{
 		qual = 1;
-	} else if((cull_equation->m_sign[0] == LESS_THAN_OR_EQUAL_TO) && (data <= cull_equation->m_value[0]))
+	} else if ((cull_equation->m_sign[0] == LESS_THAN_OR_EQUAL_TO) && (data <= cull_equation->m_value[0]))
 	{
 		qual = 1;
-	} else if((cull_equation->m_sign[0] == GREATER_THAN) && (data > cull_equation->m_value[0]))
+	} else if ((cull_equation->m_sign[0] == GREATER_THAN) && (data > cull_equation->m_value[0]))
 	{
 		qual = 1;
-	} else if((cull_equation->m_sign[0] == GREATER_THAN_OR_EQUAL_TO) && (data >= cull_equation->m_value[0]))
+	} else if ((cull_equation->m_sign[0] == GREATER_THAN_OR_EQUAL_TO) && (data >= cull_equation->m_value[0]))
 	{
 		qual = 1;
-	} else if((cull_equation->m_sign[0] == EQUAL_TO) && (data == cull_equation->m_value[0]))
+	} else if ((cull_equation->m_sign[0] == EQUAL_TO) && (data == cull_equation->m_value[0]))
 	{
 		qual = 1;
 	}
@@ -694,16 +694,16 @@ int	CullFilter::evalEquationAlt(double data, Equation* cull_equation)
 		if((cull_equation->m_sign[1] == LESS_THAN) && (data < cull_equation->m_value[1]))
 		{
 			qual = 1;
-		} else if((cull_equation->m_sign[1] == LESS_THAN_OR_EQUAL_TO) && (data <= cull_equation->m_value[1]))
+		} else if ((cull_equation->m_sign[1] == LESS_THAN_OR_EQUAL_TO) && (data <= cull_equation->m_value[1]))
 		{
 			qual = 1;
-		} else if((cull_equation->m_sign[1] == GREATER_THAN) && (data > cull_equation->m_value[1]))
+		} else if ((cull_equation->m_sign[1] == GREATER_THAN) && (data > cull_equation->m_value[1]))
 		{
 			qual = 1;
-		} else if((cull_equation->m_sign[1] == GREATER_THAN_OR_EQUAL_TO) && (data >= cull_equation->m_value[1]))
+		} else if ((cull_equation->m_sign[1] == GREATER_THAN_OR_EQUAL_TO) && (data >= cull_equation->m_value[1]))
 		{
 			qual = 1;
-		} else if((cull_equation->m_sign[1] == EQUAL_TO) && (data == cull_equation->m_value[1]))
+		} else if ((cull_equation->m_sign[1] == EQUAL_TO) && (data == cull_equation->m_value[1]))
 		{
 			qual = 1;
 		}

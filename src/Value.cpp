@@ -399,11 +399,11 @@ void Value::getTuple( string& data, int type )
 	if(m_quality & BAD_SB_DEPTH) 
 	{			
 		return;
-	} else if(m_cull_tabled == true)
+	} else if (m_cull_tabled == true)
 	{
 		//cout << "culled " << m_eld << " " <<  m_section << " " << getTop() << endl;
 		return;
-	} else if(m_quality==GOOD)
+	} else if (m_quality==GOOD)
 	{
 		//cout << "not culled " << m_eld << " " <<  m_section << " " << getTop() << endl;
 

@@ -73,10 +73,10 @@ void Data::init( int type, bool fromFile )
 	if(type == ALL_TIE) 
 	{
 		cout << "COMPOSITED_TIE and REAL_TIE" << endl;
-	} else if(type == COMPOSITED_TIE) 
+	} else if (type == COMPOSITED_TIE) 
 	{
 		cout << "COMPOSITED_TIE" << endl;
-	} else if(type == REAL_TIE) 
+	} else if (type == REAL_TIE) 
 	{
 		cout << "REAL_TIE" << endl;
 	}	
@@ -340,7 +340,7 @@ Hole* Data::createHole( int index, char* name, int type, char* annotation )
 			m_holes.insert(iter, newHole);
 			return newHole;
 		}	
-		else if(checkType(prevType,type, prevAnnot, annotation) && !checkType(holeptr->getType(), prevType, holeptr->getAnnotation(), prevAnnot))
+		else if (checkType(prevType,type, prevAnnot, annotation) && !checkType(holeptr->getType(), prevType, holeptr->getAnnotation(), prevAnnot))
 		{
 			//cout << "?????------------char " << name_hole_char << " " << name_char << endl;
 			m_holes.insert(iter, newHole);
@@ -475,7 +475,7 @@ Hole* Data::getHole( char* name, int datatype, char* annotation )
 				return (Hole*) *iter;
 			}
 		}	
-	} else if(datatype != USERDEFINEDTYPE)
+	} else if (datatype != USERDEFINEDTYPE)
 	{
 		for(iter = m_holes.begin(); iter != m_holes.end(); iter++) 
 		{

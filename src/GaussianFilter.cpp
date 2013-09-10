@@ -248,7 +248,7 @@ void GaussianFilter::visitorPoints( CoreObject* object )
 			// compute smoothed value
 			if(valueptrI->getSmoothStatus() < SM_OK)
 			{
-			} else if(!valueptrI->getQuality())
+			} else if (!valueptrI->getQuality())
 			{
 				tempdata =0;
 				for(int j = 0; j < m_width; j++)
@@ -401,7 +401,7 @@ void GaussianFilter::visitorDepth( CoreObject* object )
 						if(!highfound && !(target <= rint((double)(valueptrM->getDepth() * 100)) && valueptrM->getQuality() == GOOD)) 
 						{
 							m++;
-						} else if(!highfound)
+						} else if (!highfound)
 						{
 							highfound = 1;
 							j = m;
@@ -455,7 +455,7 @@ void GaussianFilter::visitorDepth( CoreObject* object )
 				}
 			} // end of for statement
 			
-            if(l > m_maxdepth)
+            if (l > m_maxdepth)
             {
 				coreptr->setSmoothStatus(SM_TOOFEWPTS);
 #ifdef DEBUG				
@@ -463,7 +463,7 @@ void GaussianFilter::visitorDepth( CoreObject* object )
 #endif
             }
 			
-            if(coreptr->getSmoothStatus() == NONE)
+            if (coreptr->getSmoothStatus() == NONE)
             {
 				m_datptr[l] = coreptr->getValue(end_cnt)->getData();
               
@@ -506,7 +506,7 @@ void GaussianFilter::visitorDepth( CoreObject* object )
 							if(rint((double)(valueptrI->getMbsf() * 100.0)) < (start_depth + halfwidth))
 							{
 								valueptrI->setSmoothStatus(SM_TAIL);
-							} else if(rint((double)(valueptrI->getMbsf() * 100.0)) > (end_depth - halfwidth))
+							} else if (rint((double)(valueptrI->getMbsf() * 100.0)) > (end_depth - halfwidth))
 							{
 								valueptrI->setSmoothStatus(SM_TAIL);
 							} else 
@@ -520,7 +520,7 @@ void GaussianFilter::visitorDepth( CoreObject* object )
 							if(rint((double)(valueptrI->getDepth() * 100.0)) < (start_depth + halfwidth))
 							{
 								valueptrI->setSmoothStatus(SM_TAIL);
-							} else if(rint((double)(valueptrI->getDepth() * 100.0)) > (end_depth - halfwidth))
+							} else if (rint((double)(valueptrI->getDepth() * 100.0)) > (end_depth - halfwidth))
 							{
 								valueptrI->setSmoothStatus(SM_TAIL);
 							} else 
