@@ -1908,11 +1908,14 @@ class DataFrame(wx.Frame):
 			os.chdir(workingdir)
 		else :
 			# ------- not delete file, move the directory to backup
-			if os.access(self.parent.DBPath + 'backup/' , os.F_OK) == False :
-				os.mkdir(self.parent.DBPath + 'backup/')
-			newdirname = '\'' +self.parent.DBPath + 'backup/' + str(datetime.today()) + '/\''
-			#os.system('rm -rf ' + self.parent.DBPath + 'db/')
-			os.system('mv ' + self.parent.DBPath + 'db/ ' + newdirname)
+			#if os.access(self.parent.DBPath + 'backup/' , os.F_OK) == False :
+			#	os.mkdir(self.parent.DBPath + 'backup/')
+			#newdirname = '\'' +self.parent.DBPath + 'backup/' + str(datetime.today()) + '/\''
+			#os.system('mv ' + self.parent.DBPath + 'db/ ' + newdirname)
+
+			# brg 9/17/2013 above backup directory appears to be a half-implemented feature:
+			# reverting to normal file deletion for now.
+			os.system('rm -rf ' + self.parent.DBPath + 'db/')
 			os.system('mkdir '+ self.parent.DBPath + 'db/')
 	
 		self.parent.logFileptr.write("Delete All Dataset \n\n")
@@ -2089,7 +2092,7 @@ class DataFrame(wx.Frame):
 				else :
 					filename = self.parent.DBPath + 'db/' + title + '/' + self.tree.GetItemText(selectItem, 8)
 					#  --- not to delete
-					#os.system('rm \"'+ filename + '\"')
+					os.system('rm \"'+ filename + '\"')
 					self.parent.logFileptr.write("Delete " + filename + "\n\n")
 			else :
 				type = self.tree.GetItemText(selectItem, 0)
@@ -2113,7 +2116,7 @@ class DataFrame(wx.Frame):
 						else :
 							filename = self.parent.DBPath + 'db/' + title + '/' + self.tree.GetItemText(child_item, 8)
 							# ----- not to delete
-							#os.system('rm \"'+ filename + '\"')
+							os.system('rm \"'+ filename + '\"')
 							self.parent.logFileptr.write("Delete " + filename + "\n\n")
 						for k in range(1, totalcount) :
 							child_item = self.tree.GetNextSibling(child_item)
@@ -2127,10 +2130,10 @@ class DataFrame(wx.Frame):
 							else :
 								filename = self.parent.DBPath + 'db/' + title + '/' + self.tree.GetItemText(child_item, 8)
 								# ----- not to delete
-								#os.system('rm \"'+ filename + '\"')
+								os.system('rm \"'+ filename + '\"')
 								self.parent.logFileptr.write("Delete " + filename + "\n\n")
 
-				else :
+				else : # delete site
 					titleItem = selectItem
 					title = type
 					type = '*' 
@@ -2145,7 +2148,7 @@ class DataFrame(wx.Frame):
 						self.parent.logFileptr.write("Delete " + self.parent.DBPath + 'db/' + title + "\n\n")
 					else :
 						# ----- not to delete
-						#os.system('rm -rf ' + self.parent.DBPath + 'db/' + title)
+						os.system('rm -rf ' + self.parent.DBPath + 'db/' + title)
 						self.parent.logFileptr.write("Delete " + self.parent.DBPath + 'db/' + title + "\n\n")
 
 
