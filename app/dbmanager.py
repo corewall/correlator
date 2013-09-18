@@ -7236,10 +7236,10 @@ class DataFrame(wx.Frame):
 		elif datatype == "Other" :
 			datatype = "otherfix"
 		else :
-                        type_last = len(datatype) -1
-                        if datatype[type_last] == '\n' :
-                                datatype = datatype[0:type_last]
-			annot = datatype 
+			type_last = len(datatype) - 1
+			if datatype[type_last] == '\n' :
+				datatype = datatype[0:type_last]
+			annot = datatype # brg 9/17/2013 indentation was screwy here, think this is right
 
 		datasort = [ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
 		cols = self.dataPanel.GetNumberCols()
