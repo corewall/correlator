@@ -38,7 +38,7 @@ class MessageDialog(wx.Dialog):
 
 		self.Center()
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
-		panel1 = wx.Panel(self, -1)
+		panel1 = wx.Panel(self, -1, style = wx.WANTS_CHARS)
 		sizer = wx.FlexGridSizer(1, 2)
 		if title == "Error" : 
 			bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/ErrorCircle-32x32.png'))
@@ -64,15 +64,17 @@ class MessageDialog(wx.Dialog):
 			grid.Add(cancelBtn, 0, wx.LEFT, 10)
 			vbox_top.Add(grid, 0, wx.LEFT, 70)
 
-		wx.EVT_KEY_UP(self, self.OnCharUp)
+		#wx.EVT_KEY_UP(self, self.OnCharUp)
+		panel1.Bind(wx.EVT_CHAR, self.OnCharUp)
 		self.SetSizer(vbox_top)
 
+	# 9/17/2013 brg: Seems we only need to handle enter for Okay, escape
+	# is automatically handled by wx.Dialog
 	def OnCharUp(self,event):
-		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_RETURN :
-			self.EndModal(wx.ID_OK) 
-		elif keyid == wx.WXK_ESCAPE :
-			self.EndModal(wx.ID_CANCEL) 
+		if event.GetKeyCode() == wx.WXK_RETURN :
+			self.EndModal(wx.ID_OK)
+		else:
+			event.Skip()
 
 class Message3Button(wx.Dialog):
 	def __init__(self, parent, msg):
@@ -879,7 +881,7 @@ class AboutDialog(wx.Dialog):
 
 class BackgroundPanel(wx.Panel):
         def __init__(self, parent, background, panel_size):
-                wx.Panel.__init__(self, parent, -1, size=panel_size)
+                wx.Panel.__init__(self, parent, -1, size=panel_size, style=wx.WANTS_CHARS)
         
                 img = wx.Image(background, wx.BITMAP_TYPE_ANY)
                 self.buffer = wx.BitmapFromImage(img)
@@ -890,41 +892,35 @@ class BackgroundPanel(wx.Panel):
         def OnPaint(self, evt):
                 dc = wx.BufferedPaintDC(self, self.buffer)
         
+# 9/17/2013 brg: rename to splash?
 class OpenFrame(wx.Dialog):
 	def __init__(self, parent, id, user, version):
                 panel_size=(800, 370)
-		wx.Dialog.__init__(self, parent, id, "Correlator v" + version, size=panel_size,style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, id, "Correlator v" + version, size=panel_size,style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
-		#panel = wx.Panel ( self, -1, size=(800, 370), style=wx.BORDER)
 		panel = BackgroundPanel(self, 'images/corewall_suite.jpg', panel_size)
  
 		self.version = version
-		#picture = wx.StaticBitmap(self)
-		#picture.SetBitmap(wx.Bitmap('images/corewall_suite.jpg'))
 		wx.StaticText(self, -1, 'COMPOSITE, SPLICE, CORE-LOG INTEGRATION, AGE MODEL', (60, 30))
-
-		#self.SetBackgroundColour(wx.Colour(255, 255, 255))
 
 		wx.StaticText(self, -1, 'User Name : ', (250, 220))
 		self.name = wx.TextCtrl(self, -1, user, (340, 220), size=(150, 25))
 		     
 		okBtn = wx.Button(panel, -1, "START", (500, 220), size=(80, 30))
-				
 		self.Bind(wx.EVT_BUTTON, self.OnSTART, okBtn)
-		self.user = user
 
-                if platform_name[0] == "Windows" :
-                        cancelBtn = wx.Button(panel, wx.ID_CANCEL, "CANCEL", (580, 220), size=(80, 30))
+		self.user = user
+		if platform_name[0] == "Windows" :
+			cancelBtn = wx.Button(panel, wx.ID_CANCEL, "CANCEL", (580, 220), size=(80, 30))
 
 		#wx.StaticText(self, -1, 'Developer:  Sean Higgins, Hyejung Hur', (60, 280))
 		wx.HyperlinkCtrl(self, -1, 'Go to Correlator Web', 'http://sqlcore.geo.umn.edu/CoreWallDatabase/cwWiki/index.php/Correlator', (60, 300))
 
 		aboutBtn = wx.Button(panel, -1, "ABOUT", (200, 300), size=(80, 30))
 		self.Bind(wx.EVT_BUTTON, self.OnABOUT, aboutBtn)
-                #self.SetFocusFromKbd()
 
-		wx.EVT_KEY_DOWN(self.name, self.OnChar)
-		wx.EVT_KEY_DOWN(self, self.OnChar)
+		wx.EVT_KEY_DOWN(self.name, self.OnPanelChar)
+		panel.Bind(wx.EVT_CHAR, self.OnPanelChar)
 
 	def OnABOUT(self, event) :
 		dlg = AboutDialog(self, self.version)
@@ -932,17 +928,19 @@ class OpenFrame(wx.Dialog):
 		dlg.ShowModal()
 		dlg.Destroy()
 
-	def OnSTART(self, event) :
+	def OnOK(self):
 		self.user = self.name.GetValue()
-		self.EndModal(wx.ID_OK) 
-	
-	def OnChar(self,event):
-		keyid = event.GetKeyCode()
-		if keyid == 13 :
-			# ENTER
-			self.user = self.name.GetValue()
-			self.EndModal(wx.ID_OK) 
-		elif keyid == 27 :
-			# ESC 
-			self.EndModal(wx.ID_CANCEL) 
+		self.EndModal(wx.ID_OK)
 
+	def OnSTART(self, event) :
+		self.OnOK()
+
+	# Close on Escape, continue on Enter
+	def OnPanelChar(self, event):
+		keyid = event.GetKeyCode()
+		if keyid == 13 : # ENTER
+			self.OnOK()
+		elif keyid == 27 : # ESC 
+			self.EndModal(wx.ID_CANCEL)
+		else:
+			event.Skip() # allow unhandled key events to propagate up the chain
