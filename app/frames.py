@@ -371,16 +371,16 @@ class CompositePanel():
 		# Panel 1
 		panel1 = wx.Panel(self.mainPanel, -1)
 		grid1 = wx.GridSizer(4, 2)
-		grid1.Add(wx.StaticText(panel1, -1, 'Interpolated depth step(meter) : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+		grid1.Add(wx.StaticText(panel1, -1, 'Interpolated depth step(meter) : '), 0, wx.ALIGN_CENTER_VERTICAL)
 		self.depthstep = wx.TextCtrl(panel1, -1, "0.11", size = (buttonsize, 25), style=wx.SUNKEN_BORDER )
 		#self.depthstep.Enable(False)
-		grid1.Add(self.depthstep)
+		grid1.Add(self.depthstep, 0, wx.ALIGN_RIGHT)
 		grid1.Add(wx.StaticText(panel1, -1, 'Correlation window length : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
 		self.winlength = wx.TextCtrl(panel1, -1, str(self.parent.winLength), size =(buttonsize, 25), style=wx.SUNKEN_BORDER )
-		grid1.Add(self.winlength)
+		grid1.Add(self.winlength, 0, wx.ALIGN_RIGHT)
 		grid1.Add(wx.StaticText(panel1, -1, 'Correlation lead/lag : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
 		self.leadlag = wx.TextCtrl(panel1, -1, str(self.leadLagValue), size = (buttonsize, 25), style=wx.SUNKEN_BORDER )
-		grid1.Add(self.leadlag)
+		grid1.Add(self.leadlag, 0, wx.ALIGN_RIGHT)
 
 		buttonsize = 90
 		if platform_name[0] == "Windows" :
@@ -390,7 +390,7 @@ class CompositePanel():
 
 		addButton = wx.Button(panel1, -1, "Recorrelate", size =(buttonsize, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCorrelate, addButton)
-		grid1.Add(addButton)
+		grid1.Add(addButton, 0, wx.ALIGN_RIGHT)
 
 		panel1.SetSizer(grid1)
 		vbox.Add(panel1, 0, wx.TOP, 9)
@@ -438,12 +438,12 @@ class CompositePanel():
 		if platform_name[0] == "Windows" :
 			buttonsize = 145
 		
-		sizer31.Add(self.coreBelow, wx.BOTTOM, 9)
+		sizer31.Add(self.coreBelow, wx.BOTTOM, 0)
 		self.actionType = wx.ComboBox(panel3, -1, "To tie", (0,0),(buttonsize,-1), ("To best correlation", "To tie", "To given"), wx.CB_DROPDOWN)
 		self.actionType.SetForegroundColour(wx.BLACK)
 		self.actionType.SetEditable(False)
-		sizer31.Add(self.actionType, 0, wx.TOP, 9)
-		hbox3.Add(sizer31, 1, wx.RIGHT, 3)
+		sizer31.Add(self.actionType, 0, wx.TOP, 0)
+		hbox3.Add(sizer31, 1, wx.RIGHT, 0)
 
 		sizer32 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Undo option'), orient=wx.VERTICAL)
 		sizer32.Add(wx.StaticText(panel3, -1, 'Previous offset :', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
@@ -686,13 +686,13 @@ class SplicePanel():
 		grid1.Add(wx.StaticText(panel1, -1, 'Interpolated depth step(meter) : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
 		self.depthstep = wx.TextCtrl(panel1, -1, "0.11", size = (buttonsize, 25), style=wx.SUNKEN_BORDER )
 		#self.depthstep.Enable(False)
-		grid1.Add(self.depthstep)
+		grid1.Add(self.depthstep, 0, wx.ALIGN_RIGHT)
 		grid1.Add(wx.StaticText(panel1, -1, 'Correlation window length : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
 		self.winlength = wx.TextCtrl(panel1, -1, str(self.parent.winLength), size =(buttonsize, 25), style=wx.SUNKEN_BORDER )
-		grid1.Add(self.winlength)
+		grid1.Add(self.winlength, 0, wx.ALIGN_RIGHT)
 		grid1.Add(wx.StaticText(panel1, -1, 'Correlation lead/lag : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
 		self.leadlag = wx.TextCtrl(panel1, -1, str(self.leadLagValue), size = (buttonsize, 25), style=wx.SUNKEN_BORDER )
-		grid1.Add(self.leadlag)
+		grid1.Add(self.leadlag, 0, wx.ALIGN_RIGHT)
 
 		buttonsize = 90 
 		if platform_name[0] == "Windows" :
@@ -700,7 +700,7 @@ class SplicePanel():
 		grid1.Add(wx.StaticText(panel1, -1, ' ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
 		addButton = wx.Button(panel1, -1, "Recorrelate", size =(buttonsize, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCorrelate, addButton)
-		grid1.Add(addButton)
+		grid1.Add(addButton, 0, wx.ALIGN_RIGHT)
 
 		panel1.SetSizer(grid1)
 		vbox.Add(panel1, 0, wx.TOP, 9)
