@@ -1078,7 +1078,7 @@ class DataCanvas(wxBufferedWindow):
 		affine = 0.0
 		#for i in range(forcount) :
 		for i in range(len_hole) : 
-			holedata = hole[i + 1]
+			holedata = hole[i + 1] # actually coredata
 
 			if self.CurrentSpliceCore == self.coreCount :
 				spliceflag = 1	
@@ -4991,7 +4991,7 @@ class DataCanvas(wxBufferedWindow):
 					if r[3] == 0 : 
 						self.selectedTie = count
 						if (count % 2) == 1 : 
-					 		self.activeTie = count
+							self.activeTie = count
 						return
 			count = count + 1
 
@@ -5157,6 +5157,8 @@ class DataCanvas(wxBufferedWindow):
 				smooth_id = r[4]
 				break
 
+		# 9/19/2013 brg: duplication - these routines are EXACTLY THE SAME
+		# except one uses SmoothData and one uses HoleData
 		if smooth_id == 1 :
 			for data in self.SmoothData:
 				for record in data:
@@ -5214,6 +5216,7 @@ class DataCanvas(wxBufferedWindow):
 			data_list = self.HoleData
 			
 
+		# 9/23/2013 brgtodo duplication - it's everywhere.
 		if self.Constrained == 1 :
 			for data in data_list:
 				for record in data:
@@ -5327,49 +5330,50 @@ class DataCanvas(wxBufferedWindow):
 		return 0
 
 	def UpdateAgeModel(self):
-                space_bar = ""
+		space_bar = ""
 		if platform_name[0] == "Windows" :
-                        space_bar = " "
-                        
+			space_bar = " "
+
+		# 9/23/2013 brgtodo duplication
 		for data in self.StratData :
 			for r in data:
-					order, hole, name, label, start, stop, rawstart, rawstop, age, type = r 
-					strItem = ""
-					bm0 = int(100.0 * float(rawstart)) / 100.0;
-					str_ba = str(bm0)
-					max_ba = len(str_ba)
-					start_ba = str_ba.find('.', 0)
-					str_ba = str_ba[start_ba:max_ba]
-					max_ba = len(str_ba)
-					if max_ba < 3 :
-						strItem = strItem + str(bm0) + "0 \t"
-					else :
-						strItem = strItem + str(bm0) + space_bar + "\t"
+				order, hole, name, label, start, stop, rawstart, rawstop, age, type = r 
+				strItem = ""
+				bm0 = int(100.0 * float(rawstart)) / 100.0;
+				str_ba = str(bm0)
+				max_ba = len(str_ba)
+				start_ba = str_ba.find('.', 0)
+				str_ba = str_ba[start_ba:max_ba]
+				max_ba = len(str_ba)
+				if max_ba < 3 :
+					strItem = strItem + str(bm0) + "0 \t"
+				else :
+					strItem = strItem + str(bm0) + space_bar + "\t"
 
-					bm = int(100.0 * float(start)) / 100.0;
-					str_ba = str(bm)
-					max_ba = len(str_ba)
-					start_ba = str_ba.find('.', 0)
-					str_ba = str_ba[start_ba:max_ba]
-					max_ba = len(str_ba)
-					if max_ba < 3 :
-						strItem += str(bm) + "0 \t" + str(bm) + "0 \t"
-					else :
-						strItem += str(bm) + space_bar + "\t" + str(bm) + space_bar + " \t"
+				bm = int(100.0 * float(start)) / 100.0;
+				str_ba = str(bm)
+				max_ba = len(str_ba)
+				start_ba = str_ba.find('.', 0)
+				str_ba = str_ba[start_ba:max_ba]
+				max_ba = len(str_ba)
+				if max_ba < 3 :
+					strItem += str(bm) + "0 \t" + str(bm) + "0 \t"
+				else :
+					strItem += str(bm) + space_bar + "\t" + str(bm) + space_bar + " \t"
 
-					ba = int(1000.0 * float(age)) / 1000.0;
-					str_ba = str(ba)
-					max_ba = len(str_ba)
-					start_ba = str_ba.find('.', 0)
-					str_ba = str_ba[start_ba:max_ba]
-					max_ba = len(str_ba)
-					if max_ba < 3 :
-						strItem += str(ba) + "0 \t" + label 
-					else :
-						strItem += str(ba) + space_bar + "\t" + label 
-					ret = self.parent.agePanel.OnAddAgeToListAt(strItem, int(order))
-					if ret >= 0 :
-						self.AgeDataList.insert(int(order), ((self.SelectedAge, start, rawstart, age, name, label, type, 0.0)))
+				ba = int(1000.0 * float(age)) / 1000.0;
+				str_ba = str(ba)
+				max_ba = len(str_ba)
+				start_ba = str_ba.find('.', 0)
+				str_ba = str_ba[start_ba:max_ba]
+				max_ba = len(str_ba)
+				if max_ba < 3 :
+					strItem += str(ba) + "0 \t" + label 
+				else :
+					strItem += str(ba) + space_bar + "\t" + label 
+				ret = self.parent.agePanel.OnAddAgeToListAt(strItem, int(order))
+				if ret >= 0 :
+					self.AgeDataList.insert(int(order), ((self.SelectedAge, start, rawstart, age, name, label, type, 0.0)))
 
 	def OnMouseUp(self, event):
 		self.SetFocusFromKbd()
@@ -5479,73 +5483,74 @@ class DataCanvas(wxBufferedWindow):
 				start_ba = str_ba.find('.', 0)
 				str_ba = str_ba[start_ba:max_ba]
 				max_ba = len(str_ba)
-                                if platform_name[0] != "Windows" :
-                                        if max_ba < 3 :
-                                                strItem = strItem + str(bm0) + "0 \t"
-                                        else :
-                                                strItem = strItem + str(bm0) + "\t"
 
-                                        bm = int(100.00 * float(start)) / 100.00;
-                                        str_ba = str(bm)
-                                        max_ba = len(str_ba)
-                                        start_ba = str_ba.find('.', 0)
-                                        str_ba = str_ba[start_ba:max_ba]
-                                        max_ba = len(str_ba)
-                                        if max_ba < 3 :
-                                                strItem += str(bm) + "0 \t" + str(bm) + "0 \t"
-                                        else :
-                                                strItem += str(bm) + "\t" + str(bm) + "\t"
+				# 9/23/2013 brgtodo duplication candidate
+				if platform_name[0] != "Windows" :
+					if max_ba < 3 :
+						strItem = strItem + str(bm0) + "0 \t"
+					else :
+						strItem = strItem + str(bm0) + "\t"
 
-                                        ba = int(1000.00 * float(age)) / 1000.00;
-                                        str_ba = str(ba)
-                                        max_ba = len(str_ba)
-                                        start_ba = str_ba.find('.', 0)
-                                        str_ba = str_ba[start_ba:max_ba]
-                                        max_ba = len(str_ba)
-                                        if max_ba < 3 :
-                                                strItem += str(ba) + "0 \t" + label 
-                                        else :
-                                                strItem += str(ba) + "\t" + label 
-                                        if type == "handpick"  :
-                                                strItem += " *handpick"
-                                else :
-                                        if max_ba < 3 :
-                                                strItem = strItem + str(bm0) + "0 \t"
-                                        else :
-                                                strItem = strItem + str(bm0) + " \t"
+					bm = int(100.00 * float(start)) / 100.00;
+					str_ba = str(bm)
+					max_ba = len(str_ba)
+					start_ba = str_ba.find('.', 0)
+					str_ba = str_ba[start_ba:max_ba]
+					max_ba = len(str_ba)
+					if max_ba < 3 :
+						strItem += str(bm) + "0 \t" + str(bm) + "0 \t"
+					else :
+						strItem += str(bm) + "\t" + str(bm) + "\t"
 
-                                        bm = int(100.00 * float(start)) / 100.00;
-                                        str_ba = str(bm)
-                                        max_ba = len(str_ba)
-                                        start_ba = str_ba.find('.', 0)
-                                        str_ba = str_ba[start_ba:max_ba]
-                                        max_ba = len(str_ba)
-                                        if max_ba < 3 :
-                                                strItem += str(bm) + "0 \t" + str(bm) + "0 \t"
-                                        else :
-                                                strItem += str(bm) + " \t" + str(bm) + " \t"
+					ba = int(1000.00 * float(age)) / 1000.00;
+					str_ba = str(ba)
+					max_ba = len(str_ba)
+					start_ba = str_ba.find('.', 0)
+					str_ba = str_ba[start_ba:max_ba]
+					max_ba = len(str_ba)
+					if max_ba < 3 :
+						strItem += str(ba) + "0 \t" + label 
+					else :
+						strItem += str(ba) + "\t" + label 
+					if type == "handpick"  :
+						strItem += " *handpick"
+				else :
+					if max_ba < 3 :
+						strItem = strItem + str(bm0) + "0 \t"
+					else :
+						strItem = strItem + str(bm0) + " \t"
 
-                                        ba = int(1000.00 * float(age)) / 1000.00;
-                                        str_ba = str(ba)
-                                        max_ba = len(str_ba)
-                                        start_ba = str_ba.find('.', 0)
-                                        str_ba = str_ba[start_ba:max_ba]
-                                        max_ba = len(str_ba)
-                                        if max_ba < 3 :
-                                                strItem += str(ba) + "0 \t" + label 
-                                        else :
-                                                strItem += str(ba) + " \t" + label 
-                                        if type == "handpick"  :
-                                                strItem += " *handpick"                                       
+					bm = int(100.00 * float(start)) / 100.00;
+					str_ba = str(bm)
+					max_ba = len(str_ba)
+					start_ba = str_ba.find('.', 0)
+					str_ba = str_ba[start_ba:max_ba]
+					max_ba = len(str_ba)
+					if max_ba < 3 :
+						strItem += str(bm) + "0 \t" + str(bm) + "0 \t"
+					else :
+						strItem += str(bm) + " \t" + str(bm) + " \t"
+
+					ba = int(1000.00 * float(age)) / 1000.00;
+					str_ba = str(ba)
+					max_ba = len(str_ba)
+					start_ba = str_ba.find('.', 0)
+					str_ba = str_ba[start_ba:max_ba]
+					max_ba = len(str_ba)
+					if max_ba < 3 :
+						strItem += str(ba) + "0 \t" + label 
+					else :
+						strItem += str(ba) + " \t" + label 
+					if type == "handpick"  :
+						strItem += " *handpick"                                       
 
 				ret = self.parent.agePanel.OnAddAgeToList(strItem)
 				if ret >= 0 :
 					self.AgeDataList.insert(ret, (self.SelectedAge, start, rawstart, age, name, label, type, 0.0))
 					self.parent.TimeChange = True
 					self.UpdateDrawing()
-						
 
-		self.drag = 0 
+		self.drag = 0
 		self.SelectedAge = -1
 		self.grabScrollA = 0
 		self.grabScrollB = 0
@@ -6507,7 +6512,6 @@ class DataCanvas(wxBufferedWindow):
 
 
 	def OnUpdateTie(self, type):
-		rulserStart = 0
 		graphNo = 0
 		tieData = None
 		if type == 1 : # composite
