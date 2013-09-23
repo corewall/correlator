@@ -12,6 +12,8 @@ from wx.lib import plot
 import random, sys, os, re, time, ConfigParser, string
 from datetime import datetime
 
+import numpy.oldnumeric as _Numeric
+
 import py_correlator
 from dialog import *
 from dbmanager import *
@@ -350,12 +352,53 @@ class ProgressFrame(wx.Frame):
 		self.parent.Enable(True)
 		self.Destroy()
 
+# 9/21/2013 brg: Extend wx.plot to exclude items with no legend text
+# from the legend. This way we can add lines connecting offset
+# points in Growth Rate graph without those lines ending up as random
+# unlabeled entries in the legend. Pulled code straight from plot.py
+# on the wx trunk.
+class BetterLegendPlotCanvas(plot.PlotCanvas):
+	def __init__(self, parent):
+		plot.PlotCanvas.__init__(self, parent)
+
+	def _drawLegend(self, dc, graphics, rhsW, topH, legendBoxWH, legendSymExt, legendTextExt):
+		"""Draws legend symbols and text"""
+		# top right hand corner of graph box is ref corner
+		trhc= self.plotbox_origin+ (self.plotbox_size-[rhsW,topH])*[1,-1]
+		legendLHS= .091* legendBoxWH[0] # border space between legend sym and graph box
+		lineHeight= max(legendSymExt[1], legendTextExt[1]) * 1.1 #1.1 used as space between lines
+		dc.SetFont(self._getFont(self._fontSizeLegend))
+		legendItemsDrawn = 0 # brg added to remove space for undrawn legend items
+		for i in range(len(graphics)):
+			o = graphics[i]
+			if o.getLegend() == '': # don't add items with no legend text to the legend!
+				continue
+			#s= i*lineHeight
+			s = legendItemsDrawn * lineHeight
+			if isinstance(o,plot.PolyMarker):
+				# draw marker with legend
+				pnt= (trhc[0]+legendLHS+legendSymExt[0]/2., trhc[1]+s+lineHeight/2.)
+				o.draw(dc, self.printerScale, coord=_Numeric.array([pnt]))
+			elif isinstance(o,plot.PolyLine):
+				# draw line with legend
+				pnt1= (trhc[0]+legendLHS, trhc[1]+s+lineHeight/2.)
+				pnt2= (trhc[0]+legendLHS+legendSymExt[0], trhc[1]+s+lineHeight/2.)
+				o.draw(dc, self.printerScale, coord=_Numeric.array([pnt1,pnt2]))
+			else:
+				raise TypeError, "object is neither PolyMarker or PolyLine instance"
+			# draw legend txt
+			pnt= (trhc[0]+legendLHS+legendSymExt[0]+5*self._pointSize[0], trhc[1]+s+lineHeight/2.-legendTextExt[1]/2)
+			dc.DrawText(o.getLegend(),pnt[0],pnt[1])
+			legendItemsDrawn += 1
+		dc.SetFont(self._getFont(self._fontSizeAxis)) # reset
+
 class CompositePanel():
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.parent = parent
 		self.leadLagValue = self.parent.leadLag
 		self.polyline_list =[]
+		self.growthPlotData = []
 		self.addItemsInFrame()
 		self.bestOffset = 0
 
@@ -395,31 +438,48 @@ class CompositePanel():
 		panel1.SetSizer(grid1)
 		vbox.Add(panel1, 0, wx.TOP, 9)
 
-		# Panel 2
-		panel2 = wx.Panel(self.mainPanel, -1)
-		# Setup graph
-		# parent, id, pos, size, style, name
-		self.wxpcPlotCanvas = plot.PlotCanvas(panel2)
+		self.plotNote = wx.Notebook(self.mainPanel, -1, style=wx.NB_TOP | wx.NB_MULTILINE)
+
+		# Correlation/Evaluation graph panel
+		self.corrPlotCanvas = BetterLegendPlotCanvas(self.plotNote)
+
 		if self.parent.Height > 768 :
-			self.wxpcPlotCanvas.SetSize((300,300))
+			self.corrPlotCanvas.SetSize((300,300))
 		else :
-			self.wxpcPlotCanvas.SetSize((300,250))
+			self.corrPlotCanvas.SetSize((300,250))
 
-		#self.wxpcPlotCanvas.SetEnableZoom( True )
-		self.wxpcPlotCanvas.SetEnableGrid( True )
-		self.wxpcPlotCanvas.SetBackgroundColour("White")
-		#self.wxpcPlotCanvas.Centre(wxBOTH)
-		self.wxpcPlotCanvas.Show(True)
+		self.corrPlotCanvas.SetEnableGrid(True)
+		self.corrPlotCanvas.SetEnableTitle(False)
+		self.corrPlotCanvas.SetBackgroundColour("White")
+		self.corrPlotCanvas.Show(True)
 
-		xdata = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
+		# Growth Rate graph panel
+		self.growthPlotCanvas = BetterLegendPlotCanvas(self.plotNote)
+		self.growthPlotCanvas.SetEnableGrid(True)
+		self.growthPlotCanvas.SetEnableTitle(False)
+		self.growthPlotCanvas.SetEnableLegend(True)
+		self.growthPlotCanvas.SetFontSizeLegend(10)
+		self.growthPlotCanvas.SetBackgroundColour('White')
+		self.growthPlotCanvas.Show(True)
+
+		self.plotNote.AddPage(self.corrPlotCanvas, 'Evaluation')
+		self.plotNote.AddPage(self.growthPlotCanvas, 'Growth Rate')
+
+		# add Notebook to main panel
+		self.plotNote.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectPlotNote)
+		self.plotNote.SetSelection(1)
+		vbox.Add(self.plotNote, 1, wx.EXPAND, 5)
+
+		# update drawings
+		xdata = [ (-self.leadLagValue, 0), (self.leadLagValue, 0) ]
 		self.xaxes = plot.PolyLine(xdata, legend='', colour='black', width =2)
 		ydata = [ (0, -1),( 0, 1) ]
 		self.yaxes = plot.PolyLine(ydata, legend='', colour='black', width =2)
-
 		data = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
 		self.OnUpdateData(data, [], 0)
 		self.OnUpdateDrawing()
-		vbox.Add(panel2, 0, wx.TOP, 5)
+
+		self.UpdateGrowthPlot()
 
 		# Panel 3
 		panel3 = wx.Panel(self.mainPanel, -1)
@@ -588,6 +648,8 @@ class CompositePanel():
 
 		self.parent.Window.activeTie = -1
 
+		self.UpdateGrowthPlot()
+
 	def OnClearTie(self, evt):
 		self.parent.Window.OnClearTies(0)
 		self.OnButtonEnable(0, False)
@@ -611,10 +673,11 @@ class CompositePanel():
 
 	def OnUpdate(self):
 		self.leadLagValue = float(self.leadlag.GetValue())
-		self.wxpcPlotCanvas.Clear()
+		self.corrPlotCanvas.Clear()
 		data = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
 		self.OnUpdateData(data, [], 0)
 		self.OnUpdateDrawing()
+		self.UpdateGrowthPlot()
 		
 	def OnUpdateDepth(self, data):
 		depth = int(10000.0 * float(data)) / 10000.0;
@@ -627,39 +690,85 @@ class CompositePanel():
 	def OnUpdateData(self, data, bestdata, best):
 		self.bestOffset = best 
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
-
-		if bestdata == [] : 
-			self.polyline_list.append(line)
-			#gc = plot.PlotGraphics([line,self.xaxes,self.yaxes], 'Evaluation Graph', 'depth Axis', 'coef Axis')
-		else :
+		self.polyline_list.append(line)
+		if bestdata != [] :
 			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width =5) 
-			self.polyline_list.append(line)
 			self.polyline_list.append(bestline)
-			#gc = plot.PlotGraphics([line,self.xaxes,self.yaxes,bestline], 'Evaluation Graph', 'depth Axis', 'coef Axis')
-		#self.wxpcPlotCanvas.Draw(gc, xAxis = (-self.leadLagValue , self.leadLagValue), yAxis = (-1, 1))	
 
+	# 9/18/2013 brg: Identical to OnUpdateData() above... and in SplicePanel
 	def OnAddFirstData(self, data, bestdata, best):
 		self.bestOffset = best 
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
-
-		if bestdata == [] : 
-			self.polyline_list.append(line)
-		else :
+		self.polyline_list.append(line)
+		if bestdata != [] : 
 			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width =5) 
-			self.polyline_list.append(line)
 			self.polyline_list.append(bestline)
 
 	def OnAddData(self, data):
 		line = plot.PolyLine(data, legend='', colour='grey', width =2) 
 		self.polyline_list.append(line)
 
+	def OnSelectPlotNote(self, event):
+		#self.corrPlotPanel.Hide()
+		self.corrPlotCanvas.Hide()
+		#self.growthPlotPanel.Hide()
+		self.growthPlotCanvas.Hide()
+		if event.GetSelection() == 0:
+			#self.corrPlotPanel.Show()
+			self.corrPlotCanvas.Show()
+		elif event.GetSelection() == 1:
+			self.UpdateGrowthPlot()
+			self.growthPlotCanvas.Show()
+
+	def UpdateGrowthPlot(self):
+		# 9/18/2013 brg: Was unable to get Window attribute on init without adding this
+		# hasattr call. Unclear why - its (Window is an instance of DataCanvas)
+		# lone init() method, where Window is initialized, is called before this,
+		# or so it would seem. Interestingly, other attributes declared beneath
+		# Window in DataCanvas.init() were also unavailable. Funky.
+		maxMbsfDepth = 0.0
+		growthRateLines = []
+		if hasattr(self.parent, 'Window'):
+			holeNum = 0
+			# avoid duplicate holes with different datatypes
+			holeSet = set([])
+			holeMarker = ['circle', 'square', 'triangle', 'plus', 'triangle_down']
+			holeColor = ['red', 'blue', 'green', 'black', 'orange']
+			for hole in self.parent.Window.HoleData:
+				if hole[0][0][7] not in holeSet:
+					holeSet.add(hole[0][0][7])
+					growthRatePoints = []
+					for core in range(hole[0][0][8]):
+						offset = hole[0][core + 1][5]
+						topSectionMcd = hole[0][core + 1][9][0]
+						mbsfDepth = topSectionMcd - hole[0][core + 1][5]
+						if mbsfDepth > maxMbsfDepth:
+							maxMbsfDepth = mbsfDepth
+						offsetMbsfPair = (mbsfDepth, offset)
+						growthRatePoints.append(offsetMbsfPair)
+					self.growthPlotData.append(plot.PolyMarker(growthRatePoints, marker=holeMarker[holeNum], legend=hole[0][0][7], colour=holeColor[holeNum], size=2))
+					if len(growthRatePoints) == 1:
+						growthRatePoints = [(0,0)] + growthRatePoints
+					growthRateLines.append(plot.PolyLine(growthRatePoints, colour='black', width=1))
+					holeNum = (holeNum + 1) % len(holeMarker) # make sure we don't overrun marker/color lists
+		else:
+			return
+		
+		tenPercentLine = plot.PolyLine([(0,0),(maxMbsfDepth, maxMbsfDepth/10.0)], legend='10%', colour='black', width=2)
+		# order matters: draw 10% line, then data lines, then data markers/points
+		self.growthPlotData = [tenPercentLine] + self.growthPlotData
+		self.growthPlotData = growthRateLines + self.growthPlotData
+
+		gc = plot.PlotGraphics(self.growthPlotData, 'Growth Rate', 'mbsf', 'offset (m)')
+		self.growthPlotCanvas.Draw(gc, xAxis = (0, maxMbsfDepth), yAxis = (0, maxMbsfDepth/10))
+		self.growthPlotData = []
+
 	def OnUpdateDrawing(self):
 		self.polyline_list.append(self.xaxes)
 		self.polyline_list.append(self.yaxes)
 		gc = plot.PlotGraphics(self.polyline_list, 'Evaluation Graph', 'depth Axis', 'coef Axis')
-		self.wxpcPlotCanvas.Draw(gc, xAxis = (-self.leadLagValue , self.leadLagValue), yAxis = (-1, 1))	
+		self.corrPlotCanvas.Draw(gc, xAxis = (-self.leadLagValue , self.leadLagValue), yAxis = (-1, 1))	
 		self.polyline_list = []
-
 
 class SplicePanel():
 	def __init__(self, parent, mainPanel):
@@ -709,17 +818,17 @@ class SplicePanel():
 		panel2 = wx.Panel(self.mainPanel, -1)
 		# Setup graph
 		# parent, id, pos, size, style, name
-		self.wxpcPlotCanvas = plot.PlotCanvas(panel2)
+		self.corrPlotCanvas = plot.PlotCanvas(panel2)
 		if self.parent.Height > 768 :
-			self.wxpcPlotCanvas.SetSize((300,300))
+			self.corrPlotCanvas.SetSize((300,300))
 		else :
-			self.wxpcPlotCanvas.SetSize((300,250))
+			self.corrPlotCanvas.SetSize((300,250))
 
-		#self.wxpcPlotCanvas.SetEnableZoom( True )
-		self.wxpcPlotCanvas.SetEnableGrid( True )
-		self.wxpcPlotCanvas.SetBackgroundColour("White")
-		#self.wxpcPlotCanvas.Centre(wxBOTH)
-		self.wxpcPlotCanvas.Show(True)
+		#self.corrPlotCanvas.SetEnableZoom( True )
+		self.corrPlotCanvas.SetEnableGrid( True )
+		self.corrPlotCanvas.SetBackgroundColour("White")
+		#self.corrPlotCanvas.Centre(wxBOTH)
+		self.corrPlotCanvas.Show(True)
 
 		xdata = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
 		self.xaxes = plot.PolyLine(xdata, legend='', colour='black', width =2)
@@ -1085,7 +1194,7 @@ class SplicePanel():
 
 	def OnUpdate(self):
 		self.leadLagValue = float(self.leadlag.GetValue())
-		self.wxpcPlotCanvas.Clear()
+		self.corrPlotCanvas.Clear()
 		data = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
 		self.OnUpdateData(data, [])
 		self.OnUpdateDrawing()
@@ -1103,23 +1212,17 @@ class SplicePanel():
 
 	def OnUpdateData(self, data, bestdata):
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
-		if bestdata == [] : 
-			self.polyline_list.append(line)
-			#gc = plot.PlotGraphics([line,self.xaxes,self.yaxes], 'Evaluation Graph', 'depth Axis', 'coef Axis')
-		else :
+		self.polyline_list.append(line)
+		if bestdata != [] : 
 			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width =5) 
-			self.polyline_list.append(line)
 			self.polyline_list.append(bestline)
-		#gc = plot.PlotGraphics([line,self.xaxes,self.yaxes,bestline], 'Evaluation Graph', 'depth Axis', 'coef Axis')
-		#self.wxpcPlotCanvas.Draw(gc, xAxis = (-self.leadLagValue , self.leadLagValue), yAxis = (-1, 1))	
 
+	# brg 9/18/2013 duplication
 	def OnAddFirstData(self, data, bestdata, best):
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
-		if bestdata == [] : 
-			self.polyline_list.append(line)
-		else :
+		self.polyline_list.append(line)
+		if bestdata != [] : 
 			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width =5) 
-			self.polyline_list.append(line)
 			self.polyline_list.append(bestline)
 
 	def OnAddData(self, data):
@@ -1130,7 +1233,7 @@ class SplicePanel():
 		self.polyline_list.append(self.xaxes)
 		self.polyline_list.append(self.yaxes)
 		gc = plot.PlotGraphics(self.polyline_list, 'Evaluation Graph', 'depth Axis', 'coef Axis')
-		self.wxpcPlotCanvas.Draw(gc, xAxis = (-self.leadLagValue , self.leadLagValue), yAxis = (-1, 1))	
+		self.corrPlotCanvas.Draw(gc, xAxis = (-self.leadLagValue , self.leadLagValue), yAxis = (-1, 1))	
 		self.polyline_list = []
 
 
@@ -1644,18 +1747,18 @@ class ELDPanel():
 		panel2 = wx.Panel(self.mainPanel, -1)
 		# Setup graph
 		# parent, id, pos, size, style, name
-		self.wxpcPlotCanvas = plot.PlotCanvas(panel2)
+		self.corrPlotCanvas = plot.PlotCanvas(panel2)
 		if self.parent.Height > 768 :
-			self.wxpcPlotCanvas.SetSize((300,300))
+			self.corrPlotCanvas.SetSize((300,300))
 		else :
-			#self.wxpcPlotCanvas.SetSize((300,250))
-			self.wxpcPlotCanvas.SetSize((300,230))
+			#self.corrPlotCanvas.SetSize((300,250))
+			self.corrPlotCanvas.SetSize((300,230))
 
-		#self.wxpcPlotCanvas.SetEnableZoom( True )
-		self.wxpcPlotCanvas.SetEnableGrid( True )
-		self.wxpcPlotCanvas.SetBackgroundColour("White")
-		#self.wxpcPlotCanvas.Centre(wxBOTH)
-		self.wxpcPlotCanvas.Show(True)
+		#self.corrPlotCanvas.SetEnableZoom( True )
+		self.corrPlotCanvas.SetEnableGrid( True )
+		self.corrPlotCanvas.SetBackgroundColour("White")
+		#self.corrPlotCanvas.Centre(wxBOTH)
+		self.corrPlotCanvas.Show(True)
 
 		xdata = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
 		self.xaxes = plot.PolyLine(xdata, legend='', colour='black', width =2)
@@ -1890,7 +1993,7 @@ class ELDPanel():
 
 	def OnUpdate(self):
 		self.leadLagValue = float(self.leadlag.GetValue())
-		self.wxpcPlotCanvas.Clear()
+		self.corrPlotCanvas.Clear()
 		data = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
 		self.OnUpdateData(data, [])
 		self.OnUpdateDrawing()
@@ -1908,23 +2011,17 @@ class ELDPanel():
 
 	def OnUpdateData(self, data, bestdata):
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
-		if bestdata == [] : 
-			self.polyline_list.append(line)
-			#gc = plot.PlotGraphics([line,self.xaxes,self.yaxes], 'Evaluation Graph', 'depth Axis', 'coef Axis')
-		else :
+		self.polyline_list.append(line)
+		if bestdata != [] : 
 			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width =5) 
-			self.polyline_list.append(line)
 			self.polyline_list.append(bestline)
-		#gc = plot.PlotGraphics([line,self.xaxes,self.yaxes,bestline], 'Evaluation Graph', 'depth Axis', 'coef Axis')
-		#self.wxpcPlotCanvas.Draw(gc, xAxis = (-self.leadLagValue , self.leadLagValue), yAxis = (-1, 1))	
 
+	# 9/18/2013 brg: duplication
 	def OnAddFirstData(self, data, bestdata, best):
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
-		if bestdata == [] : 
-			self.polyline_list.append(line)
-		else :
+		self.polyline_list.append(line)
+		if bestdata != [] : 
 			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width =5) 
-			self.polyline_list.append(line)
 			self.polyline_list.append(bestline)
 
 	def OnAddData(self, data):
@@ -1935,7 +2032,7 @@ class ELDPanel():
 		self.polyline_list.append(self.xaxes)
 		self.polyline_list.append(self.yaxes)
 		gc = plot.PlotGraphics(self.polyline_list, 'Evaluation Graph', 'depth Axis', 'coef Axis')
-		self.wxpcPlotCanvas.Draw(gc, xAxis = (-self.leadLagValue , self.leadLagValue), yAxis = (-1, 1))	
+		self.corrPlotCanvas.Draw(gc, xAxis = (-self.leadLagValue , self.leadLagValue), yAxis = (-1, 1))	
 		self.polyline_list = []
 
 

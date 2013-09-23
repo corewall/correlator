@@ -4212,6 +4212,8 @@ class DataFrame(wx.Frame):
 		self.parent.Window.SetFocusFromKbd()
 		self.parent.Window.UpdateDrawing()
 
+		self.parent.compositePanel.OnUpdate() # make sure growth rate is updated
+
 		self.parent.compositePanel.saveButton.Enable(True)
 		if self.parent.Window.LogData  == [] :
 			self.parent.splicePanel.saveButton.Enable(True)

@@ -3918,6 +3918,7 @@ class DataCanvas(wxBufferedWindow):
 					self.TieData = []
 					self.parent.compositePanel.OnButtonEnable(0, False)
 					self.parent.compositePanel.OnButtonEnable(1, True)
+					self.parent.compositePanel.UpdateGrowthPlot()
 
 					if opId == 3 : 
 						s = "Composite(All Below): hole " + holeA + " core " + coreA + ": " + str(datetime.today()) + "\n"
