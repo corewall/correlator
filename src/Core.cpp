@@ -687,6 +687,45 @@ void Core::setRange( data_range range )
 	m_updated = true;
 }
 	
+Value* Core::createTypedValue(const int index)
+{
+	Value *newValue = NULL;
+	switch (m_type)
+	{
+	case GRA:
+		{
+			newValue = (Value*) new GraValue(index, this);
+			break;
+		}
+	case PWAVE:
+		{
+			newValue = (Value*) new PwaveValue(index, this);
+			break;
+		}
+	case SUSCEPTIBILITY:
+		{
+			newValue = (Value*) new SusceptibilityValue(index, this);
+			break;
+		}
+	case NATURALGAMMA:
+		{
+			newValue = (Value*) new NaturalGammaValue(index, this);
+			break;
+		}
+	case REFLECTANCE:
+		{
+			newValue = (Value*) new ReflectanceValue(index, this);
+			break;
+		}
+	default:
+		{
+			newValue = (Value*) new NaturalGammaValue(index, this);
+			break;
+		}
+	}
+	return newValue;
+}
+
 Value* Core::createValue( int index )
 {
 	// check validation with index
@@ -703,42 +742,8 @@ Value* Core::createValue( int index )
 		}
 	}
 	
-	Value* newValue = NULL;
-	switch(m_type) 
-	{
-	case GRA:
-		{
-			newValue = (Value*) new GraValue(index, this);
-		}
-		break;
-	case PWAVE:
-		{
-			newValue = (Value*) new PwaveValue(index, this);
-		}
-		break;
-	case SUSCEPTIBILITY:
-		{
-			newValue = (Value*) new SusceptibilityValue(index, this);
-		}
-		break;
-	case NATURALGAMMA:
-		{
-			newValue = (Value*) new NaturalGammaValue(index, this);
-		}
-		break;
-	case REFLECTANCE:
-		{
-			newValue = (Value*) new ReflectanceValue(index, this);
-		}
-		break;		
-	default:
-		{
-			newValue = (Value*) new NaturalGammaValue(index, this);
-		}
-		break;					
-	}
-
-	if(newValue != NULL) 
+	Value* newValue = createTypedValue(index);
+	if (newValue != NULL) 
 	{
 		m_values.push_back(newValue);
 		m_goodRef++;
@@ -765,42 +770,8 @@ Value* Core::createValue( int index, double depth )
 		}
 	}
 	
-	Value* newValue = NULL;
-	switch(m_type) 
-	{
-	case GRA:
-		{
-			newValue = (Value*) new GraValue(index, this);
-		}
-		break;
-	case PWAVE:
-		{
-			newValue = (Value*) new PwaveValue(index, this);
-		}
-		break;
-	case SUSCEPTIBILITY:
-		{
-			newValue = (Value*) new SusceptibilityValue(index, this);
-		}
-		break;
-	case NATURALGAMMA:
-		{
-			newValue = (Value*) new NaturalGammaValue(index, this);
-		}
-		break;
-	case REFLECTANCE:
-		{
-			newValue = (Value*) new ReflectanceValue(index, this);
-		}
-		break;		
-	default:
-		{
-			newValue = (Value*) new NaturalGammaValue(index, this);
-		}
-		break;					
-	}
-
-	if(newValue != NULL) 
+	Value* newValue = createTypedValue(index);
+	if (newValue != NULL) 
 	{
 		for(iter = m_values.begin(); iter != m_values.end(); iter++) 
 		{
@@ -885,55 +856,23 @@ Value* Core::createInterpolatedValue( double depth )
 		{
 			if(newValue == NULL)
 			{
-				//newValue = (Value*) new Value(index, this);
-				switch(m_type) 
+				newValue = createTypedValue(index);
+				if (newValue != NULL)
 				{
-					case GRA:
-					{
-						newValue = (Value*) new GraValue(index, this);
-					}
-						break;
-					case PWAVE:
-					{
-						newValue = (Value*) new PwaveValue(index, this);
-					}
-						break;
-					case SUSCEPTIBILITY:
-					{
-						newValue = (Value*) new SusceptibilityValue(index, this);
-					}
-						break;
-					case NATURALGAMMA:
-					{
-						newValue = (Value*) new NaturalGammaValue(index, this);
-					}
-						break;
-					case REFLECTANCE:
-					{
-						newValue = (Value*) new ReflectanceValue(index, this);
-					}
-						break;		
-					default:
-					{
-						newValue = (Value*) new NaturalGammaValue(index, this);
-					}
-						break;					
-				}
-				
-				
-				newValue->setValueType(INTERPOLATED_VALUE);				
-				m_values.insert(iter, newValue);
-				m_goodRef++;
-				m_updated = true;
+					newValue->setValueType(INTERPOLATED_VALUE);				
+					m_values.insert(iter, newValue);
+					m_goodRef++;
+					m_updated = true;
 #ifdef DEBUG				
-				cout << "[DEBUG] Interpolated  value is added : core No=" << getNumber() << " depth=" << depth <<  " before point depth=" << valueptr->getMbsf() << " " << index <<  endl;				
+					cout << "[DEBUG] Interpolated  value is added : core No=" << getNumber() << " depth=" << depth <<  " before point depth=" << valueptr->getMbsf() << " " << index <<  endl;
 #endif
+				}
 				break;
 			}
 		}
 	}
 
-	index =0;	
+	index = 0;
 	for(iter = m_values.begin(); iter != m_values.end(); iter++, index++) 
 	{
 		valueptr = (Value*) *iter;
@@ -943,45 +882,16 @@ Value* Core::createInterpolatedValue( double depth )
 	
 	if(newValue == NULL)
 	{
-		switch(m_type) 
+		newValue = createTypedValue(index);
+		if (newValue != NULL)
 		{
-			case GRA:
-			{
-				newValue = (Value*) new GraValue(index, this);
-			}
-				break;
-			case PWAVE:
-			{
-				newValue = (Value*) new PwaveValue(index, this);
-			}
-				break;
-			case SUSCEPTIBILITY:
-			{
-				newValue = (Value*) new SusceptibilityValue(index, this);
-			}
-				break;
-			case NATURALGAMMA:
-			{
-				newValue = (Value*) new NaturalGammaValue(index, this);
-			}
-				break;
-			case REFLECTANCE:
-			{
-				newValue = (Value*) new ReflectanceValue(index, this);
-			}
-				break;		
-			default:
-			{
-				newValue = (Value*) new NaturalGammaValue(index, this);
-			}
-				break;					
-		}
-		newValue->setValueType(INTERPOLATED_VALUE);				
-		m_values.push_back(newValue);
-		m_goodRef++;
+			newValue->setValueType(INTERPOLATED_VALUE);				
+			m_values.push_back(newValue);
+			m_goodRef++;
 #ifdef DEBUG		
-		cout << "[DEBUG] Interpolated  value is added : core No=" << getNumber() << " depth=" << depth <<  " before point depth=" << newValue->getMbsf() << " " << index <<  endl;				
+			cout << "[DEBUG] Interpolated  value is added : core No=" << getNumber() << " depth=" << depth <<  " before point depth=" << newValue->getMbsf() << " " << index <<  endl;
 #endif
+		}
 		m_updated = true;
 	}
 	return newValue;	
