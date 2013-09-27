@@ -1081,10 +1081,10 @@ int ReadSpliceTable(FILE *fptr, Data* dataptr, bool alternative, int core_type, 
 				}		
 
 				newValue = coreptr->createInterpolatedValue(depth);
-	
 				if(newValue && (newValue->getMbsf() != depth))
 				{
 					newValue->copy(valueA);
+					newValue->setValueType(INTERPOLATED_VALUE); // this is assigned in createInterpolatedValue(), but lost when we copy valueA into newValue
 					newValue->setDepth(depth);
 					newValue->applyAffine(coreptr->getDepthOffset(), newValue->getType());
 					//newValue->setB(offset);
@@ -1155,15 +1155,16 @@ int ReadSpliceTable(FILE *fptr, Data* dataptr, bool alternative, int core_type, 
 				newValue = newCore->createInterpolatedValue(depth);
 				if(newValue && (newValue->getMbsf() != depth))
 				{
-						newValue->copy(valueB);
-						newValue->setDepth(depth);
-						newValue->applyAffine(newCore->getDepthOffset(), newValue->getType());
-						//newValue->setB(offset);
-						// need to update data and bottom/top value
-						newValue->setRawData(temp_data);
-						newValue->setTop(range.top);
-						valueB = newValue;
-						//std::cout << "P/b)--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << std::endl;
+					newValue->copy(valueB);
+					newValue->setValueType(INTERPOLATED_VALUE); // this is assigned in createInterpolatedValue(), but lost when we copy valueB into newValue
+					newValue->setDepth(depth);
+					newValue->applyAffine(newCore->getDepthOffset(), newValue->getType());
+					//newValue->setB(offset);
+					// need to update data and bottom/top value
+					newValue->setRawData(temp_data);
+					newValue->setTop(range.top);
+					valueB = newValue;
+					//std::cout << "P/b)--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << std::endl;
 				}
 			}
 			tieptr->setTieTo(valueB);		
@@ -1248,15 +1249,16 @@ int ReadSpliceTable(FILE *fptr, Data* dataptr, bool alternative, int core_type, 
 
 				if(newValue && (newValue->getMbsf() != depth))
 				{
-						newValue->copy(valueA);
-						newValue->setDepth(depth);
-						newValue->applyAffine(coreptr->getDepthOffset(), newValue->getType());
-						//newValue->setB(offset);
-						// need to update data and bottom/top value
-						newValue->setRawData(temp_data);
-						newValue->setTop(range.top);
-						valueA = newValue;
-						//std::cout << "P/a)--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << std::endl;
+					newValue->copy(valueA);
+					newValue->setValueType(INTERPOLATED_VALUE); // this is assigned in createInterpolatedValue(), but lost when we copy valueA into newValue
+					newValue->setDepth(depth);
+					newValue->applyAffine(coreptr->getDepthOffset(), newValue->getType());
+					//newValue->setB(offset);
+					// need to update data and bottom/top value
+					newValue->setRawData(temp_data);
+					newValue->setTop(range.top);
+					valueA = newValue;
+					//std::cout << "P/a)--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << std::endl;
 				}
 			}
 			if(valueA == NULL) continue;
@@ -1322,18 +1324,18 @@ int ReadSpliceTable(FILE *fptr, Data* dataptr, bool alternative, int core_type, 
 				}
 		
 				newValue = newCore->createInterpolatedValue(depth);
-
 				if(newValue && (newValue->getMbsf() != depth))
 				{
-						newValue->copy(valueB);
-						newValue->setDepth(depth);
-						newValue->applyAffine(newCore->getDepthOffset(), newValue->getType());
-						//newValue->setB(offset);
-						// need to update data and bottom/top value
-						newValue->setRawData(temp_data);
-						newValue->setTop(range.top);
-						valueB = newValue;
-						//std::cout << "P/b)--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << std::endl;
+					newValue->copy(valueB);
+					newValue->setValueType(INTERPOLATED_VALUE); // this is assigned in createInterpolatedValue(), but lost when we copy valueA into newValue
+					newValue->setDepth(depth);
+					newValue->applyAffine(newCore->getDepthOffset(), newValue->getType());
+					//newValue->setB(offset);
+					// need to update data and bottom/top value
+					newValue->setRawData(temp_data);
+					newValue->setTop(range.top);
+					valueB = newValue;
+					//std::cout << "P/b)--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << std::endl;
 				}
 			}
 			if(valueB == NULL) continue;
@@ -3412,19 +3414,23 @@ int WriteCoreHole( char* filename, Hole* holeptr )
 			{
 				valueptr = coreptr->getValue(j);
 				if (valueptr == NULL) continue;
+				if (valueptr->getValueType() == INTERPOLATED_VALUE) continue;
 				if (valueptr->getQuality() == GOOD)
 				{
 					//fprintf (fptr, "%s \t%s \t%s \t%d \t%c \t%s", leg, site, holeptr->getName(), coreptr->getNumber(), valueptr->getType(), valueptr->getSection());
 					fprintf (fptr, "%s \t%s \tspliced_record \t%d \t%c \t%s", leg, site, coreptr->getNumber(), valueptr->getType(), valueptr->getSection());
 
 					fprintf (fptr, " \t%f \t%f \t%f \t%f \t-", valueptr->getTop(), valueptr->getBottom(), valueptr->getELD(), valueptr->getRawData());
-					if(valueptr->getValueType() == INTERPOLATED_VALUE)
-					{
-						fprintf (fptr, " \ti%s \t%f \t%f\n", coreptr->getAnnotation(), valueptr->getMbsf(), coreptr->getDepthOffset());
-					} else 
-					{
+
+					// 9/26/2013 brg: Omit interpolated values entirely for now
+					//if (valueptr->getValueType() == INTERPOLATED_VALUE)
+					//{
+					//	fprintf (fptr, " \ti%s \t%f \t%f\n", coreptr->getAnnotation(), valueptr->getMbsf(), coreptr->getDepthOffset());
+					//}
+					//else 
+					//{
 						fprintf (fptr, " \t%s \t%f \t%f\n", coreptr->getAnnotation(), valueptr->getMbsf(), coreptr->getDepthOffset());					
-					}
+					//}
 				}
 			}
 		}	
