@@ -720,37 +720,49 @@ class CompositePanel():
 			self.UpdateGrowthPlot()
 			self.growthPlotCanvas.Show()
 
+	def UpdateGrowthPlotData(self):
+		maxMbsfDepth = 0.0
+		growthRateLines = []
+		holeNum = 0
+		holeSet = set([]) # avoid duplicate holes with different datatypes
+		holeMarker = ['circle', 'square', 'triangle', 'plus', 'triangle_down']
+		holeColor = ['red', 'blue', 'green', 'black', 'orange']
+		for hole in self.parent.Window.HoleData:
+			holeName = hole[0][0][7]
+			if holeName not in holeSet:
+				holeSet.add(holeName)
+				growthRatePoints = []
+
+				# brg 10/14/2013: hole[0][0][8] indicates the number of cores in the hole, but this isn't
+				# always reliable - make sure we don't overrun the list of cores given such errant data
+				numCores = min(hole[0][0][8], len(hole[0]) - 1)
+
+				for core in range(numCores):
+					offset = hole[0][core + 1][5]
+					topSectionMcd = hole[0][core + 1][9][0]
+					mbsfDepth = topSectionMcd - hole[0][core + 1][5]
+					if mbsfDepth > maxMbsfDepth:
+						maxMbsfDepth = mbsfDepth
+					offsetMbsfPair = (mbsfDepth, offset)
+					growthRatePoints.append(offsetMbsfPair)
+
+				self.growthPlotData.append(plot.PolyMarker(growthRatePoints, marker=holeMarker[holeNum], legend=hole[0][0][7], colour=holeColor[holeNum], size=2))
+				if len(growthRatePoints) == 1:
+					growthRatePoints = [(0,0)] + growthRatePoints
+				growthRateLines.append(plot.PolyLine(growthRatePoints, colour='black', width=1))
+				holeNum = (holeNum + 1) % len(holeMarker) # make sure we don't overrun marker/color lists
+
+		return growthRateLines, maxMbsfDepth
+
 	def UpdateGrowthPlot(self):
 		# 9/18/2013 brg: Was unable to get Window attribute on init without adding this
 		# hasattr call. Unclear why - its (Window is an instance of DataCanvas)
 		# lone init() method, where Window is initialized, is called before this,
 		# or so it would seem. Interestingly, other attributes declared beneath
 		# Window in DataCanvas.init() were also unavailable. Funky.
-		maxMbsfDepth = 0.0
 		growthRateLines = []
 		if hasattr(self.parent, 'Window'):
-			holeNum = 0
-			# avoid duplicate holes with different datatypes
-			holeSet = set([])
-			holeMarker = ['circle', 'square', 'triangle', 'plus', 'triangle_down']
-			holeColor = ['red', 'blue', 'green', 'black', 'orange']
-			for hole in self.parent.Window.HoleData:
-				if hole[0][0][7] not in holeSet:
-					holeSet.add(hole[0][0][7])
-					growthRatePoints = []
-					for core in range(hole[0][0][8]):
-						offset = hole[0][core + 1][5]
-						topSectionMcd = hole[0][core + 1][9][0]
-						mbsfDepth = topSectionMcd - hole[0][core + 1][5]
-						if mbsfDepth > maxMbsfDepth:
-							maxMbsfDepth = mbsfDepth
-						offsetMbsfPair = (mbsfDepth, offset)
-						growthRatePoints.append(offsetMbsfPair)
-					self.growthPlotData.append(plot.PolyMarker(growthRatePoints, marker=holeMarker[holeNum], legend=hole[0][0][7], colour=holeColor[holeNum], size=2))
-					if len(growthRatePoints) == 1:
-						growthRatePoints = [(0,0)] + growthRatePoints
-					growthRateLines.append(plot.PolyLine(growthRatePoints, colour='black', width=1))
-					holeNum = (holeNum + 1) % len(holeMarker) # make sure we don't overrun marker/color lists
+			growthRateLines, maxMbsfDepth = self.UpdateGrowthPlotData()
 		else:
 			return
 		
