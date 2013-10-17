@@ -11,7 +11,7 @@ import wx.lib.sheet as sheet
 from wx.lib import plot
 import random, sys, os, re, time, ConfigParser, string
 
-import py_correlator
+from importManager import py_correlator
 
 class CoreSheet(sheet.CSheet):
 	def __init__(self, parent, x, y):

@@ -15,7 +15,8 @@ from datetime import datetime
 import xml.sax
 from xml_handler import *
 
-import py_correlator
+from importManager import py_correlator
+
 from dialog import *
 
 def opj(path):

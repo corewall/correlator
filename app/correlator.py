@@ -20,8 +20,7 @@ import random, sys, re, time, ConfigParser, string
 import getpass
 from datetime import datetime
 
-# for importing py_correlator properly
-import py_correlator
+from importManager import py_correlator
 
 from canvas import * 
 from dialog import *

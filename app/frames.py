@@ -14,7 +14,8 @@ from datetime import datetime
 
 import numpy.oldnumeric as _Numeric
 
-import py_correlator
+from importManager import py_correlator
+
 from dialog import *
 from dbmanager import *
 
