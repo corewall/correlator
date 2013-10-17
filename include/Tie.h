@@ -84,8 +84,8 @@ public:
 	int		applyAffine( double offset );
 
 	void	calcEquation( Tie* tieptr );
-	int		calcCoeficiant( int off = 0 );
-	int		calcCoeficiantUpdate( int off = 0 );
+	int		calcCoefficient( int off = 0 );
+	int		calcCoefficientUpdate( int off = 0 );
 	
 	int		calcOffset( void );
 

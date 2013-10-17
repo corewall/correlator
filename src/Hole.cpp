@@ -242,7 +242,7 @@ void Hole::getTuple( std::string& data, int type )
 			tempCore->getTuple(data, type);
 		}
 		data += ":";
-	} else if(type == SECTION)
+	} else if (type == SECTION)
 	{
 		char info[25]; info[0] = 0;
 		sprintf(info, "%s,%s,%s,", getSite(), getLeg(), m_name.c_str());
@@ -255,7 +255,7 @@ void Hole::getTuple( std::string& data, int type )
 			tempCore->getTuple(data, type);
 		}
 		data += ":";
-	} else if((type == SAGAN_TIE) || (type == TIE_SHIFT))
+	} else if ((type == SAGAN_TIE) || (type == TIE_SHIFT))
 	{	
 		for(iter = m_cores.begin(); iter != m_cores.end(); iter++)
 		{   

@@ -113,6 +113,7 @@ public:
 	void getSaganTuple( std::string& data, int fileflag = false ); 
 
 	void getCoefList( std::string& data );
+	int getSectionAtDepth(char *hole, int core, int coretype, double depth);
 	
 	int setCoreQuality( char* hole, int core, int coretype, int quality, char* annot = NULL );
 	

@@ -191,7 +191,7 @@ void Tie::update( void )
 				}
 			}
 			
-			//if(calcCoeficiant() <= 0) return;
+			//if(calcCoefficient() <= 0) return;
 			//std::cout << "coef : " << m_coef << std::endl;
 		}
 	}
@@ -304,7 +304,7 @@ void Tie::getTuple( string& data, int type )
 		} else {
 			printf( "error.......for tie.... NULL\n");
 		}
-	} else if(type == TIE_SHIFT)
+	} else if (type == TIE_SHIFT)
 	{
 		if (m_active == true)
 		{
@@ -422,7 +422,7 @@ void Tie::calcEquation( Tie* tieptr )
 	if(m_corr_status == YES)
 	{
 		tempdepth[0] = m_tieTocore.m_eld;
-	} else if(m_affine_status == YES)
+	} else if (m_affine_status == YES)
 	{
 		tempdepth[0] = m_tieTocore.m_mcd;
 	} else 
@@ -434,7 +434,7 @@ void Tie::calcEquation( Tie* tieptr )
 		if(m_corr_status == YES)
 		{
 			tempdepth[1] = tieptr->m_tieTocore.m_eld;
-		} else if(m_affine_status == YES)
+		} else if (m_affine_status == YES)
 		{
 			tempdepth[1] = tieptr->m_tieTocore.m_mcd;	
 		} else 
@@ -455,10 +455,10 @@ void Tie::calcEquation( Tie* tieptr )
 	}
 }
 
-int Tie::calcCoeficiant( int off )
+int Tie::calcCoefficient( int off )
 {
 	//  sum up
-	//std::cout << "calcCoeficiant " << std::endl;
+	//std::cout << "calcCoefficient " << std::endl;
 	Core* coreA = m_tiedcore.m_coreptr;
 	Core* coreB = m_tieTocore.m_coreptr;
  	int n = coreA->getNumOfValues() -1;
@@ -514,7 +514,7 @@ int Tie::calcCoeficiant( int off )
 		}
 	} 
 
-	// calculate the standard deviation and the correlation coeficiant
+	// calculate the standard deviation and the correlation coefficient
 	double stdevX, stdevY;
 	if(nx > 1)
 	{
@@ -645,7 +645,7 @@ Value* Tie::findValue( Core* coreptr, double depth )
 
 
 
-int Tie::calcCoeficiantUpdate( int off )
+int Tie::calcCoefficientUpdate( int off )
 {
 	//  sum up
 	Core* coreA = m_tiedcore.m_coreptr;
@@ -689,7 +689,7 @@ int Tie::calcCoeficiantUpdate( int off )
 		}
 	} 
 	
-	// calculate the standard deviation and the correlation coeficiant
+	// calculate the standard deviation and the correlation coefficient
 	double stdevX, stdevY;
 	if(nx > 1)
 	{
@@ -758,7 +758,7 @@ int Tie::correlate( void )
   */
 	// calc. corr. coef. for each lead,lag in given window note that core1offset causes core 1 to lag and then lead core 2
 	//core1offset = tie1num - tie2num - lag;
-	//calcCoeficiant();
+	//calcCoefficient();
 
 //	m_lead_lag = lag;
 	//m_offset = m_tiedcore->getValue(i)->getELD() - m_tieTocore->getValue(i)->getELD() - lag * depstep;
@@ -771,7 +771,7 @@ int Tie::correlate( void )
 	return 1;
 }
 
-void Tie::setTieTo( Core* coreptr, char valuetype, char* section, data_range range, double mbsf, double mcd )
+void Tie::setTieTo( Core* coreptr, char valuetype, char* section, data_range range, double mbsf /* =0.0 */, double mcd /* =0.0 */ )
 {
 	m_tieTocore.m_coreptr = coreptr;
 	m_tieTocore.m_valuetype = valuetype;
@@ -791,7 +791,7 @@ void Tie::setTieTo( Core* coreptr, char valuetype, char* section, data_range ran
 	//m_tieTocore.m_valueptr = valueptr;
 }
 
-void Tie::setTied( Core* coreptr, char valuetype, char* section, data_range range, double mbsf, double mcd )
+void Tie::setTied( Core* coreptr, char valuetype, char* section, data_range range, double mbsf /* = 0.0*/, double mcd /* = 0.0 */ )
 {
 	m_tiedcore.m_coreptr = coreptr;
 	m_tiedcore.m_valuetype = valuetype;
@@ -850,7 +850,7 @@ Value* Tie::getTieToValue( void )
 	
 double Tie::getCoef( void ) 
 {
-	calcCoeficiant();
+	calcCoefficient();
 	return m_coef;
 }
 
@@ -1207,10 +1207,10 @@ void Tie::debugPrintOut( void )
 		if(m_tietype == COMPOSITED_TIE)
 		{
 			cout << "  type: composite" << endl;
-		} else if(m_tietype == REAL_TIE)
+		} else if (m_tietype == REAL_TIE)
 		{
 			cout << "  type : splice" << endl;
-		} else if(m_tietype == INTERPOLATED_TIED)
+		} else if (m_tietype == INTERPOLATED_TIED)
 		{
 			cout << " type : interporate" << endl;
 		}

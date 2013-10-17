@@ -82,6 +82,9 @@ protected:
 	int		checkDepthOrder( void );
 
 	void 		cleanTies( int type = ALL_TIE, bool fromFile = false );
+
+private:
+	Value* createTypedValue(const int index);
 	
 	// set_functions and get_functions.
 public:

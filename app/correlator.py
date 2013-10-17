@@ -20,8 +20,7 @@ import random, sys, re, time, ConfigParser, string
 import getpass
 from datetime import datetime
 
-# for importing py_correlator properly
-import py_correlator
+from importManager import py_correlator
 
 from canvas import * 
 from dialog import *
@@ -895,12 +894,7 @@ class MainFrame(wx.Frame):
 			self.eldPanel.OnAddData(l)
 
 	def OnHide(self, event):
-		#if self.CurrentDataNo != -1 :
-		#	ret = self.OnShowMessage("About", "Do you want to save changes?", 2)	
-		#	if ret == wx.ID_OK :
-		#		self.topMenu.OnSAVE(event)
-
-		self.OnSaveSession(1)
+		self.SavePreferences()
 
 		WIN_WIDTH = self.Width 
 		WIN_HEIGHT = self.Height 
@@ -944,7 +938,7 @@ class MainFrame(wx.Frame):
 		if ret == wx.ID_CANCEL :
 			return
 
-		self.OnSaveSession(1)
+		self.SavePreferences()
 		if self.logFileptr != None :
 			s = "\n" + str(datetime.today()) + "\n"
 			self.logFileptr.write(s)
@@ -996,6 +990,46 @@ class MainFrame(wx.Frame):
 			self.optPanel.opt2.SetValue(True)
 
 
+	def RebuildComboBox(self, comboBox, typeNames, hasSpliceData, hasLogData):
+		prevSelected = comboBox.GetCurrentSelection()
+		if prevSelected == -1 :
+			prevSelected = 0
+
+		comboBox.Clear()
+		comboBox.Append("All Holes")
+		for type in typeNames:
+			typeStr = "All " + type
+			if comboBox.FindString(typeStr) == wx.NOT_FOUND:
+				comboBox.Append(typeStr)
+
+		if hasSpliceData == True:
+			comboBox.Append("Spliced Records")
+		if hasLogData == True:
+			comboBox.Append("Log")
+
+		comboBox.SetSelection(prevSelected)
+		if platform_name[0] == "Windows":
+			comboBox.SetValue(comboBox.GetString(prevSelected))
+
+		return prevSelected
+
+
+	def RefreshTypeComboBoxes(self):
+		if self.filterPanel.locked == False:
+			holeData = self.Window.HoleData
+			hasSpliceData = (self.Window.SpliceData != [])
+			hasLogData = (self.Window.LogData != [])
+
+			# extract type names
+			typeNames = []
+			if len(holeData) > 0:
+				for holeIdx in range(len(holeData)):
+					typeNames.append(holeData[holeIdx][0][0][2])
+
+			self.filterPanel.prevSelected = self.RebuildComboBox(self.filterPanel.all, typeNames, hasSpliceData, hasLogData)
+			self.optPanel.prevSelected = self.RebuildComboBox(self.optPanel.all, typeNames, hasSpliceData, hasLogData)
+
+
 	def UpdateSECTION(self):
 		self.Window.SectionData = []
 		ret = py_correlator.getData(18)
@@ -1006,19 +1040,14 @@ class MainFrame(wx.Frame):
 		self.Window.HoleData = []
 		ret = py_correlator.getData(0)
 		if ret != "" :
-			self.filterPanel.OnRegisterClear()
 			self.LOCK = 0
 			self.PrevDataType = ""
 			self.ParseData(ret, self.Window.HoleData)
-			#self.OnUpdateDepthStep()
 			self.UpdateMinMax()
 			self.LOCK = 1
-			ret =""
-			if self.Window.SpliceData != [] :
-				self.filterPanel.OnRegisterHole("Spliced Records")
-			# HYEJUNG
-			if self.Window.LogData != [] :
-				self.filterPanel.OnRegisterHole("Log")
+			ret = "" # 9/18/2013 brg: Why? It's local and we're done with it.
+
+			self.RefreshTypeComboBoxes()
 
 	def UpdateSMOOTH_CORE(self):
 		self.Window.SmoothData = []
@@ -1911,56 +1940,57 @@ class MainFrame(wx.Frame):
 		self.OnDisableMenu(0, False)
 		self.Window.UpdateDrawing()
 
+		# 8/18/2013 brg: Unused, commenting
 		# HYEJUNG
-	def OnClearCoreType(self, event):
-		dlg =  ClearDataDialog(self, self.filterPanel.all)
-		#self.UpdateData()
+# 	def OnClearCoreType(self, event):
+# 		dlg =  ClearDataDialog(self, self.filterPanel.all)
+# 		#self.UpdateData()
 		
-		self.Window.HoleData = []
-		ret = "" 
-		if self.smoothDisplay == 1 or self.smoothDisplay == 3 : 
-			ret = py_correlator.getData(0)
-		elif self.smoothDisplay == 2 : 
-			ret = py_correlator.getData(1)
+# 		self.Window.HoleData = []
+# 		ret = "" 
+# 		if self.smoothDisplay == 1 or self.smoothDisplay == 3 : 
+# 			ret = py_correlator.getData(0)
+# 		elif self.smoothDisplay == 2 : 
+# 			ret = py_correlator.getData(1)
 
-		if ret != "" :
-			self.RawData =ret
-			#self.filterPanel.OnLock()
-			self.filterPanel.OnRegisterClear()
- 			self.PrevDataType = ""
- 			self.LOCK = 0
-			self.ParseData(self.RawData, self.Window.HoleData)
-			self.LOCK = 1
-			#self.filterPanel.OnRelease()
-			self.UpdateMinMax()
-		self.RawData = ""
-		ret =""
+# 		if ret != "" :
+# 			self.RawData =ret
+# 			#self.filterPanel.OnLock()
+# 			self.filterPanel.OnRegisterClear()
+#  			self.PrevDataType = ""
+#  			self.LOCK = 0
+# 			self.ParseData(self.RawData, self.Window.HoleData)
+# 			self.LOCK = 1
+# 			#self.filterPanel.OnRelease()
+# 			self.UpdateMinMax()
+# 		self.RawData = ""
+# 		ret =""
 
-		if self.Window.SmoothData != [] : 
-			self.Window.SmoothData = []
-			self.SmoothData = py_correlator.getData(1)
-			if self.SmoothData != "" :
-				self.filterPanel.OnLock()
-				self.ParseData(self.SmoothData, self.Window.SmoothData)
-				self.filterPanel.OnRelease()
-			self.SmoothData = ""
+# 		if self.Window.SmoothData != [] : 
+# 			self.Window.SmoothData = []
+# 			self.SmoothData = py_correlator.getData(1)
+# 			if self.SmoothData != "" :
+# 				self.filterPanel.OnLock()
+# 				self.ParseData(self.SmoothData, self.Window.SmoothData)
+# 				self.filterPanel.OnRelease()
+# 			self.SmoothData = ""
 
-		if self.Window.SpliceData != [] and self.Window.SmoothData != [] : 
-			self.Window.SpliceSmoothData = []
-			splice_data = py_correlator.getData(4)
-			if splice_data != "" :
-				self.filterPanel.OnLock()
-				self.ParseData(splice_data, self.Window.SpliceSmoothData)
-				self.filterPanel.OnRelease()
+# 		if self.Window.SpliceData != [] and self.Window.SmoothData != [] : 
+# 			self.Window.SpliceSmoothData = []
+# 			splice_data = py_correlator.getData(4)
+# 			if splice_data != "" :
+# 				self.filterPanel.OnLock()
+# 				self.ParseData(splice_data, self.Window.SpliceSmoothData)
+# 				self.filterPanel.OnRelease()
 
-		if self.Window.StratData != [] :
-			self.UpdateStratData()
+# 		if self.Window.StratData != [] :
+# 			self.UpdateStratData()
 		
-		self.Window.UpdateDrawing()
+# 		self.Window.UpdateDrawing()
 
 		
-		#dlg.ShowModal()	
-		#dlg.Destroy()	
+# 		#dlg.ShowModal()	
+# 		#dlg.Destroy()	
 
 	def OnClearAllData(self, event):
 		self.OnClearData()
@@ -2107,181 +2137,101 @@ class MainFrame(wx.Frame):
 		if ret == wx.ID_OK :
 			py_correlator.saveSession(path, self.selectedColumn)
 
+	# utility routine to write a single preference key-value pair to file
+	def WritePreferenceItem(self, key, value, file):
+		keyStr = key + ": "
+		valueStr = str(value) + "\n"
+		file.write(keyStr + valueStr)
 
-	def OnSaveSession(self, event):
-		width, height = self.GetClientSizeTuple()
-
+	# save user options/preferences
+	def SavePreferences(self):
 		cmd = "cp "
 		if sys.platform == 'win32' :
 			cmd = "copy "
 		cmd += myPath + "/default.cfg " + myPath + "/tmp/.default.cfg" 
 		os.system(cmd)
 		
-		#f = open(self.DBPath + 'default.cfg', 'w+')
 		f = open(myPath + '/default.cfg', 'w+')
-
 		f.write("[applications] \n")
-		s = "fullscreen: " + str(self.fulls) + "\n"
-		f.write(s)
+		
+		self.WritePreferenceItem("fullscreen", self.fulls, f)
+
 		winPT = self.GetPosition()
 		if winPT[0] < 0 or winPT[1] < 0 :
-			winPT = [0, 0] 
-		s = "winx: " + str(winPT[0]) + "\n"
-		f.write(s)
+			winPT = [0, 0]
+		self.WritePreferenceItem("winx", winPT[0], f)
+
 		if sys.platform != 'win32' :
-                        if winPT[0] < 800 and winPT[1] == 0 :
-                                s = "winy: 100\n"
-                                f.write(s)
-                        else :
-                                s = "winy: " + str(winPT[1]) + "\n"
-                                f.write(s)
-                else :
-                        s = "winy: " + str(winPT[1]) + "\n"
-                        f.write(s)
+			if winPT[0] < 800 and winPT[1] == 0 :
+				self.WritePreferenceItem("winy", 100, f)
+			else :
+				self.WritePreferenceItem("winy", winPT[1], f)
+		else :
+			self.WritePreferenceItem("winy", winPT[1], f)
                                 
-		s = "width: " + str(width) + "\n"
-		f.write(s)
-		s = "height: " + str(height) + "\n"
-		f.write(s)
+		width, height = self.GetClientSizeTuple()
+		self.WritePreferenceItem("width", width, f)
+		self.WritePreferenceItem("height", height, f)
 
-		#winPT = self.dataFrame.GetPosition()
-		#s = "dmwinx: " + str(winPT[0]) + "\n"
-		#f.write(s)
-		#s = "dmwiny: " + str(winPT[1]) + "\n"
-		#f.write(s)
+		self.WritePreferenceItem("secondscroll", self.Window.isSecondScroll, f)
 
-		#width, height = self.dataFrame.GetClientSizeTuple()
-		#s = "dmwidth: " + str(width) + "\n"
-		#f.write(s)
-		#s = "dmheight: " + str(height) + "\n"
-		#f.write(s)
-
-		s = "secondscroll: " + str(self.Window.isSecondScroll) + "\n"
-		f.write(s)
 		if (width - self.Window.splicerX) < 10 :
-			self.Window.splicerX = width /2
+			self.Window.splicerX = width / 2
+		self.WritePreferenceItem("middlebarposition", self.Window.splicerX, f)
 
-		s = "middlebarposition: " + str(self.Window.splicerX) + "\n"
-		f.write(s)
-		s = "startdepth: " + str(self.Window.rulerStartDepth) + "\n"
-		f.write(s)
-		s = "secondstartdepth: " + str(self.Window.SPrulerStartDepth) + "\n"
-		f.write(s)
-		s = "datawidth: " + str(self.optPanel.slider1.GetValue()) + "\n"
-		f.write(s)
-		s = "rulerscale: " + str(self.optPanel.slider2.GetValue()) + "\n"
-		f.write(s)
-		s = "rulerrange: " + str(self.optPanel.min_depth.GetValue()) + " " + str(self.optPanel.max_depth.GetValue()) + "\n"
-		f.write(s)
+		self.WritePreferenceItem("startdepth", self.Window.rulerStartDepth, f)
+		self.WritePreferenceItem("secondstartdepth", self.Window.SPrulerStartDepth, f)
+		self.WritePreferenceItem("datawidth", self.optPanel.slider1.GetValue(), f)
+		self.WritePreferenceItem("rulerunits", self.Window.GetRulerUnitsStr(), f)
+		self.WritePreferenceItem("rulerscale", self.optPanel.slider2.GetValue(), f)
 
-		s = "tiedotsize: " + str(self.Window.tieDotSize) + "\n"
-		f.write(s)
-		s = "tiewidth: " + str(self.Window.tieline_width) + "\n"
-		f.write(s)
-		s = "splicewindow: " + str(self.Window.spliceWindowOn) + "\n"
-		f.write(s)
-		s = "fontsize: " + str(self.Window.font2.GetPointSize()) + "\n"
-		f.write(s)
-		s = "fontstartdepth: " + str(self.Window.startDepth) + "\n"
-		f.write(s)
-		s = "scrollsize: " + str(self.Window.ScrollSize) + "\n"
-		f.write(s)
+		rulerRangeStr = str(self.optPanel.min_depth.GetValue()) + " " + str(self.optPanel.max_depth.GetValue())
+		self.WritePreferenceItem("rulerrange", rulerRangeStr, f)
 
-		if self.Window.showHoleGrid == True :
-			s = "showline: 1\n"
-			f.write(s)
-		else :
-			s = "showline: 0\n"
-			f.write(s)
+		self.WritePreferenceItem("tiedotsize", self.Window.tieDotSize, f)
+		self.WritePreferenceItem("tiewidth", self.Window.tieline_width, f)
+		self.WritePreferenceItem("splicewindow", self.Window.spliceWindowOn, f)
+		self.WritePreferenceItem("fontsize", self.Window.font2.GetPointSize(), f)
+		self.WritePreferenceItem("fontstartdepth", self.Window.startDepth, f)
+		self.WritePreferenceItem("scrollsize", self.Window.ScrollSize, f)
 
-		if self.Window.ShiftClue == True :
-			s = "shiftclue: 1\n"
-			f.write(s)
-		else :
-			s = "shiftclue: 0\n"
-			f.write(s)
+		showlineInt = 1 if self.Window.showHoleGrid == True else 0
+		self.WritePreferenceItem("showline", showlineInt, f)
+
+		shiftclueInt = 1 if self.Window.ShiftClue == True else 0
+		self.WritePreferenceItem("shiftclue", shiftclueInt, f)
 		
-		# HYEJUNG DB
-		#selectrows = self.dataFrame.listPanel.GetSelectedRows()
-		#size = len(selectrows)
-		#s = "data:"
-		#for row in selectrows :
-		#	s = s + " " + str(row)		
-		#s = s + "\n"
-		##s = "data: " + str(self.CurrentDataNo) + "\n"
-		#f.write(s)
-	
-		s = "tab: " + str(self.Window.sideNote.GetSelection()) + "\n"
-		f.write(s)
-
-		s = "path: " + self.Directory + "\n"
-		f.write(s)
-
-		s = "dbpath: " + self.DBPath + "\n"
-		f.write(s)
+		self.WritePreferenceItem("tab", self.Window.sideNote.GetSelection(), f)
+		self.WritePreferenceItem("path", self.Directory, f)
+		self.WritePreferenceItem("dbpath", self.DBPath, f)
 
 		winPT = self.topMenu.GetPosition()
-		s = "toolbar: " + str(winPT[0]) + " " + str(winPT[1]) + "\n"
-		f.write(s)
+		self.WritePreferenceItem("toolbar", str(winPT[0]) + " " + str(winPT[1]), f)
 
-		s = "shiftrange: " + str(self.optPanel.tie_shift.GetValue()) + "\n"
-		f.write(s)
+		self.WritePreferenceItem("shiftrange", self.optPanel.tie_shift.GetValue(), f)
+		self.WritePreferenceItem("leadlag", self.leadLag, f)
+		self.WritePreferenceItem("winlength", self.winLength, f)
 
-		s = "leadlag: " + str(self.leadLag) + "\n"
-		f.write(s)
-
-		s = "winlength: " + str(self.winLength) + "\n"
-		f.write(s)
-
-		#s = "startup: " + str(self.dataFrame.startupbtn.GetValue()) + "\n"
-		#f.write(s)
-
-		s = "colors: "
+		colorStr = ""
 		for i in range(18) : 
 			colorItem = self.Window.colorList[i].Get()
-			s = s + str(colorItem[0]) + " " + str(colorItem[1]) + " " + str(colorItem[2]) + " "
-		f.write(s + "\n")
+			colorStr = colorStr + str(colorItem[0]) + " " + str(colorItem[1]) + " " + str(colorItem[2]) + " "
+		self.WritePreferenceItem("colors", colorStr, f)
 
-		s = "overlapcolors: "
+		overlapColorStr = ""
 		for i in range(9) : 
 			colorItem = self.Window.overlapcolorList[i].Get()
-			s = s + str(colorItem[0]) + " " + str(colorItem[1]) + " " + str(colorItem[2]) + " "
-		f.write(s)
+			overlapColorStr = overlapColorStr + str(colorItem[0]) + " " + str(colorItem[1]) + " " + str(colorItem[2]) + " "
+		self.WritePreferenceItem("overlapcolors", overlapColorStr, f)
 
 		f.close()
 
 
 	def OnInitDataUpdate(self):
-		self.filterPanel.OnRegisterClear()
-		self.PrevDataType = ""
 		self.UpdateCORE()
 		self.UpdateSMOOTH_CORE()
 		self.Window.UpdateDrawing()
 		return
-
-		ret = py_correlator.getData(0)
-		if len(ret) > 0 : 
-			self.RawData = ret
-			self.Window.HoleData = []
-			self.filterPanel.OnRegisterClear()
-			self.PrevDataType = ""
-			self.ParseData(self.RawData, self.Window.HoleData)
-			#print "[DEBUG] Min : " + str(self.Window.minRange) + ", Max : " + str(self.Window.maxRange) 
-			#self.OnUpdateDepthStep()
-
-			self.RawData = "" 
-			self.OnDisableMenu(1, True)
-			self.UpdateMinMax()
-
-			self.autoPanel.SetCoreList(0, self.Window.HoleData)
-
-		#if len(self.SmoothData) > 0 : 
-		#	self.Window.SmoothData = []
-		#	self.filterPanel.OnLock()
-		#	self.ParseData(self.SmoothData, self.Window.SmoothData)
-		#	self.filterPanel.OnRelease()
-		#	self.SmoothData = "" 
-		self.Window.UpdateDrawing()
 
 	def UndoSpliceSectionSend(self):
 		if self.client == None :
@@ -2574,6 +2524,9 @@ class MainFrame(wx.Frame):
 				break
 		return idx, type
 
+	def GetSectionAtDepth(self, hole, core, type, depth):
+		return py_correlator.getSectionAtDepth(hole, core, type, depth)
+
 
 	def ShiftSectionSend(self, hole, core, offset, type):
 		if self.client != None :
@@ -2727,7 +2680,7 @@ class MainFrame(wx.Frame):
 
 
 	def ParseHole(self, start, last, data, output):
-		hole = [] 
+		hole = [] # a global used throughout this file
 		# site 
 		last = data.find(",", start)
 		site = data[start:last] 
@@ -3145,7 +3098,7 @@ class MainFrame(wx.Frame):
 			self.Window.SetSpliceFromFile(tie_list, flag)
 
 	def NewDrawing(self,cfgfile, new_flag):
-		self.Window.DrawData = self.MakeNewData(cfgfile, new_flag)
+		self.Window.DrawData = self.LoadPreferencesAndInitDrawData(cfgfile, new_flag)
 		self.Window.UpdateDrawing()
 
 	def OnClick(self, name):
@@ -3170,7 +3123,7 @@ class MainFrame(wx.Frame):
 				self.Window.SPrulerStartDepth = 0.0
 
 
-	def MakeNewData(self, cfgfile, new_flag):
+	def LoadPreferencesAndInitDrawData(self, cfgfile, new_flag):
 		self.positions= [ (77,32) , (203,32), (339,32),
 						 (77,152) , (203,152), (339,152),
 						 (77,270) , (203,270), (339,270),
@@ -3287,6 +3240,13 @@ class MainFrame(wx.Frame):
 		#		conf_value = float ( str_temp )
 		#		self.Window.SPrulerStartDepth = conf_value 
 
+		self.Window.rulerUnits = "m" # default to meters
+		if self.config.has_option("applications", "rulerunits"):
+			rulerUnitsStr = self.config.get("applications", "rulerunits")
+			if len(rulerUnitsStr) > 0:
+				self.Window.rulerUnits = rulerUnitsStr
+		unitIndex = self.Window.GetRulerUnitsIndex()
+		self.optPanel.unitsPopup.SetSelection(unitIndex)
 
 		if self.config.has_option("applications", "rulerrange"):
 			conf_str = self.config.get("applications", "rulerrange")
@@ -3608,8 +3568,6 @@ class CorrelatorApp(wx.App):
 		wx.App.__init__(self,0)
 		
 	def OnInit(self):
-		wx.InitAllImageHandlers()
-
 		user = getpass.getuser()
 		#if platform_name[0] != "Windows" :
 		openframe = OpenFrame(None, -1, user, version)

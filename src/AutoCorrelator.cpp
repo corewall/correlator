@@ -493,14 +493,14 @@ int AutoCorrelator::applyToAll( double appliedOffset, double stretch, double mud
 	for(int i=0; i < numHoles; i++)
 	{
 		holeptr = dataptr->getHole(i);
-        if(holeptr == NULL) continue;
+        if (holeptr == NULL) continue;
 		if(holeptr->getELDStatus() == doflag) continue;
 		
         numCores =  holeptr->getNumOfCores();
         for(int j=0; j <= numCores; j++)
         {
 			coreptr = holeptr->getCore(j);
-            if(coreptr == NULL) continue;
+            if (coreptr == NULL) continue;
 
 			//offset = coreptr->getDepthOffset() - appliedOffset;
 			//coreptr->setDepthOffset(offset, true);
@@ -664,7 +664,7 @@ double AutoCorrelator::evalCore( Core* coreA, Core* coreB, Value* valueA, Value*
 
 
 	bnum = nx;
-	// calculate the standard deviation and the correlation coeficiant
+	// calculate the standard deviation and the correlation coefficient
 	double coef =0.0;
 	double stdevX, stdevY;
 	if(nx > 1)
@@ -867,7 +867,7 @@ int AutoCorrelator::correlate_backup( void )
 						tieptr->applyAffine(ioffset);
 						
 						// update
-						tieptr->calcCoeficiantUpdate();
+						tieptr->calcCoefficientUpdate();
 
 						// get coef
 						coef += tieptr->getCoef();

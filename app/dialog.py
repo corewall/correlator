@@ -11,7 +11,7 @@ import wx.lib.sheet as sheet
 from wx.lib import plot
 import random, sys, os, re, time, ConfigParser, string
 
-import py_correlator
+from importManager import py_correlator
 
 class CoreSheet(sheet.CSheet):
 	def __init__(self, parent, x, y):
@@ -38,7 +38,7 @@ class MessageDialog(wx.Dialog):
 
 		self.Center()
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
-		panel1 = wx.Panel(self, -1)
+		panel1 = wx.Panel(self, -1, style = wx.WANTS_CHARS)
 		sizer = wx.FlexGridSizer(1, 2)
 		if title == "Error" : 
 			bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/ErrorCircle-32x32.png'))
@@ -64,15 +64,17 @@ class MessageDialog(wx.Dialog):
 			grid.Add(cancelBtn, 0, wx.LEFT, 10)
 			vbox_top.Add(grid, 0, wx.LEFT, 70)
 
-		wx.EVT_KEY_UP(self, self.OnCharUp)
+		#wx.EVT_KEY_UP(self, self.OnCharUp)
+		panel1.Bind(wx.EVT_CHAR, self.OnCharUp)
 		self.SetSizer(vbox_top)
 
+	# 9/17/2013 brg: Seems we only need to handle enter for Okay, escape
+	# is automatically handled by wx.Dialog
 	def OnCharUp(self,event):
-		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_RETURN :
-			self.EndModal(wx.ID_OK) 
-		elif keyid == wx.WXK_ESCAPE :
-			self.EndModal(wx.ID_CANCEL) 
+		if event.GetKeyCode() == wx.WXK_RETURN :
+			self.EndModal(wx.ID_OK)
+		else:
+			event.Skip()
 
 class Message3Button(wx.Dialog):
 	def __init__(self, parent, msg):
@@ -177,7 +179,7 @@ class StratTypeDialog(wx.Dialog):
 
 		self.Center()
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
-		self.types = wx.ComboBox(self, -1, "Diatoms", (0,0), (250, 30), ("Diatoms", "Radioloria", "Foraminifera", "Nannofossils", "Paleomag"), wx.CB_DROPDOWN)
+		self.types = wx.ComboBox(self, -1, "Diatoms", (0,0), (250, -1), ("Diatoms", "Radioloria", "Foraminifera", "Nannofossils", "Paleomag"), wx.CB_DROPDOWN)
 
 		vbox_top.Add(self.types, 0, wx.LEFT | wx.TOP, 25)
 
@@ -424,7 +426,7 @@ class AltSpliceDialog(wx.Dialog):
 		panel = wx.Panel ( self, -1, (15, 15), size=(330, 100), style=wx.BORDER)
 		wx.StaticText(panel, -1, 'Data Type', (10, 20))
 		wx.StaticText(panel, -1, 'Splice', (10, 60))
-		self.all = wx.ComboBox(panel, -1, "", (90,20), (220,30), (""), wx.CB_DROPDOWN)
+		self.all = wx.ComboBox(panel, -1, "", (90,20), (220,-1), (""), wx.CB_DROPDOWN)
 		for types in parent.Window.range :
 			if types[0] != "splice" and types[0] != "altsplice" :
 				self.all.Append(types[0])
@@ -435,7 +437,7 @@ class AltSpliceDialog(wx.Dialog):
 		self.all.SetEditable(False)
 		#self.Bind(wx.EVT_COMBOBOX, self.SetTYPE, self.all)
 
-		self.splice = wx.ComboBox(panel, -1, "", (90,60), (220,70), (""), wx.CB_DROPDOWN)
+		self.splice = wx.ComboBox(panel, -1, "", (90,60), (220,-1), (""), wx.CB_DROPDOWN)
 		parent.dataFrame.Update_PROPERTY_ITEM(parent.dataFrame.selectBackup)
 		property = parent.dataFrame.propertyIdx
 		totalcount = parent.dataFrame.tree.GetChildrenCount(property, False)
@@ -483,11 +485,9 @@ class ColorTableDialog(wx.Dialog):
 
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
 
-		vbox_top.Add(wx.StaticLine(self, -1, size=(480,1)), 0, wx.TOP | wx.LEFT, 9)
-
 		panel1 = wx.Panel(self, -1)
 		sizer1 = wx.StaticBoxSizer(wx.StaticBox(panel1, -1, 'Color set'), orient=wx.VERTICAL)
-		self.colorSet = wx.ComboBox(panel1, -1, "Custom", (0,0), (270,30), ("ODP", "Corporate", "Maritime", "Earth", "Santa Fe", "Custom"), wx.CB_DROPDOWN)
+		self.colorSet = wx.ComboBox(panel1, -1, "Custom", (0,0), (270,-1), ("ODP", "Corporate", "Maritime", "Earth", "Santa Fe", "Custom"), wx.CB_DROPDOWN)
 		self.colorSet.SetForegroundColour(wx.BLACK)
 		self.Bind(wx.EVT_COMBOBOX, self.SetColorSet, self.colorSet)
 		self.colorSet.SetEditable(False)
@@ -499,7 +499,7 @@ class ColorTableDialog(wx.Dialog):
 		grid1 = wx.GridSizer(1, 2)
 
 		sizer2 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'Customize color'), orient=wx.VERTICAL)
-		grid2 = wx.FlexGridSizer(16, 4)
+		grid2 = wx.FlexGridSizer(9, 4)
 		self.colorPicker01 = wx.ColourPickerCtrl(panel2, 1)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker01)
 		grid2.Add(self.colorPicker01)
@@ -511,7 +511,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker02 = wx.ColourPickerCtrl(panel2, 2)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker02)
-		grid2.Add(self.colorPicker02, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker02, 0, wx.LEFT, 10)
 		if platform_name[0] == "Windows" :		
 			grid2.Add(wx.StaticText(panel2, -1, 'mcd               '))
 		else :
@@ -523,7 +523,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker04 = wx.ColourPickerCtrl(panel2, 4)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker04)
-		grid2.Add(self.colorPicker04, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker04, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'Smooth'))
 
 		self.colorPicker05 = wx.ColourPickerCtrl(panel2, 5)
@@ -533,7 +533,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker06 = wx.ColourPickerCtrl(panel2, 6)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker06)
-		grid2.Add(self.colorPicker06, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker06, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'log'))
 
 		self.colorPicker07 = wx.ColourPickerCtrl(panel2, 7)
@@ -543,7 +543,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker08 = wx.ColourPickerCtrl(panel2, 8)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker08)
-		grid2.Add(self.colorPicker08, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker08, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'fixed tie'))
 
 		self.colorPicker09 = wx.ColourPickerCtrl(panel2, 9)
@@ -553,7 +553,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker10 = wx.ColourPickerCtrl(panel2, 10)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker10)
-		grid2.Add(self.colorPicker10, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker10, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'paleomag'))
 
 		self.colorPicker11 = wx.ColourPickerCtrl(panel2, 11)
@@ -563,7 +563,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker12 = wx.ColourPickerCtrl(panel2, 12)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker12)
-		grid2.Add(self.colorPicker12, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker12, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'rad'))
 
 		self.colorPicker13 = wx.ColourPickerCtrl(panel2, 13)
@@ -573,7 +573,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker14 = wx.ColourPickerCtrl(panel2, 14)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker14)
-		grid2.Add(self.colorPicker14, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker14, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'nano'))
 
 		self.colorPicker15 = wx.ColourPickerCtrl(panel2, 15)
@@ -583,7 +583,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker16 = wx.ColourPickerCtrl(panel2, 16)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker16)
-		grid2.Add(self.colorPicker16, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker16, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'labels'))
 
 		self.colorPicker17 = wx.ColourPickerCtrl(panel2, 17)
@@ -593,7 +593,7 @@ class ColorTableDialog(wx.Dialog):
 
 		self.colorPicker18 = wx.ColourPickerCtrl(panel2, 18)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker18)
-		grid2.Add(self.colorPicker18, 0, wx.LEFT, 60)
+		grid2.Add(self.colorPicker18, 0, wx.LEFT, 10)
 		grid2.Add(wx.StaticText(panel2, -1, 'guide'))
 
 		sizer2.Add(grid2)
@@ -640,7 +640,7 @@ class ColorTableDialog(wx.Dialog):
 		grid3.Add(wx.StaticText(panel2, -1, '9th hole'))
 		sizer3.Add(grid3)
 
-		grid1.Add(sizer3, 0, wx.LEFT, 10)
+		grid1.Add(sizer3, 0, wx.LEFT, 30)
 		panel2.SetSizer(grid1)
 		vbox_top.Add(panel2, 0, wx.TOP | wx.LEFT, 9)
 
@@ -653,7 +653,7 @@ class ColorTableDialog(wx.Dialog):
 		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Dismiss", size=(120, 30))
 		grid4.Add(cancelBtn, 0, wx.LEFT, 25)		
 
-		vbox_top.Add(grid4, 0, wx.LEFT | wx.TOP, 15)		
+		vbox_top.Add(grid4, 0, wx.LEFT | wx.TOP, 0)
 
 		self.SetSizer(vbox_top)
 		self.updateItem()
@@ -881,7 +881,7 @@ class AboutDialog(wx.Dialog):
 
 class BackgroundPanel(wx.Panel):
         def __init__(self, parent, background, panel_size):
-                wx.Panel.__init__(self, parent, -1, size=panel_size)
+                wx.Panel.__init__(self, parent, -1, size=panel_size, style=wx.WANTS_CHARS)
         
                 img = wx.Image(background, wx.BITMAP_TYPE_ANY)
                 self.buffer = wx.BitmapFromImage(img)
@@ -892,41 +892,35 @@ class BackgroundPanel(wx.Panel):
         def OnPaint(self, evt):
                 dc = wx.BufferedPaintDC(self, self.buffer)
         
+# 9/17/2013 brg: rename to splash?
 class OpenFrame(wx.Dialog):
 	def __init__(self, parent, id, user, version):
                 panel_size=(800, 370)
-		wx.Dialog.__init__(self, parent, id, "Correlator v" + version, size=panel_size,style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, id, "Correlator v" + version, size=panel_size,style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
-		#panel = wx.Panel ( self, -1, size=(800, 370), style=wx.BORDER)
 		panel = BackgroundPanel(self, 'images/corewall_suite.jpg', panel_size)
  
 		self.version = version
-		#picture = wx.StaticBitmap(self)
-		#picture.SetBitmap(wx.Bitmap('images/corewall_suite.jpg'))
 		wx.StaticText(self, -1, 'COMPOSITE, SPLICE, CORE-LOG INTEGRATION, AGE MODEL', (60, 30))
-
-		#self.SetBackgroundColour(wx.Colour(255, 255, 255))
 
 		wx.StaticText(self, -1, 'User Name : ', (250, 220))
 		self.name = wx.TextCtrl(self, -1, user, (340, 220), size=(150, 25))
 		     
 		okBtn = wx.Button(panel, -1, "START", (500, 220), size=(80, 30))
-				
 		self.Bind(wx.EVT_BUTTON, self.OnSTART, okBtn)
-		self.user = user
 
-                if platform_name[0] == "Windows" :
-                        cancelBtn = wx.Button(panel, wx.ID_CANCEL, "CANCEL", (580, 220), size=(80, 30))
+		self.user = user
+		if platform_name[0] == "Windows" :
+			cancelBtn = wx.Button(panel, wx.ID_CANCEL, "CANCEL", (580, 220), size=(80, 30))
 
 		#wx.StaticText(self, -1, 'Developer:  Sean Higgins, Hyejung Hur', (60, 280))
 		wx.HyperlinkCtrl(self, -1, 'Go to Correlator Web', 'http://sqlcore.geo.umn.edu/CoreWallDatabase/cwWiki/index.php/Correlator', (60, 300))
 
 		aboutBtn = wx.Button(panel, -1, "ABOUT", (200, 300), size=(80, 30))
 		self.Bind(wx.EVT_BUTTON, self.OnABOUT, aboutBtn)
-                #self.SetFocusFromKbd()
 
-		wx.EVT_KEY_DOWN(self.name, self.OnChar)
-		wx.EVT_KEY_DOWN(self, self.OnChar)
+		wx.EVT_KEY_DOWN(self.name, self.OnPanelChar)
+		panel.Bind(wx.EVT_CHAR, self.OnPanelChar)
 
 	def OnABOUT(self, event) :
 		dlg = AboutDialog(self, self.version)
@@ -934,17 +928,19 @@ class OpenFrame(wx.Dialog):
 		dlg.ShowModal()
 		dlg.Destroy()
 
-	def OnSTART(self, event) :
+	def OnOK(self):
 		self.user = self.name.GetValue()
-		self.EndModal(wx.ID_OK) 
-	
-	def OnChar(self,event):
-		keyid = event.GetKeyCode()
-		if keyid == 13 :
-			# ENTER
-			self.user = self.name.GetValue()
-			self.EndModal(wx.ID_OK) 
-		elif keyid == 27 :
-			# ESC 
-			self.EndModal(wx.ID_CANCEL) 
+		self.EndModal(wx.ID_OK)
 
+	def OnSTART(self, event) :
+		self.OnOK()
+
+	# Close on Escape, continue on Enter
+	def OnPanelChar(self, event):
+		keyid = event.GetKeyCode()
+		if keyid == 13 : # ENTER
+			self.OnOK()
+		elif keyid == 27 : # ESC 
+			self.EndModal(wx.ID_CANCEL)
+		else:
+			event.Skip() # allow unhandled key events to propagate up the chain

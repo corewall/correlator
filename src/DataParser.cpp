@@ -369,7 +369,7 @@ int FindCoreType(FILE *fptr, int format)
 			default : type = OTHERTYPE;
 			}
 		}	
-		else if(format == TKREPORT)
+		else if (format == TKREPORT)
 		{
 #ifdef DEBUG
 	cout << "[TKreport] Token Count : " << count << endl;
@@ -792,7 +792,7 @@ int ReadAffineTable(FILE *fptr, Data* dataptr)
 			applied = true;
 			affinetype = 1;
 			fromfile = true;
-		} else if(token[0] == 'N')
+		} else if (token[0] == 'N')
 		{
 			applied = false;
 			if(depth_offset != 0)
@@ -1081,10 +1081,10 @@ int ReadSpliceTable(FILE *fptr, Data* dataptr, bool alternative, int core_type, 
 				}		
 
 				newValue = coreptr->createInterpolatedValue(depth);
-	
 				if(newValue && (newValue->getMbsf() != depth))
 				{
 					newValue->copy(valueA);
+					newValue->setValueType(INTERPOLATED_VALUE); // this is assigned in createInterpolatedValue(), but lost when we copy valueA into newValue
 					newValue->setDepth(depth);
 					newValue->applyAffine(coreptr->getDepthOffset(), newValue->getType());
 					//newValue->setB(offset);
@@ -1155,15 +1155,16 @@ int ReadSpliceTable(FILE *fptr, Data* dataptr, bool alternative, int core_type, 
 				newValue = newCore->createInterpolatedValue(depth);
 				if(newValue && (newValue->getMbsf() != depth))
 				{
-						newValue->copy(valueB);
-						newValue->setDepth(depth);
-						newValue->applyAffine(newCore->getDepthOffset(), newValue->getType());
-						//newValue->setB(offset);
-						// need to update data and bottom/top value
-						newValue->setRawData(temp_data);
-						newValue->setTop(range.top);
-						valueB = newValue;
-						//std::cout << "P/b)--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << std::endl;
+					newValue->copy(valueB);
+					newValue->setValueType(INTERPOLATED_VALUE); // this is assigned in createInterpolatedValue(), but lost when we copy valueB into newValue
+					newValue->setDepth(depth);
+					newValue->applyAffine(newCore->getDepthOffset(), newValue->getType());
+					//newValue->setB(offset);
+					// need to update data and bottom/top value
+					newValue->setRawData(temp_data);
+					newValue->setTop(range.top);
+					valueB = newValue;
+					//std::cout << "P/b)--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << std::endl;
 				}
 			}
 			tieptr->setTieTo(valueB);		
@@ -1248,15 +1249,16 @@ int ReadSpliceTable(FILE *fptr, Data* dataptr, bool alternative, int core_type, 
 
 				if(newValue && (newValue->getMbsf() != depth))
 				{
-						newValue->copy(valueA);
-						newValue->setDepth(depth);
-						newValue->applyAffine(coreptr->getDepthOffset(), newValue->getType());
-						//newValue->setB(offset);
-						// need to update data and bottom/top value
-						newValue->setRawData(temp_data);
-						newValue->setTop(range.top);
-						valueA = newValue;
-						//std::cout << "P/a)--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << std::endl;
+					newValue->copy(valueA);
+					newValue->setValueType(INTERPOLATED_VALUE); // this is assigned in createInterpolatedValue(), but lost when we copy valueA into newValue
+					newValue->setDepth(depth);
+					newValue->applyAffine(coreptr->getDepthOffset(), newValue->getType());
+					//newValue->setB(offset);
+					// need to update data and bottom/top value
+					newValue->setRawData(temp_data);
+					newValue->setTop(range.top);
+					valueA = newValue;
+					//std::cout << "P/a)--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << std::endl;
 				}
 			}
 			if(valueA == NULL) continue;
@@ -1322,18 +1324,18 @@ int ReadSpliceTable(FILE *fptr, Data* dataptr, bool alternative, int core_type, 
 				}
 		
 				newValue = newCore->createInterpolatedValue(depth);
-
 				if(newValue && (newValue->getMbsf() != depth))
 				{
-						newValue->copy(valueB);
-						newValue->setDepth(depth);
-						newValue->applyAffine(newCore->getDepthOffset(), newValue->getType());
-						//newValue->setB(offset);
-						// need to update data and bottom/top value
-						newValue->setRawData(temp_data);
-						newValue->setTop(range.top);
-						valueB = newValue;
-						//std::cout << "P/b)--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << std::endl;
+					newValue->copy(valueB);
+					newValue->setValueType(INTERPOLATED_VALUE); // this is assigned in createInterpolatedValue(), but lost when we copy valueA into newValue
+					newValue->setDepth(depth);
+					newValue->applyAffine(newCore->getDepthOffset(), newValue->getType());
+					//newValue->setB(offset);
+					// need to update data and bottom/top value
+					newValue->setRawData(temp_data);
+					newValue->setTop(range.top);
+					valueB = newValue;
+					//std::cout << "P/b)--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << std::endl;
 				}
 			}
 			if(valueB == NULL) continue;
@@ -1571,7 +1573,7 @@ int ReadEqLogDepthTable( FILE *fptr, Data* dataptr, const char* affinefilename )
 					if(token[0] == 'Y') 
 					{ 
 						newCore->setDepthOffset(depth_offset, value_type, true, true); // applied, fromfile
-					} else if(token[0] == 'N')
+					} else if (token[0] == 'N')
 					{
 						newCore->setDepthOffset(depth_offset, value_type, false, true);
 					}
@@ -2499,17 +2501,17 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
     for(int i=0; i < numHoles; i++)
     {
                  holeptr = dataptr->getHole(i);
-                 if(holeptr == NULL) continue;
+                 if (holeptr == NULL) continue;
                  numCores =  holeptr->getNumOfCores();
                  for(int j=0; j < numCores; j++)
                  {
                         coreptr = holeptr->getCore(j);
-                        if(coreptr == NULL) continue;
+                        if (coreptr == NULL) continue;
                         numTies = coreptr->getNumOfTies();
                         for(int k=0; k < numTies; k++)
                         {
                                 tieptr = coreptr->getTie(k);
-                                if(tieptr->getType() == REAL_TIE)
+                                if (tieptr->getType() == REAL_TIE)
                                 {
                                         count++;
                                 }
@@ -2610,7 +2612,7 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 							first_value->getMbsf(), first_value->getMcd());					
 						}
 					}
-				} else 
+				} else // tieptr->isAll == true
 				{
 					temp_value = tieInfoptr->m_valueptr;
 					if(temp_value == NULL) continue;
@@ -2668,17 +2670,17 @@ Tie* findTie( Data* dataptr, int order )
         for(int i=0; i < numHoles; i++)
         {
                  holeptr = dataptr->getHole(i);
-                 if(holeptr == NULL) continue;
+                 if (holeptr == NULL) continue;
                  numCores =  holeptr->getNumOfCores();
                  for(int j=0; j < numCores; j++)
                  {
                         coreptr = holeptr->getCore(j);
-                        if(coreptr == NULL) continue;
+                        if (coreptr == NULL) continue;
                         numTies = coreptr->getNumOfTies();
                         for(int k=0; k < numTies; k++)
                         {
                                 tieptr = coreptr->getTie(k);
-                                if(tieptr->getType() == REAL_TIE && tieptr->getOrder() == order)
+                                if (tieptr->getType() == REAL_TIE && tieptr->getOrder() == order)
                                 {
                                         return tieptr;
                                 }
@@ -2710,7 +2712,7 @@ int WriteEqLogDepthTable( FILE *fptr, Data* dataptr, const char* affinefilename 
 	// Affine Y     /home/ibex/sagan/sagan_testdata/leg162testdata/984.affine.pdem
 	if (affinefilename == NULL)
 		fprintf (fptr, "Affine \tN \t\n");
-	else if(strlen(affinefilename) > 0)
+	else if (strlen(affinefilename) > 0)
 		fprintf (fptr, "Affine \tY \t%s\n", affinefilename);
 	else 
 		fprintf (fptr, "Affine \tN\n");
@@ -2800,7 +2802,7 @@ Strat* findStrat( Data* dataptr, int order )
 	for(int i=0; i < numHoles; i++)
 	{
 		 holeptr = dataptr->getHole(i);
-		 if(holeptr == NULL) continue;
+		 if (holeptr == NULL) continue;
 		 numCores =  holeptr->getNumOfCores();
 		 for(int j=0; j < numCores; j++)
 		 {
@@ -2842,12 +2844,12 @@ int WriteStratTable( FILE *fptr, Data* dataptr )
     for(int i=0; i < numHoles; i++)
     {
                  holeptr = dataptr->getHole(i);
-                 if(holeptr == NULL) continue;
+                 if (holeptr == NULL) continue;
                  numCores =  holeptr->getNumOfCores();
                  for(int j=0; j < numCores; j++)
                  {
                         coreptr = holeptr->getCore(j);
-                        if(coreptr == NULL) continue;
+                        if (coreptr == NULL) continue;
                         numStrats = coreptr->getNumOfStrat();
 						count += numStrats;
                  }
@@ -3294,7 +3296,7 @@ int WriteCoreHole( char* filename, Hole* holeptr )
 	fptr = fopen(filename,"w+");
 	if(fptr == NULL) return 0;
 	
-	if (holeptr->getType() == SPLICED_RECORD)	
+	if (holeptr->getType() == SPLICED_RECORD)
 	{
 		fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo Annotation RawDepth Offset\n");
 	} else {
@@ -3331,7 +3333,8 @@ int WriteCoreHole( char* filename, Hole* holeptr )
 	
 #ifdef DEBUG	
 	cout << "[DEBUG] Export Core : core size = " << coresize << endl;
-#endif	
+#endif
+
 	int valuesize =0;	
 	Core* coreptr = NULL;
 	Value* valueptr = NULL;
@@ -3402,33 +3405,32 @@ int WriteCoreHole( char* filename, Hole* holeptr )
 	else 
 	{
 		int j = 0;
-		for(int i=0; i < coresize; i++)
+		for (int i = 0; i < coresize; i++)
 		{
 			coreptr = holeptr->getCore(i);
-			if(coreptr == NULL) continue;
+			if (coreptr == NULL) continue;
 			valuesize = coreptr->getNumOfValues();
-			/*j = 0;
-			if(i == 0) 
-				j =0;
-			else 
-				j = 1;*/
-			for(j =0; j < valuesize; j++)
+			for (j = 0; j < valuesize; j++)
 			{
 				valueptr = coreptr->getValue(j);
-				if(valueptr == NULL) continue;
-				if(valueptr->getQuality() ==GOOD)
+				if (valueptr == NULL) continue;
+				if (valueptr->getValueType() == INTERPOLATED_VALUE) continue;
+				if (valueptr->getQuality() == GOOD)
 				{
 					//fprintf (fptr, "%s \t%s \t%s \t%d \t%c \t%s", leg, site, holeptr->getName(), coreptr->getNumber(), valueptr->getType(), valueptr->getSection());
 					fprintf (fptr, "%s \t%s \tspliced_record \t%d \t%c \t%s", leg, site, coreptr->getNumber(), valueptr->getType(), valueptr->getSection());
 
 					fprintf (fptr, " \t%f \t%f \t%f \t%f \t-", valueptr->getTop(), valueptr->getBottom(), valueptr->getELD(), valueptr->getRawData());
-					if(valueptr->getValueType() == INTERPOLATED_VALUE)
-					{
-						fprintf (fptr, " \ti%s \t%f \t%f\n", coreptr->getAnnotation(), valueptr->getMbsf(), coreptr->getDepthOffset());
-					} else 
-					{
+
+					// 9/26/2013 brg: Omit interpolated values entirely for now
+					//if (valueptr->getValueType() == INTERPOLATED_VALUE)
+					//{
+					//	fprintf (fptr, " \ti%s \t%f \t%f\n", coreptr->getAnnotation(), valueptr->getMbsf(), coreptr->getDepthOffset());
+					//}
+					//else 
+					//{
 						fprintf (fptr, " \t%s \t%f \t%f\n", coreptr->getAnnotation(), valueptr->getMbsf(), coreptr->getDepthOffset());					
-					}
+					//}
 				}
 			}
 		}	
@@ -3944,7 +3946,7 @@ int	WriteLog( char* read_filename, char* write_filename, int depth_idx, int data
 		{
 			if(depth_idx == i)
 				depth = atof(token);
-			else if(data_idx == i)
+			else if (data_idx == i)
 				data = atof(token);				
 			getToken(line, token);
 		}

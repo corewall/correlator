@@ -11,7 +11,9 @@ import wx.lib.sheet as sheet
 from wx.lib import plot
 from datetime import datetime
 import random, sys, os, re, time, ConfigParser, string
-import py_correlator
+
+from importManager import py_correlator
+
 from frames import *
 
 
@@ -220,9 +222,9 @@ class DataCanvas(wxBufferedWindow):
 				wx.Colour(147, 112, 219), wx.Colour(84, 139, 84), wx.Colour(219, 112, 147), \
 				wx.Colour(30, 144, 255)]
 
-		self.compositeX = 40
-		self.splicerX = 700	
-		self.splicerBackX = 700
+		self.compositeX = 35
+		self.splicerX = 695
+		self.splicerBackX = 695
 		self.tieline_width = 1
 
 		self.holeWidth = 300
@@ -234,6 +236,7 @@ class DataCanvas(wxBufferedWindow):
 		self.rulerStartDepth = 0.0 
 		self.rulerEndDepth = 0.0
 		self.rulerTickRate = 0.0 
+		self.rulerUnits = 'cm' # one of 'm','cm','mm'
 		self.tieDotSize = 10 
 
 		self.ageXGap = 1.0
@@ -581,6 +584,16 @@ class DataCanvas(wxBufferedWindow):
 				return (r[1], r[2])
 		return None
 
+	def GetRulerUnitsStr(self):
+		return self.rulerUnits
+
+	def GetRulerUnitsIndex(self):
+		unitToIndexMap = {'m':0, 'cm':1, 'mm':2}
+		return unitToIndexMap[self.rulerUnits]
+
+	def GetRulerUnitsFactor(self):
+		unitToFactorMap = {'m':1.0, 'cm':100.0, 'mm':1000.0}
+		return unitToFactorMap[self.rulerUnits]
 
 	def OnSelectELDNote(self, event):
 		note_id = event.GetSelection()
@@ -750,17 +763,20 @@ class DataCanvas(wxBufferedWindow):
 		pos = self.rulerStartAgeDepth 
 		dc.DrawLines(((self.compositeX, 0), (self.compositeX, self.Height)))
 
+		rulerUnitsStr = " (" + self.GetRulerUnitsStr() + ")"
 		dc.DrawText("Depth", self.compositeX - 35, self.startAgeDepth - 45)
-		dc.DrawText(" (m)", self.compositeX - 35, self.startAgeDepth - 35)
+		dc.DrawText(rulerUnitsStr, self.compositeX - 35, self.startAgeDepth - 35)
 		
 		# Draw depth scale ticks
 		rulerRange = (self.rulerHeight / (self.ageYLength / self.ageGap))
 		self.ageRulerTickRate = self.CalcTickRate(rulerRange)
 
+		unitAdjFactor = self.GetRulerUnitsFactor()
 		while True :
+			adjPos = pos * unitAdjFactor
 			dc.DrawLines(((self.compositeX - 10, depth), (self.compositeX, depth)))
-			extraSpace = (len(str(pos)) - 3) * 5 # adjust position of longer numbers to avoid overlap with ticks
-			dc.DrawText(str(pos), self.compositeX - 35 - extraSpace, depth - 5)
+			wid, hit = dc.GetTextExtent(str(adjPos))
+			dc.DrawRotatedText(str(adjPos), self.compositeX - 5 - hit * 2, depth + wid/2, 90.0)
 			depth = depth + (self.ageRulerTickRate * self.ageYLength / self.ageGap)
 			dc.DrawLines(((self.compositeX - 5, depth), (self.compositeX, depth)))
 			depth = depth + (self.ageRulerTickRate * self.ageYLength / self.ageGap) 
@@ -887,9 +903,10 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetTextForeground(self.colorDict['foreground'])
 		dc.SetFont(self.font2)
 
+		rulerUnitsStr = " (" + self.GetRulerUnitsStr() + ")"
 		if self.timeseries_flag == False :
 			dc.DrawText("Depth", self.compositeX - 35, self.startDepth - 45)
-			dc.DrawText(" (m)", self.compositeX - 35, self.startDepth - 35)
+			dc.DrawText(rulerUnitsStr, self.compositeX - 35, self.startDepth - 35)
 		else :
 			dc.DrawText("Age", self.compositeX - 35, self.startDepth - 45)
 			dc.DrawText("(Ma)", self.compositeX - 35, self.startDepth - 35)
@@ -904,13 +921,18 @@ class DataCanvas(wxBufferedWindow):
 		rulerRange = (self.rulerHeight / self.length) * 2;
 		self.rulerTickRate = self.CalcTickRate(rulerRange)
 
+		unitAdjFactor = self.GetRulerUnitsFactor()
 		while True :
-			dc.DrawLines(((self.compositeX - 10, depth), (self.compositeX, depth)))
-			extraSpace = (len(str(pos)) - 3) * 5 # adjust position of longer numbers to avoid overlap with ticks
-			dc.DrawText(str(pos), self.compositeX - 35 - extraSpace, depth - 5)
+			adjPos = pos * unitAdjFactor
+
+			dc.DrawLines(((self.compositeX - 10, depth), (self.compositeX, depth))) # depth-labeled ticks
+			wid, hit = dc.GetTextExtent(str(adjPos))
+			dc.DrawRotatedText(str(adjPos), self.compositeX - 5 - hit * 2, depth + wid/2, 90.0)
 			depth = depth + (self.rulerTickRate * self.length) / 2
-			dc.DrawLines(((self.compositeX - 5, depth), (self.compositeX, depth)))
+
+			dc.DrawLines(((self.compositeX - 5, depth), (self.compositeX, depth))) # unlabeled ticks
 			depth = depth + (self.rulerTickRate * self.length) / 2 
+
 			pos = pos + self.rulerTickRate * 2
 			if depth > self.Height :
 				break
@@ -924,7 +946,7 @@ class DataCanvas(wxBufferedWindow):
 
 			if self.timeseries_flag == False :
 				dc.DrawText("Depth", self.splicerX - 35, self.startDepth - 45)
-				dc.DrawText(" (m)", self.splicerX - 35, self.startDepth - 35)
+				dc.DrawText(rulerUnitsStr, self.splicerX - 35, self.startDepth - 35)
 			else :
 				dc.DrawText("Age", self.splicerX - 35, self.startDepth - 45)
 				dc.DrawText("(Ma)", self.splicerX - 35, self.startDepth - 35)
@@ -933,9 +955,10 @@ class DataCanvas(wxBufferedWindow):
 			self.SPrulerHeight = self.Height - self.startDepth
 			
 			while True :
+				adjPos = pos * unitAdjFactor
 				dc.DrawLines(((self.splicerX - 10, depth), (self.splicerX, depth)))
-				extraSpace = (len(str(pos)) - 3) * 5 # adjust position of longer numbers to avoid overlap with ticks
-				dc.DrawText(str(pos), self.splicerX - 35 - extraSpace, depth - 5)
+				wid, hit = dc.GetTextExtent(str(adjPos))
+				dc.DrawRotatedText(str(adjPos), self.splicerX - 5 - hit * 2, depth + wid/2, 90.0)
 				depth = depth + (self.rulerTickRate * self.length) / 2
 				dc.DrawLines(((self.splicerX - 5, depth), (self.splicerX, depth)))
 				depth = depth + (self.rulerTickRate * self.length) / 2 
@@ -1078,7 +1101,7 @@ class DataCanvas(wxBufferedWindow):
 		affine = 0.0
 		#for i in range(forcount) :
 		for i in range(len_hole) : 
-			holedata = hole[i + 1]
+			holedata = hole[i + 1] # actually coredata
 
 			if self.CurrentSpliceCore == self.coreCount :
 				spliceflag = 1	
@@ -2133,7 +2156,7 @@ class DataCanvas(wxBufferedWindow):
 		return affine
 
 
-	def DrawGraphInfo(self, dc, index, flag):
+	def DrawGraphInfo(self, dc, curCoreData, flag):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
@@ -2145,28 +2168,22 @@ class DataCanvas(wxBufferedWindow):
 		if flag == 2 :
 			x = self.Width - 220
 
-		self.minData = -1 
-		for key, data in self.DrawData.items():
-			if key == "CoreInfo":
-				for s in data :
-					info = s 
-					for r in info:
-						n, leg, site, hole, core, min, max, dmin, dmax, squish, type, quality, holeth = r
-						if n == index :
-							dc.DrawText("Hole: " + hole + " Core: " + core, x, self.startDepth) 
-							self.statusStr = self.statusStr + "Hole: " + hole + " Core: " + core
-							dc.DrawText("Min: " + str(min) + " Max: " + str(max), x, self.startDepth + 20) 
-							dc.DrawText("Stretched Ratio: " + str(squish) + "%", x, self.startDepth + 40) 
-							if quality == '0' :
-								dc.DrawText("Quality: Good", x, self.startDepth + 60) 
-							else :
-								dc.DrawText("Quality: Bad", x, self.startDepth + 60) 
-							self.minData = min 
-							return (type, holeth)
-		return None 
+		self.minData = -1
+		n, leg, site, hole, core, min, max, dmin, dmax, squish, type, quality, holeth = curCoreData
+		self.statusStr = self.statusStr + "Hole: " + hole + " Core: " + core
+		dc.DrawText("Hole: " + hole + " Core: " + core, x, self.startDepth)
+		dc.DrawText("Min: " + str(min) + " Max: " + str(max), x, self.startDepth + 20)
+		dc.DrawText("Stretched Ratio: " + str(squish) + "%", x, self.startDepth + 40)
+
+		qualityStr = "Quality: "
+		qualityStr += "Good" if quality == '0' else "Bad"
+		dc.DrawText(qualityStr, x, self.startDepth + 60) 
+
+		self.minData = min 
+		return (type, holeth)
 
 
-	def DrawMouseInfo(self, dc, x, y, startx, flag, type):
+	def DrawMouseInfo(self, dc, curCoreData, x, y, startx, flag, type):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
@@ -2175,6 +2192,7 @@ class DataCanvas(wxBufferedWindow):
 
 		ycoord = y
 		ycoord = (ycoord - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
+		unroundedYcoord = ycoord
 		ycoord = round(ycoord, 3)
 		#if flag == 1 :
 		#	dc.DrawText(str(ycoord), self.compositeX + 3, y - 5)
@@ -2195,7 +2213,12 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawText(str(tempx), x, self.startDepth - 15)
 				break
 
-		self.statusStr = self.statusStr + " Depth:" + str(ycoord) + " Data: " + str(tempx) 
+		section = self.parent.GetSectionAtDepth(curCoreData[3], int(curCoreData[4]), type, ycoord)
+		self.statusStr += " Section: " + str(section)
+
+		# display depth in ruler units
+		yUnitAdjusted = round(unroundedYcoord * self.GetRulerUnitsFactor(), 3)
+		self.statusStr += " Depth: " + str(yUnitAdjusted) + " Data: " + str(tempx)
 
 	def DrawAnnotation(self, dc, info, line):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
@@ -2369,9 +2392,7 @@ class DataCanvas(wxBufferedWindow):
 				for r in data:
 					im, x, y = r
 					dc.DrawBitmap(im, self.Width + x - 1, y, 1)
-
-		for key, data in self.DrawData.items():
-			if key == "HScroll":
+			elif key == "HScroll":
 				for r in data:
 					im, x, y = r
 					dc.DrawBitmap(im, x, self.Height + y, 1)
@@ -2399,12 +2420,22 @@ class DataCanvas(wxBufferedWindow):
 		for key, data in self.DrawData.items():
 			if key == "MouseInfo":
 				for r in data:
-					n, x, y, startx, flag = r
-					ret = self.DrawGraphInfo(dc, n, flag)
-					if ret != None :
-						type, holeth = ret
+					coreIndex, x, y, startx, flag = r
+					coreFound = False
+					curCoreData = []
+					for dataList in self.DrawData["CoreInfo"]:
+						for coreData in dataList:
+								if coreData[0] == coreIndex:
+									curCoreData = coreData
+									coreFound = True
+									break
+						if coreFound == True:
+							break
+
+					if coreFound == True:
+						type, holeth = self.DrawGraphInfo(dc, curCoreData, flag)
 						self.selectedHoleType = type
-						self.DrawMouseInfo(dc, x, y, startx, flag, type)
+						self.DrawMouseInfo(dc, curCoreData, x, y, startx, flag, type)
 			if type != "" :
 				break
 		self.parent.statusBar.SetStatusText(self.statusStr)
@@ -2426,6 +2457,7 @@ class DataCanvas(wxBufferedWindow):
 			#dc.SetFont( self.font2 )
 			ycoord = self.MousePos[1] 
 			ycoord = (ycoord - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
+			ycoord = ycoord * self.GetRulerUnitsFactor()
 			ycoord = round(ycoord, 3)
 			if self.MousePos[0] < self.splicerX :
 				if holeth != -1 :
@@ -3560,125 +3592,107 @@ class DataCanvas(wxBufferedWindow):
 		self.LogTieData.insert(index - 1, data1)
 		self.LogselectedTie = index 
 
-	def OnSpliceTieSelectionCb(self, event) :
-		opId = event.GetId() 
-		self.activeSPTie = -1
-		self.showMenu = False
-		if opId == 1 :
-			if len(self.SpliceTieData) > 2 :
-				if self.SPselectedTie < 2 :
-					self.OnUndoSplice()
+	# 8/28/2013 brg: Better name?
+	def ApplySplice(self, tieIndex) :
+		if tieIndex >= 0:
+			tieNo = 0
+			coreidA = coreidB = 0
+			depth = 0
+			corexB = 0
+			x1 = x2 = y1 = y2 = 0
+			
+			# 8/28/2013 brg: Previously for-looped through a list of tie tuples. Since we're just assigning,
+			# use the last tuple and be done with it.
+			dataA = self.SpliceTieData[tieIndex]
+			dataATuple = dataA[-1]
+
+			coreidB = dataATuple[2]
+			y1 = dataATuple[6]
+			x1 = dataATuple[4]
+
+			dataB = self.SpliceTieData[tieIndex - 1]
+			dataBTuple = dataB[-1]
+			coreidA = dataBTuple[2]
+			depth = dataBTuple[6]
+			y2 = dataBTuple[6]
+			tieNo = dataBTuple[8]
+			x2 = dataBTuple[4]
+
+			reversed = False 
+			if x2 > x1 :
+				reversed = True
+
+			holeA = holeB = '-'
+			coreA = coreB = -1
+			typeA = typeB = ''
+			count = 0
+			for s in self.DrawData["CoreInfo"]:
+				data = s
+				for r in data:
+					if r[0] == coreidA :
+						holeA = r[3]
+						coreA = r[4]
+						typeA = r[10]
+						count = count + 1
+					if r[0] == coreidB :
+						holeB = r[3]
+						coreB = r[4]
+						typeB = r[10]
+						count = count + 1
+					if count >= 2:
+						break
+				if count >= 2 :
+					break
+
+			type_a = self.GetTypeID(typeA)
+			type_b = self.GetTypeID(typeB)
+			if type_a != type_b :
+				self.multipleType = True 
+
+			if holeA != '-' and holeB != '-' :
+				if reversed == False :
+					splice_data = py_correlator.splice(typeB, holeB, int(coreB), y1, typeA, holeA, int(coreA), y2, tieNo, self.parent.smoothDisplay, 0)
 				else :
-					self.OnClearTies(1)
-			else :
-				if self.SpliceTieFromFile != len(self.RealSpliceTie) :
-					self.OnUndoSplice()
-				else :
-					self.OnClearTies(1)
-		elif opId == 2 :
-			if self.SPselectedTie >= 0 :
-				tieNo = 0
-				dataA = self.SpliceTieData[self.SPselectedTie]
-				coreidA = 0
-				coreidB = 0
-				depth = 0
-				corexB = 0
-				y1 = 0
-				y2 = 0
-				x1 = 0
-				x2 = 0
-				
-				for r in dataA :
-					coreidB = r[2]
-					y1 = r[6]
-					#y1 = (r[1] - self.startDepth) / ( self.length / self.gap ) + self.SPrulerStartDepth
-					x1 = r[4]
-				dataB = self.SpliceTieData[self.SPselectedTie - 1]
-				for r in dataB :
-					coreidA = r[2]
-					depth = r[6]
-					y2 = r[6]
-					#y2 = (r[1] - self.startDepth) / ( self.length / self.gap ) + self.SPrulerStartDepth
-					tieNo = r[8]
-					x2 = r[4]
+					splice_data = py_correlator.splice(typeA, holeA, int(coreA), y2, typeB, holeB, int(coreB), y1, tieNo, self.parent.smoothDisplay, 0)
+				self.parent.SpliceChange = True
+				py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
 
-				reversed = False 
-				if x2 > x1 :
-					reversed = True
+				if tieNo <= 0 and splice_data[0] > 0 : 
+					self.spliceCount = self.spliceCount + 1
+					self.RealSpliceTie.append(dataB)
+					self.RealSpliceTie.append(dataA)
+				if splice_data[0] == -1 : 
+					self.parent.OnShowMessage("Error", "It can not find value point.", 1)
+					self.parent.splicePanel.OnButtonEnable(0, True)
+					self.parent.splicePanel.OnButtonEnable(1, False)
+					return
 
-				holeA = '-'
-				holeB = '-'
-				coreA = -1
-				coreB = -1
-				typeA = ''
-				typeB = ''
-				count = 0
-				for s in self.DrawData["CoreInfo"]:
-					data = s
-					for r in data:
-					 if r[0] == coreidA :
-						 holeA = r[3]
-						 coreA = r[4]
-						 typeA = r[10]
-						 count = count + 1
-					 if r[0] == coreidB :
-						 holeB = r[3]
-						 coreB = r[4]
-						 typeB = r[10]
-						 count = count + 1
-					 if count >= 2:
-						 break
-					if count >= 2 :
-					 break
+				data = self.SpliceTieData[tieIndex]
+				for rtie in data :
+					x, y, n, f, startx, m, d, splicex, i, mode = rtie
+					data.remove(rtie)
+					if mode == 1 :
+						d = splice_data[2]
+					news = (x, y, n, f, startx, m, d, splicex, splice_data[0], mode)
+					data.insert(0, news)
+				data = self.SpliceTieData[tieIndex - 1]
+				for rtie in data : 
+					x, y, n, f, startx, m, d, splicex, i, mode = rtie
+					data.remove(rtie)
+					if mode == 1 :
+						d = splice_data[2]
+					news = (x, y, n, f, startx, m, d, splicex, splice_data[0], mode)
+					data.insert(0, news)
 
-				type_a = self.GetTypeID(typeA)
-				type_b = self.GetTypeID(typeB)
-				if type_a != type_b :
-					self.multipleType = True 
+				if splice_data[1] != "" :
+					self.SpliceData = []
+					self.parent.filterPanel.OnLock()
+					self.parent.ParseData(splice_data[1], self.SpliceData)
+					self.parent.filterPanel.OnRelease()
+					self.parent.UpdateSMOOTH_SPLICE(False)
 
-				if holeA != '-' and holeB != '-' :
-					if reversed == False :
-						splice_data = py_correlator.splice(typeB, holeB, int(coreB), y1, typeA, holeA, int(coreA), y2, tieNo, self.parent.smoothDisplay, 0)
-					else :
-						splice_data = py_correlator.splice(typeA, holeA, int(coreA), y2, typeB, holeB, int(coreB), y1, tieNo, self.parent.smoothDisplay, 0)
-					self.parent.SpliceChange = True
-					py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
-
-					if tieNo <= 0 and splice_data[0] > 0 : 
-						self.spliceCount = self.spliceCount + 1
-						self.RealSpliceTie.append(dataB)
-						self.RealSpliceTie.append(dataA)
-					if splice_data[0] == -1 : 
-						self.parent.OnShowMessage("Error", "It can not find value point.", 1)
-						self.parent.splicePanel.OnButtonEnable(0, True)
-						self.parent.splicePanel.OnButtonEnable(1, False)
-						return
-
-					data = self.SpliceTieData[self.SPselectedTie]
-					for rtie in data :
-						x, y, n, f, startx, m, d, splicex, i, mode = rtie
-						data.remove(rtie)
-						if mode == 1 :
-							d = splice_data[2]
-						news = (x, y, n, f, startx, m, d, splicex, splice_data[0], mode)
-						data.insert(0, news)
-					data = self.SpliceTieData[self.SPselectedTie - 1]
-					for rtie in data : 
-						x, y, n, f, startx, m, d, splicex, i, mode = rtie
-						data.remove(rtie)
-						if mode == 1 :
-							d = splice_data[2]
-						news = (x, y, n, f, startx, m, d, splicex, splice_data[0], mode)
-						data.insert(0, news)
-
-
-					if splice_data[1] != "" :
-						self.SpliceData = []
-						self.parent.filterPanel.OnLock()
-						self.parent.ParseData(splice_data[1], self.SpliceData)
-						self.parent.filterPanel.OnRelease()
-						self.parent.UpdateSMOOTH_SPLICE(False)
-
+					# brg 8/28/2013: Necessary? Logic in button splice, not right-click splice.
+					# Still don't understand why there'd be any difference at all.
 					self.parent.splicePanel.OnButtonEnable(0, False)
 					self.parent.splicePanel.OnButtonEnable(1, True)
 
@@ -3706,6 +3720,28 @@ class DataCanvas(wxBufferedWindow):
 		self.drag = 0 
 		self.UpdateDrawing()
 
+
+	def OnSpliceTieSelectionCb(self, event) :
+		opId = event.GetId() 
+		self.activeSPTie = -1
+		self.showMenu = False
+		if opId == 1 :
+			if len(self.SpliceTieData) > 2 :
+				if self.SPselectedTie < 2 :
+					self.OnUndoSplice()
+				else :
+					self.OnClearTies(1)
+			else :
+				if self.SpliceTieFromFile != len(self.RealSpliceTie) :
+					self.OnUndoSplice()
+				else :
+					self.OnClearTies(1)
+			self.SPselectedTie = -1
+			self.SPGuideCore = []
+			self.drag = 0 
+			self.UpdateDrawing()
+		elif opId == 2 :
+			self.ApplySplice(self.SPselectedTie)
 
 	def OnClearTies(self, mode) :
 		if mode == 0 :
@@ -3910,6 +3946,7 @@ class DataCanvas(wxBufferedWindow):
 					self.TieData = []
 					self.parent.compositePanel.OnButtonEnable(0, False)
 					self.parent.compositePanel.OnButtonEnable(1, True)
+					self.parent.compositePanel.UpdateGrowthPlot()
 
 					if opId == 3 : 
 						s = "Composite(All Below): hole " + holeA + " core " + coreA + ": " + str(datetime.today()) + "\n"
@@ -4176,142 +4213,8 @@ class DataCanvas(wxBufferedWindow):
 		self.parent.splicePanel.OnButtonEnable(0, False)
 		self.parent.splicePanel.OnButtonEnable(1, True)
 		lastTie = len(self.SpliceTieData) - 1
-
-		#print "[DEBUG] length of Splice Ties " + str(len(self.SpliceTieData)) 
-
-		if lastTie >= 0 :
-			tieNo = 0
-			dataA = self.SpliceTieData[lastTie]
-			coreidA = 0
-			coreidB = 0
-			depth = 0
-			corexB = 0
-			y1 = 0
-			y2 = 0
-			x1 = 0
-			x2 = 0
-			for r in dataA :
-				coreidB = r[2]
-				y1 = r[6]
-				#y1 = (r[1] - self.startDepth) / ( self.length / self.gap ) + self.SPrulerStartDepth
-				x1 = r[4]
-			dataB = self.SpliceTieData[lastTie - 1]
-			for r in dataB :
-				coreidA = r[2]
-				depth = r[6]
-				y2 = r[6]
-				#y2 = (r[1] - self.startDepth) / ( self.length / self.gap ) + self.SPrulerStartDepth
-				tieNo = r[8]
-				x2 = r[4]
-
-			reversed = False
-			if x2 > x1 :
-				reversed = True
-
-			holeA = '-'
-			holeB = '-'
-			coreA = -1
-			coreB = -1
-			typeA = ''
-			typeB = ''
-			count = 0
-			for s in self.DrawData["CoreInfo"]:
-				data = s
-				for r in data:
-					if r[0] == coreidA :
-					 holeA = r[3]
-					 coreA = r[4]
-					 typeA = r[10]
-					 count = count + 1
-					if r[0] == coreidB :
-					 holeB = r[3]
-					 coreB = r[4]
-					 typeB = r[10]
-					 count = count + 1
-					if count >= 2:
-					 break
-				if count >= 2 :
-					 break
-
-			appendflag = 0
-			#if self.isAppend == True :
-			#	appendflag = 1
-
-			type_a = self.GetTypeID(typeA)
-			type_b = self.GetTypeID(typeB)
-			if type_a != type_b :
-				self.multipleType = True
-
-			if holeA != '-' and holeB != '-' :
-
-				if reversed == False : 
-					splice_data = py_correlator.splice(typeB, holeB, int(coreB), y1, typeA, holeA, int(coreA), y2, tieNo, self.parent.smoothDisplay, appendflag)
-				else :
-					splice_data = py_correlator.splice(typeA, holeA, int(coreA), y2, typeB, holeB, int(coreB), y1, tieNo, self.parent.smoothDisplay, appendflag)
-
-				self.parent.SpliceChange = True
-				py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
-
-				if tieNo <= 0 and splice_data[0] > 0 :
-					self.spliceCount = self.spliceCount + 1
-					self.RealSpliceTie.append(dataB)
-					self.RealSpliceTie.append(dataA)
-				if splice_data[0] == -1 :
-					self.isAppend = False 
-					self.parent.OnShowMessage("Error", "It can not find value point.", 1)
-					self.parent.splicePanel.OnButtonEnable(0, True)
-					self.parent.splicePanel.OnButtonEnable(1, False)
-					return
-
-				data = self.SpliceTieData[lastTie]
-				for rtie in data :
-					x, y, n, f, startx, m, d, splicex, i, mode = rtie
-					data.remove(rtie)
-					if mode == 1 :
-						d = splice_data[2]
-					news = (x, y, n, f, startx, m, d, splicex, splice_data[0], mode)
-					data.insert(0, news)
-				data = self.SpliceTieData[lastTie - 1]
-				for rtie in data :
-					x, y, n, f, startx, m, d, splicex, i, mode = rtie
-					data.remove(rtie)
-					if mode == 1 :
-						d = splice_data[2]
-					news = (x, y, n, f, startx, m, d, splicex, splice_data[0], mode)
-					data.insert(0, news)
-
-				if splice_data[1] != "" :
-					self.SpliceData = []
-					self.parent.filterPanel.OnLock()
-					self.parent.ParseData(splice_data[1], self.SpliceData)
-					self.parent.filterPanel.OnRelease()
-					self.parent.UpdateSMOOTH_SPLICE(False)
-
-				s = "Constrained Splice: "	
-				if self.Constrained == 0 :
-					s = "Unconstrained Splice: "
-						
-				s = s + "hole " + holeB + " core " + coreB + ": " + str(datetime.today()) + "\n"
-				self.parent.logFileptr.write(s)
-				s = holeA + " " + coreA + " " + str(y1) + " tied to " + holeB + " " + coreB + " " + str(y2) + "\n\n"
-				self.parent.SpliceSectionSend(holeA, coreA, y1, "split", tieNo)
-				self.parent.SpliceSectionSend(holeB, coreB, y2, None, tieNo)
-				if tieNo > 0 :
-					self.parent.SpliceSectionSend(holeA, coreA, y1, "split", -1)
-					self.parent.SpliceSectionSend(holeB, coreB, y2, None, -1)
-
-				self.parent.logFileptr.write(s)
-				if self.parent.showReportPanel == 1 :
-					self.parent.OnUpdateReport()
-
-				self.SpliceTieData = []
-				self.SpliceTieData.append(dataB)
-				self.SpliceTieData.append(dataA)
-				self.SPselectedTie = -1
-				self.SPGuideCore = []
-
-		self.drag = 0
-		self.UpdateDrawing()
+		# print "[DEBUG] length of Splice Ties " + str(len(self.SpliceTieData)) 
+		self.ApplySplice(lastTie)
 
 	def OnUndoSplice(self):
 		lastTie = len(self.RealSpliceTie) - 1
@@ -5117,7 +5020,7 @@ class DataCanvas(wxBufferedWindow):
 					if r[3] == 0 : 
 						self.selectedTie = count
 						if (count % 2) == 1 : 
-					 		self.activeTie = count
+							self.activeTie = count
 						return
 			count = count + 1
 
@@ -5283,6 +5186,8 @@ class DataCanvas(wxBufferedWindow):
 				smooth_id = r[4]
 				break
 
+		# 9/19/2013 brg: duplication - these routines are EXACTLY THE SAME
+		# except one uses SmoothData and one uses HoleData
 		if smooth_id == 1 :
 			for data in self.SmoothData:
 				for record in data:
@@ -5340,6 +5245,7 @@ class DataCanvas(wxBufferedWindow):
 			data_list = self.HoleData
 			
 
+		# 9/23/2013 brgtodo duplication - it's everywhere.
 		if self.Constrained == 1 :
 			for data in data_list:
 				for record in data:
@@ -5453,49 +5359,50 @@ class DataCanvas(wxBufferedWindow):
 		return 0
 
 	def UpdateAgeModel(self):
-                space_bar = ""
+		space_bar = ""
 		if platform_name[0] == "Windows" :
-                        space_bar = " "
-                        
+			space_bar = " "
+
+		# 9/23/2013 brgtodo duplication
 		for data in self.StratData :
 			for r in data:
-					order, hole, name, label, start, stop, rawstart, rawstop, age, type = r 
-					strItem = ""
-					bm0 = int(100.0 * float(rawstart)) / 100.0;
-					str_ba = str(bm0)
-					max_ba = len(str_ba)
-					start_ba = str_ba.find('.', 0)
-					str_ba = str_ba[start_ba:max_ba]
-					max_ba = len(str_ba)
-					if max_ba < 3 :
-						strItem = strItem + str(bm0) + "0 \t"
-					else :
-						strItem = strItem + str(bm0) + space_bar + "\t"
+				order, hole, name, label, start, stop, rawstart, rawstop, age, type = r 
+				strItem = ""
+				bm0 = int(100.0 * float(rawstart)) / 100.0;
+				str_ba = str(bm0)
+				max_ba = len(str_ba)
+				start_ba = str_ba.find('.', 0)
+				str_ba = str_ba[start_ba:max_ba]
+				max_ba = len(str_ba)
+				if max_ba < 3 :
+					strItem = strItem + str(bm0) + "0 \t"
+				else :
+					strItem = strItem + str(bm0) + space_bar + "\t"
 
-					bm = int(100.0 * float(start)) / 100.0;
-					str_ba = str(bm)
-					max_ba = len(str_ba)
-					start_ba = str_ba.find('.', 0)
-					str_ba = str_ba[start_ba:max_ba]
-					max_ba = len(str_ba)
-					if max_ba < 3 :
-						strItem += str(bm) + "0 \t" + str(bm) + "0 \t"
-					else :
-						strItem += str(bm) + space_bar + "\t" + str(bm) + space_bar + " \t"
+				bm = int(100.0 * float(start)) / 100.0;
+				str_ba = str(bm)
+				max_ba = len(str_ba)
+				start_ba = str_ba.find('.', 0)
+				str_ba = str_ba[start_ba:max_ba]
+				max_ba = len(str_ba)
+				if max_ba < 3 :
+					strItem += str(bm) + "0 \t" + str(bm) + "0 \t"
+				else :
+					strItem += str(bm) + space_bar + "\t" + str(bm) + space_bar + " \t"
 
-					ba = int(1000.0 * float(age)) / 1000.0;
-					str_ba = str(ba)
-					max_ba = len(str_ba)
-					start_ba = str_ba.find('.', 0)
-					str_ba = str_ba[start_ba:max_ba]
-					max_ba = len(str_ba)
-					if max_ba < 3 :
-						strItem += str(ba) + "0 \t" + label 
-					else :
-						strItem += str(ba) + space_bar + "\t" + label 
-					ret = self.parent.agePanel.OnAddAgeToListAt(strItem, int(order))
-					if ret >= 0 :
-						self.AgeDataList.insert(int(order), ((self.SelectedAge, start, rawstart, age, name, label, type, 0.0)))
+				ba = int(1000.0 * float(age)) / 1000.0;
+				str_ba = str(ba)
+				max_ba = len(str_ba)
+				start_ba = str_ba.find('.', 0)
+				str_ba = str_ba[start_ba:max_ba]
+				max_ba = len(str_ba)
+				if max_ba < 3 :
+					strItem += str(ba) + "0 \t" + label 
+				else :
+					strItem += str(ba) + space_bar + "\t" + label 
+				ret = self.parent.agePanel.OnAddAgeToListAt(strItem, int(order))
+				if ret >= 0 :
+					self.AgeDataList.insert(int(order), ((self.SelectedAge, start, rawstart, age, name, label, type, 0.0)))
 
 	def OnMouseUp(self, event):
 		self.SetFocusFromKbd()
@@ -5605,73 +5512,74 @@ class DataCanvas(wxBufferedWindow):
 				start_ba = str_ba.find('.', 0)
 				str_ba = str_ba[start_ba:max_ba]
 				max_ba = len(str_ba)
-                                if platform_name[0] != "Windows" :
-                                        if max_ba < 3 :
-                                                strItem = strItem + str(bm0) + "0 \t"
-                                        else :
-                                                strItem = strItem + str(bm0) + "\t"
 
-                                        bm = int(100.00 * float(start)) / 100.00;
-                                        str_ba = str(bm)
-                                        max_ba = len(str_ba)
-                                        start_ba = str_ba.find('.', 0)
-                                        str_ba = str_ba[start_ba:max_ba]
-                                        max_ba = len(str_ba)
-                                        if max_ba < 3 :
-                                                strItem += str(bm) + "0 \t" + str(bm) + "0 \t"
-                                        else :
-                                                strItem += str(bm) + "\t" + str(bm) + "\t"
+				# 9/23/2013 brgtodo duplication candidate
+				if platform_name[0] != "Windows" :
+					if max_ba < 3 :
+						strItem = strItem + str(bm0) + "0 \t"
+					else :
+						strItem = strItem + str(bm0) + "\t"
 
-                                        ba = int(1000.00 * float(age)) / 1000.00;
-                                        str_ba = str(ba)
-                                        max_ba = len(str_ba)
-                                        start_ba = str_ba.find('.', 0)
-                                        str_ba = str_ba[start_ba:max_ba]
-                                        max_ba = len(str_ba)
-                                        if max_ba < 3 :
-                                                strItem += str(ba) + "0 \t" + label 
-                                        else :
-                                                strItem += str(ba) + "\t" + label 
-                                        if type == "handpick"  :
-                                                strItem += " *handpick"
-                                else :
-                                        if max_ba < 3 :
-                                                strItem = strItem + str(bm0) + "0 \t"
-                                        else :
-                                                strItem = strItem + str(bm0) + " \t"
+					bm = int(100.00 * float(start)) / 100.00;
+					str_ba = str(bm)
+					max_ba = len(str_ba)
+					start_ba = str_ba.find('.', 0)
+					str_ba = str_ba[start_ba:max_ba]
+					max_ba = len(str_ba)
+					if max_ba < 3 :
+						strItem += str(bm) + "0 \t" + str(bm) + "0 \t"
+					else :
+						strItem += str(bm) + "\t" + str(bm) + "\t"
 
-                                        bm = int(100.00 * float(start)) / 100.00;
-                                        str_ba = str(bm)
-                                        max_ba = len(str_ba)
-                                        start_ba = str_ba.find('.', 0)
-                                        str_ba = str_ba[start_ba:max_ba]
-                                        max_ba = len(str_ba)
-                                        if max_ba < 3 :
-                                                strItem += str(bm) + "0 \t" + str(bm) + "0 \t"
-                                        else :
-                                                strItem += str(bm) + " \t" + str(bm) + " \t"
+					ba = int(1000.00 * float(age)) / 1000.00;
+					str_ba = str(ba)
+					max_ba = len(str_ba)
+					start_ba = str_ba.find('.', 0)
+					str_ba = str_ba[start_ba:max_ba]
+					max_ba = len(str_ba)
+					if max_ba < 3 :
+						strItem += str(ba) + "0 \t" + label 
+					else :
+						strItem += str(ba) + "\t" + label 
+					if type == "handpick"  :
+						strItem += " *handpick"
+				else :
+					if max_ba < 3 :
+						strItem = strItem + str(bm0) + "0 \t"
+					else :
+						strItem = strItem + str(bm0) + " \t"
 
-                                        ba = int(1000.00 * float(age)) / 1000.00;
-                                        str_ba = str(ba)
-                                        max_ba = len(str_ba)
-                                        start_ba = str_ba.find('.', 0)
-                                        str_ba = str_ba[start_ba:max_ba]
-                                        max_ba = len(str_ba)
-                                        if max_ba < 3 :
-                                                strItem += str(ba) + "0 \t" + label 
-                                        else :
-                                                strItem += str(ba) + " \t" + label 
-                                        if type == "handpick"  :
-                                                strItem += " *handpick"                                       
+					bm = int(100.00 * float(start)) / 100.00;
+					str_ba = str(bm)
+					max_ba = len(str_ba)
+					start_ba = str_ba.find('.', 0)
+					str_ba = str_ba[start_ba:max_ba]
+					max_ba = len(str_ba)
+					if max_ba < 3 :
+						strItem += str(bm) + "0 \t" + str(bm) + "0 \t"
+					else :
+						strItem += str(bm) + " \t" + str(bm) + " \t"
+
+					ba = int(1000.00 * float(age)) / 1000.00;
+					str_ba = str(ba)
+					max_ba = len(str_ba)
+					start_ba = str_ba.find('.', 0)
+					str_ba = str_ba[start_ba:max_ba]
+					max_ba = len(str_ba)
+					if max_ba < 3 :
+						strItem += str(ba) + "0 \t" + label 
+					else :
+						strItem += str(ba) + " \t" + label 
+					if type == "handpick"  :
+						strItem += " *handpick"                                       
 
 				ret = self.parent.agePanel.OnAddAgeToList(strItem)
 				if ret >= 0 :
 					self.AgeDataList.insert(ret, (self.SelectedAge, start, rawstart, age, name, label, type, 0.0))
 					self.parent.TimeChange = True
 					self.UpdateDrawing()
-						
 
-		self.drag = 0 
+		self.drag = 0
 		self.SelectedAge = -1
 		self.grabScrollA = 0
 		self.grabScrollB = 0
@@ -6633,7 +6541,6 @@ class DataCanvas(wxBufferedWindow):
 
 
 	def OnUpdateTie(self, type):
-		rulserStart = 0
 		graphNo = 0
 		tieData = None
 		if type == 1 : # composite
