@@ -356,7 +356,7 @@ class ProgressFrame(wx.Frame):
 # from the legend. This way we can add lines connecting offset
 # points in Growth Rate graph without those lines ending up as random
 # unlabeled entries in the legend. Pulled code straight from plot.py
-# on the wx trunk.
+# on the wxPython trunk.
 class BetterLegendPlotCanvas(plot.PlotCanvas):
 	def __init__(self, parent):
 		plot.PlotCanvas.__init__(self, parent)
@@ -3641,6 +3641,10 @@ class PreferencesPanel():
 			return
 		self.parent.Window.UpdateDrawing()
 
+	def OnChangeRulerUnits(self, evt):
+		self.parent.Window.rulerUnits = self.unitsPopup.GetStringSelection()
+		self.parent.Window.UpdateDrawing()
+
 	# 9/12/2012 brgtodo: rename slider2 to something meaningful,
 	# update tie edit fields when slider moves  
 	def OnRulerOneScale(self, event):
@@ -3699,6 +3703,16 @@ class PreferencesPanel():
 	def addItemsInFrame(self):
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
 	
+		unitsPanel = wx.Panel(self.mainPanel, -1)
+		unitsSizer = wx.FlexGridSizer(1, 2)
+		self.unitsPopup = wx.Choice(unitsPanel, -1, choices=('m','cm','mm'), size=(-1,24))
+		self.unitsPopup.SetSelection(0)
+		self.mainPanel.Bind(wx.EVT_CHOICE, self.OnChangeRulerUnits, self.unitsPopup)
+		unitsSizer.Add(wx.StaticText(unitsPanel, -1, "Depth units: "), flag=wx.ALIGN_CENTER_VERTICAL)
+		unitsSizer.Add(self.unitsPopup, flag=wx.ALIGN_CENTER_VERTICAL)
+		unitsPanel.SetSizer(unitsSizer)
+		vbox_top.Add(unitsPanel, 0, wx.LEFT | wx.BOTTOM | wx.TOP, 9)
+
 		grid1 = wx.FlexGridSizer(1, 2)
 		self.opt1 = wx.CheckBox(self.mainPanel, -1, 'Splice/Log window', (10, 10))
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnActivateWindow, self.opt1)
@@ -3708,7 +3722,7 @@ class PreferencesPanel():
 		self.tool.SetValue(True)
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnToolbarWindow, self.tool)
 		grid1.Add(self.tool, 0, wx.LEFT, 5)
-		vbox_top.Add(grid1, 0, wx.TOP | wx.LEFT, 9)
+		vbox_top.Add(grid1, 0, wx.LEFT, 9)
 
 		buttonsize = 300
 		if platform_name[0] == "Windows" :

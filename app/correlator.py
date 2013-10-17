@@ -1046,7 +1046,7 @@ class MainFrame(wx.Frame):
 			self.ParseData(ret, self.Window.HoleData)
 			self.UpdateMinMax()
 			self.LOCK = 1
-			ret = ""
+			ret = "" # 9/18/2013 brg: Why? It's local and we're done with it.
 
 			self.RefreshTypeComboBoxes()
 
@@ -2183,6 +2183,7 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("startdepth", self.Window.rulerStartDepth, f)
 		self.WritePreferenceItem("secondstartdepth", self.Window.SPrulerStartDepth, f)
 		self.WritePreferenceItem("datawidth", self.optPanel.slider1.GetValue(), f)
+		self.WritePreferenceItem("rulerunits", self.Window.GetRulerUnitsStr(), f)
 		self.WritePreferenceItem("rulerscale", self.optPanel.slider2.GetValue(), f)
 
 		rulerRangeStr = str(self.optPanel.min_depth.GetValue()) + " " + str(self.optPanel.max_depth.GetValue())
@@ -3240,6 +3241,13 @@ class MainFrame(wx.Frame):
 		#		conf_value = float ( str_temp )
 		#		self.Window.SPrulerStartDepth = conf_value 
 
+		self.Window.rulerUnits = "m" # default to meters
+		if self.config.has_option("applications", "rulerunits"):
+			rulerUnitsStr = self.config.get("applications", "rulerunits")
+			if len(rulerUnitsStr) > 0:
+				self.Window.rulerUnits = rulerUnitsStr
+		unitIndex = self.Window.GetRulerUnitsIndex()
+		self.optPanel.unitsPopup.SetSelection(unitIndex)
 
 		if self.config.has_option("applications", "rulerrange"):
 			conf_str = self.config.get("applications", "rulerrange")

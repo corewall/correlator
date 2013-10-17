@@ -220,9 +220,9 @@ class DataCanvas(wxBufferedWindow):
 				wx.Colour(147, 112, 219), wx.Colour(84, 139, 84), wx.Colour(219, 112, 147), \
 				wx.Colour(30, 144, 255)]
 
-		self.compositeX = 40
-		self.splicerX = 700	
-		self.splicerBackX = 700
+		self.compositeX = 35
+		self.splicerX = 695
+		self.splicerBackX = 695
 		self.tieline_width = 1
 
 		self.holeWidth = 300
@@ -234,6 +234,7 @@ class DataCanvas(wxBufferedWindow):
 		self.rulerStartDepth = 0.0 
 		self.rulerEndDepth = 0.0
 		self.rulerTickRate = 0.0 
+		self.rulerUnits = 'cm' # one of 'm','cm','mm'
 		self.tieDotSize = 10 
 
 		self.ageXGap = 1.0
@@ -581,6 +582,16 @@ class DataCanvas(wxBufferedWindow):
 				return (r[1], r[2])
 		return None
 
+	def GetRulerUnitsStr(self):
+		return self.rulerUnits
+
+	def GetRulerUnitsIndex(self):
+		unitToIndexMap = {'m':0, 'cm':1, 'mm':2}
+		return unitToIndexMap[self.rulerUnits]
+
+	def GetRulerUnitsFactor(self):
+		unitToFactorMap = {'m':1.0, 'cm':100.0, 'mm':1000.0}
+		return unitToFactorMap[self.rulerUnits]
 
 	def OnSelectELDNote(self, event):
 		note_id = event.GetSelection()
@@ -750,17 +761,20 @@ class DataCanvas(wxBufferedWindow):
 		pos = self.rulerStartAgeDepth 
 		dc.DrawLines(((self.compositeX, 0), (self.compositeX, self.Height)))
 
+		rulerUnitsStr = " (" + self.GetRulerUnitsStr() + ")"
 		dc.DrawText("Depth", self.compositeX - 35, self.startAgeDepth - 45)
-		dc.DrawText(" (m)", self.compositeX - 35, self.startAgeDepth - 35)
+		dc.DrawText(rulerUnitsStr, self.compositeX - 35, self.startAgeDepth - 35)
 		
 		# Draw depth scale ticks
 		rulerRange = (self.rulerHeight / (self.ageYLength / self.ageGap))
 		self.ageRulerTickRate = self.CalcTickRate(rulerRange)
 
+		unitAdjFactor = self.GetRulerUnitsFactor()
 		while True :
+			adjPos = pos * unitAdjFactor
 			dc.DrawLines(((self.compositeX - 10, depth), (self.compositeX, depth)))
-			extraSpace = (len(str(pos)) - 3) * 5 # adjust position of longer numbers to avoid overlap with ticks
-			dc.DrawText(str(pos), self.compositeX - 35 - extraSpace, depth - 5)
+			wid, hit = dc.GetTextExtent(str(adjPos))
+			dc.DrawRotatedText(str(adjPos), self.compositeX - 5 - hit * 2, depth + wid/2, 90.0)
 			depth = depth + (self.ageRulerTickRate * self.ageYLength / self.ageGap)
 			dc.DrawLines(((self.compositeX - 5, depth), (self.compositeX, depth)))
 			depth = depth + (self.ageRulerTickRate * self.ageYLength / self.ageGap) 
@@ -887,9 +901,10 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetTextForeground(self.colorDict['foreground'])
 		dc.SetFont(self.font2)
 
+		rulerUnitsStr = " (" + self.GetRulerUnitsStr() + ")"
 		if self.timeseries_flag == False :
 			dc.DrawText("Depth", self.compositeX - 35, self.startDepth - 45)
-			dc.DrawText(" (m)", self.compositeX - 35, self.startDepth - 35)
+			dc.DrawText(rulerUnitsStr, self.compositeX - 35, self.startDepth - 35)
 		else :
 			dc.DrawText("Age", self.compositeX - 35, self.startDepth - 45)
 			dc.DrawText("(Ma)", self.compositeX - 35, self.startDepth - 35)
@@ -904,13 +919,18 @@ class DataCanvas(wxBufferedWindow):
 		rulerRange = (self.rulerHeight / self.length) * 2;
 		self.rulerTickRate = self.CalcTickRate(rulerRange)
 
+		unitAdjFactor = self.GetRulerUnitsFactor()
 		while True :
-			dc.DrawLines(((self.compositeX - 10, depth), (self.compositeX, depth)))
-			extraSpace = (len(str(pos)) - 3) * 5 # adjust position of longer numbers to avoid overlap with ticks
-			dc.DrawText(str(pos), self.compositeX - 35 - extraSpace, depth - 5)
+			adjPos = pos * unitAdjFactor
+
+			dc.DrawLines(((self.compositeX - 10, depth), (self.compositeX, depth))) # depth-labeled ticks
+			wid, hit = dc.GetTextExtent(str(adjPos))
+			dc.DrawRotatedText(str(adjPos), self.compositeX - 5 - hit * 2, depth + wid/2, 90.0)
 			depth = depth + (self.rulerTickRate * self.length) / 2
-			dc.DrawLines(((self.compositeX - 5, depth), (self.compositeX, depth)))
+
+			dc.DrawLines(((self.compositeX - 5, depth), (self.compositeX, depth))) # unlabeled ticks
 			depth = depth + (self.rulerTickRate * self.length) / 2 
+
 			pos = pos + self.rulerTickRate * 2
 			if depth > self.Height :
 				break
@@ -924,7 +944,7 @@ class DataCanvas(wxBufferedWindow):
 
 			if self.timeseries_flag == False :
 				dc.DrawText("Depth", self.splicerX - 35, self.startDepth - 45)
-				dc.DrawText(" (m)", self.splicerX - 35, self.startDepth - 35)
+				dc.DrawText(rulerUnitsStr, self.splicerX - 35, self.startDepth - 35)
 			else :
 				dc.DrawText("Age", self.splicerX - 35, self.startDepth - 45)
 				dc.DrawText("(Ma)", self.splicerX - 35, self.startDepth - 35)
@@ -933,9 +953,10 @@ class DataCanvas(wxBufferedWindow):
 			self.SPrulerHeight = self.Height - self.startDepth
 			
 			while True :
+				adjPos = pos * unitAdjFactor
 				dc.DrawLines(((self.splicerX - 10, depth), (self.splicerX, depth)))
-				extraSpace = (len(str(pos)) - 3) * 5 # adjust position of longer numbers to avoid overlap with ticks
-				dc.DrawText(str(pos), self.splicerX - 35 - extraSpace, depth - 5)
+				wid, hit = dc.GetTextExtent(str(adjPos))
+				dc.DrawRotatedText(str(adjPos), self.splicerX - 5 - hit * 2, depth + wid/2, 90.0)
 				depth = depth + (self.rulerTickRate * self.length) / 2
 				dc.DrawLines(((self.splicerX - 5, depth), (self.splicerX, depth)))
 				depth = depth + (self.rulerTickRate * self.length) / 2 
@@ -2145,12 +2166,12 @@ class DataCanvas(wxBufferedWindow):
 		if flag == 2 :
 			x = self.Width - 220
 
-		self.minData = -1 
+		self.minData = -1
 		n, leg, site, hole, core, min, max, dmin, dmax, squish, type, quality, holeth = curCoreData
 		self.statusStr = self.statusStr + "Hole: " + hole + " Core: " + core
-		dc.DrawText("Hole: " + hole + " Core: " + core, x, self.startDepth) 
-		dc.DrawText("Min: " + str(min) + " Max: " + str(max), x, self.startDepth + 20) 
-		dc.DrawText("Stretched Ratio: " + str(squish) + "%", x, self.startDepth + 40) 
+		dc.DrawText("Hole: " + hole + " Core: " + core, x, self.startDepth)
+		dc.DrawText("Min: " + str(min) + " Max: " + str(max), x, self.startDepth + 20)
+		dc.DrawText("Stretched Ratio: " + str(squish) + "%", x, self.startDepth + 40)
 
 		qualityStr = "Quality: "
 		qualityStr += "Good" if quality == '0' else "Bad"
@@ -2169,6 +2190,7 @@ class DataCanvas(wxBufferedWindow):
 
 		ycoord = y
 		ycoord = (ycoord - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
+		unroundedYcoord = ycoord
 		ycoord = round(ycoord, 3)
 		#if flag == 1 :
 		#	dc.DrawText(str(ycoord), self.compositeX + 3, y - 5)
@@ -2191,7 +2213,10 @@ class DataCanvas(wxBufferedWindow):
 
 		section = self.parent.GetSectionAtDepth(curCoreData[3], int(curCoreData[4]), type, ycoord)
 		self.statusStr += " Section: " + str(section)
-		self.statusStr += " Depth:" + str(ycoord) + " Data: " + str(tempx)
+
+		# display depth in ruler units
+		yUnitAdjusted = round(unroundedYcoord * self.GetRulerUnitsFactor(), 3)
+		self.statusStr += " Depth: " + str(yUnitAdjusted) + " Data: " + str(tempx)
 
 	def DrawAnnotation(self, dc, info, line):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
@@ -2430,6 +2455,7 @@ class DataCanvas(wxBufferedWindow):
 			#dc.SetFont( self.font2 )
 			ycoord = self.MousePos[1] 
 			ycoord = (ycoord - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
+			ycoord = ycoord * self.GetRulerUnitsFactor()
 			ycoord = round(ycoord, 3)
 			if self.MousePos[0] < self.splicerX :
 				if holeth != -1 :
