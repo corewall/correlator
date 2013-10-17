@@ -1459,7 +1459,7 @@ int Correlator::appendSplice( bool allflag )
 						coreno++;
 						if(coreno == holeno) 
 						{
-							coreptr == NULL;
+							coreptr = NULL;
 							break;
 						}
 						
@@ -1734,8 +1734,6 @@ void  Correlator::generateSaganHole( void )
 			}
 		}	
 	}
-
-
 }
 	
 void Correlator::generateSpliceHole(Hole* newSpliceHole) {
@@ -1753,6 +1751,7 @@ void Correlator::generateSpliceHole(Hole* newSpliceHole) {
 	Tie* tieptr;
 	int count=0;
 	
+	// count number of ties
 	for(int i=0; i < numHoles; i++)
 	{
 		holeptr = m_dataptr->getHole(i);
