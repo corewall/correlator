@@ -146,7 +146,7 @@ int getToken(char *str, char *token, char **buf)
 
 	//p_token = strtok( str, seps );
 
-#ifdef WIN32
+#if defined(WIN32) || defined(WIN64)
 	if (p_token = strtok_s(str, seps, buf))
 	{
 		strcpy(token, p_token);

@@ -37,7 +37,7 @@
 #include <iostream>
 #endif
 
-#ifdef WIN32
+#if defined(WIN32) || defined(WIN64)
 #define rint(a) floor((a)+(((a) < 0)? -0.5 : 0.5))
 #endif
 

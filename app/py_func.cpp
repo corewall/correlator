@@ -1,8 +1,8 @@
-#if defined(WIN32) || defined (linux)
+//#if defined(WIN32) || defined(WIN64) || defined (linux)
 #include <Python.h>
-#else 
-#include <Python/Python.h>
-#endif
+//#else 
+//#include <Python/Python.h>
+//#endif
  
 #include <iostream>
 #include <DataManager.h>
@@ -90,7 +90,13 @@ static PyObject* createNewAge(PyObject *self, PyObject *args);
 static PyObject* formatChange(PyObject *self, PyObject *args);
 static PyObject* setCoreQuality(PyObject *self, PyObject *args);
 static PyObject* getMcdRate(PyObject *self, PyObject *args);
+#if defined(WIN32)
 PyMODINIT_FUNC initpy_correlator(void);
+#elif defined(WIN64)
+PyMODINIT_FUNC initpy_correlator64(void);
+#else
+#error "WIN32 or WIN64 must be defined"
+#endif
 
 // all the methods callable from Python have to be
 // listed here
@@ -288,9 +294,19 @@ static PyMethodDef PyCoreMethods[] = {
 // this function is called when we do import py_correlator from python
 // it let's the python interpreter know about all the functions
 // in this module available for calling
+#if defined(WIN32)
 PyMODINIT_FUNC initpy_correlator(void)
+#elif defined(WIN64)
+PyMODINIT_FUNC initpy_correlator64(void)
+#else
+#error "WIN32 or WIN64 must be defined"
+#endif
 {
-    (void) Py_InitModule("py_correlator", PyCoreMethods);
+#if defined(WIN32)
+	(void) Py_InitModule("py_correlator", PyCoreMethods);
+#elif defined(WIN64)
+	(void) Py_InitModule("py_correlator64", PyCoreMethods);
+#endif
 	
 	autocorrelator.setCorrelator(&correlator);
 
