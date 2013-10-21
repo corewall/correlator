@@ -4,6 +4,7 @@ rm dialog.py
 rm canvas.py
 rm frames.py
 rm dbmanager.py
+rm importManager.py
 rm xml_handler.py
 rm *.pyc
 rm py_correlator*
@@ -19,6 +20,7 @@ cp dialog.py ../bin/static/
 cp frames.py ../bin/static/
 cp canvas.py ../bin/static/
 cp dbmanager.py ../bin/static/
+cp importManager.py ../bin/static/
 cp xml_handler.py ../bin/static/
 cp libcore.dylib ../bin/static/
 cp py_correlator.so ../bin/static/
