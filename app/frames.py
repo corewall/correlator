@@ -30,7 +30,7 @@ class TopMenuFrame(wx.Frame):
 		topsize = (180, 245)
 		if platform_name[0] == "Windows" :
 			topsize = (185, 260)
-		wx.Frame.__init__(self, parent, -1, "Tool Bar",
+		wx.Frame.__init__(self, None, -1, "Tool Bar",
 						 wx.Point(20,100),
 						 topsize,
 						 style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
@@ -180,16 +180,6 @@ class TopMenuFrame(wx.Frame):
 			else :
 				self.parent.dataFrame.Raise()
 
-			#self.parent.OnOpenData(event)
-			
-			# brg 7/11/2013: Gross workarounds for behavior changes in wx 2.9. Hiding of the display window on
-			# "Go to Data Manager" causes data manager and toolbar to hide (i.e. all windows vanish).
-			# Commenting Show(False) causes data manager to appear, but tool bar doesn't rise to the top
-			# (despite being an always on top window, also a source of much frustration in Corelyzer). Calling
-			# Hide()/Show() brings it to the top.
-			#self.parent.Show(False)
-			self.Hide()
-			self.Show()
 			self.dbbtn.SetLabel("Go to Display")
 		else :
 			self.parent.dataFrame.propertyIdx = None

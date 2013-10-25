@@ -26,15 +26,14 @@ def opj(path):
 
 class DataFrame(wx.Frame):
 	def __init__(self, parent, winsize, points):
-		wx.Frame.__init__(self, parent, -1, "Correlator Data Manager",
-						 points,
-						 size=(winsize[0],winsize[1]))
+		wx.Frame.__init__(self, None, -1, "Correlator Data Manager",
+						 points, size=(winsize[0],winsize[1]))
 
 		winsize = parent.GetClientSizeTuple()
 		self.parent = parent
 		self.statusBar = self.CreateStatusBar()
-		panelx = winsize[0]-150
-		panely = winsize[1]-50 
+		panelx = winsize[0] - 150
+		panely = winsize[1] - 50 
 		self.selectedCol = -1
 		self.paths = ""
 		self.EditRow = -1
@@ -138,18 +137,15 @@ class DataFrame(wx.Frame):
 		self.repCount = 0
 		wx.EVT_SIZE(self, self.OnSize)
 		wx.EVT_CLOSE(self, self.OnHide)
-		#wx.EVT_MOVE(self, self.OnMOVE)
-
+		wx.EVT_MOVE(self, self.OnMOVE)
 
 	def OnHide(self,event):
 		self.Show(False)
 		self.parent.midata.Check(False)
 
-	# brg 7/11/2013: in wx 2.9, the SetPosition() call triggers the parent's OnMOVE which re-triggers
-	# this OnMOVE and so on ad infinitum, causing the Window to run offscreen in short order.
-	#def OnMOVE(self,event):
-		#pos = self.GetPosition()
-		#self.parent.SetPosition(pos)
+	def OnMOVE(self,event):
+		pos = self.GetPosition()
+		self.parent.SetPosition(pos)
 
 	def OnSize(self,event):
 		winx, winy = self.GetClientSizeTuple()
