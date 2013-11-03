@@ -999,13 +999,7 @@ class DataCanvas(wxBufferedWindow):
 			else : 
 				startX = self.WidthsControl[self.HoleCount] 
 
-		# brg 11/2/2013: subtract fudge factor (150) so hole graphs draw until they're
-		# completely obscured by the splice area (if present). Previously, graphs would
-		# stop drawing while mostly visible as you dragged the scrollbar separating composite
-		# and splice areas to the left. The cutoff point was the left edge of the colored
-		# mbsf/mcd/eld legend rectangles just beneath the composite area: each is 50 wide,
-		# subtracting their total width does the trick.
-		rangeMax = startX + self.holeWidth - 150
+		rangeMax = startX + self.holeWidth
 
 		if self.showHoleGrid == True :
 			if startX < self.splicerX :
