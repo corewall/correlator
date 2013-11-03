@@ -385,13 +385,17 @@ class MainFrame(wx.Frame):
 		self.miscroll.Check(False)
 		self.Bind(wx.EVT_MENU, self.SHOWScroll, self.miscroll)
 
-	
-		menuView.AppendSeparator()
-		self.mitextsizeup = menuView.Append(-1, "Text Size Up", "Text Size Up")
-		self.Bind(wx.EVT_MENU, self.SETTextSizeUp, self.mitextsizeup)
-		
-		self.mitextsizeDown = menuView.Append(-1, "Text Size Down", "Text Size Down")
-		self.Bind(wx.EVT_MENU, self.SETTextSizeDown, self.mitextsizeDown)
+		# 11/2/2013 brg: Removing for now - graph area layouts can get pretty screwed up
+		# with repeated font size changes (the top graph info area can end up in negative
+		# coordinates and thus not show up). If we need this functionality back, use actual
+		# font metrics instead of the current "add or subtract 5 for each increment/decrement
+		# of font size" approach in SETTextSizeUp/Down(). Also, don't load/save "fontsize"
+		# preference, which retains the custom fontsize value.
+		#menuView.AppendSeparator()
+		#self.mitextsizeup = menuView.Append(-1, "Text Size Up", "Text Size Up")
+		#self.Bind(wx.EVT_MENU, self.SETTextSizeUp, self.mitextsizeup)
+		#self.mitextsizeDown = menuView.Append(-1, "Text Size Down", "Text Size Down")
+		#self.Bind(wx.EVT_MENU, self.SETTextSizeDown, self.mitextsizeDown)
 
 		menuView.AppendSeparator()
 		self.miScrollbigger = menuView.Append(-1, "Bigger Scroll", "Bigger Scroll")
@@ -2168,7 +2172,7 @@ class MainFrame(wx.Frame):
 				self.WritePreferenceItem("winy", winPT[1], f)
 		else :
 			self.WritePreferenceItem("winy", winPT[1], f)
-                                
+
 		width, height = self.GetClientSizeTuple()
 		self.WritePreferenceItem("width", width, f)
 		self.WritePreferenceItem("height", height, f)
@@ -2191,7 +2195,7 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("tiedotsize", self.Window.tieDotSize, f)
 		self.WritePreferenceItem("tiewidth", self.Window.tieline_width, f)
 		self.WritePreferenceItem("splicewindow", self.Window.spliceWindowOn, f)
-		self.WritePreferenceItem("fontsize", self.Window.font2.GetPointSize(), f)
+		#self.WritePreferenceItem("fontsize", self.Window.font2.GetPointSize(), f) # see 11/2/2013 brg
 		self.WritePreferenceItem("fontstartdepth", self.Window.startDepth, f)
 		self.WritePreferenceItem("scrollsize", self.Window.ScrollSize, f)
 
@@ -3317,11 +3321,12 @@ class MainFrame(wx.Frame):
 					b = int(conf_array[i*3+2]) 
 					self.Window.overlapcolorList.insert(i, wx.Colour(r, g, b))
 
-		if self.config.has_option("applications", "fontsize"):
-			str_temp = self.config.get("applications", "fontsize")
-			if len(str_temp) > 0 :
-				conf_value = int ( str_temp )
-				self.Window.font2.SetPointSize(conf_value)
+		# see 11/2/2013 brg
+		#if self.config.has_option("applications", "fontsize"):
+		#	str_temp = self.config.get("applications", "fontsize")
+		#	if len(str_temp) > 0 :
+		#		conf_value = int ( str_temp )
+		#		self.Window.font2.SetPointSize(conf_value)
 			
 		if self.config.has_option("applications", "fontstartdepth"):
 			str_temp = self.config.get("applications", "fontstartdepth")

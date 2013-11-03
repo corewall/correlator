@@ -106,9 +106,9 @@ class DataCanvas(wxBufferedWindow):
 
 		self.bitmaps = {}
 		if platform_name[0] == "Windows" :
-			self.font1 = wx.Font(14, wx.ROMAN, wx.NORMAL, wx.BOLD)				
-			self.font2 = wx.Font(10, wx.ROMAN, wx.NORMAL, wx.BOLD)
-			self.font3 = wx.Font(9, wx.ROMAN, wx.NORMAL, wx.BOLD)
+			self.font1 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD)
+			self.font2 = wx.Font(9, wx.SWISS, wx.NORMAL, wx.NORMAL)
+			self.font3 = wx.Font(9, wx.SWISS, wx.NORMAL, wx.BOLD)
 		else :
 			self.font1 = wx.Font(14, wx.TELETYPE, wx.NORMAL, wx.BOLD)
 			self.font2 = wx.Font(10, wx.TELETYPE, wx.NORMAL, wx.BOLD)
@@ -999,7 +999,13 @@ class DataCanvas(wxBufferedWindow):
 			else : 
 				startX = self.WidthsControl[self.HoleCount] 
 
-		rangeMax = startX + self.holeWidth
+		# brg 11/2/2013: subtract fudge factor (150) so hole graphs draw until they're
+		# completely obscured by the splice area (if present). Previously, graphs would
+		# stop drawing while mostly visible as you dragged the scrollbar separating composite
+		# and splice areas to the left. The cutoff point was the left edge of the colored
+		# mbsf/mcd/eld legend rectangles just beneath the composite area: each is 50 wide,
+		# subtracting their total width does the trick.
+		rangeMax = startX + self.holeWidth - 150
 
 		if self.showHoleGrid == True :
 			if startX < self.splicerX :
@@ -1034,14 +1040,6 @@ class DataCanvas(wxBufferedWindow):
 					dc.SetPen(wx.Pen(self.overlapcolorList[self.selectedCount], 1))
 					dc.DrawRectangle(startX, self.startDepth - 20, 30, 20)
 					dc.SetBrush(wx.TRANSPARENT_BRUSH)
-
-		inrange_flag = True 
-		if rangeMax > self.splicerX :
-			inrange_flag = False 
-		#elif rangeMax < (self.compositeX + 50):
-		#	return type
-		#if overlapped_flag == False and inrange_flag == False :
-		#	return type
 
 		smooth_id = -1
 		for r in self.range :
@@ -1114,7 +1112,6 @@ class DataCanvas(wxBufferedWindow):
 				elif self.parent.autoPanel.ApplyFlag == 1 :
 					spliceflag = 2	
 
-			#if inrange_flag == True :
 			affine = self.DrawCoreGraph(dc, self.coreCount, startX, holeInfo, holedata, smoothed, spliceflag, compositeflag, affine) 
 
 			if overlapped_flag == True :
@@ -1134,8 +1131,6 @@ class DataCanvas(wxBufferedWindow):
 				self.DrawData["CoreInfo"].append(l)
 
 			self.coreCount = self.coreCount + 1
-
-
 
 		# DRAWING TITLE
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
@@ -1275,7 +1270,7 @@ class DataCanvas(wxBufferedWindow):
 			self.AgeOffset = 0.0
 			self.prevDepth = 0.0
 			#for i in range(forcount) :
-                        for i in range(len_hole) :                             
+			for i in range(len_hole) :                             
 				holedata = hole[i + 1]
 				if index < splicesize :
 					ret = self.DrawAgeSpliceCore(dc, self.SpliceCore[index], holedata[10], smoothed, holedata[7])
@@ -2814,13 +2809,14 @@ class DataCanvas(wxBufferedWindow):
 		self.Done = False
 		icount = 0
 		type = ""
+
 		for data in self.HoleData:
 			for r in data:
 				hole = r 
 				type = self.DrawHoleGraph(dc, hole, 0, type) 
 				self.HoleCount = self.HoleCount + 1 
 			icount = icount + 1
-		self.Done = True 
+		self.Done = True
 
 		self.HoleCount = 0
 		self.coreCount = 0 
@@ -2988,7 +2984,7 @@ class DataCanvas(wxBufferedWindow):
 				elif count == 1 : 
 					dc.SetBrush(wx.Brush(self.colorDict['shiftTie']))
 					dc.SetPen(wx.Pen(self.colorDict['shiftTie'], 1))
-				 
+
 				for r in data :
 					y = self.startDepth + (r[6] - self.rulerStartDepth) * (self.length / self.gap)
 					tempx = r[6] 
