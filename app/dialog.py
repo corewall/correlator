@@ -274,8 +274,8 @@ class AgeListDialog(wx.Dialog):
 			self.ageList.InsertItems([str(age)], idx)
 			idx += 1
 
-		wx.Button(self, wx.ID_OK, "SELECT", ((25, 135)))
-		wx.Button(self, wx.ID_CANCEL, "CANCEL", ((110, 135)))
+		wx.Button(self, wx.ID_OK, "Select", ((25, 135)))
+		wx.Button(self, wx.ID_CANCEL, "Cancel", ((110, 135)))
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
 	def OnCharUp(self,event):
@@ -330,8 +330,8 @@ class SaveTableDialog(wx.Dialog):
 		self.seriesUpdate.SetValue(True)
 		wx.RadioButton(panel4, -1, "Create New", (190, 10))
 
-		wx.Button(self, wx.ID_OK, "SAVE", ((85, 265)))
-		wx.Button(self, wx.ID_CANCEL, "CANCEL", ((180, 265)))
+		wx.Button(self, wx.ID_OK, "Save", ((85, 265)))
+		wx.Button(self, wx.ID_CANCEL, "Cancel", ((180, 265)))
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
 	def OnCharUp(self,event):
@@ -344,7 +344,7 @@ class SaveTableDialog(wx.Dialog):
 
 class ExportCoreDialog(wx.Dialog):
 	def __init__(self, parent):
-		wx.Dialog.__init__(self, parent, -1, "Export Core", size=(260, 260),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
+		wx.Dialog.__init__(self, parent, -1, "Export Core", size=(300, 260),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
 
 		vbox = wx.BoxSizer(wx.VERTICAL)
 		vbox.Add(wx.StaticText(self, -1, 'Check to Export Core data'), 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 12)
@@ -396,7 +396,7 @@ class ExportCoreDialog(wx.Dialog):
 		self.SetSizer(vbox)
 
 		wx.Button(self, wx.ID_OK, "Next", ((45, 200)))
-		wx.Button(self, wx.ID_CANCEL, "CANCEL", ((140, 200)))
+		wx.Button(self, wx.ID_CANCEL, "Cancel", ((140, 200)))
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
 	def OnCharUp(self,event):
@@ -459,9 +459,9 @@ class AltSpliceDialog(wx.Dialog):
 
 		self.selectedType = "" 
 		self.selectedSplice = "" 
-		okBtn = wx.Button(self, -1, "SELECT", (70, 135))
+		okBtn = wx.Button(self, -1, "Select", (70, 135))
 		self.Bind(wx.EVT_BUTTON, self.OnSELECT, okBtn)
-		cancelBtn = wx.Button(self, wx.ID_CANCEL, "CANCEL", (210, 135))
+		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Cancel", (210, 135))
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
 	def OnCharUp(self,event):
@@ -850,26 +850,24 @@ class ColorTableDialog(wx.Dialog):
 
 class AboutDialog(wx.Dialog):
 	def __init__(self, parent, version) :
-		wx.Dialog.__init__(self, parent, -1, "About Correlator V" + version, size=(500, 300), style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
-		wx.StaticText(self, -1, 'Correlator facilitates the adjustment of core depth data drilled in', (20, 10))
-		wx.StaticText(self, -1, 'a multi-hole scenario by usually correlating measured whole-core', (20, 30))
-		wx.StaticText(self, -1, '(GRA, MSLP, PWC,#NGR) or half-core (RSC) sensor data across holes using', (20, 50))
-		wx.StaticText(self, -1, 'an optimized cross-correlation approach.', (20, 70))
+		wx.Dialog.__init__(self, parent, -1, "About Correlator v" + version, size=(500, 300), style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
 
-		wx.StaticText(self, -1, 'For more detail information, ', (20, 90))
-		wx.HyperlinkCtrl(self, -1, 'Go to Correlator Web', 'http://sqlcore.geo.umn.edu/CoreWallDatabase/cwWiki/index.php/Correlator', (200, 90))
+		desctext = "Correlator facilitates the adjustment of core depth data drilled in a multi-hole scenario by usually correlating measured whole-core (GRA, MSLP, PWC, #NGR) or half-core (RSC) sensor data across holes using an optimized cross-correlation approach."
 
+		desc = wx.StaticText(self, -1, desctext, (10,10))
+		desc.Wrap(480)
+
+		wx.HyperlinkCtrl(self, -1, 'For more detailed information, please visit the Correlator Website', 'http://www.corewall.org', (15,95))
 
 		wx.StaticText(self, -1, 'Developer:  Sean Higgins(shiggins@oceanleadership.org)', (20, 130))
 		wx.StaticText(self, -1, 'Hyejung Hur(hhur2@uic.edu)', (95, 150))
 
 		wx.StaticText(self, -1, 'Organization: ', (20, 180))
-		wx.HyperlinkCtrl(self, -1, 'EVL', 'http://www.evl.uic.edu', (20, 200))
-		wx.HyperlinkCtrl(self, -1, 'NSF', 'http://www.nsf.gov/', (20, 220))
+		wx.HyperlinkCtrl(self, -1, 'EVL', 'http://www.evl.uic.edu', (25, 200))
+		wx.HyperlinkCtrl(self, -1, 'NSF', 'http://www.nsf.gov/', (25, 220))
 		wx.HyperlinkCtrl(self, -1, 'LacCore', 'http://lrc.geo.umn.edu/LacCore/laccore.html', (120, 200))
 		wx.HyperlinkCtrl(self, -1, 'Lamont Doherty', 'http://www.ldeo.columbia.edu/', (120, 220))
 
-		wx.StaticText(self, -1, '2009. May', (400, 240))
 		okBtn = wx.Button(self, wx.ID_OK, "Close", ((230, 240)))
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
@@ -906,17 +904,16 @@ class OpenFrame(wx.Dialog):
 		wx.StaticText(self, -1, 'User Name : ', (250, 220))
 		self.name = wx.TextCtrl(self, -1, user, (340, 220), size=(150, 25))
 		     
-		okBtn = wx.Button(panel, -1, "START", (500, 220), size=(80, 30))
+		okBtn = wx.Button(panel, -1, "Start", (500, 213), size=(80, 30))
 		self.Bind(wx.EVT_BUTTON, self.OnSTART, okBtn)
 
 		self.user = user
 		if platform_name[0] == "Windows" :
-			cancelBtn = wx.Button(panel, wx.ID_CANCEL, "CANCEL", (580, 220), size=(80, 30))
+			cancelBtn = wx.Button(panel, wx.ID_CANCEL, "Cancel", (580, 220), size=(80, 30))
 
-		#wx.StaticText(self, -1, 'Developer:  Sean Higgins, Hyejung Hur', (60, 280))
-		wx.HyperlinkCtrl(self, -1, 'Go to Correlator Web', 'http://sqlcore.geo.umn.edu/CoreWallDatabase/cwWiki/index.php/Correlator', (60, 300))
+		wx.HyperlinkCtrl(self, -1, 'Go to Correlator Web', 'http://www.corewall.org', (60, 300))
 
-		aboutBtn = wx.Button(panel, -1, "ABOUT", (200, 300), size=(80, 30))
+		aboutBtn = wx.Button(panel, -1, "About", (200, 290), size=(80, 30))
 		self.Bind(wx.EVT_BUTTON, self.OnABOUT, aboutBtn)
 
 		wx.EVT_KEY_DOWN(self.name, self.OnPanelChar)

@@ -1165,13 +1165,13 @@ class MainFrame(wx.Frame):
 		#print self.Window.ShiftTieList
 
 	def OnAbout(self, event):
-		dlg = MessageDialog(self, "Help", "http://sqlcore.geo.umn.edu/\nCoreWallDatabase/cwWiki/\nindex.php/Correlator", 1)
+		dlg = AboutDialog(None, version)
 		dlg.Centre()
 		dlg.ShowModal()
 		dlg.Destroy()
 
 	def OnShowMessage(self, type, msg, numButton): 
-		dlg = MessageDialog(self.topMenu, type, msg, numButton)
+		dlg = MessageDialog(None, type, msg, numButton)
 		dlg.Centre(wx.CENTER_ON_SCREEN)
 		ret = dlg.ShowModal()
 		dlg.Destroy()

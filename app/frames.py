@@ -200,7 +200,7 @@ class TopMenuFrame(wx.Frame):
 			splice_flag = True
 			self.parent.OnShowMessage("Information", "You need to save splice table too.", 1)
 
-		savedialog = SaveTableDialog(self, -1, self.parent.AffineChange, splice_flag)
+		savedialog = SaveTableDialog(None, -1, self.parent.AffineChange, splice_flag)
 		savedialog.Centre()
 		ret = savedialog.ShowModal()
 		affine_flag = savedialog.affineCheck.GetValue()
@@ -405,7 +405,7 @@ class CompositePanel():
 		# Panel 1
 		panel1 = wx.Panel(self.mainPanel, -1)
 		grid1 = wx.GridSizer(4, 2)
-		grid1.Add(wx.StaticText(panel1, -1, 'Interpolated depth step(meter) : '), 0, wx.ALIGN_CENTER_VERTICAL)
+		grid1.Add(wx.StaticText(panel1, -1, 'Interpolated depth step (m) : '), 0, wx.ALIGN_CENTER_VERTICAL)
 		self.depthstep = wx.TextCtrl(panel1, -1, "0.11", size = (buttonsize, 25), style=wx.SUNKEN_BORDER )
 		#self.depthstep.Enable(False)
 		grid1.Add(self.depthstep, 0, wx.ALIGN_RIGHT)
@@ -540,7 +540,7 @@ class CompositePanel():
 		# Panel 4
 		panel4 = wx.Panel(self.mainPanel, -1)
 		hbox4 = wx.BoxSizer(wx.HORIZONTAL)
-		sizer41 = wx.StaticBoxSizer(wx.StaticBox(panel4, -1, 'Depth adjust (meter)'), orient=wx.VERTICAL)
+		sizer41 = wx.StaticBoxSizer(wx.StaticBox(panel4, -1, 'Depth adjust (m)'), orient=wx.VERTICAL)
 		self.depth = wx.TextCtrl(panel4, -1, " ", size=(buttonsize, 25), style=wx.SUNKEN_BORDER )
 		sizer41.Add(self.depth)
 		hbox4.Add(sizer41, 1, wx.RIGHT, 10)
@@ -794,7 +794,7 @@ class SplicePanel():
 		if platform_name[0] == "Windows" :
 			buttonsize = 100
 			
-		grid1.Add(wx.StaticText(panel1, -1, 'Interpolated depth step(meter) : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+		grid1.Add(wx.StaticText(panel1, -1, 'Interpolated depth step (m) : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
 		self.depthstep = wx.TextCtrl(panel1, -1, "0.11", size = (buttonsize, 25), style=wx.SUNKEN_BORDER )
 		#self.depthstep.Enable(False)
 		grid1.Add(self.depthstep, 0, wx.ALIGN_RIGHT)
@@ -874,7 +874,7 @@ class SplicePanel():
 		hbox3.Add(sizer34, 1, wx.RIGHT, 10)
 
 		sizer31_1 = wx.FlexGridSizer(3, 1)
-		sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Depth adjust (meter)'), orient=wx.VERTICAL)
+		sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Depth adjust (m)'), orient=wx.VERTICAL)
 		self.depth = wx.TextCtrl(panel3, -1, "0.0", size=(buttonsize, 25), style=wx.SUNKEN_BORDER )
 		self.depth.Enable(False)
 		sizer31.Add(self.depth)
