@@ -728,15 +728,17 @@ class CompositePanel():
 				for core in range(numCores):
 					offset = hole[0][core + 1][5]
 					topSectionMcd = hole[0][core + 1][9][0]
-					mbsfDepth = topSectionMcd - hole[0][core + 1][5]
+					mbsfDepth = topSectionMcd - offset
 					if mbsfDepth > maxMbsfDepth:
 						maxMbsfDepth = mbsfDepth
-					offsetMbsfPair = (mbsfDepth, offset)
+					offsetMbsfPair = (mbsfDepth, topSectionMcd)
 					growthRatePoints.append(offsetMbsfPair)
 
-				self.growthPlotData.append(plot.PolyMarker(growthRatePoints, marker=holeMarker[holeNum], legend=hole[0][0][7], colour=holeColor[holeNum], size=2))
-				if len(growthRatePoints) == 1:
+				self.growthPlotData.append(plot.PolyMarker(growthRatePoints, marker=holeMarker[holeNum], legend=hole[0][0][7], colour=holeColor[holeNum], size=0.8))
+
+				if len(growthRatePoints) == 1: # ensure we have at least two points
 					growthRatePoints = [(0,0)] + growthRatePoints
+
 				growthRateLines.append(plot.PolyLine(growthRatePoints, colour='black', width=1))
 				holeNum = (holeNum + 1) % len(holeMarker) # make sure we don't overrun marker/color lists
 
@@ -754,13 +756,13 @@ class CompositePanel():
 		else:
 			return
 		
-		tenPercentLine = plot.PolyLine([(0,0),(maxMbsfDepth, maxMbsfDepth/10.0)], legend='10%', colour='black', width=2)
+		tenPercentLine = plot.PolyLine([(0,0),(maxMbsfDepth, maxMbsfDepth * 1.1)], legend='10%', colour='black', width=2)
 		# order matters: draw 10% line, then data lines, then data markers/points
 		self.growthPlotData = [tenPercentLine] + self.growthPlotData
 		self.growthPlotData = growthRateLines + self.growthPlotData
 
-		gc = plot.PlotGraphics(self.growthPlotData, 'Growth Rate', 'mbsf', 'offset (m)')
-		self.growthPlotCanvas.Draw(gc, xAxis = (0, maxMbsfDepth), yAxis = (0, maxMbsfDepth/10))
+		gc = plot.PlotGraphics(self.growthPlotData, 'Growth Rate', 'mbsf', 'mcd')
+		self.growthPlotCanvas.Draw(gc, xAxis = (0, maxMbsfDepth), yAxis = (0, maxMbsfDepth * 1.1))
 		self.growthPlotData = []
 
 	def OnUpdateDrawing(self):
