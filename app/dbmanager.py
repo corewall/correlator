@@ -3,7 +3,6 @@
 ## For Mac-OSX
 #/usr/bin/env pythonw
 
-#from wxPython.wx import *
 import platform
 platform_name = platform.uname()
 
@@ -18,6 +17,7 @@ from xml_handler import *
 from importManager import py_correlator
 
 from dialog import *
+from model import *
 
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
@@ -193,22 +193,20 @@ class DataFrame(wx.Frame):
 		self.UpdateWindowUI()
 
 
+	# handles all of the many many many right-click commands in Data Manager
 	def OnPOPMENU(self, event):
 		opId = event.GetId()
 		self.currentIdx = self.tree.GetSelections()
-		if opId == 1 :
-			# LOAD CORE
+		if opId == 1 :	# LOAD CORE
 			self.OnLOAD()
-		elif opId == 2 :
-			# VIEW FILE
+		elif opId == 2 : # VIEW FILE
 			filename = self.tree.GetItemText(self.selectedIdx, 8)
 			if filename != "" :
 				filename = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + filename
 				self.fileText.Clear()
 				self.fileText.LoadFile(filename)
 				self.sideNote.SetSelection(2)
-		elif opId == 3 :
-			# EDIT CORE
+		elif opId == 3 : # EDIT CORE
 			self.importType = "CORE"
 			self.importLabel = []
 			self.selectedDataType = ""
@@ -459,32 +457,13 @@ class DataFrame(wx.Frame):
 								os.system('rm \"'+ self.parent.DBPath +filename + '\"')
 
 				self.tree.Delete(self.selectedIdx)
-				log_report = self.tree.AppendItem(self.root, 'Session Reports')
-				list = os.listdir(self.parent.DBPath + 'log/')
-				for dir in list :
-					if dir != ".DS_Store" :
-						report_item = self.tree.AppendItem(log_report, 'Report')
-						self.tree.SetItemText(report_item, dir, 1)
-						last = dir.find(".", 0)
-						user = dir[0:last]
-						self.tree.SetItemText(report_item, user, 7)
-						start = last + 1
-						last = dir.find("-", start)
-						last = dir.find("-", last+1)
-						last = dir.find("-", last+1)
-						time = dir[start:last] + " "
-						start = last + 1
-						last = dir.find("-", start)
-						time += dir[start:last] + ":"
-						start = last + 1
-						last = dir.find(".", start)
-						time += dir[start:last]
-						self.tree.SetItemText(report_item, time, 6)
+				self.LoadSessionReports()
 				self.parent.OnShowMessage("Information", "Successfully deleted", 1)
 		elif opId == 31 :
 			# EXPORT SESSION REPORT
 			self.EXPORT_REPORT()
 		elif opId == 32 :
+			# 12/9/2013 brg: Import Universal cull table - menu item commented at present
 			self.OnIMPORT_CULLTABLE(True)
 		elif opId == 33 :
 			self.IMPORT_TIME_SERIES()
@@ -492,6 +471,8 @@ class DataFrame(wx.Frame):
 		self.selectedIdx = None
 
 
+	# build appropriate right-click menu based on selection type - rather than pulling
+	# text strings from the View to determine what's what, we should be asking the Model!
 	def SelectTREE(self, event):
 		pos = event.GetPosition()
 		idx, flags, col = self.tree.HitTest(pos)
@@ -2998,6 +2979,8 @@ class DataFrame(wx.Frame):
 							culltable_item = child_item
 						else :
 							self.OnSAVE_DB_ITEM(fout, type, child_item, "")
+
+							# DUPLICATE AAA
 							if len(self.tree.GetItemText(selectItem, 1)) == 0 :
 								s = 'typeData: Continuous\n'
 								fout.write(s)
@@ -3013,6 +2996,7 @@ class DataFrame(wx.Frame):
 							fout.write(s)
 							s = 'typeMax: ' + self.tree.GetItemText(selectItem, 5) + '\n'
 							fout.write(s)
+							#END DUPLICATE AAA
 
 						for l in range(1, totalcount) :
 							child_item = self.tree.GetNextSibling(child_item)
@@ -3023,6 +3007,7 @@ class DataFrame(wx.Frame):
 								source_filename = self.tree.GetItemText(culltable_item, 9) 
 								self.OnSAVE_DB_ITEM(fout, type, culltable_item, source_filename)
 
+								# DUPLICATE AAA
 								if len(self.tree.GetItemText(selectItem, 1)) == 0 :
 									s = 'typeData: Continuous\n'
 									fout.write(s)
@@ -3038,6 +3023,7 @@ class DataFrame(wx.Frame):
 								fout.write(s)
 								s = 'typeMax: ' + self.tree.GetItemText(selectItem, 5) + '\n'
 								fout.write(s)
+								# END DUPLICATE AAA
 								culltable_item = None
 
 		fout.close()
@@ -4841,7 +4827,8 @@ class DataFrame(wx.Frame):
 		#		self.listPanel.SetCellValue(row, 18, str(min))
 		#		self.listPanel.SetCellValue(row, 19, str(max))
 
-	def OnLOADCONFIG(self):
+
+	def ValidateDatabase(self):
 		if os.access(self.parent.DBPath + 'db/', os.F_OK) == False :
 			os.mkdir(self.parent.DBPath + 'db/')
 
@@ -4859,6 +4846,7 @@ class DataFrame(wx.Frame):
 				if os.access(self.parent.DBPath + 'db/' + data_item + '/datalist.db', os.F_OK) == False :
 					validate = False 
 					break
+
 		root_f.close()
 		if validate == False :
 			print "[ERROR] Data list is not valide, DATALIST WILL BE RE-GENERATED"
@@ -4871,6 +4859,7 @@ class DataFrame(wx.Frame):
 							root_f.write(dir + "\n")
 			root_f.close()
 
+	def LoadSessionReports(self):
 		log_report = self.tree.AppendItem(self.root, 'Session Reports')
 		list = os.listdir(self.parent.DBPath + 'log/')
 		for dir in list :
@@ -4895,6 +4884,146 @@ class DataFrame(wx.Frame):
 		if len(list) >= 50 :
 			self.parent.OnShowMessage("Information", "Please, Clean Session Reports", 1)
 
+	def LoadDatabase(self):
+		self.ValidateDatabase()
+		self.LoadSessionReports()
+		siteNames = self.LoadSiteNames()
+		loadedSites = self.LoadSites(siteNames)
+
+	def LoadSiteNames(self):
+		dbRootFile = open(self.parent.DBPath + 'db/datalist.db', 'r+')
+		loadedSites = []
+		for site in dbRootFile:
+			site = site.strip()
+			if site == '' or site in loadedSites:
+				continue
+			else:
+				loadedSites.append(site)
+		return loadedSites
+
+	# parse single-line types
+	def ParseOthers(self, site, siteLines):
+		for line in siteLines:
+			tokens = line.split(': ')
+			if tokens[0] == 'affinetable':
+				affine = AffineData()
+				affine.FromTokens(tokens)
+				site.affineTables.append(affine)
+			elif tokens[0] == 'splicetable':
+				splice = SpliceData()
+				splice.FromTokens(tokens)
+				site.spliceTables.append(splice)
+			elif tokens[0] == 'eldtable':
+				eld = EldData()
+				eld.FromTokens(tokens)
+				site.eldTables.append(eld)
+			elif tokens[0] == 'culltable' or tokens[0] == 'uni_culltable':
+				cull = CullTable()
+				cull.FromTokens(tokens)
+				site.cullTables.append(cull)
+			elif tokens[0] == 'log':
+				log = DownholeLogTable()
+				log.FromTokens(tokens)
+				site.logTables.append(log)
+			elif tokens[0] == 'strat':
+				strat = StratTable()
+				strat.FromTokens(tokens)
+				site.stratTables.append(strat)
+			elif tokens[0] == 'age':
+				age = AgeTable()
+				age.FromTokens(tokens)
+				site.ageTables.append(age)
+			elif tokens[0] == 'series':
+				series = SeriesTable()
+				series.FromTokens(tokens)
+				site.seriesTables.append(series)
+			elif tokens[0] == 'image':
+				image = ImageTable()
+				image.FromTokens(tokens)
+				site.imageTables.append(image)
+
+
+	def ParseHoleSets(self, site, siteLines):
+		curType = None
+		for line in siteLines:
+			token = line.split(': ')
+			if token[0] == 'type' and token[1] not in site.holeSets:
+				curType = token[1]
+				site.holeSets[token[1]] = HoleSet(curType)
+			elif token[0] == 'typeData':
+				site.holeSets[curType].contOrDisc = token[1]
+			elif token[0] == 'typeDecimate':
+				site.holeSets[curType].decimate = token[1]
+			elif token[0] == 'typeSmooth':
+				site.holeSets[curType].smooth = token[1]
+			elif token[0] == 'typeMin':
+				site.holeSets[curType].min = token[1]
+			elif token[0] == 'typeMax':
+				site.holeSets[curType].max = token[1]
+
+	# For some reason holes are the only data we serialize as multiple lines. Why?
+	# Maintaining as single lines (like everything else) would simplify things.
+	def ParseHoles(self, site, siteLines):
+		curHole = None
+		curType = None
+		for line in siteLines:
+			token = line.split(': ')
+			if token[0] == 'hole':
+				if curHole != None:
+					site.AddHole(curType, curHole)
+				curHole = HoleData(token[1])
+			elif token[0] == 'type':
+				curType = token[1]
+ 			elif token[0] == "dataName":
+				curHole.dataName = token[1]
+ 			elif token[0] == "depth" :
+				curHole.depth = token[1]
+ 			elif token[0] == "file" :
+				curHole.file = token[1]
+ 			elif token[0] == "min" :
+				curHole.min = token[1]
+ 			elif token[0] == "max" :
+				curHole.max = token[1]
+ 			elif token[0] == "updatedTime" :
+				curHole.updatedTime = token[1]
+ 			elif token[0] == "enable" :
+				curHole.enable = token[1]
+ 			elif token[0] == "byWhom" :
+				curHole.byWhom = token[1]
+ 			elif token[0] == "source" :
+				curHole.origSource = token[1]
+ 			elif token[0] == "data" :
+				curHole.data = token[1]
+		if curHole != None:
+			site.AddHole(curType, curHole)
+
+	def LoadSites(self, siteNames):
+		loadedSites = []
+		for siteName in siteNames:
+			site = SiteData(siteName)
+
+			siteFile = open(self.parent.DBPath + 'db/' + siteName + '/datalist.db', 'r+')
+			siteLines = siteFile.readlines()
+			for idx, line in enumerate(siteLines):
+				siteLines[idx] = siteLines[idx].strip()
+
+			self.ParseHoleSets(site, siteLines)
+			self.ParseHoles(site, siteLines)
+			self.ParseOthers(site, siteLines)
+			site.dump()
+			loadedSites.append(site)
+
+		return loadedSites
+
+	# brg 12/4/2013: Builds data manager UI
+	def OnLOADCONFIG(self):
+		#self.ValidateDatabase()
+		#self.LoadSessionReports()
+
+		self.sites = {}
+
+		self.LoadDatabase()
+
 		root_f = open(self.parent.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
 		loaded_item_list = []
@@ -4915,7 +5044,9 @@ class DataFrame(wx.Frame):
 
 				sub_f = open(self.parent.DBPath + 'db/' + data_item + '/datalist.db', 'r+')
 
-				root = self.tree.AppendItem(self.root, data_item)
+				curSite = SiteData(data_item)
+
+				root = self.tree.AppendItem(self.root, data_item) # site name
 				self.tree.SetItemBold(root, True)
 				property_child = self.tree.AppendItem(root, 'Saved Tables')
 				log_child = self.tree.AppendItem(root, 'Downhole Log Data')
@@ -4929,12 +5060,15 @@ class DataFrame(wx.Frame):
 				token_nums = 0
 
 				for sub_line in sub_f :
+					# 12/4/2013 brg: Pretty sure this is unnecessary as each sub_line
+					# should already be a single line of sub_f without extra linebreaks,
+					# i.e. this just makes a singleton list containing sub_line
 					lines = sub_line.splitlines()
 
 					for line in lines :
 						token = line.split(': ')
 						token_nums = len(token) 
-						if token[0] == "hole" :
+						if token[0] == "hole" : # start a new hole
 							hole = token[1]
 							child = None
 							hole_child = None

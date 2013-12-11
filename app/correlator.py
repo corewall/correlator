@@ -1,5 +1,5 @@
 #!python.exe
-import site
+import site # brg 12/4/2013 unused
 import platform
 import os
 import socket
