@@ -103,6 +103,20 @@ class DataFrame(wx.Frame):
 		self.sideNote.AddPage(self.treeListPanel, 'Data List')
 		self.tree.GetMainWindow().Bind(wx.EVT_RIGHT_DOWN, self.SelectTREE)
 
+		self.dbPanelParent = wx.Panel(self.sideNote, -1)
+		self.dbPanelParent.SetSizer(wx.BoxSizer(wx.VERTICAL))
+
+		self.dbPanel = wx.ScrolledWindow(self.dbPanelParent, -1)
+		self.dbPanel.SetScrollbars(5, 5, 1200, 800) #1/6/2014 brgtodo
+		self.dbPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.dbPanel.SetBackgroundColour('white')
+
+		# 1/6/2014 brg: On Mac, only left half of vertical scrollbar appears. Seems the ScrolledWindow
+		# is too wide for the parent window. Add to a Panel so we can use a fudged border on the right
+		# to make things look correct.
+		self.dbPanelParent.GetSizer().Add(self.dbPanel, 1, wx.EXPAND | wx.RIGHT, 9)
+		self.sideNote.AddPage(self.dbPanelParent, 'Data List v2')
+
 		self.dataPanel = CoreSheet(self.sideNote, 120, 100)
 		self.sideNote.AddPage(self.dataPanel, 'Generic Data')
 		self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.OnSELECTCELL, self.dataPanel)
@@ -114,7 +128,6 @@ class DataFrame(wx.Frame):
 		self.fileText = wx.TextCtrl(self.filePanel, -1, "", style=wx.TE_MULTILINE|wx.TE_READONLY|wx.VSCROLL|wx.TE_WORDWRAP)
 		self.fileText.SetEditable(False)
 		self.sideNote.AddPage(self.filePanel, 'Data File')
-
 
 		self.dataPanel.SetColLabelValue(0, "Data Type")
 		self.dataPanel.SetColSize(0, 150)
@@ -4800,22 +4813,23 @@ class DataFrame(wx.Frame):
 						self.OnUPDATE_DB_FILE(title, parentItem)
 
 
-	def OnUPDATEMINMAX(self, min, max, type):
-		#selectrows = self.listPanel.GetSelectedRows()
-		strdatatype = ""
-		if type == "All Natural Gamma" :
-			strdatatype = "NaturalGamma"	
-		elif type == "All Susceptibility" :
-			strdatatype = "Susceptibility"
-		elif type == "All Reflectance" :
-			strdatatype = "Reflectance"
-		elif type == "All Bulk Density(GRA)" : 
-			strdatatype = "Bulk Density(GRA)"
-		elif type == "All Pwave" : 
-			strdatatype = "Pwave"
-		elif type == "All Other" : 
-			strdatatype = "Other"
-			
+	# brgtodo this does nothing and is never used.
+# 	def OnUPDATEMINMAX(self, min, max, type):
+# 		#selectrows = self.listPanel.GetSelectedRows()
+# 		strdatatype = ""
+# 		if type == "All Natural Gamma" :
+# 			strdatatype = "NaturalGamma"	
+# 		elif type == "All Susceptibility" :
+# 			strdatatype = "Susceptibility"
+# 		elif type == "All Reflectance" :
+# 			strdatatype = "Reflectance"
+# 		elif type == "All Bulk Density(GRA)" : 
+# 			strdatatype = "Bulk Density(GRA)"
+# 		elif type == "All Pwave" : 
+# 			strdatatype = "Pwave"
+# 		elif type == "All Other" : 
+# 			strdatatype = "Other"
+#			
 		#if strdatatype != "" :
 		#	for row in selectrows :
 		#		if self.listPanel.GetCellValue(row, 10) == strdatatype:
@@ -4828,6 +4842,8 @@ class DataFrame(wx.Frame):
 		#		self.listPanel.SetCellValue(row, 19, str(max))
 
 
+	""" Confirm existence of dirs and files corresponding to sites listed in root-level
+	datalist.db. If not, regenerate root datalist.db to reflect filesystem state. """
 	def ValidateDatabase(self):
 		if os.access(self.parent.DBPath + 'db/', os.F_OK) == False :
 			os.mkdir(self.parent.DBPath + 'db/')
@@ -4888,7 +4904,7 @@ class DataFrame(wx.Frame):
 		self.ValidateDatabase()
 		self.LoadSessionReports()
 		siteNames = self.LoadSiteNames()
-		loadedSites = self.LoadSites(siteNames)
+		self.loadedSites = self.LoadSites(siteNames) # return instead?
 
 	def LoadSiteNames(self):
 		dbRootFile = open(self.parent.DBPath + 'db/datalist.db', 'r+')
@@ -5017,12 +5033,9 @@ class DataFrame(wx.Frame):
 
 	# brg 12/4/2013: Builds data manager UI
 	def OnLOADCONFIG(self):
-		#self.ValidateDatabase()
-		#self.LoadSessionReports()
-
-		self.sites = {}
-
 		self.LoadDatabase()
+
+		self.dbview = DBView(self.dbPanel, self.loadedSites)
 
 		root_f = open(self.parent.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
