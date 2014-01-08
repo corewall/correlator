@@ -1,3 +1,5 @@
+from importManager import py_correlator
+
 import wx
 
 class HoleData:
@@ -14,6 +16,7 @@ class HoleData:
 		self.enable = '[no enable]'
 		self.updatedTime = '[no updatedTime]'
 		self.byWhom = '[no byWhom]'
+		self.holeSet = None # parent HoleSet
 
 	def __repr__(self):
 		return "Hole %s: %s %s %s %s %s %s %s %s %s %s" % (self.name, self.dataName, self.depth, self.min, self.max, self.file, self.origSource, self.data, self.enable, self.updatedTime, self.byWhom)
@@ -27,6 +30,7 @@ class HoleSet:
 		self.smooth = '[no smooth]'
 		self.min = '[no min]'
 		self.max = '[no max]'
+		self.site = None # parent SiteData
 
 	def __repr__(self):
 		return "HoleSet %s: %s %s %s %s %s" % (self.type, self.contOrDisc, self.decimate, self.smooth, self.min, self.max)
@@ -38,6 +42,7 @@ class HoleSet:
 	
 	def AddHole(self, hole):
 		if isinstance(hole, HoleData) and hole.name not in self.holes:
+			hole.holeSet = self
 			self.holes[hole.name] = hole
 
 	# return string for use in title of a hole set's CollapsiblePane
@@ -86,7 +91,11 @@ class SiteData:
 
 	def AddHole(self, type, hole):
 		if type in self.holeSets:
+			self.holeSets[type].site = self
 			self.holeSets[type].AddHole(hole)
+
+	def GetDir(self):
+		return self.name + '/'
 
 class TableData:
 	def __init__(self):
@@ -238,7 +247,8 @@ class DownholeLogTable:
 			self.foo = tokens[11] # unclear what this value means
 
 class DBView:
-	def __init__(self, parentPanel, siteList):
+	def __init__(self, parent, parentPanel, siteList):
+		self.parent = parent # 1/6/2014 brg: Don't like this naming...app?
 		self.parentPanel = parentPanel # wx.Panel
 		self.panes = [] # wx.CollapsiblePanes - retain to re-Layout() as needed
 
@@ -349,6 +359,9 @@ class DBView:
 		self.panes = []
 		self.dataPanel.GetSizer().Clear(True)
 
+		if site == None:
+			return
+		
 		# Add Holes
 		for hs in site.holeSets.values():
 			hsPane = wx.CollapsiblePane(self.dataPanel, -1, hs.type, style=wx.CP_NO_TLW_RESIZE)
@@ -421,11 +434,69 @@ class DBView:
 	def HandleHoleMenu(self, evt, hole):
 		print "event id = " + str(evt.GetId())
 		print "Hole = " + hole.name
+		if evt.GetId() == 1: # Load
+			holeList = [hole]
+			self.LoadHole(holeList)
 
 	def HandleHoleSetMenu(self, evt, holeSet):
 		print "event id = " + str(evt.GetId())
 		print "HoleSet type = " + holeSet.type
-	
+		if evt.GetId() == 1: # Load
+			holeList = holeSet.holes.values()
+			self.LoadHole(holeList)
+
+	def LoadHole(self, holeList):
+		# pre stuff
+		self.parent.INIT_CHANGES()
+		self.parent.OnNewData(None) # brgtodo
+		self.parent.Window.range = []
+		self.parent.Window.AltSpliceData = []
+		self.parent.Window.selectedType = ""
+		self.parent.TimeChange = False
+		self.parent.Window.timeseries_flag = False
+
+		for hole in holeList:
+			# tell C++ side to load the hole
+			self.parent.CurrentDir = self.parent.DBPath + "db/" + hole.holeSet.site.GetDir()
+			holefile = self.parent.DBPath + "db/" + hole.holeSet.site.GetDir() + hole.file
+			self.parent.LOCK = 0
+			type = hole.holeSet.type #GRA
+			intType, annot = self.parent.TypeStrToInt(type)
+			ret = py_correlator.openHoleFile(holefile, -1, intType, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
+			if ret == 1:
+				self.parent.LOCK = 1
+
+			# gotta set the range or nothing shows up
+			continueFlag = True
+#			min = float(hole.holeSet.min) # holeSet range isn't max of hole maxes and min of hole mins
+#			max = float(hole.holeSet.max)
+			min = float(hole.min)
+			max = float(hole.max)
+			coef = max - min
+
+			smooth = -1 # no smoothing
+			newrange = type, min, max, coef, smooth, continueFlag
+			self.parent.Window.range.append(newrange)
+
+		# assume no splice or other table loaded for now
+		self.parent.LOCK = 0 # 1/6/2014 brg: Lock() Unlock() methods?
+		self.parent.UpdateCORE()
+		self.parent.UpdateSMOOTH_CORE()
+		self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
+		self.parent.LOCK = 1
+
+		# LOAD SECTION
+		self.parent.OnUpdateDepthStep()
+
+		self.parent.NewDATA_SEND()
+		self.parent.Window.UpdateScroll(1)
+		self.parent.Window.UpdateScroll(2)
+		self.parent.Window.SetFocusFromKbd()
+		self.parent.Window.UpdateDrawing()
+		self.parent.compositePanel.OnUpdate() # make sure growth rate is updated
+
+		# hide data manager and show display(?)
+
 	def GetCurrentSite(self):
 		if self.currentSite.GetCount() > 0:
 			id = self.currentSite.GetSelection()

@@ -3059,28 +3059,9 @@ class DataFrame(wx.Frame):
 		if decivalue != '' :
 			ndecivalue = int(decivalue)
 
-		annot = ""
 		coretype = self.tree.GetItemText(parentItem, 0)
 		self.parent.CurrentType = coretype
-		type = 7
-		if coretype == "Bulk Density(GRA)" :
-			type = 1 
-		elif coretype == "Pwave" :
-			type = 2 
-		elif coretype == "PWave" :
-			type = 2 
-		elif coretype == "Susceptibility" :
-			type = 3 
-		elif coretype == "NaturalGamma" :
-			type = 4 
-		elif coretype == "Natural Gamma" :
-			type = 4 
-		elif coretype == "Reflectance" :
-			type = 5 
-		elif coretype == "Other" :	
-			type = 6
-		else :
-			annot = coretype	
+		type, annot = self.parent.TypeStrToInt(coretype)
 
 		if self.parent.Window.timeseries_flag == False  :
 			y_data = self.tree.GetItemText(selectItem, 13)
@@ -3566,24 +3547,7 @@ class DataFrame(wx.Frame):
 		filename += self.tree.GetItemText(selectItem, 8)
 
 		if filename != "" :
-			coretype = 7
-			annot = ""
-			if type == "Bulk Density(GRA)" :
-				coretype = 1
-			elif type == "Pwave" :
-				coretype = 2
-			elif type == "Susceptibility" :
-				coretype = 3
-			elif type == "NaturalGamma" :
-				coretype = 4
-			elif type == "Natural Gamma" :
-				coretype = 4
-			elif type == "Reflectance" :
-				coretype = 5
-			elif type == "Other" :
-				coretype = 6
-			else :
-				annot = type
+			coretype, annot = self.parent.TypeStrToInt(type)
 
 			py_correlator.openCullTable(filename, coretype, annot)
 			s = "Cull Table: " + filename + " For type-" + type + "\n"
@@ -3652,22 +3616,7 @@ class DataFrame(wx.Frame):
 						break
 
 			if filename != "" :
-				coretype = 7
-				annot = ""
-				if type == "Bulk Density(GRA)" :
-					coretype = 1
-				elif type == "Pwave" :
-					coretype = 2
-				elif type == "Susceptibility" :
-					coretype = 3
-				elif type == "NaturalGamma" :
-					coretype = 4
-				elif type == "Reflectance" :
-					coretype = 5
-				elif type == "Other" :
-					coretype = 6
-				else :
-					annot = type
+				coretype, annot = self.parent.TypeStrToInt(type)
 
 				py_correlator.openCullTable(filename, coretype, annot)
 				s = "Cull Table: " + filename + " For type-" + type + "\n"
@@ -3866,7 +3815,7 @@ class DataFrame(wx.Frame):
 
 				self.parent.logFileptr.write("Load Files: \n")
 
-				if len(self.tree.GetItemText(selectItem, 8)) > 0 :
+				if len(self.tree.GetItemText(selectItem, 8)) > 0 : # if hole node
 					parentItem = self.tree.GetItemParent(selectItem)
 					type = self.tree.GetItemText(parentItem, 0)
 					if universal_cull_item == None :
@@ -3913,9 +3862,9 @@ class DataFrame(wx.Frame):
 							previousType = type 
 							previousItem = selectItem
 
-				else :
+				else : # not hole node, other types?
 					type = self.tree.GetItemText(selectItem, 0)
-					if type.find("-", 0) == -1 :
+					if type.find("-", 0) == -1 : # if non-site node, appears to be holeset
 						parentItem = self.tree.GetItemParent(selectItem)
 						if universal_cull_item == None :
 							universal_cull_item = self.Find_UCULL(parentItem) 
@@ -3971,7 +3920,7 @@ class DataFrame(wx.Frame):
 								newrange = type, min, max, coef, smooth, continue_flag
 								self.parent.Window.range.append(newrange) 
 
-					else :
+					else : # must be a site node
 						parentItem = selectItem
 						if universal_cull_item == None :
 							universal_cull_item = self.Find_UCULL(parentItem) 
@@ -4813,7 +4762,7 @@ class DataFrame(wx.Frame):
 						self.OnUPDATE_DB_FILE(title, parentItem)
 
 
-	# brgtodo this does nothing and is never used.
+	# brgtodo never used
 # 	def OnUPDATEMINMAX(self, min, max, type):
 # 		#selectrows = self.listPanel.GetSelectedRows()
 # 		strdatatype = ""
@@ -5035,7 +4984,7 @@ class DataFrame(wx.Frame):
 	def OnLOADCONFIG(self):
 		self.LoadDatabase()
 
-		self.dbview = DBView(self.dbPanel, self.loadedSites)
+		self.dbview = DBView(self.parent, self.dbPanel, self.loadedSites)
 
 		root_f = open(self.parent.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
@@ -6544,24 +6493,7 @@ class DataFrame(wx.Frame):
 		f.close()
 		fout.close()
 
-		type = 7
-		annot = ""
-		if datatype == "NaturalGamma" :			
-			type = 4
-		elif datatype == "Natural Gamma" :			
-			type = 4
-		elif datatype == "Susceptibility" :
-			type = 3
-		elif datatype == "Reflectance" :
-			type = 5
-		elif datatype == "Bulk Density(GRA)" :
-			type = 1
-		elif datatype == "Pwave" :
-			type = 2
-		elif datatype == "PWave" :
-			type = 2
-		else :
-			annot = datatype
+		type, annot = self.parent.TypeStrToInt(datatype)
 
 		self.parent.OnNewData(None)
 		self.parent.LOCK = 0
@@ -7909,5 +7841,3 @@ class DataFrame(wx.Frame):
 			self.dataPanel.SetColLabelValue(self.selectedCol, "Depth")
 
 		self.selectedCol = -1
-
-

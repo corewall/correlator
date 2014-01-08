@@ -3127,6 +3127,27 @@ class MainFrame(wx.Frame):
 				self.Window.SPrulerStartDepth = 0.0
 
 
+	# brg 1/8/2014: move to utils module or the like?
+	""" Convert data type string to integer (and non-empty annotation string if data type is user-defined)"""
+	def TypeStrToInt(self, typeStr):
+		type = 7 # custom type
+		annot = ""
+		if typeStr == "Bulk Density(GRA)" :
+			type = 1 
+		elif typeStr.lower() == "pwave": # expecting 'Pwave' or 'PWave'
+			type = 2 
+		elif typeStr == "Susceptibility" :
+			type = 3 
+		elif typeStr.replace(' ', '') == "NaturalGamma" : # expecting 'Natural Gamma' or 'NaturalGamma'
+			type = 4 
+		elif typeStr == "Reflectance" :
+			type = 5 
+		elif typeStr == "Other" :
+			type = 6
+		else:
+			annot = typeStr
+		return type, annot
+
 	def LoadPreferencesAndInitDrawData(self, cfgfile, new_flag):
 		self.positions= [ (77,32) , (203,32), (339,32),
 						 (77,152) , (203,152), (339,152),
