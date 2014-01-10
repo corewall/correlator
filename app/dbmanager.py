@@ -66,6 +66,9 @@ class DataFrame(wx.Frame):
 		#self.startupbtn = wx.CheckBox(self, -1, 'Open at Start Up', (530, panely+10))
 		#self.startupbtn.SetValue(True)
 
+		# 1/8/2014 brgtodo: What is the point of the Dismiss button??? It just hides the data manager, f'nality
+		# more usefully implemented in the "Go to Display/Data Manager" button in the toolbar. Why would a user
+		# want to just hide the Data Manager?  Strong candidate for removal.
 		self.okbtn = wx.Button(self, -1, "Dismiss",(550, panely+10), size=(100,30))
 		self.Bind(wx.EVT_BUTTON, self.OnDISMISS, self.okbtn)
 

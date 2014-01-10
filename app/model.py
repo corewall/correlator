@@ -17,6 +17,7 @@ class HoleData:
 		self.updatedTime = '[no updatedTime]'
 		self.byWhom = '[no byWhom]'
 		self.holeSet = None # parent HoleSet
+		self.gui = None # HoleGUI
 
 	def __repr__(self):
 		return "Hole %s: %s %s %s %s %s %s %s %s %s %s" % (self.name, self.dataName, self.depth, self.min, self.max, self.file, self.origSource, self.data, self.enable, self.updatedTime, self.byWhom)
@@ -260,13 +261,16 @@ class DBView:
 	def InitUI(self, siteList):
 		self.sitePanel = wx.Panel(self.parentPanel, -1)
 		self.sitePanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
-		self.currentSite = wx.Choice(self.sitePanel, -1)
 		siteLabel = wx.StaticText(self.sitePanel, -1, "Current Site: ", style=wx.BOLD)
 		slFont = siteLabel.GetFont()
 		slFont.SetWeight(wx.BOLD)
 		siteLabel.SetFont(slFont)
+		self.currentSite = wx.Choice(self.sitePanel, -1)
+		self.loadButton = wx.Button(self.sitePanel, -1, "Load")
+
 		self.sitePanel.GetSizer().Add(siteLabel, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL)
-		self.sitePanel.GetSizer().Add(self.currentSite, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL)
+		self.sitePanel.GetSizer().Add(self.currentSite, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+		self.sitePanel.GetSizer().Add(self.loadButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.parentPanel.GetSizer().Add(self.sitePanel, 0, border=10, flag=wx.BOTTOM | wx.LEFT)
 
 		self.dataPanel = wx.Panel(self.parentPanel, -1)
@@ -276,6 +280,7 @@ class DBView:
 
 		self.UpdateSites(siteList)
 		self.parentPanel.Bind(wx.EVT_CHOICE, self.SiteChanged, self.currentSite)
+		self.parentPanel.Bind(wx.EVT_BUTTON, self.LoadPressed, self.loadButton)
 
 	def InitMenus(self):
 		self.menu = wx.Menu()
@@ -286,6 +291,7 @@ class DBView:
 		panel = wx.Panel(toPanel, -1)
 		sizer = wx.BoxSizer(wx.HORIZONTAL)
 		panel.SetSizer(sizer)
+		panel.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel) # forward all mousewheel events to parent
 		return panel, sizer
 
 	def AddHoleSetRow(self, toPanel, holeSet):
@@ -312,11 +318,13 @@ class DBView:
 	def AddHoleRow(self, toPanel, hole):
 		panel, sizer = self.NewPanel(toPanel)
 
+		hole.gui = HoleGUI(hole, panel)
+
 		sizer.Add(wx.StaticText(panel, -1, hole.name, size=(75,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
 		button = wx.Button(panel, -1, "Actions...")
 		sizer.Add(button, 0, border=5, flag=wx.BOTTOM)
-		cb = wx.CheckBox(panel, -1, "Enabled", size=(80,-1))
-		sizer.Add(cb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		#cb = holeGui.enabledCb #wx.CheckBox(panel, -1, "Enabled", size=(80,-1))
+		sizer.Add(hole.gui.enabledCb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "Range: (" + hole.min + ", " + hole.max + ")"), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "File: " + hole.file), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "Last updated: " + hole.updatedTime), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
@@ -326,7 +334,7 @@ class DBView:
 		panel.Bind(wx.EVT_BUTTON, self.PopActionsMenu, button)
 		panel.Bind(wx.EVT_MENU, lambda event, args=hole: self.HandleHoleMenu(event, args), self.loadItem)
 		panel.Bind(wx.EVT_MENU, lambda event, args=hole: self.HandleHoleMenu(event, args), self.viewItem)
-		panel.Bind(wx.EVT_CHECKBOX, lambda event, args=panel: self.HoleEnabled(event, args), cb)
+		panel.Bind(wx.EVT_CHECKBOX, lambda event, args=panel: self.HoleEnabled(event, args), hole.gui.enabledCb)
 
 		toPanel.GetSizer().Add(panel)
 
@@ -366,6 +374,7 @@ class DBView:
 		for hs in site.holeSets.values():
 			hsPane = wx.CollapsiblePane(self.dataPanel, -1, hs.type, style=wx.CP_NO_TLW_RESIZE)
 			hsPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
+			hsPane.GetPane().SetBackgroundColour('pink')
 			self.dataPanel.GetSizer().Add(hsPane, 0, border=5, flag=wx.ALL|wx.EXPAND)
 			self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, hsPane)
 			self.panes.append(hsPane)
@@ -405,10 +414,19 @@ class DBView:
 		for lt in site.logTables:
 			self.AddTableRow(ltPane.GetPane(), lt)
 
+		# Forward mousewheel events to parent - seems like there ought to be an easier way...
+		for pane in self.panes:
+			pane.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
+		self.dataPanel.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
+
 		# refresh layout
 		for pane in self.panes:
 			pane.Expand()
 		self.PaneChanged(evt=None) # force re-layout
+
+	def OnMouseWheel(self, event):
+		self.parentPanel.GetEventHandler().ProcessEvent(event)
+		event.Skip()
 
 	def UpdateSites(self, siteList):
 		self.currentSite.Clear()
@@ -420,6 +438,16 @@ class DBView:
 		curSite = self.currentSite.GetClientData(siteIndex)
 		if curSite != None:
 			self.UpdateView(curSite)
+
+	def LoadPressed(self, evt):
+		siteIndex = self.currentSite.GetSelection()
+		curSite = self.currentSite.GetClientData(siteIndex)
+		holesToLoad = []
+		for holeSet in curSite.holeSets.values():
+			for hole in holeSet.holes.values():
+				if hole.gui.enabledCb.GetValue() == True:
+					holesToLoad.append(hole)
+		self.LoadHoles(holesToLoad)
 
 	def PaneChanged(self, evt):
 		self.parentPanel.Layout()
@@ -436,16 +464,16 @@ class DBView:
 		print "Hole = " + hole.name
 		if evt.GetId() == 1: # Load
 			holeList = [hole]
-			self.LoadHole(holeList)
+			self.LoadHoles(holeList)
 
 	def HandleHoleSetMenu(self, evt, holeSet):
 		print "event id = " + str(evt.GetId())
 		print "HoleSet type = " + holeSet.type
 		if evt.GetId() == 1: # Load
 			holeList = holeSet.holes.values()
-			self.LoadHole(holeList)
+			self.LoadHoles(holeList)
 
-	def LoadHole(self, holeList):
+	def LoadHoles(self, holeList):
 		# pre stuff
 		self.parent.INIT_CHANGES()
 		self.parent.OnNewData(None) # brgtodo
@@ -502,3 +530,8 @@ class DBView:
 			id = self.currentSite.GetSelection()
 			return self.currentSite.GetClientData(id)
 		return None
+
+class HoleGUI:
+	def __init__(self, hole, panel):
+		self.enabledCb = wx.CheckBox(panel, -1, "Enabled", size=(80,-1))
+		self.enabledCb.SetValue(hole.enable == "Enable")
