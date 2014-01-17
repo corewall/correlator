@@ -2206,25 +2206,23 @@ static int getType(char *typeStr)
 }
 
 // 9/9/2013 brg
-// Given typeStr, attempt to find an integer type - if none can be found,
+// Given typeStr, find matching integer type. If it's not a built-in type,
 // set outAnnot = to typeStr. This logic is duplicated throughout py_func.cpp.
 // I'm not in love with using parameters for output, but it's less offensive
 // than the duplication by a long shot.
 static bool getTypeAndAnnot(char *typeStr, int &outType, char **outAnnot)
 {
-	bool foundType = false;
-	const int type = getType(typeStr);
-	if (type != -1)
+	bool builtInType = false;
+	outType = getType(typeStr);
+	if (outType != USERDEFINEDTYPE)
 	{
-		outType = type;
 		*outAnnot = NULL;
-		foundType = true;
+		builtInType = true;
 	}
 	else
 	{
-		outType = USERDEFINEDTYPE;
 		*outAnnot = typeStr;
 	}
 
-	return foundType;
+	return builtInType;
 }
