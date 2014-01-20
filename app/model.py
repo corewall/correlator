@@ -1,54 +1,106 @@
 from importManager import py_correlator
+from dialog import *
 
 import wx
 
-class HoleData:
+def ParseEnableToken(enableToken):
+	return enableToken == 'Enable'
+
+def ParseContinuousToken(contToken):
+	return contToken == 'Continuous'
+
+# FileMetadata a better name?
+class TableData:
+	def __init__(self):
+		self.file = ''
+		self.updatedTime = ''
+		self.byWhom = ''
+		self.enable = False
+		self.origSource = ''
+
+	def __repr__(self):
+		return "%s %s %s %s %s" % (self.file, self.updatedTime, self.byWhom, str(self.enable), self.origSource)
+
+	def FromTokens(self, tokens):
+		self.file = tokens[1]
+		self.updatedTime = tokens[2]
+		self.byWhom = tokens[3]
+		self.enable = ParseEnableToken(tokens[4])
+		if len(tokens) > 5 and tokens[5] != '-':
+			self.origSource = tokens[5]
+
+	def GetEnableStr(self):
+		return "Enable" if self.enable else "Disable"
+
+	def IsEnabled(self):
+		return self.enable
+
+class HoleData(TableData):
 	def __init__(self, name):
+		TableData.__init__(self)
 		self.name = name
 		self.dataName = '[no dataName]'
 		self.depth = '[no depth]'
-		#self.decimate = '[no decimate]' #though decimate is stored at a hole level, it's holeset level in practice
 		self.min = '[no min]'
 		self.max = '[no max]'
-		self.file = '[no file]'
-		self.origSource = '[no origSource]'
 		self.data = '[no data]'
-		self.enable = '[no enable]'
-		self.updatedTime = '[no updatedTime]'
-		self.byWhom = '[no byWhom]'
 		self.holeSet = None # parent HoleSet
 		self.gui = None # HoleGUI
 
 	def __repr__(self):
-		return "Hole %s: %s %s %s %s %s %s %s %s %s %s" % (self.name, self.dataName, self.depth, self.min, self.max, self.file, self.origSource, self.data, self.enable, self.updatedTime, self.byWhom)
+		return "Hole %s: %s %s %s %s %s %s %s %s %s %s" % (self.name, self.dataName, self.depth, self.min, self.max, self.data, str(self.enable), self.file, self.origSource, self.updatedTime, self.byWhom)
 
 class HoleSet:
 	def __init__(self, type):
 		self.holes = {} # dict of HoleData objects
-		self.type = type # built-in type e.g. NaturalGamma, Pwave, or Other
-		self.contOrDisc = '[no contOrDisc]' # discrete or continuous
-		self.decimate = '[no decimate]'
+		self.cullTable = None # appears there can only be one of these per HoleSet
+		self.type = type # built-in type string e.g. NaturalGamma, Pwave, or Other
+		self.continuous = True # if False, discrete
+		self.decimate = '[no decimate]' # numeric?
 		self.smooth = '[no smooth]'
 		self.min = '[no min]'
 		self.max = '[no max]'
 		self.site = None # parent SiteData
+		self.gui = None # HoleSetGUI
 
 	def __repr__(self):
-		return "HoleSet %s: %s %s %s %s %s" % (self.type, self.contOrDisc, self.decimate, self.smooth, self.min, self.max)
+		return "HoleSet %s: %s, %s %s %s %s %s" % (self.type, self.GetCullFile(), self.continuous, self.decimate, self.smooth, self.min, self.max)
 
 	def dump(self):
 		print self
 		for hole in self.holes.values():
 			print hole
+		if self.HasCull():
+			print self.cullTable
 	
 	def AddHole(self, hole):
 		if isinstance(hole, HoleData) and hole.name not in self.holes:
 			hole.holeSet = self
 			self.holes[hole.name] = hole
 
+	def HasCull(self):
+		return self.cullTable != None
+
+	def EnableCull(self, enable=True):
+		if self.HasCull():
+			self.cullTable.enable = enable
+
+	def IsCullEnabled(self):
+		result = False
+		if self.HasCull():
+			result = self.cullTable.IsEnabled()
+		return result
+
+	def GetCullFile(self):
+		if self.HasCull():
+			return self.cullTable.file
+		else:
+			return "[no cull table]"
+
+
 	# return string for use in title of a hole set's CollapsiblePane
 	def GetTitleStr(self):
-		return self.type + " - Range: (" + self.min + ", " + self.max + "); " + self.contOrDisc + "; " + "Decimate: " + self.decimate + "; " + "Smoothing: " + self.smooth
+		return self.type + " - Range: (" + self.min + ", " + self.max + "); " + self.continuous + "; " + "Decimate: " + self.decimate + "; " + "Smoothing: " + self.smooth
 
 class SiteData:
 	def __init__(self, name):
@@ -57,12 +109,14 @@ class SiteData:
 		self.affineTables = []
 		self.spliceTables = []
 		self.eldTables = []
-		self.cullTables = []
 		self.logTables = []
 		self.stratTables = []
 		self.ageTables = []
 		self.seriesTables = [] # timeseries
 		self.imageTables = []
+		self.affineGui = None
+		self.spliceGui = None
+		self.eldGui = None
 
 	def __repr__(self):
 		return "SiteData %s" % (self.name)
@@ -77,8 +131,6 @@ class SiteData:
 			print st
 		for et in self.eldTables:
 			print et
-		for ct in self.cullTables:
-			print ct
 		for lt in self.logTables:
 			print lt
 		for st in self.stratTables:
@@ -90,32 +142,42 @@ class SiteData:
 		for it in self.imageTables:
 			print it
 
+	def SyncToGui(self):
+		for hs in self.holeSets.values():
+			hs.gui.SyncToGui()
+			for hole in hs.holes.values():
+				hole.gui.SyncToGui()
+		self.affineGui.SyncToGui()
+		self.spliceGui.SyncToGui()
+		self.eldGui.SyncToGui()
+
 	def AddHole(self, type, hole):
 		if type in self.holeSets:
 			self.holeSets[type].site = self
 			self.holeSets[type].AddHole(hole)
 
+	""" return currently enabled AffineTable if there is one """
+	def GetAffine(self):
+		return self.GetEnabledTable(self.affineTables)
+
+	""" return currently enabled SpliceTable if there is one """
+	def GetSplice(self):
+		return self.GetEnabledTable(self.spliceTables)
+	
+	""" return currently enable EldTable if there is one """
+	def GetEld(self):
+		return self.GetEnabledTable(self.eldTables)
+
+	""" generic "find the enabled table" routine """
+	def GetEnabledTable(self, tableList):
+		result = None
+		for tab in tableList:
+			if tab.enable:
+				result = tab
+		return result
+
 	def GetDir(self):
 		return self.name + '/'
-
-class TableData:
-	def __init__(self):
-		self.file = ''
-		self.updatedTime = ''
-		self.byWhom = ''
-		self.enable = ''
-		self.origSource = ''
-
-	def __repr__(self):
-		return "%s %s %s %s %s" % (self.file, self.updatedTime, self.byWhom, self.enable, self.origSource)
-
-	def FromTokens(self, tokens):
-		self.file = tokens[1]
-		self.updatedTime = tokens[2]
-		self.byWhom = tokens[3]
-		self.enable = tokens[4]
-		if len(tokens) > 5 and tokens[5] != '-':
-			self.origSource = tokens[5]
 
 class AffineData(TableData):
 	def __init__(self):
@@ -248,10 +310,12 @@ class DownholeLogTable:
 			self.foo = tokens[11] # unclear what this value means
 
 class DBView:
-	def __init__(self, parent, parentPanel, siteList):
+	def __init__(self, parent, dataFrame, parentPanel, siteList):
 		self.parent = parent # 1/6/2014 brg: Don't like this naming...app?
+		self.dataFrame = dataFrame # old DB Manager DataFrame
 		self.parentPanel = parentPanel # wx.Panel
 		self.panes = [] # wx.CollapsiblePanes - retain to re-Layout() as needed
+		self.menu = None # action menu
 
 		self.InitUI(siteList)
 		self.InitMenus()
@@ -283,9 +347,20 @@ class DBView:
 		self.parentPanel.Bind(wx.EVT_BUTTON, self.LoadPressed, self.loadButton)
 
 	def InitMenus(self):
+		# master dictionary of all menu items
+		self.menuIds = {'Load': 1,
+						'View': 2,
+						'Export': 3,
+						'Enable All': 101,
+						'Disable All': 102}
+
+		self.holeMenuItems = ['Load', 'View', 'Export']
+		self.holeSetMenuItems = ['Load', 'Export', 'Enable All', 'Disable All']
+
+	def BuildMenu(self, itemList):
 		self.menu = wx.Menu()
-		self.loadItem = self.menu.Append(1, "Load")
-		self.viewItem = self.menu.Append(2, "View")
+		for key in itemList:
+			self.menu.Append(self.menuIds[key], key)
 
 	def NewPanel(self, toPanel):
 		panel = wx.Panel(toPanel, -1)
@@ -297,21 +372,29 @@ class DBView:
 	def AddHoleSetRow(self, toPanel, holeSet):
 		panel, sizer = self.NewPanel(toPanel)
 
+		holeSet.gui = HoleSetGUI(holeSet, panel)
+
 		sizer.Add(wx.StaticText(panel, -1, "[All Holes]", size=(75,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
 		button = wx.Button(panel, -1, "Actions...")
 		sizer.Add(button, 0)
 		sizer.AddSpacer((85,-1))
 		sizer.Add(wx.StaticText(panel, -1, "Range: (" + holeSet.min + ", " + holeSet.max + ")"), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.AddSpacer((5,-1))
-		sizer.Add(wx.StaticText(panel, -1, holeSet.contOrDisc), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		sizer.Add(holeSet.gui.continuousChoice, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.AddSpacer((5,-1))
 		sizer.Add(wx.StaticText(panel, -1, "Decimate: " + holeSet.decimate), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.AddSpacer((5,-1))
 		sizer.Add(wx.StaticText(panel, -1, holeSet.smooth), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		sizer.AddSpacer((5,-1))
+		
+		sizer.Add(holeSet.gui.cullEnabledCb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 
-		panel.Bind(wx.EVT_BUTTON, self.PopActionsMenu, button)
-		panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args), self.loadItem)
-		panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args), self.viewItem)
+		panel.Bind(wx.EVT_BUTTON, lambda event, args=holeSet: self.PopActionsMenu(event, args), button)
+		panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args))
+		#panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args), self.loadItem)
+		#panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args), self.viewItem)
+		#panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args), self.enableAllItem)
+		#panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args), self.disableAllItem)
 
 		toPanel.GetSizer().Add(panel)
 
@@ -323,7 +406,6 @@ class DBView:
 		sizer.Add(wx.StaticText(panel, -1, hole.name, size=(75,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
 		button = wx.Button(panel, -1, "Actions...")
 		sizer.Add(button, 0, border=5, flag=wx.BOTTOM)
-		#cb = holeGui.enabledCb #wx.CheckBox(panel, -1, "Enabled", size=(80,-1))
 		sizer.Add(hole.gui.enabledCb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "Range: (" + hole.min + ", " + hole.max + ")"), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "File: " + hole.file), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
@@ -331,12 +413,27 @@ class DBView:
 		sizer.Add(wx.StaticText(panel, -1, "By: " + hole.byWhom), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "Source: " + hole.origSource), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 
-		panel.Bind(wx.EVT_BUTTON, self.PopActionsMenu, button)
-		panel.Bind(wx.EVT_MENU, lambda event, args=hole: self.HandleHoleMenu(event, args), self.loadItem)
-		panel.Bind(wx.EVT_MENU, lambda event, args=hole: self.HandleHoleMenu(event, args), self.viewItem)
-		panel.Bind(wx.EVT_CHECKBOX, lambda event, args=panel: self.HoleEnabled(event, args), hole.gui.enabledCb)
+		panel.Bind(wx.EVT_BUTTON, lambda event, args=hole: self.PopActionsMenu(event, args), button)
+		panel.Bind(wx.EVT_MENU, lambda event, args=hole: self.HandleHoleMenu(event, args))
+		#panel.Bind(wx.EVT_MENU, lambda event, args=hole: self.HandleHoleMenu(event, args), self.loadItem)
+		#panel.Bind(wx.EVT_MENU, lambda event, args=hole: self.HandleHoleMenu(event, args), self.viewItem)
 
 		toPanel.GetSizer().Add(panel)
+
+	def AddSavedTableRow(self, toPanel, site, name):
+		panel, sizer = self.NewPanel(toPanel)
+		
+		gui = SavedTableGUI(site, name, panel)
+
+		sizer.Add(wx.StaticText(panel, -1, name, size=(90,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
+		button = wx.Button(panel, -1, "Actions...")
+		sizer.Add(button, 0, border=5, flag=wx.BOTTOM|wx.LEFT)
+		sizer.Add(gui.tableChoice, 0, border=5, flag=wx.BOTTOM|wx.LEFT)
+		sizer.Add(gui.enabledCb, 0, border=5, flag=wx.BOTTOM|wx.LEFT)
+
+		toPanel.GetSizer().Add(panel)
+
+		return gui
 
 	# for classes derived from TableData
 	def AddTableRow(self, toPanel, table):
@@ -354,15 +451,7 @@ class DBView:
 
 		toPanel.GetSizer().Add(panel)
 
-	def HoleEnabled(self, event, panel):
-		cb = event.GetEventObject()
-		if isinstance(cb, wx.CheckBox):
-			if cb.GetValue() == True:
-				panel.SetBackgroundColour('green')
-			else:
-				panel.SetBackgroundColour('pink')
-			panel.Refresh()
-
+	# 1/13/2014 brgtodo?: Retain GUI objects rather than rebuilding GUI whenever site changes?
 	def UpdateView(self, site):
 		self.panes = []
 		self.dataPanel.GetSizer().Clear(True)
@@ -371,11 +460,11 @@ class DBView:
 			return
 		
 		# Add Holes
-		for hs in site.holeSets.values():
+		for hsKey in sorted(site.holeSets.keys()): # sort by holeset type
+			hs = site.holeSets[hsKey]
 			hsPane = wx.CollapsiblePane(self.dataPanel, -1, hs.type, style=wx.CP_NO_TLW_RESIZE)
 			hsPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
-			hsPane.GetPane().SetBackgroundColour('pink')
-			self.dataPanel.GetSizer().Add(hsPane, 0, border=5, flag=wx.ALL|wx.EXPAND)
+			self.dataPanel.GetSizer().Add(hsPane, 0, border=5, flag=wx.ALL)
 			self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, hsPane)
 			self.panes.append(hsPane)
 			self.AddHoleSetRow(hsPane.GetPane(), hs)
@@ -386,19 +475,17 @@ class DBView:
 		# Saved Tables (Affine, ELD, Splice)
 		stPane = wx.CollapsiblePane(self.dataPanel, -1, "Saved Tables", style=wx.CP_NO_TLW_RESIZE)
 		stPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
-		self.dataPanel.GetSizer().Add(stPane, 0, border=5, flag=wx.ALL|wx.EXPAND) # brgtodo: expand necessary?
+		self.dataPanel.GetSizer().Add(stPane, 0, border=5, flag=wx.ALL) # brgtodo: expand necessary?
 		self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, stPane)
 		self.panes.append(stPane)
-		for at in site.affineTables:
-			self.AddTableRow(stPane.GetPane(), at)
-		for st in site.spliceTables:
-			self.AddTableRow(stPane.GetPane(), st)
-		for et in site.eldTables:
-			self.AddTableRow(stPane.GetPane(), et)
+
+		site.affineGui = self.AddSavedTableRow(stPane.GetPane(), site, "Affine")
+		site.spliceGui = self.AddSavedTableRow(stPane.GetPane(), site, "Splice")
+		site.eldGui = self.AddSavedTableRow(stPane.GetPane(), site, "ELD")
 
 		amPane = wx.CollapsiblePane(self.dataPanel, -1, "Age Models", style=wx.CP_NO_TLW_RESIZE)
 		amPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
-		self.dataPanel.GetSizer().Add(amPane, 0, border=5, flag=wx.ALL|wx.EXPAND) # brgtodo: expand necessary?
+		self.dataPanel.GetSizer().Add(amPane, 0, border=5, flag=wx.ALL) # brgtodo: expand necessary?
 		self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, amPane)
 		self.panes.append(amPane)
 		for at in site.ageTables:
@@ -408,7 +495,7 @@ class DBView:
 
 		ltPane = wx.CollapsiblePane(self.dataPanel, -1, "Downhole Logs", style=wx.CP_NO_TLW_RESIZE)
 		ltPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
-		self.dataPanel.GetSizer().Add(ltPane, 0, border=5, flag=wx.ALL|wx.EXPAND) # brgtodo: expand necessary?
+		self.dataPanel.GetSizer().Add(ltPane, 0, border=5, flag=wx.ALL) # brgtodo: expand necessary?
 		self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, ltPane)
 		self.panes.append(ltPane)
 		for lt in site.logTables:
@@ -421,7 +508,8 @@ class DBView:
 
 		# refresh layout
 		for pane in self.panes:
-			pane.Expand()
+			if len(pane.GetPane().GetSizer().GetChildren()) > 0:
+				pane.Expand()
 		self.PaneChanged(evt=None) # force re-layout
 
 	def OnMouseWheel(self, event):
@@ -442,12 +530,15 @@ class DBView:
 	def LoadPressed(self, evt):
 		siteIndex = self.currentSite.GetSelection()
 		curSite = self.currentSite.GetClientData(siteIndex)
+		curSite.SyncToGui()
 		holesToLoad = []
 		for holeSet in curSite.holeSets.values():
 			for hole in holeSet.holes.values():
-				if hole.gui.enabledCb.GetValue() == True:
+				#if hole.gui.enabledCb.GetValue() == True:
+				if hole.enable:
 					holesToLoad.append(hole)
-		self.LoadHoles(holesToLoad)
+		if len(holesToLoad) > 0:
+			self.LoadHoles(holesToLoad)
 
 	def PaneChanged(self, evt):
 		self.parentPanel.Layout()
@@ -456,22 +547,36 @@ class DBView:
 			cp.GetPane().Layout()
 		self.parentPanel.FitInside() # show/hide scrollbar if necessary
 
-	def PopActionsMenu(self, evt):
+	def PopActionsMenu(self, evt, obj):
+		if isinstance(obj, HoleData):
+			self.BuildMenu(self.holeMenuItems)
+		elif isinstance(obj, HoleSet):
+			self.BuildMenu(self.holeSetMenuItems)
+			
 		evt.GetEventObject().PopupMenu(self.menu)
 
 	def HandleHoleMenu(self, evt, hole):
-		print "event id = " + str(evt.GetId())
-		print "Hole = " + hole.name
-		if evt.GetId() == 1: # Load
+		hole.holeSet.site.SyncToGui()
+		if evt.GetId() == self.menuIds['Load']:
 			holeList = [hole]
 			self.LoadHoles(holeList)
+		elif evt.GetId() == self.menuIds['View']:
+			self.ViewFile(hole.file)
+		elif evt.GetId() == self.menuIds['Export']:
+			holeList = [hole]
+			self.ExportHoles(holeList)
 
 	def HandleHoleSetMenu(self, evt, holeSet):
-		print "event id = " + str(evt.GetId())
-		print "HoleSet type = " + holeSet.type
-		if evt.GetId() == 1: # Load
+		holeSet.site.SyncToGui()
+		if evt.GetId() == self.menuIds['Load']:
 			holeList = holeSet.holes.values()
 			self.LoadHoles(holeList)
+		if evt.GetId() == self.menuIds['Export']:
+			holeList = holeSet.holes.values()
+			self.ExportHoles(holeList)
+		elif evt.GetId() == self.menuIds['Enable All'] or evt.GetId() == self.menuIds['Disable All']:
+			for hole in holeSet.holes.values():
+				hole.gui.enabledCb.SetValue(evt.GetId() == self.menuIds['Enable All'])
 
 	def LoadHoles(self, holeList):
 		# pre stuff
@@ -483,6 +588,7 @@ class DBView:
 		self.parent.TimeChange = False
 		self.parent.Window.timeseries_flag = False
 
+		# laod enabled holes
 		for hole in holeList:
 			# tell C++ side to load the hole
 			self.parent.CurrentDir = self.parent.DBPath + "db/" + hole.holeSet.site.GetDir()
@@ -494,24 +600,79 @@ class DBView:
 			if ret == 1:
 				self.parent.LOCK = 1
 
-			# gotta set the range or nothing shows up
-			continueFlag = True
-#			min = float(hole.holeSet.min) # holeSet range isn't max of hole maxes and min of hole mins
-#			max = float(hole.holeSet.max)
+			# set range for each hole
+			continueFlag = hole.holeSet.continuous
 			min = float(hole.min)
 			max = float(hole.max)
 			coef = max - min
-
-			smooth = -1 # no smoothing
+			smooth = -1 # pull from holeset - no smoothing for now
 			newrange = type, min, max, coef, smooth, continueFlag
 			self.parent.Window.range.append(newrange)
 
-		# assume no splice or other table loaded for now
-		self.parent.LOCK = 0 # 1/6/2014 brg: Lock() Unlock() methods?
-		self.parent.UpdateCORE()
-		self.parent.UpdateSMOOTH_CORE()
-		self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
-		self.parent.LOCK = 1
+		# load log (OnLOAD_LOG())
+		site = holeList[0].holeSet.site
+		path = self.parent.DBPath + 'db/' + site.GetDir()
+		
+		# load saved tables (OnLOAD_TABLE())
+		tableLoaded = [False, False, False]
+		for at in site.affineTables:
+			if at.enable:
+				py_correlator.openAttributeFile(path + at.file, 0)
+				tableLoaded[0] = True
+				break
+		for st in site.spliceTables:
+			if st.enable:
+				ret = py_correlator.openSpliceFile(path + st.file)
+				if ret == 'error':
+					self.parent.OnShowMessage("Error", "Couldn't create splice record(s)", 1)
+				else:
+					tableLoaded[1] = True
+				break
+		for et in site.eldTables:
+			if et.enable:
+				py_correlator.openAttributeFile(path + et.file, 1)
+				tableLoaded[2] = True
+				if self.parent.Window.LogData != [] :
+					self.parent.eldPanel.SetFlag(True)
+					mudline = py_correlator.getMudline()
+					if mudline != 0.0 :
+						self.parent.OnUpdateLogData(True)
+					retdata = py_correlator.getData(13)
+					if retdata != "" :
+						self.parent.ParseSaganData(retdata)
+						self.parent.autoPanel.OnButtonEnable(0, False)
+					retdata = "" 
+				break
+
+		self.parent.LOCK = 0
+
+		if tableLoaded[1] == True :
+			self.parent.OnInitDataUpdate()
+			self.parent.InitSPLICE()
+			self.parent.UpdateSPLICE(False)
+			self.parent.autoPanel.SetCoreList(1, [])
+			self.parent.filterPanel.OnRegisterHole("Spliced Records")
+
+			holeSet = holeList[0].holeSet
+			hsMin = float(holeSet.min)
+			hsMax = float(holeSet.max)
+			newrange = 'splice', hsMin, hsMax, hsMax - hsMin, 0, holeSet.continuous
+			self.parent.Window.range.append(newrange)
+			self.parent.Window.selectedType = holeSet.type
+		else :
+			self.parent.UpdateCORE()
+			self.parent.UpdateSMOOTH_CORE()
+			self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
+
+		if tableLoaded[2] == True :
+			self.parent.UpdateELD(True)
+
+		if not tableLoaded[1] and not tableLoaded[2]:
+			self.parent.UpdateCORE()
+			self.parent.UpdateSMOOTH_CORE()
+			self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
+
+ 		self.parent.LOCK = 1
 
 		# LOAD SECTION
 		self.parent.OnUpdateDepthStep()
@@ -525,6 +686,136 @@ class DBView:
 
 		# hide data manager and show display(?)
 
+	def ViewFile(self, filename):
+		holefile = self.parent.DBPath + "db/" + self.GetCurrentSite().GetDir() + filename
+		self.dataFrame.fileText.Clear()
+		self.dataFrame.fileText.LoadFile(holefile)
+		self.dataFrame.sideNote.SetSelection(3) # File View tab
+
+	def ExportHoles(self, holeList):
+		exportDlg = ExportCoreDialog(self.dataFrame)
+		exportDlg.Centre()
+		if exportDlg.ShowModal() == wx.ID_OK:
+			fileDlg = wx.FileDialog(self.dataFrame, "Select Directory for Export", self.parent.Directory, style=wx.SAVE)
+			if fileDlg.ShowModal() == wx.ID_OK:
+				self.parent.OnNewData(None)
+
+				siteDir = holeList[0].holeSet.site.GetDir()
+				path = self.parent.DBPath + 'db/' + siteDir
+
+				# load holes (ignoring enabled state)
+				for hole in holeList:
+					intType, annot = self.parent.TypeStrToInt(hole.holeSet.type)
+					holefile = path + hole.file
+					ret = py_correlator.openHoleFile(holefile, -1, intType, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
+
+				# apply cull, affine, splice
+				applied = ""
+# 				if exportDlg.cull.GetValue() == True and cull_item != None:
+# 					py_correlator.openCullTable(path + self.tree.GetItemText(cull_item, 8), type, annot)
+# 					applied = "cull"
+
+				affine_item = holeList[0].holeSet.site.GetAffine()
+ 				if exportDlg.affine.GetValue() == True and affine_item != None:
+ 					py_correlator.openAttributeFile(path + affine_item.file, 0)
+ 					applied = "affine"
+
+				splice_item = holeList[0].holeSet.site.GetSplice()
+ 				if exportDlg.splice.GetValue() == True and splice_item != None :
+ 					ret_splice = py_correlator.openSpliceFile(path + splice_item.file)
+ 					if ret_splice == "error" : 
+ 						self.parent.OnShowMessage("Error", "Could not Make Splice Records", 1)
+					applied = "splice"
+				elif exportDlg.splice.GetValue() == True and splice_item == None :
+ 					self.parent.OnShowMessage("Error", "Can't export, active splice table required.", 1)
+ 					self.parent.OnNewData(None)
+ 					exportDlg.Destroy()
+ 					return
+
+				# apply eld, age model
+# 				if exportDlg.eld.GetValue() == True and eld_item != None :
+# 					if log_item != None :
+# 						py_correlator.openLogFile(path+ self.tree.GetItemText(log_item, 8), int(self.tree.GetItemText(log_item, 11)))
+# 						py_correlator.openAttributeFile(path + self.tree.GetItemText(eld_item, 8), 1)
+# 						applied = "eld"
+# 					else :
+# 						self.parent.OnShowMessage("Error", "Need Log to Export ELD", 1)
+# 						self.parent.OnNewData(None)
+# 						dlg.Destroy()
+# 						return
+# 				if exportDlg.age.GetValue() == True and age_item != None :
+# 					applied += "-age"
+# 					agefilename = path+ self.tree.GetItemText(age_item, 8)
+# 					if exportDlg.eld.GetValue() == True :
+# 						if exportDlg.splice.GetValue() == True :
+# 							count = py_correlator.saveAgeCoreData(agefilename, path + ".export.tmp", 2)
+# 						else :
+# 							count = py_correlator.saveAgeCoreData(agefilename, path + ".export.tmp", 0)
+# 					else :
+# 						if exportDlg.splice.GetValue() == True :
+# 							count = py_correlator.saveAgeCoreData(agefilename, path + ".export.tmp", 1)
+# 						else :
+# 							count = py_correlator.saveAgeCoreData(agefilename, path + ".export.tmp", 0)
+# 				elif exportDlg.eld.GetValue() == True :
+# 					if exportDlg.splice.GetValue() == True :
+# 						count = py_correlator.saveCoreData(path + ".export.tmp", 2)
+# 					else :
+# 						count = py_correlator.saveCoreData(path + ".export.tmp", 0)
+# 				elif exportDlg.splice.GetValue() == True :
+# 					count = py_correlator.saveCoreData(path + ".export.tmp", 1)
+# 				else :
+# 					count = py_correlator.saveCoreData(path + ".export.tmp", 0)
+#
+# 				self.parent.OnNewData(None)
+
+				# just using splice/affine for now
+				saveType = 1 if (exportDlg.splice.GetValue() == True) else 0
+				savedCoreCount = py_correlator.saveCoreData(path + ".export.tmp", saveType)
+
+ 				self.parent.OnNewData(None)
+
+				# 1/20/2014 brgtodo: I was initially horrified by the idea of assembling shell
+				# commands to copy files, but it seems to be an accepted practice in the Python
+				# world. Further, using a library (shlib is the most likely candidate) will lose
+				# file metadata on POSIX systems like OS X, i.e. we'll lose group, owner and
+				# resource forks (though, God willing, we don't have anything with a fork!).
+				if exportDlg.format.GetValue() == True: # export non-XML
+					outdir = fileDlg.GetDirectory()
+					filename = fileDlg.GetFilename()
+					#multiple = len(holeList) > 0
+					count = 0
+					for hole in holeList:
+						filePrefix = filename + '-' + hole.holeSet.site.name + '-' + applied
+						countStr = ""
+						#if multiple:
+						if savedCoreCount > 1:
+							filePrefix = filePrefix + hole.name
+							countStr = str(count)
+							count = count + 1
+							
+						typeStr = self.parent.TypeStrToFileSuffix(hole.holeSet.type, True)
+						fileSuffix = '.' + typeStr + '.dat'
+						outfile = filePrefix + fileSuffix
+						if sys.platform == 'win32':
+							workingdir = os.getcwd()
+							os.chdir(path)
+							cmd = 'copy ' + '.export.tmp' + countStr + ' \"' + outdir + '/' + outfile + '\"'
+							os.system(cmd)
+							os.chdir(workingdir)
+						else:
+							cmd = 'cp \"' + path + '.export.tmp' + countStr + '\" \"' + outdir + '/' + outfile + '\"'
+							os.system(cmd)
+				else: # export as XML - 1/17/2014 brgtodo
+					pass
+				
+				if savedCoreCount > 0:
+					self.parent.OnShowMessage("Information", "Export successful", 1)
+				else:
+					self.parent.OnShowMessage("Error", "Export failed", 1)
+
+			fileDlg.Destroy()
+		exportDlg.Destroy()
+
 	def GetCurrentSite(self):
 		if self.currentSite.GetCount() > 0:
 			id = self.currentSite.GetSelection()
@@ -533,5 +824,74 @@ class DBView:
 
 class HoleGUI:
 	def __init__(self, hole, panel):
+		self.hole = hole
 		self.enabledCb = wx.CheckBox(panel, -1, "Enabled", size=(80,-1))
-		self.enabledCb.SetValue(hole.enable == "Enable")
+		self.SyncToData()
+
+	def SyncToData(self):
+		self.enabledCb.SetValue(self.hole.IsEnabled())
+
+	def SyncToGui(self):
+		self.hole.enable = self.enabledCb.GetValue()
+
+class HoleSetGUI:
+	def __init__(self, holeSet, panel):
+		self.holeSet = holeSet
+		self.continuousChoice = wx.Choice(panel, -1, choices=['Continuous','Discrete'])
+		self.cullEnabledCb = wx.CheckBox(panel, -1, "Enable Cull")
+		self.SyncToData()
+
+	def SyncToData(self):
+		self.continuousChoice.SetSelection(0 if self.holeSet.continuous else 1)
+		self.cullEnabledCb.Enable(self.holeSet.HasCull())
+		self.cullEnabledCb.SetValue(self.holeSet.IsCullEnabled())
+
+	def SyncToGui(self):
+		self.holeSet.continuous = (self.continuousChoice.GetSelection() == 0)
+		self.holeSet.EnableCull(self.cullEnabledCb.GetValue())
+
+class SavedTableGUI:
+	def __init__(self, site, name, panel):
+		self.site = site
+		self.name = name # Affine, Splice or ELD
+		self.tableChoice = wx.Choice(panel, -1, size=(200,-1))
+		self.enabledCb = wx.CheckBox(panel, -1, "Enable")
+		self.SyncToData()
+
+	def SyncToData(self):
+		enabledIdx = -1
+		for t in self.GetTables():
+			self.tableChoice.Append(t.file)
+			if t.enable:
+				enabledIdx = self.tableChoice.GetCount() - 1
+
+		if self.tableChoice.GetCount() == 0:
+			self.tableChoice.Append("[no " + self.name.lower() + " tables]")
+			self.tableChoice.SetSelection(0)
+			self.enabledCb.Enable(False)
+		else:
+			self.enabledCb.Enable(True)
+			if enabledIdx != -1:
+				self.tableChoice.SetSelection(enabledIdx)
+				self.enabledCb.SetValue(True)
+			else:
+				self.tableChoice.SetSelection(0)
+				self.enabledCb.SetValue(False)
+
+	def SyncToGui(self):
+		selStr = self.tableChoice.GetString(self.tableChoice.GetSelection())
+		enable = self.enabledCb.GetValue()
+		for t in self.GetTables():
+			t.enable = (enable and (t.file == selStr))
+
+	# pull correct list of tables based on self.name
+	def GetTables(self):
+		if self.name == "Affine":
+			return self.site.affineTables
+		elif self.name == "Splice":
+			return self.site.spliceTables
+		elif self.name == "ELD":
+			return self.site.eldTables
+		else:
+			print "GetTables(): Unexpected saved table type: " + self.name
+			return []

@@ -3148,6 +3148,28 @@ class MainFrame(wx.Frame):
 			annot = typeStr
 		return type, annot
 
+	""" Convert data type string to output filename suffix. When Exporting data, the suffix
+	is 'adj', in all other cases it's 'fix' """
+	def TypeStrToFileSuffix(self, typeStr, useExportSuffix=False):
+		suffix = "adj" if useExportSuffix else "fix"
+		result = ""
+		if typeStr == "Bulk Density(GRA)" :
+			result = "gr" + suffix
+		elif typeStr.lower() == "pwave" :
+			result = "pw" + suffix
+		elif typeStr == "Susceptibility" :
+			suffix = "sus" + suffix
+		elif typeStr.replace('  ', '') == "NaturalGamma" :
+			result = "ng" + suffix
+		elif typeStr == "Reflectance" :
+			result = "refl" + suffix
+		# 1/20/2014 brgtodo: May not be correct for export case...previous code
+		# ignored the possibility of an Other type being passed in. However, this
+		# does yield the correct suffix (type only, no adj/fix suffix) on Export.
+		else:
+			result = typeStr
+		return result
+
 	def LoadPreferencesAndInitDrawData(self, cfgfile, new_flag):
 		self.positions= [ (77,32) , (203,32), (339,32),
 						 (77,152) , (203,152), (339,152),

@@ -130,6 +130,7 @@ class DataFrame(wx.Frame):
 		self.filePanel = wx.Panel(self.sideNote, -1)
 		self.fileText = wx.TextCtrl(self.filePanel, -1, "", style=wx.TE_MULTILINE|wx.TE_READONLY|wx.VSCROLL|wx.TE_WORDWRAP)
 		self.fileText.SetEditable(False)
+		self.fileText.SetFont(wx.Font(14,wx.FONTFAMILY_TELETYPE,wx.FONTSTYLE_NORMAL,wx.FONTWEIGHT_NORMAL)) # fixed-width font
 		self.sideNote.AddPage(self.filePanel, 'Data File')
 
 		self.dataPanel.SetColLabelValue(0, "Data Type")
@@ -355,6 +356,7 @@ class DataFrame(wx.Frame):
 		elif opId == 21 :
 			self.OnIMPORT_IMAGE()
 		elif opId == 22 :
+			print "Export XML Data!"
 			# EXPORT XML TABLES
 			type = self.tree.GetItemText(self.selectedIdx, 1)
 			path = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10)
@@ -386,10 +388,12 @@ class DataFrame(wx.Frame):
 			else :
 				self.SAVE_CULL_TO_XML(path, filename)
 		elif opId == 23 :
+			print "Export Core Data!"
 			self.EXPORT_CORE_DATA(self.selectedIdx, False)
 		elif opId == 24 :
 			self.IMPORT_AGE_MODEL()
 		elif opId == 25 :
+			print "Export Core Data (typed)!"
 			self.EXPORT_CORE_DATA(self.selectedIdx, True)
 		elif opId == 26 :
 			self.tree.SetItemText(self.selectedIdx, "Discrete", 1) 
@@ -804,31 +808,8 @@ class DataFrame(wx.Frame):
 								log_item = child_item
 								break
 
-			type = 7
-			annot = ""
-			if datatype == "NaturalGamma" :
-				type = 4
-				datatype = "ngadj"
-			elif datatype == "Natural Gamma" :
-				type = 4
-				datatype = "ngadj"
-			elif datatype == "Susceptibility" :
-				type = 3
-				datatype = "susadj"
-			elif datatype == "Reflectance" :
-				type = 5
-				datatype = "refladj"
-			elif datatype == "Bulk Density(GRA)" :
-				type = 1
-				datatype = "gradj"
-			elif datatype == "Pwave" :
-				type = 2
-				datatype = "pwadj"
-			elif datatype == "PWave" :
-				type = 2
-				datatype = "pwadj"
-			else :
-				annot = datatype
+			type, annot = self.parent.TypeStrToInt(datatype)
+			datatype = self.parent.TypeStrToFileSuffix(datatype, True)
 
 			if isType == False :
 				parentItem = self.tree.GetItemParent(selectedIdx)
@@ -4606,12 +4587,12 @@ class DataFrame(wx.Frame):
 			if str(data[0]) == type :
 				self.cullData.remove(data)
 				break
-		if bcull == 0 :
+		if bcull == 0 : # remove existing cull ("No Cull" radio checked)
 			l = []
 			l.append(type)
 			l.append(False)
 			self.cullData.append(l)
-		else :
+		else : # cull parameters
 			l = []
 			l.append(type)
 			l.append(True)
@@ -4633,7 +4614,6 @@ class DataFrame(wx.Frame):
 			if cullNumber >= 0 :
 				l.append(str(cullNumber))
 			self.cullData.append(l)
-
 
 	def GetDECIMATE(self, type):
 		self.Update_PROPERTY_ITEM(self.selectBackup)
@@ -4885,10 +4865,6 @@ class DataFrame(wx.Frame):
 				eld = EldData()
 				eld.FromTokens(tokens)
 				site.eldTables.append(eld)
-			elif tokens[0] == 'culltable' or tokens[0] == 'uni_culltable':
-				cull = CullTable()
-				cull.FromTokens(tokens)
-				site.cullTables.append(cull)
 			elif tokens[0] == 'log':
 				log = DownholeLogTable()
 				log.FromTokens(tokens)
@@ -4910,24 +4886,27 @@ class DataFrame(wx.Frame):
 				image.FromTokens(tokens)
 				site.imageTables.append(image)
 
-
 	def ParseHoleSets(self, site, siteLines):
 		curType = None
 		for line in siteLines:
-			token = line.split(': ')
-			if token[0] == 'type' and token[1] not in site.holeSets:
-				curType = token[1]
-				site.holeSets[token[1]] = HoleSet(curType)
-			elif token[0] == 'typeData':
-				site.holeSets[curType].contOrDisc = token[1]
-			elif token[0] == 'typeDecimate':
-				site.holeSets[curType].decimate = token[1]
-			elif token[0] == 'typeSmooth':
-				site.holeSets[curType].smooth = token[1]
-			elif token[0] == 'typeMin':
-				site.holeSets[curType].min = token[1]
-			elif token[0] == 'typeMax':
-				site.holeSets[curType].max = token[1]
+			tokens = line.split(': ')
+			if tokens[0] == 'type' and tokens[1] not in site.holeSets:
+				curType = tokens[1]
+				site.holeSets[tokens[1]] = HoleSet(curType)
+			elif tokens[0] == 'typeData':
+				site.holeSets[curType].continuous = ParseContinuousToken(tokens[1])
+			elif tokens[0] == 'typeDecimate':
+				site.holeSets[curType].decimate = tokens[1]
+			elif tokens[0] == 'typeSmooth':
+				site.holeSets[curType].smooth = tokens[1]
+			elif tokens[0] == 'typeMin':
+				site.holeSets[curType].min = tokens[1]
+			elif tokens[0] == 'typeMax':
+				site.holeSets[curType].max = tokens[1]
+			elif tokens[0] == 'culltable' or tokens[0] == 'uni_culltable':
+				cull = CullTable()
+				cull.FromTokens(tokens)
+				site.holeSets[curType].cullTable = cull
 
 	# For some reason holes are the only data we serialize as multiple lines. Why?
 	# Maintaining as single lines (like everything else) would simplify things.
@@ -4955,7 +4934,7 @@ class DataFrame(wx.Frame):
  			elif token[0] == "updatedTime" :
 				curHole.updatedTime = token[1]
  			elif token[0] == "enable" :
-				curHole.enable = token[1]
+				curHole.enable = ParseEnableToken(token[1])
  			elif token[0] == "byWhom" :
 				curHole.byWhom = token[1]
  			elif token[0] == "source" :
@@ -4973,7 +4952,7 @@ class DataFrame(wx.Frame):
 			siteFile = open(self.parent.DBPath + 'db/' + siteName + '/datalist.db', 'r+')
 			siteLines = siteFile.readlines()
 			for idx, line in enumerate(siteLines):
-				siteLines[idx] = siteLines[idx].strip()
+				siteLines[idx] = siteLines[idx].strip('\r\n')
 
 			self.ParseHoleSets(site, siteLines)
 			self.ParseHoles(site, siteLines)
@@ -4987,7 +4966,11 @@ class DataFrame(wx.Frame):
 	def OnLOADCONFIG(self):
 		self.LoadDatabase()
 
-		self.dbview = DBView(self.parent, self.dbPanel, self.loadedSites)
+		# self.parent - "master" Correlator class
+		# self - old dbmanager (has required variables and methods)
+		# self.dbPanel - Notebook panel in which to embed DBView
+		# self.loadedSites - list of sites loaded from root datalist.db
+		self.dbview = DBView(self.parent, self, self.dbPanel, self.loadedSites)
 
 		root_f = open(self.parent.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
@@ -5651,13 +5634,13 @@ class DataFrame(wx.Frame):
 					if valid == True and main_form == False :
 						filename = ".tmp_table"
 						if sys.platform == 'win32' :
-                                                        self.OnFORMATTING(path, self.parent.Directory + "\\.tmp_table", tableType)
-                                                        path = self.parent.Directory + "\\.tmp_table"
-                                                else :
-                                                        self.OnFORMATTING(path, self.parent.Directory + "/.tmp_table", tableType)
-                                                        path = self.parent.Directory + "/.tmp_table"
+							self.OnFORMATTING(path, self.parent.Directory + "\\.tmp_table", tableType)
+							path = self.parent.Directory + "\\.tmp_table"
+						else :
+							self.OnFORMATTING(path, self.parent.Directory + "/.tmp_table", tableType)
+							path = self.parent.Directory + "/.tmp_table"
 
-				else :
+				else : # last >= 0
 					self.handler.init()
 					if sys.platform == 'win32' :
                                                 self.handler.openFile(self.parent.Directory + "\\.tmp_table")
@@ -5676,6 +5659,7 @@ class DataFrame(wx.Frame):
 						siteflag = True
 					else :
 						valid = False 
+
 				if valid == True :
 					type = self.Add_TABLE('AFFINE' , 'affine', False, True, source_filename)
 					self.parent.OnShowMessage("Information", "Successfully imported", 1)
