@@ -3799,13 +3799,18 @@ class DataFrame(wx.Frame):
 
 				self.parent.logFileptr.write("Load Files: \n")
 
-				if len(self.tree.GetItemText(selectItem, 8)) > 0 : # if hole node
+				# hole node
+				if len(self.tree.GetItemText(selectItem, 8)) > 0 :
 					parentItem = self.tree.GetItemParent(selectItem)
 					type = self.tree.GetItemText(parentItem, 0)
 					if universal_cull_item == None :
 						cull_parentItem = self.tree.GetItemParent(parentItem)
 						universal_cull_item = self.Find_UCULL(cull_parentItem) 
 
+					# it appears that a cull table will never be loaded for a single hole
+					# since multiple selection is impossible thus previousType will == "" when
+					# we reach this point. Strangely, that's for the best since loading a cull
+					# table before loading data results in a C++ side crash (because dataptr is NULL).
 					if previousType != "" and previousType != type and count_load > 0 :
 						ret = self.OnLOAD_CULLTABLE(parentItem, type)
 						if ret == "" :

@@ -9,6 +9,23 @@ def ParseEnableToken(enableToken):
 def ParseContinuousToken(contToken):
 	return contToken == 'Continuous'
 
+""" Generate a range list - [name, min, max, range coefficient, smoothing type, continuous or discrete] -
+from the provided HoleData or DownholeLogTable """
+def MakeRangeList(data, name):
+	if not isinstance(data, HoleData) and not isinstance(data, DownholeLogTable):
+		print "MakeRangeList() expects HoleData or DownholeLogData"
+		return []
+	min = float(data.min)
+	max = float(data.max)
+	coef = max - min
+	if isinstance(data, HoleData):
+		continuous = data.holeSet.continuous
+		smooth = data.holeSet.smooth
+	else: # DownholeLogTable
+		continuous = True
+		smooth = data.smooth
+	return [name, min, max, coef, smooth, continuous]
+
 # FileMetadata a better name?
 class TableData:
 	def __init__(self):
@@ -150,6 +167,8 @@ class SiteData:
 		self.affineGui.SyncToGui()
 		self.spliceGui.SyncToGui()
 		self.eldGui.SyncToGui()
+		for log in self.logTables:
+			log.gui.SyncToGui()
 
 	def AddHole(self, type, hole):
 		if type in self.holeSets:
@@ -273,22 +292,19 @@ class ImageTable(TableData):
 	def GetName(self):
 		return "Image Table"
 
-class DownholeLogTable:
+class DownholeLogTable(TableData):
 	def __init__(self):
-		self.file = None
-		self.updatedTime = None
-		self.byWhom = None
-		self.origSource = None
-		self.dataIndex = None
-		self.enable = None
-		self.dataType = None
-		self.min = None
-		self.max = None
-		self.decimate = None
-		self.foo = None
+		TableData.__init__(self)
+		self.dataIndex = '[no dataIndex]'
+		self.dataType = '[no dataType]'
+		self.min = '[no min]'
+		self.max = '[no max]'
+		self.decimate = '[no decimate]'
+		self.smooth = '[no smooth]'
+		self.gui = None # LogTableGUI
 
 	def __repr__(self):
-		return "DownholeLogTable " + "%s %s %s %s %s %s %s %s %s %s %s" % (self.file, self.updatedTime, self.byWhom, self.origSource, self.dataIndex, self.enable, self.dataType, self.min, self.max, self.decimate, self.foo)
+		return "DownholeLogTable " + "%s %s %s %s %s %s %s %s %s %s %s" % (self.file, self.updatedTime, self.byWhom, self.origSource, self.dataIndex, self.enable, self.dataType, self.min, self.max, self.decimate, self.smooth)
 
 	def GetName(self):
 		return self.dataType
@@ -299,7 +315,7 @@ class DownholeLogTable:
 		self.byWhom = tokens[3]
 		self.origSource = tokens[4]
 		self.dataIndex = tokens[5]
-		self.enable = tokens[6]
+		self.enable = ParseEnableToken(tokens[6])
 		self.dataType = tokens[7]
 		if len(tokens) >= 10:
 			self.min = tokens[8]
@@ -307,7 +323,7 @@ class DownholeLogTable:
 		if len(tokens) >= 11:
 			self.decimate = tokens[10]
 		if len(tokens) >= 12:
-			self.foo = tokens[11] # unclear what this value means
+			self.smooth = tokens[11]
 
 class DBView:
 	def __init__(self, parent, dataFrame, parentPanel, siteList):
@@ -451,6 +467,24 @@ class DBView:
 
 		toPanel.GetSizer().Add(panel)
 
+	def AddLogTableRow(self, toPanel, table):
+		panel, sizer = self.NewPanel(toPanel)
+
+		table.gui = LogTableGUI(table, panel)
+
+		sizer.Add(wx.StaticText(panel, -1, table.GetName(), size=(90,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
+		button = wx.Button(panel, -1, "Actions...")
+		sizer.Add(button, 0, border=5, flag=wx.BOTTOM)
+		sizer.Add(table.gui.enabledCb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		sizer.Add(wx.StaticText(panel, -1, "File: " + table.file), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		sizer.Add(wx.StaticText(panel, -1, "Last updated: " + table.updatedTime), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		sizer.Add(wx.StaticText(panel, -1, "By: " + table.byWhom), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		sizer.Add(wx.StaticText(panel, -1, "Source: " + table.origSource), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+
+		panel.Bind(wx.EVT_CHECKBOX, self.LogCheckboxChanged, table.gui.enabledCb)
+
+		toPanel.GetSizer().Add(panel)
+
 	# 1/13/2014 brgtodo?: Retain GUI objects rather than rebuilding GUI whenever site changes?
 	def UpdateView(self, site):
 		self.panes = []
@@ -483,6 +517,14 @@ class DBView:
 		site.spliceGui = self.AddSavedTableRow(stPane.GetPane(), site, "Splice")
 		site.eldGui = self.AddSavedTableRow(stPane.GetPane(), site, "ELD")
 
+		ltPane = wx.CollapsiblePane(self.dataPanel, -1, "Downhole Logs", style=wx.CP_NO_TLW_RESIZE)
+		ltPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.dataPanel.GetSizer().Add(ltPane, 0, border=5, flag=wx.ALL) # brgtodo: expand necessary?
+		self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, ltPane)
+		self.panes.append(ltPane)
+		for lt in site.logTables:
+			self.AddLogTableRow(ltPane.GetPane(), lt)
+
 		amPane = wx.CollapsiblePane(self.dataPanel, -1, "Age Models", style=wx.CP_NO_TLW_RESIZE)
 		amPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.dataPanel.GetSizer().Add(amPane, 0, border=5, flag=wx.ALL) # brgtodo: expand necessary?
@@ -492,14 +534,6 @@ class DBView:
 			self.AddTableRow(amPane.GetPane(), at)
 		for st in site.seriesTables:
 			self.AddTableRow(amPane.GetPane(), st)
-
-		ltPane = wx.CollapsiblePane(self.dataPanel, -1, "Downhole Logs", style=wx.CP_NO_TLW_RESIZE)
-		ltPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
-		self.dataPanel.GetSizer().Add(ltPane, 0, border=5, flag=wx.ALL) # brgtodo: expand necessary?
-		self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, ltPane)
-		self.panes.append(ltPane)
-		for lt in site.logTables:
-			self.AddTableRow(ltPane.GetPane(), lt)
 
 		# Forward mousewheel events to parent - seems like there ought to be an easier way...
 		for pane in self.panes:
@@ -527,6 +561,7 @@ class DBView:
 		if curSite != None:
 			self.UpdateView(curSite)
 
+	""" Load all enabled holes """
 	def LoadPressed(self, evt):
 		siteIndex = self.currentSite.GetSelection()
 		curSite = self.currentSite.GetClientData(siteIndex)
@@ -534,11 +569,20 @@ class DBView:
 		holesToLoad = []
 		for holeSet in curSite.holeSets.values():
 			for hole in holeSet.holes.values():
-				#if hole.gui.enabledCb.GetValue() == True:
 				if hole.enable:
 					holesToLoad.append(hole)
 		if len(holesToLoad) > 0:
 			self.LoadHoles(holesToLoad)
+
+	""" Ensure only one log Enabled checkbox is checked at a time """
+	def LogCheckboxChanged(self, evt):
+		siteIndex = self.currentSite.GetSelection()
+		curSite = self.currentSite.GetClientData(siteIndex)
+		changedCb = evt.GetEventObject()
+		newState = changedCb.GetValue()
+		for log in curSite.logTables:
+			if log.gui.enabledCb != changedCb and newState == True:
+				log.gui.enabledCb.SetValue(False)
 
 	def PaneChanged(self, evt):
 		self.parentPanel.Layout()
@@ -588,11 +632,13 @@ class DBView:
 		self.parent.TimeChange = False
 		self.parent.Window.timeseries_flag = False
 
-		# laod enabled holes
+		site = holeList[0].holeSet.site
+		sitePath = self.parent.DBPath + 'db/' + site.GetDir()
+
+		# load enabled holes
 		for hole in holeList:
-			# tell C++ side to load the hole
-			self.parent.CurrentDir = self.parent.DBPath + "db/" + hole.holeSet.site.GetDir()
-			holefile = self.parent.DBPath + "db/" + hole.holeSet.site.GetDir() + hole.file
+			self.parent.CurrentDir = sitePath
+			holefile = sitePath + hole.file
 			self.parent.LOCK = 0
 			type = hole.holeSet.type #GRA
 			intType, annot = self.parent.TypeStrToInt(type)
@@ -600,29 +646,58 @@ class DBView:
 			if ret == 1:
 				self.parent.LOCK = 1
 
-			# set range for each hole
-			continueFlag = hole.holeSet.continuous
-			min = float(hole.min)
-			max = float(hole.max)
-			coef = max - min
-			smooth = -1 # pull from holeset - no smoothing for now
-			newrange = type, min, max, coef, smooth, continueFlag
-			self.parent.Window.range.append(newrange)
+			# set range
+			holeRange = MakeRangeList(hole, type)
+			self.parent.Window.range.append(holeRange)
 
-		# load log (OnLOAD_LOG())
-		site = holeList[0].holeSet.site
-		path = self.parent.DBPath + 'db/' + site.GetDir()
-		
+		# load cull tables
+		culledTypes = []
+		for hole in holeList:
+			if hole.holeSet.type not in culledTypes and hole.holeSet.IsCullEnabled():
+				print "loading cull"
+				coretype, annot = self.parent.TypeStrToInt(hole.holeSet.type)
+				print "coretype = " + str(coretype) + ", annot = " + annot
+				py_correlator.openCullTable(sitePath + hole.holeSet.cullTable.file, coretype, annot)
+				culledTypes.append(hole.holeSet.type)
+
+		# load log
+		logLoaded = False
+		for log in site.logTables:
+			if log.enable:
+				py_correlator.openLogFile(sitePath + log.file, int(log.dataIndex))
+				# decimate
+				# smooth
+				ret = py_correlator.getData(5)
+				if ret != "":
+					if py_correlator.getMudline() != 0.0:
+						self.parent.Window.isLogShifted = True
+					self.parent.filterPanel.OnLock()
+					self.parent.ParseData(ret, self.parent.Window.LogData)
+
+					# set range
+					logRange = MakeRangeList(log, 'log')
+					self.parent.Window.range.append(logRange)
+
+					self.parent.UpdateSMOOTH_LogData()
+
+					self.parent.filterPanel.OnRelease()
+					self.parent.Window.isLogMode = 1
+					self.parent.Window.SpliceTieData = []
+					self.parent.Window.CurrentSpliceCore = -1
+					self.parent.autoPanel.OnButtonEnable(0, True)
+					logLoaded = True
+					break
+
 		# load saved tables (OnLOAD_TABLE())
 		tableLoaded = [False, False, False]
 		for at in site.affineTables:
 			if at.enable:
-				py_correlator.openAttributeFile(path + at.file, 0)
+				py_correlator.openAttributeFile(sitePath + at.file, 0)
 				tableLoaded[0] = True
 				break
 		for st in site.spliceTables:
 			if st.enable:
-				ret = py_correlator.openSpliceFile(path + st.file)
+				ret = py_correlator.openSpliceFile(sitePath + st.file)
 				if ret == 'error':
 					self.parent.OnShowMessage("Error", "Couldn't create splice record(s)", 1)
 				else:
@@ -630,12 +705,11 @@ class DBView:
 				break
 		for et in site.eldTables:
 			if et.enable:
-				py_correlator.openAttributeFile(path + et.file, 1)
+				py_correlator.openAttributeFile(sitePath + et.file, 1)
 				tableLoaded[2] = True
 				if self.parent.Window.LogData != [] :
 					self.parent.eldPanel.SetFlag(True)
-					mudline = py_correlator.getMudline()
-					if mudline != 0.0 :
+					if py_correlator.getMudline() != 0.0 :
 						self.parent.OnUpdateLogData(True)
 					retdata = py_correlator.getData(13)
 					if retdata != "" :
@@ -644,6 +718,10 @@ class DBView:
 					retdata = "" 
 				break
 
+		# 1/21/2014 brgtodo: Try to consolidate all the parent.Window changes, GUI changes
+		# and such into their own routines.
+		self.parent.Window.LogselectedTie = -1
+		self.parent.Window.activeSATie = -1
 		self.parent.LOCK = 0
 
 		if tableLoaded[1] == True :
@@ -672,7 +750,21 @@ class DBView:
 			self.parent.UpdateSMOOTH_CORE()
 			self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
 
+		self.parent.Window.ShowLog = False
+		if logLoaded:
+			self.parent.Window.ShowLog = True
+			self.parent.filterPanel.OnRegisterHole("Log")
+
+		self.parent.OnDisableMenu(1, True)
  		self.parent.LOCK = 1
+
+		if self.parent.showReportPanel == 1:
+			self.parent.OnUpdateReport()
+
+		self.parent.Show(True)
+		self.dataFrame.Show(False)
+		self.parent.midata.Check(False)
+		self.parent.topMenu.dbbtn.SetLabel("Go to Data Manager")
 
 		# LOAD SECTION
 		self.parent.OnUpdateDepthStep()
@@ -895,3 +987,15 @@ class SavedTableGUI:
 		else:
 			print "GetTables(): Unexpected saved table type: " + self.name
 			return []
+
+class LogTableGUI:
+	def __init__(self, logTable, panel):
+		self.logTable = logTable
+		self.enabledCb = wx.CheckBox(panel, -1, "Enable")
+		self.SyncToData()
+
+	def SyncToData(self):
+		self.enabledCb.SetValue(self.logTable.enable)
+
+	def SyncToGui(self):
+		self.logTable.enable = self.enabledCb.GetValue()
