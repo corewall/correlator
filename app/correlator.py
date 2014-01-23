@@ -339,7 +339,7 @@ class MainFrame(wx.Frame):
 
 		menuFile.AppendSeparator()
 
-		miFileExit = menuFile.Append(-1, "&Exit\tCtrl-X", "Exit demo")
+		miFileExit = menuFile.Append(wx.ID_EXIT, "&Exit\tCtrl-X", "Exit demo")
 		self.Bind(wx.EVT_MENU, self.OnExitButton, miFileExit)
 		menuBar.Append(menuFile, "&File")
 
@@ -408,7 +408,7 @@ class MainFrame(wx.Frame):
 
 		# Help 
 		menuHelp = wx.Menu()
-		self.miAbout = menuHelp.Append(-1, "About Correlator\tF1", "")
+		self.miAbout = menuHelp.Append(wx.ID_ABOUT, "About Correlator\tF1", "")
 		self.Bind(wx.EVT_MENU, self.OnAbout, self.miAbout)
 		menuBar.Append(menuHelp, "&Help")
 
