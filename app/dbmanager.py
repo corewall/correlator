@@ -1504,6 +1504,31 @@ class DataFrame(wx.Frame):
 		fout.close()
 		fin.close()
 
+	""" Bare-bones validation of image listing files: Count tokens in first non-comment line """
+	def ValidateImageListingFile(self, file):
+		valid = False
+		f = open(file, 'r')
+		lines = f.readlines()
+		for line in lines[1:]: # skip first line
+			if line[0] == '#':
+				continue
+
+			# There are two acceptable formats:
+			# LIMS format is 11+ tokens with space-separated fields. Columns: expedition site hole
+			# core coreType section topOffset bottomOffset depth length image_id
+			# Chronos format is 14 tokens with tab-separated fields. Columns: expedition site hole core
+			# sectionNumber sectionID sectionType coreType curatedLength linearLength MBSF FORMAT DPI imageURL
+			spaceTokens = line.split(' ')
+			tabTokens = line.split('\t')
+			if len(spaceTokens) >= 11 or len(tabTokens) == 14:
+				valid = True
+				break
+
+		if not valid:
+			self.parent.OnShowMessage("Error", "Invalid image listing file, expected either LIMS or Chronos format", 1)
+
+		return valid
+
 
 	def OnIMPORT_IMAGE(self):
 		opendlg = wx.FileDialog(self, "Open Image Data file", self.parent.Directory, "", wildcard = "*.*")
@@ -1512,7 +1537,7 @@ class DataFrame(wx.Frame):
 		source_name = opendlg.GetFilename()
 		self.parent.Directory = opendlg.GetDirectory()
 		opendlg.Destroy()
-		if ret == wx.ID_OK :
+		if ret == wx.ID_OK and self.ValidateImageListingFile(path):
 			item = self.tree.GetSelection()
 			idx = self.tree.GetChildrenCount(item, False)
 			parentItem = self.tree.GetItemParent(item)
@@ -1685,9 +1710,46 @@ class DataFrame(wx.Frame):
 	def OnIMPORT_STRAT(self):
 		while True :
 			self.OnIMPORT_STRAT1()
+			# 1/22/2014 brgtodo: Allow multiple selection to avoid nagging here?
 			ret = self.parent.OnShowMessage("About", "Any more stratigraphy files to add now?", 2)
 			if ret != wx.ID_OK :
 				break
+
+	def ValidateStratFile(self, stratFile, leg, site, title):
+		valid = False
+
+		# account for off-chance user selects an app bundle on OSX
+		if not os.path.isfile(stratFile):
+			self.parent.OnShowMessage("Error", "Invalid file selected", 1)
+			return False
+
+		f = open(stratFile, 'r+')
+		for line in f :
+			max = len(line)
+			if max == 1 : 
+				continue
+				
+			modifiedLine = line[0:-1].split()
+			if modifiedLine[0] == 'null' :
+				continue
+			max = len(modifiedLine)
+			if max == 1 : 
+				modifiedLine = line[0:-1].split('\t')
+				max = len(modifiedLine)
+			if modifiedLine[max-1] == '\r' :
+				max =  max -1
+			if max >= 20 :
+				if modifiedLine[4] == leg and modifiedLine[5] == site :
+					valid = True
+				else:
+					self.parent.OnShowMessage("Error", "This stratigraphy data is not for " + title , 1)
+					break
+			else :
+				self.parent.OnShowMessage("Error", "Invalid stratigraphy file", 1)
+				break
+
+		f.close()
+		return valid
 
 	def OnIMPORT_STRAT1(self):
 		filterindex = 0
@@ -1708,37 +1770,7 @@ class DataFrame(wx.Frame):
 			leg = title[0:last]
 			site = title[last+1:max]
 
-			valid = False
-			f = open(path, 'r+')
-			for line in f :
-				max = len(line)
-				if max == 1 : 
-					continue
-					
-				modifiedLine = line[0:-1].split()
-				if modifiedLine[0] == 'null' :
-					continue
-				max = len(modifiedLine)
-				if max == 1 : 
-					modifiedLine = line[0:-1].split('\t')
-					max = len(modifiedLine)
-
-				if modifiedLine[max-1] == '\r' :
-					max =  max -1
-			
-				if max >= 20 :
-					if modifiedLine[4] == leg and modifiedLine[5] == site :
-						valid = True
-				else :
-					self.parent.OnShowMessage("Error", "It is not Stratigraphy file", 1)
-					f.close()
-					return
-
-				break
-			f.close()
-
-			if valid == False :
-				self.parent.OnShowMessage("Error", "This Stratigraphy is not for " + title , 1)
+			if not self.ValidateStratFile(path, leg, site, title):
 				return
 
 		 	tempstamp = str(datetime.today())
