@@ -12,12 +12,11 @@ if platform.uname()[0] == "Windows":
 	is64bit = sys.maxsize > 2**32
 
 	if is64bit == True:
-		print "64-bit Python detected, importing py_correlator64"
+		print "Windows 64-bit Python detected, importing py_correlator64"
 		import py_correlator64 as py_correlator
 	else:
-		print "32-bit Python detected, importing py_correlator (32-bit)"
+		print "Windows 32-bit Python detected, importing py_correlator (32-bit)"
 		import py_correlator
 else:
 	import py_correlator
-	print "OS X detected, importing only version of py_correlator"
-
+	print "OS X detected, importing py_correlator"
