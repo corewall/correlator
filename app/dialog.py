@@ -29,7 +29,23 @@ class HoldDialog(wx.Frame):
 		#self.EndModal(wx.ID_OK)
 
 
-class MessageDialog(wx.Dialog):
+def MessageDialog(parent, title, msg, nobutton):
+	style = 0
+	if title == "Error":
+		style = wx.ICON_ERROR
+	elif title == "About" or title == "Help" or title == "Information":
+		style = wx.ICON_INFORMATION
+
+	if nobutton == 0:
+		style = style | wx.YES_NO
+	elif nobutton == 1:
+		style = style | wx.OK
+	elif nobutton == 2:
+		style = style | wx.OK | wx.CANCEL
+
+	return wx.MessageDialog(parent, msg, title, style)
+
+class MessageDialogOLD(wx.Dialog):
 	def __init__(self, parent, title, msg, nobutton):
 		if title == "About" or title == "Help" : 
 			wx.Dialog.__init__(self, parent, -1, title, size=(330, 130), style= wx.STAY_ON_TOP)

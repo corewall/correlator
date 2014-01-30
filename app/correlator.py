@@ -1171,7 +1171,8 @@ class MainFrame(wx.Frame):
 		dlg.Destroy()
 
 	def OnShowMessage(self, type, msg, numButton): 
-		dlg = MessageDialog(None, type, msg, numButton)
+		#dlg = MessageDialog(None, type, msg, numButton)
+		dlg = MessageDialog(self.topMenu, type, msg, numButton)
 		dlg.Centre(wx.CENTER_ON_SCREEN)
 		ret = dlg.ShowModal()
 		dlg.Destroy()
