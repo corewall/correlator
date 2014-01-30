@@ -2456,7 +2456,7 @@ class DataCanvas(wxBufferedWindow):
 				if self.showGrid == True :
 					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 					dc.DrawLines(((self.compositeX, self.MousePos[1] - 5), (self.splicerX - 50, self.MousePos[1] - 5)))
-			else :
+			elif self.MousePos[0] <= self.Width: # 1/29/2014 brg: Don't draw depth info if we're over options tab
 				dc.DrawText(str(ycoord), self.splicerX + 3, self.MousePos[1] - 5)
 				if self.showGrid == True :
 					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
@@ -6804,6 +6804,11 @@ class DataCanvas(wxBufferedWindow):
 		pos = event.GetPositionTuple()
 		self.MousePos = pos 
 		got = 0
+
+		# brg 1/29/2014: if mouse is over options panel, don't bother proceeding - the draw
+		# commands change nothing and cause GUI elements to respond sluggishly
+		if self.MousePos[0] > self.Width:
+			return
 
 		#if self.drag == 0 : 
 		for key, data in self.DrawData.items():
