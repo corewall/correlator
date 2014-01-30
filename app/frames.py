@@ -2721,7 +2721,6 @@ class AgeDepthPanel():
 		self.parent.Window.UpdateDrawing()
 		self.parent.TimeChange = True
 
-
 class FilterPanel():
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
@@ -3024,8 +3023,47 @@ class FilterPanel():
 			self.all.Append(holename)
 			self.parent.optPanel.OnRegisterHole(holename)
 
+	def ParseSmoothString(self, smoothStr):
+		tokens = smoothStr.split(' ')
+		if len(tokens) != 3:
+			return []
+		return tokens
+
+	def MakeSmoothString(self, width, units, smoothStyle):
+		return width + " " + units + " " + smoothStyle
+
+	def UpdateSmooth(self, smoothStr):
+		smoothList = self.ParseSmoothString(smoothStr)
+		if smoothList == []:
+			return
+		self.smoothcmd.SetStringSelection("Gaussian")
+		self.width.SetValue(smoothList[0])
+		self.unitscmd.SetStringSelection(smoothList[1])
+		self.plotcmd.SetStringSelection(smoothList[2])
+
+	# brg 1/29/2014: new-fangled SetTYPE()
+	def TypeChoiceChanged(self, event):
+		typeStr = self.all.GetValue()
+		if typeStr == 'All Holes' or typeStr == 'Log' or typeStr == 'Spliced Records':
+			return
+
+		site = self.parent.GetLoadedSite()
+		strippedType = typeStr[4:] # strip off 'All '
+		if strippedType in site.holeSets:
+			holeSet = site.holeSets[strippedType]
+		else:
+			print "Couldn't find type " + strippedType + " in site.holeSets, bailing"
+			return
+
+		self.decimate.SetValue(str(holeSet.decimate))
+		self.UpdateSmooth(holeSet.smooth)
+
 
 	def SetTYPE(self, event):
+		if self.parent.GetLoadedSite() != None:
+			self.TypeChoiceChanged(event)
+			return
+
 		type = self.all.GetValue()
 		if type  == 'All Holes' :
 			return
@@ -3035,23 +3073,26 @@ class FilterPanel():
 			return
 		else :
 			size = len(type)
-			type = type[4:size]
+			type = type[4:size] # strip off 'All '
 
 		# Update decivalue & smooth
 		if type == "Natural Gamma" :
 			type = "NaturalGamma"
 		data = self.parent.dataFrame.GetDECIMATE(type)
-		if data == None and type == "Natural Gamma" :
-			type = "NaturalGamma"
-			data = self.parent.dataFrame.GetDECIMATE(type)
+		
+		# this will never, ever, ever happen because we pull the space from "Natural Gamma" directly above
+#		if data == None and type == "Natural Gamma" :
+#			type = "NaturalGamma"
+#			data = self.parent.dataFrame.GetDECIMATE(type)
+
 		if data != None :
 			self.decimate.SetValue(data[0])
 			if data[1] != "" :
 				smooth_array = data[1].split(' ')
 				self.smoothcmd.SetStringSelection("Gaussian")
-				self.width.SetValue(smooth_array[0]) 
+				self.width.SetValue(smooth_array[0])
 				self.unitscmd.SetStringSelection(smooth_array[1])
-				self.plotcmd.SetStringSelection(smooth_array[2]) 			
+				self.plotcmd.SetStringSelection(smooth_array[2])
 			else :
 				self.smoothcmd.SetStringSelection("None")
 		else :
@@ -3061,10 +3102,11 @@ class FilterPanel():
 		# Update cull
 		cullData = self.parent.dataFrame.GetCULL(type)
 		if cullData == None :
-			if type == "Natural Gamma" :
-				type = "NaturalGamma"
-				cullData = self.parent.dataFrame.GetCULL(type)
-			elif type == "NaturalGamma" :
+			# this will never happen because we already pulled space from "Natural Gamma"
+#			if type == "Natural Gamma" :
+#				type = "NaturalGamma"
+#				cullData = self.parent.dataFrame.GetCULL(type)
+			if type == "NaturalGamma" :
 				type = "Natural Gamma"
 				cullData = self.parent.dataFrame.GetCULL(type)
 
@@ -3122,6 +3164,7 @@ class FilterPanel():
 					self.valueE.SetValue(cullData[7])
 
 
+	# brg 1/29/2014: Ignore undo for now - seems pointless for decimate
 	def OnUNDODecimate(self, event):
 		opt = self.deciUndo[0]
 		deci = self.deciUndo[1]
@@ -3132,8 +3175,8 @@ class FilterPanel():
 		self.OnDecimate(event)
 		
 
+	# brg 1/29/2014: Ignore undo for now - seems pointless for decimate
 	def OnDecimate(self, event):
-
 		type = self.all.GetValue()
 		if type == 'Spliced Records' :
 			self.parent.OnShowMessage("Error", "Splice Records can not be decimated", 1)
@@ -3144,18 +3187,17 @@ class FilterPanel():
 
 		deciValue = int(self.decimate.GetValue())
 
+		site = self.parent.GetLoadedSite()
 		if type == "All Holes" :
-			max = self.all.GetCount()
-			start = 1
-			#if self.parent.Window.LogData == [] :
-			#	start = 2 
-			for i in range(start, max) :
-				all_type = self.all.GetString(i)
-				if all_type == 'Spliced Records' :
+			for index in range(1, self.all.GetCount()):
+				allType = self.all.GetString(index)
+				if allType == 'Spliced Records' :
 					continue
-				py_correlator.decimate(all_type, deciValue)
+				py_correlator.decimate(allType, deciValue)
+				site.SetDecimate(allType[4:], deciValue)
 		else :
 			py_correlator.decimate(type, deciValue)
+			site.SetDecimate(type[4:], deciValue)
 
 		self.deciBackup = [ self.all.GetValue(), self.decimate.GetValue() ]
 
@@ -3167,12 +3209,37 @@ class FilterPanel():
 		else :
 			self.parent.UpdateLogData()
 
-		if type == "All Natural Gamma" :
-			type = "All NaturalGamma"
+		#if type == "All Natural Gamma" :
+		#	type = "All NaturalGamma"
+		#self.parent.dataFrame.OnUPDATEDECIMATE(type, deciValue)
 
-		self.parent.dataFrame.OnUPDATEDECIMATE(type, deciValue)
+		site.SyncToData()
 		self.parent.Window.UpdateDrawing()
 
+	""" Return integer smooth style (unsmoothed, smoothed, or combo) based on current smooth combobox selection """
+	def GetSmoothStyle(self):
+		smoothStyle = 0 # no smooth - should really define constant, named values
+		if self.plotcmd.GetValue() == "SmoothedOnly":
+			smoothStyle = 1
+		elif self.plotcmd.GetValue() == "Smoothed&Unsmoothed":
+			smoothStyle = 2
+		return smoothStyle
+
+	""" Return integer width or -1 if "None" smooth type is selected """
+	def GetSmoothWidth(self):
+		smoothWidth = -1
+		if self.smoothcmd.GetValue() == "Gaussian":
+			smoothWidth = int(self.width.GetValue())
+		return smoothWidth
+
+	""" Return current smooth unit """
+	def GetSmoothUnit(self):
+		smoothUnit = 2 if self.unitscmd.GetValue() == "Depth(cm)" else 1
+		return smoothUnit
+
+	""" Return True if smooth is enabled ("Gaussian" type is selected) else False """
+	def GetSmoothEnable(self):
+		return False if self.smoothcmd.GetValue() == "None" else True
 
 	def OnUNDOSmooth(self, event):
 		if self.smUndo == [] :
@@ -3197,30 +3264,19 @@ class FilterPanel():
 
 	def OnSmooth(self, event):
 		self.smundoBtn.Enable(True)
-
-		smoothEnable = 1 
-
 		self.smUndo = self.smBackup
 
-		if self.smoothcmd.GetValue() == "None" : 
-			smoothEnable = 0 
+		smoothEnable = self.GetSmoothEnable()
+		smoothWidth = self.GetSmoothWidth()
+		smoothUnit = self.GetSmoothUnit()
+		smoothUnitStr = self.unitscmd.GetValue()
+		smoothStyle = self.GetSmoothStyle()
+		smoothStyleStr = self.plotcmd.GetValue()
 
-		smoothWidth = -1
-		if self.smoothcmd.GetValue() == "Gaussian" :
-			smoothWidth = int(self.width.GetValue())
-
-		smoothUnit = 1
-		if self.unitscmd.GetValue() == "Depth(cm)" :
-			smoothUnit = 2
-
-		plot = 1
-		if self.plotcmd.GetValue() == "SmoothedOnly" :
-			plot = 2
-		elif self.plotcmd.GetValue() == "Smoothed&Unsmoothed" :
-			plot = 3
-
+		site = self.parent.GetLoadedSite()
 		type = self.all.GetValue()
 
+		# 1/29/2014 brg: Looks like this takes effect when only smoothStyle has changed.
 		if self.smBackup != [] : 
 			if type == self.smBackup[0] and self.smoothcmd.GetValue() == self.smBackup[1] and self.width.GetValue() == self.smBackup[2] and self.unitscmd.GetValue() == self.smBackup[3] :
 				if type  != 'All Holes' and type != 'Log' and type != 'Spliced Records' :
@@ -3230,65 +3286,69 @@ class FilterPanel():
 					type = "NaturalGamma"
 
 				if type == 'Spliced Records' :
-					self.parent.Window.UpdateSMOOTH('splice', plot-1)
+					self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
 				elif type == 'Log' :
-					self.parent.Window.UpdateSMOOTH('log', plot-1)
+					self.parent.Window.UpdateSMOOTH('log', smoothStyle)
 				else :
 					self.parent.dataFrame.OnUPDATE_SMOOTH(type, self.smoothcmd.GetValue(), str(self.width.GetValue()), self.unitscmd.GetValue(), self.plotcmd.GetValue() )
 					if type == 'All Holes' :
-						self.parent.Window.UpdateSMOOTH('splice', plot-1)
+						self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
 						
 				self.parent.Window.UpdateDrawing()
 				#print "[DEBUG] Display is updated : " + self.plotcmd.GetValue()
 				return
 
-
-		if smoothEnable == 0 : 
+		if not smoothEnable:
 			smoothUnit = -1
 
-		if type == 'Spliced Records' : 
-			max = self.all.GetCount()
-			start = 1
-			#if self.parent.Window.LogData == [] :
-			#	start = 2
-			for i in range(start, max) :
-				all_type = self.all.GetString(i)
-				if all_type == 'Spliced Records' :
-					continue
-				start = all_type.find("All", 0)
-				if start >= 0 : 
-					py_correlator.smooth(all_type, smoothWidth, smoothUnit)
+		# brgtodo 1/29/2014: ??? If type is spliced records, why are we doing everything
+		# *but* modifying spliced records???
+#  		if type == 'Spliced Records' : 
+#  			max = self.all.GetCount()
+#  			start = 1
+#  			#if self.parent.Window.LogData == [] :
+#  			#	start = 2
+#  			for i in range(start, max) :
+#  				all_type = self.all.GetString(i)
+#  				if all_type == 'Spliced Records' :
+#  					continue
+#  				start = all_type.find("All", 0)
+#  				if start >= 0 : 
+#  					py_correlator.smooth(all_type, smoothWidth, smoothUnit)
 
+		# brgtodo 1/29/2014: Pretty sure this does exactly the same thing as above block
 		if type == 'All Holes' : 
-			max = self.all.GetCount()
-			start = 1
-			#if self.parent.Window.LogData == [] :
-			#	start = 2
-			for i in range(start, max) :
+			for i in range(1, self.all.GetCount()) :
 				all_type = self.all.GetString(i)
 				if all_type == 'Spliced Records' :
 					continue
 				start = all_type.find("All", 0)
-				if start >= 0 or all_type == 'Log' : 
+				if start >= 0:
+					py_correlator.smooth(all_type, smoothWidth, smoothUnit)
+					site.SetSmooth(all_type[4:], self.MakeSmoothString(str(smoothWidth), smoothUnitStr, smoothStyleStr))
+				elif all_type == 'Log' :
 					py_correlator.smooth(all_type, smoothWidth, smoothUnit)
 		else :
 			py_correlator.smooth(type, smoothWidth, smoothUnit)
+			site.SetSmooth(type[4:], self.MakeSmoothString(str(smoothWidth), smoothUnitStr, smoothStyleStr))
+
+		site.SyncToData()
 
 		#HYEJUNG CHANGING NOW
 		if type == 'Spliced Records' :
 			self.parent.UpdateSMOOTH_SPLICE(False)
 			if self.parent.Window.LogData != [] and self.parent.Window.SpliceData != [] :
 				self.parent.UpdateSMOOTH_LOGSPLICE(True)
-			self.parent.Window.UpdateSMOOTH('splice', plot-1)
+			self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
 		elif type == 'Log' :
 			#self.parent.UpdateLogData()
 			self.parent.UpdateSMOOTH_LogData()
-			self.parent.Window.UpdateSMOOTH('log', plot-1)
+			self.parent.Window.UpdateSMOOTH('log', smoothStyle)
 		else :
 			self.parent.UpdateSMOOTH_CORE()
 			if type == 'All Holes' :
 				self.parent.UpdateSMOOTH_SPLICE(False)
-				self.parent.Window.UpdateSMOOTH('splice', plot-1)
+				self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
 		###
 
 		self.smBackup = [ self.all.GetValue(), self.smoothcmd.GetValue(), self.width.GetValue(), self.unitscmd.GetValue(), self.plotcmd.GetValue()]

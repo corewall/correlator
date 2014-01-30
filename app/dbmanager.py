@@ -4927,13 +4927,16 @@ class DataFrame(wx.Frame):
 		curType = None
 		for line in siteLines:
 			tokens = line.split(': ')
-			if tokens[0] == 'type' and tokens[1] not in site.holeSets:
+			#if tokens[0] == 'type' and tokens[1] not in site.holeSets:
+			#	curType = tokens[1]
+			#	site.holeSets[tokens[1]] = HoleSet(curType)
+			if tokens[0] == 'type':
 				curType = tokens[1]
-				site.holeSets[tokens[1]] = HoleSet(curType)
+				site.AddHoleSet(curType)
 			elif tokens[0] == 'typeData':
 				site.holeSets[curType].continuous = ParseContinuousToken(tokens[1])
 			elif tokens[0] == 'typeDecimate':
-				site.holeSets[curType].decimate = tokens[1]
+				site.holeSets[curType].decimate = ParseDecimateToken(tokens[1])
 			elif tokens[0] == 'typeSmooth':
 				site.holeSets[curType].smooth = tokens[1]
 			elif tokens[0] == 'typeMin':

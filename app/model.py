@@ -3,11 +3,25 @@ from dialog import *
 
 import wx
 
+# parse routines for members maintained as numeric/boolean/etc rather than a string
 def ParseEnableToken(enableToken):
 	return enableToken == 'Enable'
 
 def ParseContinuousToken(contToken):
 	return contToken == 'Continuous'
+
+def ParseDecimateToken(decToken):
+	try:
+		decInt = int(decToken)
+		return decInt
+	except ValueError:
+		return 1
+
+def MakeRangeString(min, max):
+	return "Range: (" + min + ", " + max + ")"
+
+def MakeDecimateString(dec):
+	return "Decimate: " + str(dec)
 
 """ Generate a range list - [name, min, max, range coefficient, smoothing type, continuous or discrete] -
 from the provided HoleData or DownholeLogTable """
@@ -81,7 +95,7 @@ class HoleSet:
 		self.gui = None # HoleSetGUI
 
 	def __repr__(self):
-		return "HoleSet %s: %s, %s %s %s %s %s" % (self.type, self.GetCullFile(), self.continuous, self.decimate, self.smooth, self.min, self.max)
+		return "HoleSet %s: %s, %s %s %s %s %s" % (self.type, self.GetCullFile(), self.continuous, str(self.decimate), self.smooth, self.min, self.max)
 
 	def dump(self):
 		print self
@@ -114,10 +128,9 @@ class HoleSet:
 		else:
 			return "[no cull table]"
 
-
 	# return string for use in title of a hole set's CollapsiblePane
 	def GetTitleStr(self):
-		return self.type + " - Range: (" + self.min + ", " + self.max + "); " + self.continuous + "; " + "Decimate: " + self.decimate + "; " + "Smoothing: " + self.smooth
+		return self.type + " - Range: (" + self.min + ", " + self.max + "); " + self.continuous + "; " + "Decimate: " + str(self.decimate) + "; " + "Smoothing: " + self.smooth
 
 class SiteData:
 	def __init__(self, name):
@@ -170,6 +183,21 @@ class SiteData:
 		for log in self.logTables:
 			log.gui.SyncToGui()
 
+	def SyncToData(self):
+		for hs in self.holeSets.values():
+			hs.gui.SyncToData()
+			for hole in hs.holes.values():
+				hole.gui.SyncToData()
+		self.affineGui.SyncToData()
+		self.spliceGui.SyncToData()
+		self.eldGui.SyncToData()
+		for log in self.logTables:
+			log.gui.SyncToData()
+
+	def AddHoleSet(self, type):
+		if type not in self.holeSets:
+			self.holeSets[type] = HoleSet(type)
+
 	def AddHole(self, type, hole):
 		if type in self.holeSets:
 			self.holeSets[type].site = self
@@ -183,7 +211,7 @@ class SiteData:
 	def GetSplice(self):
 		return self.GetEnabledTable(self.spliceTables)
 	
-	""" return currently enable EldTable if there is one """
+	""" return currently enabled EldTable if there is one """
 	def GetEld(self):
 		return self.GetEnabledTable(self.eldTables)
 
@@ -194,6 +222,18 @@ class SiteData:
 			if tab.enable:
 				result = tab
 		return result
+
+	def SetDecimate(self, type, decimate):
+		if type in self.holeSets:
+			self.holeSets[type].decimate = decimate
+		else:
+			print "Couldn't find type " + type + " in site " + self.name + " holeSets"
+
+	def SetSmooth(self, type, smoothStr):
+		if type in self.holeSets:
+			self.holeSets[type].smooth = smoothStr
+		else:
+			print "Couldn't find type " + type + " in site " + self.name + " holeSets"
 
 	def GetDir(self):
 		return self.name + '/'
@@ -304,7 +344,7 @@ class DownholeLogTable(TableData):
 		self.gui = None # LogTableGUI
 
 	def __repr__(self):
-		return "DownholeLogTable " + "%s %s %s %s %s %s %s %s %s %s %s" % (self.file, self.updatedTime, self.byWhom, self.origSource, self.dataIndex, self.enable, self.dataType, self.min, self.max, self.decimate, self.smooth)
+		return "DownholeLogTable " + "%s %s %s %s %s %s %s %s %s %s %s" % (self.file, self.updatedTime, self.byWhom, self.origSource, self.dataIndex, self.enable, self.dataType, self.min, self.max, str(self.decimate), self.smooth)
 
 	def GetName(self):
 		return self.dataType
@@ -321,7 +361,7 @@ class DownholeLogTable(TableData):
 			self.min = tokens[8]
 			self.max = tokens[9]
 		if len(tokens) >= 11:
-			self.decimate = tokens[10]
+			self.decimate = ParseDecimateToken(tokens[10])
 		if len(tokens) >= 12:
 			self.smooth = tokens[11]
 
@@ -391,21 +431,24 @@ class DBView:
 		holeSet.gui = HoleSetGUI(holeSet, panel)
 
 		sizer.Add(wx.StaticText(panel, -1, "[All Holes]", size=(75,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
-		button = wx.Button(panel, -1, "Actions...")
-		sizer.Add(button, 0)
+		#button = wx.Button(panel, -1, "Actions...")
+		sizer.Add(holeSet.gui.actionButton, 0)
 		sizer.AddSpacer((85,-1))
-		sizer.Add(wx.StaticText(panel, -1, "Range: (" + holeSet.min + ", " + holeSet.max + ")"), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		#sizer.Add(wx.StaticText(panel, -1, "Range: (" + holeSet.min + ", " + holeSet.max + ")"), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		sizer.Add(holeSet.gui.rangeText, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.AddSpacer((5,-1))
 		sizer.Add(holeSet.gui.continuousChoice, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.AddSpacer((5,-1))
-		sizer.Add(wx.StaticText(panel, -1, "Decimate: " + holeSet.decimate), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		sizer.Add(holeSet.gui.decimateText, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		#sizer.Add(wx.StaticText(panel, -1, "Decimate: " + str(holeSet.decimate)), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.AddSpacer((5,-1))
-		sizer.Add(wx.StaticText(panel, -1, holeSet.smooth), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		sizer.Add(holeSet.gui.smoothText, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		#sizer.Add(wx.StaticText(panel, -1, holeSet.smooth), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.AddSpacer((5,-1))
 		
 		sizer.Add(holeSet.gui.cullEnabledCb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 
-		panel.Bind(wx.EVT_BUTTON, lambda event, args=holeSet: self.PopActionsMenu(event, args), button)
+		panel.Bind(wx.EVT_BUTTON, lambda event, args=holeSet: self.PopActionsMenu(event, args), holeSet.gui.actionButton)
 		panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args))
 		#panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args), self.loadItem)
 		#panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args), self.viewItem)
@@ -626,23 +669,26 @@ class DBView:
 		# pre stuff
 		self.parent.INIT_CHANGES()
 		self.parent.OnNewData(None) # brgtodo
+
 		self.parent.Window.range = []
 		self.parent.Window.AltSpliceData = []
 		self.parent.Window.selectedType = ""
 		self.parent.TimeChange = False
 		self.parent.Window.timeseries_flag = False
 
-		site = holeList[0].holeSet.site
+		site = holeList[0].holeSet.site # shorten some otherwise long statements
 		sitePath = self.parent.DBPath + 'db/' + site.GetDir()
 
-		# load enabled holes
+		# load holes (independent of enabled status, client can pass whatever list of holes they like)
 		for hole in holeList:
 			self.parent.CurrentDir = sitePath
 			holefile = sitePath + hole.file
 			self.parent.LOCK = 0
 			type = hole.holeSet.type #GRA
 			intType, annot = self.parent.TypeStrToInt(type)
-			ret = py_correlator.openHoleFile(holefile, -1, intType, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
+			decimate = hole.holeSet.decimate
+			#self.parent.filterPanel.decimate.SetValue(str(decimate))
+			ret = py_correlator.openHoleFile(holefile, -1, intType, decimate, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
 			if ret == 1:
 				self.parent.LOCK = 1
 
@@ -737,10 +783,6 @@ class DBView:
 			newrange = 'splice', hsMin, hsMax, hsMax - hsMin, 0, holeSet.continuous
 			self.parent.Window.range.append(newrange)
 			self.parent.Window.selectedType = holeSet.type
-		else :
-			self.parent.UpdateCORE()
-			self.parent.UpdateSMOOTH_CORE()
-			self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
 
 		if tableLoaded[2] == True :
 			self.parent.UpdateELD(True)
@@ -766,6 +808,8 @@ class DBView:
 		self.parent.midata.Check(False)
 		self.parent.topMenu.dbbtn.SetLabel("Go to Data Manager")
 
+		self.parent.SetLoadedSite(site)
+
 		# LOAD SECTION
 		self.parent.OnUpdateDepthStep()
 
@@ -775,8 +819,6 @@ class DBView:
 		self.parent.Window.SetFocusFromKbd()
 		self.parent.Window.UpdateDrawing()
 		self.parent.compositePanel.OnUpdate() # make sure growth rate is updated
-
-		# hide data manager and show display(?)
 
 	def ViewFile(self, filename):
 		holefile = self.parent.DBPath + "db/" + self.GetCurrentSite().GetDir() + filename
@@ -929,12 +971,21 @@ class HoleGUI:
 class HoleSetGUI:
 	def __init__(self, holeSet, panel):
 		self.holeSet = holeSet
+		self.actionButton = wx.Button(panel, -1, "Actions...")
+		self.rangeText = wx.StaticText(panel, -1, "")
 		self.continuousChoice = wx.Choice(panel, -1, choices=['Continuous','Discrete'])
+		self.decimateText = wx.StaticText(panel,  -1, "")
+		self.smoothText = wx.StaticText(panel, -1, "")
 		self.cullEnabledCb = wx.CheckBox(panel, -1, "Enable Cull")
 		self.SyncToData()
 
 	def SyncToData(self):
 		self.continuousChoice.SetSelection(0 if self.holeSet.continuous else 1)
+		self.rangeText.SetLabel(MakeRangeString(self.holeSet.min, self.holeSet.max))
+		contIdx = 0 if self.holeSet.continuous else 1
+		self.continuousChoice.SetSelection(contIdx)
+		self.decimateText.SetLabel(MakeDecimateString(self.holeSet.decimate))
+		self.smoothText.SetLabel(self.holeSet.smooth)
 		self.cullEnabledCb.Enable(self.holeSet.HasCull())
 		self.cullEnabledCb.SetValue(self.holeSet.IsCullEnabled())
 
@@ -951,6 +1002,8 @@ class SavedTableGUI:
 		self.SyncToData()
 
 	def SyncToData(self):
+		self.tableChoice.Clear()
+
 		enabledIdx = -1
 		for t in self.GetTables():
 			self.tableChoice.Append(t.file)

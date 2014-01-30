@@ -122,17 +122,24 @@ class MainFrame(wx.Frame):
 		self.CurrentDir = ""
 		self.CurrentType = ""
 		self.CurrentDataNo = -1
-		self.LOCK = 0 
+		self.LOCK = 0
 		self.IDLE = 0
-		self.FOCUS = 1 
+		self.FOCUS = 1
 		self.Directory = ""
 		self.DBPath = "-"
-		self.client = None 
+		self.client = None
+		self.loadedSite = None
 
 		wx.EVT_CLOSE(self, self.OnHide)
 		wx.EVT_IDLE(self, self.OnIDLE)
 		wx.EVT_MOVE(self, self.OnMOVE)
 
+	def SetLoadedSite(self, siteData):
+		if isinstance(siteData, SiteData):
+			self.loadedSite = siteData
+
+	def GetLoadedSite(self):
+		return self.loadedSite
 
 	def INIT_CHANGES(self):
 		self.AffineChange = False 
@@ -1049,7 +1056,7 @@ class MainFrame(wx.Frame):
 			self.ParseData(ret, self.Window.HoleData)
 			self.UpdateMinMax()
 			self.LOCK = 1
-			ret = "" # 9/18/2013 brg: Why? It's local and we're done with it.
+			#ret = "" # 9/18/2013 brg: Why? It's local and we're done with it.
 
 			self.RefreshTypeComboBoxes()
 
@@ -1917,7 +1924,6 @@ class MainFrame(wx.Frame):
 		ret = "" 
 
 	def OnNewData(self, event):
-
 		if self.Window.HoleData != [] :
 			#self.logFileptr.write("Closed All Files Loaded. \n\n")
 			if event != None and self.client != None :
@@ -1944,58 +1950,6 @@ class MainFrame(wx.Frame):
 		self.OnClearData()
 		self.OnDisableMenu(0, False)
 		self.Window.UpdateDrawing()
-
-		# 8/18/2013 brg: Unused, commenting
-		# HYEJUNG
-# 	def OnClearCoreType(self, event):
-# 		dlg =  ClearDataDialog(self, self.filterPanel.all)
-# 		#self.UpdateData()
-		
-# 		self.Window.HoleData = []
-# 		ret = "" 
-# 		if self.smoothDisplay == 1 or self.smoothDisplay == 3 : 
-# 			ret = py_correlator.getData(0)
-# 		elif self.smoothDisplay == 2 : 
-# 			ret = py_correlator.getData(1)
-
-# 		if ret != "" :
-# 			self.RawData =ret
-# 			#self.filterPanel.OnLock()
-# 			self.filterPanel.OnRegisterClear()
-#  			self.PrevDataType = ""
-#  			self.LOCK = 0
-# 			self.ParseData(self.RawData, self.Window.HoleData)
-# 			self.LOCK = 1
-# 			#self.filterPanel.OnRelease()
-# 			self.UpdateMinMax()
-# 		self.RawData = ""
-# 		ret =""
-
-# 		if self.Window.SmoothData != [] : 
-# 			self.Window.SmoothData = []
-# 			self.SmoothData = py_correlator.getData(1)
-# 			if self.SmoothData != "" :
-# 				self.filterPanel.OnLock()
-# 				self.ParseData(self.SmoothData, self.Window.SmoothData)
-# 				self.filterPanel.OnRelease()
-# 			self.SmoothData = ""
-
-# 		if self.Window.SpliceData != [] and self.Window.SmoothData != [] : 
-# 			self.Window.SpliceSmoothData = []
-# 			splice_data = py_correlator.getData(4)
-# 			if splice_data != "" :
-# 				self.filterPanel.OnLock()
-# 				self.ParseData(splice_data, self.Window.SpliceSmoothData)
-# 				self.filterPanel.OnRelease()
-
-# 		if self.Window.StratData != [] :
-# 			self.UpdateStratData()
-		
-# 		self.Window.UpdateDrawing()
-
-		
-# 		#dlg.ShowModal()	
-# 		#dlg.Destroy()	
 
 	def OnClearAllData(self, event):
 		self.OnClearData()
@@ -2865,6 +2819,7 @@ class MainFrame(wx.Frame):
 
 			self.HScrollMax = 30.0 + (len(self.Window.HoleData) * self.Window.holeWidth)
 
+	# 1/29/2014 brgtodo: unreachable statements
 	def UpdateMinMax(self):
 		#pass
 		self.Window.minRange = 0 
