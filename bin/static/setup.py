@@ -53,6 +53,8 @@ DESCRIPTION = "CORRELATOR UI v"+str(VERSION)
 from distutils.core import setup, Distribution
 import sys, glob, os
 
+from version import ShortVersion, LongVersion
+
 #####	 MAC   ######
 # RUN WITH: python setup.py py2app -a
 #
@@ -61,7 +63,11 @@ if sys.platform == 'darwin':
 	os.system('export DYLD_LIBRARY_PATH=./lib/xerces/:.:$DYLD_LIBRARY_PATH')
 
 	opts = dict(argv_emulation=True,
-				   dist_dir="")
+				dist_dir="",
+				plist=dict(CFBundleIconFile="correlator",
+						   CFBundleShortVersionString=ShortVersion,
+						   CFBundleVersion=LongVersion))
+
 	setup(app=['correlator.py'],
 		  name = NAME,
 		  options=dict(py2app=opts),

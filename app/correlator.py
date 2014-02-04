@@ -26,14 +26,14 @@ from canvas import *
 from dialog import *
 from frames import *
 from dbmanager import *
+from version import *
 
 app = None 
-version = "1.7"
 User_Dir = os.path.expanduser("~")
 
-myPath = User_Dir  + "/Documents/Correlator/" + version + "/"
+myPath = User_Dir  + "/Documents/Correlator/" + BaseVersion + "/"
 if platform_name[0] == "Windows" :
-	myPath =  User_Dir  + "\\Correlator\\" + version + "\\"
+	myPath =  User_Dir  + "\\Correlator\\" + BaseVersion + "\\"
 myTempPath = myPath
 WIN_WIDTH = 800
 WIN_HEIGHT = 600
@@ -48,7 +48,7 @@ def opj(path):
 
 class MainFrame(wx.Frame):
 	def __init__(self, winsize, user):
-		wx.Frame.__init__(self, None, -1, "Correlator v" + version,
+		wx.Frame.__init__(self, None, -1, "Correlator (" + ShortVersion + ") - Display" ,
 						 wx.Point(0,100),
 						 winsize)
 		# style=wxSYSTEM_MENU | wxCAPTION | wxCLOSE_BOX | wxNO_FULL_REPAINT_ON_RESIZE)
@@ -1172,7 +1172,7 @@ class MainFrame(wx.Frame):
 		#print self.Window.ShiftTieList
 
 	def OnAbout(self, event):
-		dlg = AboutDialog(None, version)
+		dlg = AboutDialog(None, ShortVersion)
 		dlg.Centre()
 		dlg.ShowModal()
 		dlg.Destroy()
@@ -3202,7 +3202,7 @@ class MainFrame(wx.Frame):
 			win_width = win_width + 8
 			win_height = self.Height + 76			
 
-		self.dataFrame = DataFrame(self, (win_width, win_height), (win_x,win_y))
+		self.dataFrame = DataFrame(self, (win_width, win_height), (win_x,win_y), ShortVersion)
 		#self.dataFrame.SetPosition((win_x,win_y))
 		self.dataFrame.OnSize(1)
 		
@@ -3453,9 +3453,9 @@ class MainFrame(wx.Frame):
 
 
 		if self.DBPath == "-" :
-			self.DBPath = User_Dir  + "/Documents/Correlator/" + version  + "/"
+			self.DBPath = User_Dir  + "/Documents/Correlator/" + BaseVersion  + "/"
 			if platform_name[0] == "Windows" :
-				self.DBPath =  User_Dir  + "\\Correlator\\" + version + "\\"
+				self.DBPath =  User_Dir  + "\\Correlator\\" + BaseVersion + "\\"
 			self.dataFrame.PathTxt.SetValue("Path : " + self.DBPath)
 			
 			if os.access(self.DBPath, os.F_OK) == False :
@@ -3574,7 +3574,7 @@ class CorrelatorApp(wx.App):
 	def OnInit(self):
 		user = getpass.getuser()
 		#if platform_name[0] != "Windows" :
-		openframe = OpenFrame(None, -1, user, version)
+		openframe = OpenFrame(None, -1, user, ShortVersion)
 		openframe.Centre()
 		ret =  openframe.ShowModal()
 		user = openframe.user

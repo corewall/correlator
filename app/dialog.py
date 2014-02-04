@@ -866,7 +866,7 @@ class ColorTableDialog(wx.Dialog):
 
 class AboutDialog(wx.Dialog):
 	def __init__(self, parent, version) :
-		wx.Dialog.__init__(self, parent, -1, "About Correlator v" + version, size=(500, 300), style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, -1, "About Correlator " + version, size=(500, 300), style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
 
 		desctext = "Correlator facilitates the adjustment of core depth data drilled in a multi-hole scenario by usually correlating measured whole-core (GRA, MSLP, PWC, #NGR) or half-core (RSC) sensor data across holes using an optimized cross-correlation approach."
 
@@ -910,7 +910,7 @@ class BackgroundPanel(wx.Panel):
 class OpenFrame(wx.Dialog):
 	def __init__(self, parent, id, user, version):
                 panel_size=(800, 370)
-		wx.Dialog.__init__(self, parent, id, "Correlator v" + version, size=panel_size,style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, id, "Correlator " + version, size=panel_size,style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
 		panel = BackgroundPanel(self, 'images/corewall_suite.jpg', panel_size)
  

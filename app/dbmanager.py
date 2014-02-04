@@ -25,8 +25,8 @@ def opj(path):
 
 
 class DataFrame(wx.Frame):
-	def __init__(self, parent, winsize, points):
-		wx.Frame.__init__(self, None, -1, "Correlator Data Manager",
+	def __init__(self, parent, winsize, points, version):
+		wx.Frame.__init__(self, None, -1, "Correlator (" + version + ") - Data Manager",
 						 points, size=(winsize[0],winsize[1]))
 
 		winsize = parent.GetClientSizeTuple()
