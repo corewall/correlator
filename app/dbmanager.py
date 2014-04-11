@@ -24,16 +24,11 @@ def opj(path):
 	return apply(os.path.join, tuple(path.split('/')))
 
 
-class DataFrame(wx.Frame):
-	def __init__(self, parent, winsize, points, version):
-		wx.Frame.__init__(self, None, -1, "Correlator (" + version + ") - Data Manager",
-						 points, size=(winsize[0],winsize[1]))
+class DataFrame(wx.Panel):
+	def __init__(self, parent):
+		wx.Panel.__init__(self, parent, -1)
 
-		winsize = parent.GetClientSizeTuple()
 		self.parent = parent
-		self.statusBar = self.CreateStatusBar()
-		panelx = winsize[0] - 150
-		panely = winsize[1] - 50 
 		self.selectedCol = -1
 		self.paths = ""
 		self.EditRow = -1
@@ -54,30 +49,37 @@ class DataFrame(wx.Frame):
 		self.handler = XML_Handler()
 		self.parser.setContentHandler(self.handler)
 
-		#vbox_top = wx.BoxSizer(wx.HORIZONTAL)
-
-		self.PathTxt = wx.TextCtrl(self, -1, "Path : " + self.parent.DBPath, (5, panely+10), size=(500, 25))
+		self.sideNote = wx.Notebook(self, -1, style=wx.NB_TOP)
+		self.sideNote.SetBackgroundColour(wx.Colour(255, 255, 255))
+		
+		self.pathPanel = wx.Panel(self, -1)
+		self.PathTxt = wx.TextCtrl(self.pathPanel, -1, "Path : " + self.parent.DBPath)
 		self.PathTxt.SetEditable(False)
 
-		self.importbtn = wx.Button(self, -1, "Import",(400, panely+10), size=(100,30))
+		self.importbtn = wx.Button(self.pathPanel, -1, "Import")
 		self.Bind(wx.EVT_BUTTON, self.OnIMPORT, self.importbtn)
 		self.importbtn.Enable(False)
-
-		#self.startupbtn = wx.CheckBox(self, -1, 'Open at Start Up', (530, panely+10))
-		#self.startupbtn.SetValue(True)
 
 		# 1/8/2014 brgtodo: What is the point of the Dismiss button??? It just hides the data manager, f'nality
 		# more usefully implemented in the "Go to Display/Data Manager" button in the toolbar. Why would a user
 		# want to just hide the Data Manager?  Strong candidate for removal.
-		self.okbtn = wx.Button(self, -1, "Dismiss",(550, panely+10), size=(100,30))
+		self.okbtn = wx.Button(self.pathPanel, -1, "Dismiss")
 		self.Bind(wx.EVT_BUTTON, self.OnDISMISS, self.okbtn)
 
-		self.sideNote = wx.Notebook(self, -1, style=wx.NB_TOP)
-		self.sideNote.SetBackgroundColour(wx.Colour(255, 255, 255))
+		pathPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
+		pathPanelSizer.Add(self.PathTxt, 1, wx.LEFT | wx.RIGHT, 5)
+		pathPanelSizer.Add(self.importbtn, 0, wx.LEFT | wx.RIGHT, 5)
+		pathPanelSizer.Add(self.okbtn, 0, wx.LEFT | wx.RIGHT, 5)
+		self.pathPanel.SetSizer(pathPanelSizer)
+
+		self.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.GetSizer().Add(self.sideNote, 1, wx.EXPAND)
+		self.GetSizer().Add(self.pathPanel, 0, wx.EXPAND | wx.BOTTOM, 5)
 
 		self.treeListPanel = wx.Panel(self.sideNote, -1)
-		self.tree = gizmos.TreeListCtrl(self.treeListPanel, -1, style = wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT)
+		#self.treeListPanel = wx.Panel(self, -1)
 
+		self.tree = gizmos.TreeListCtrl(self.treeListPanel, -1, style = wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT)
 		self.tree.AddColumn(" ")
 		self.tree.SetColumnWidth(0, 200)
 		self.tree.AddColumn("Data")
@@ -103,6 +105,9 @@ class DataFrame(wx.Frame):
 		self.tree.SetMainColumn(0)
 		self.root = self.tree.AddRoot("Root")
 		self.tree.Expand(self.root)
+
+		self.treeListPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.treeListPanel.GetSizer().Add(self.tree, 1, wx.EXPAND)
 		self.sideNote.AddPage(self.treeListPanel, 'Data List')
 		self.tree.GetMainWindow().Bind(wx.EVT_RIGHT_DOWN, self.SelectTREE)
 
@@ -138,77 +143,14 @@ class DataFrame(wx.Frame):
 		for i in range(1, 39) :
 			self.dataPanel.SetColLabelValue(i, "?")
 
-		#vbox_top.Add(self.sideNote, 0, wx.LEFT | wx.TOP, 9)
-
-		#self.sidePanel = wx.Panel(self, -1, (panelx, 0), size=(145, panely) )
-		self.sidePanel = wx.Panel(self, -1)
-
-		vbox_right = wx.BoxSizer(wx.VERTICAL)
-
 		self.initialize = False
 
-		self.sidePanel.SetSizer(vbox_right)
-
-		#self.UPDATESize(winsize[0],winsize[1], 0, 45)
-
 		self.repCount = 0
-		wx.EVT_SIZE(self, self.OnSize)
 		wx.EVT_CLOSE(self, self.OnHide)
-		wx.EVT_MOVE(self, self.OnMOVE)
 
 	def OnHide(self,event):
 		self.Show(False)
 		self.parent.midata.Check(False)
-
-	def OnMOVE(self,event):
-		pos = self.GetPosition()
-		self.parent.SetPosition(pos)
-
-	def OnSize(self,event):
-		winx, winy = self.GetClientSizeTuple()
-		if sys.platform != 'win32' :
-			self.parent.SetSize((winx, winy+ 40))
-		else :
-			self.parent.SetClientSize((winx, winy-20))
-	
-		x, y = self.GetPosition()
-	
-		gabx = winx * 0.01
-		gaby = winy * 0.03
-		percentx = 1 - (160.0 / winx)
-		winxa = winx - gabx
-
-		if platform_name[0] == "Windows" :	
-			winya = winy  * 0.86 - gaby
-		else :
-			winya = winy * 0.88 - gaby
-			
-		self.dataPanel.SetSize((winxa, winya))
-		self.treeListPanel.SetSize((winxa, winya))
-		self.tree.SetSize((winxa, winya))
-		self.filePanel.SetSize((winxa, winya))
-		self.fileText.SetSize((winxa, winya))
-
-		self.PathTxt.SetPosition((5, winy - 30))
-		self.PathTxt.SetSize((winxa - 400, 25))
-		#self.startupbtn.SetPosition((winxa - 250, winy - 30))
-		self.okbtn.SetPosition((winxa - 250, winy - 30))
-		self.importbtn.SetPosition((winxa - 370, winy - 30))
-
-		
-		winxa = winxa  + gabx
-		winya = winya + gaby
-		self.sideNote.SetSize((winxa, winya))
-		self.sideNote.SetPageSize((winxa, winya))
-		self.UpdateWindowUI()
-		
-		gabx = winx * 0.02
-		winxa = winxa  + gabx
-		self.sidePanel.SetPosition((winxa, 0))
-		self.sidePanel.SetSize((145, winya))
-		
-		self.UpdateWindowUI()
-
 
 	# handles all of the many many many right-click commands in Data Manager
 	def OnPOPMENU(self, event):
@@ -4165,10 +4107,8 @@ class DataFrame(wx.Frame):
 
 		if self.parent.showReportPanel == 1 :
 			self.parent.OnUpdateReport()
-		self.parent.Show(True)
-		self.Show(False)
-		self.parent.midata.Check(False)
-		self.parent.topMenu.dbbtn.SetLabel("Go to Data Manager")
+
+		self.parent.ShowDisplay()
 
 		# LOAD SECTION
 		self.parent.NewDATA_SEND()
@@ -4195,7 +4135,6 @@ class DataFrame(wx.Frame):
 		
 
 	def Add_TABLE(self, title, sub_title, updateflag, importflag, source_filename):
-			
 		if importflag == False and len(self.selectBackup) == 0 :
 			self.parent.OnShowMessage("Error", "Could not find selected items", 1)
 			return

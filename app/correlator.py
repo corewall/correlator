@@ -117,7 +117,7 @@ class MainFrame(wx.Frame):
 		self.Window = DataCanvas(self)
 		self.topMenu = TopMenuFrame(self)
 		self.dataFrame = None
-		#self.dataFrame = DataFrame(self, (self.Width, self.Height ))
+		#self.dataFrame = DataFrame(self)
 		self.PrevDataType = "" 
 		self.CurrentDir = ""
 		self.CurrentType = ""
@@ -132,7 +132,6 @@ class MainFrame(wx.Frame):
 
 		wx.EVT_CLOSE(self, self.OnHide)
 		wx.EVT_IDLE(self, self.OnIDLE)
-		wx.EVT_MOVE(self, self.OnMOVE)
 
 	def SetLoadedSite(self, siteData):
 		if isinstance(siteData, SiteData):
@@ -147,11 +146,6 @@ class MainFrame(wx.Frame):
 		self.EldChange = False 
 		self.AgeChange = False 
 		self.TimeChange = False 
-
-	def OnMOVE(self, event):
-		if self.dataFrame != None :
-			pos = self.GetPosition()
-			self.dataFrame.SetPosition(pos)
 
 	def OnIDLE(self, event):
 		if app == None :
@@ -3061,6 +3055,26 @@ class MainFrame(wx.Frame):
 		self.Window.DrawData = self.LoadPreferencesAndInitDrawData(cfgfile, new_flag)
 		self.Window.UpdateDrawing()
 
+	def ShowDataManager(self):
+		if self.CHECK_CHANGES() == True :
+			ret = self.OnShowMessage("About", "Do you want to save?", 0)
+			if ret == wx.ID_OK :
+				self.topMenu.OnSAVE(None) # dummy event
+		if self.dataFrame.IsShown() == False :
+			self.Window.Hide()
+			self.dataFrame.Show(True)
+			self.midata.Check(True)
+			self.topMenu.dbbtn.SetLabel("Go to Display")
+		self.Layout()
+
+	def ShowDisplay(self):
+		self.dataFrame.propertyIdx = None
+		self.dataFrame.Show(False)
+		self.Window.Show(True)
+		self.midata.Check(False)
+		self.topMenu.dbbtn.SetLabel("Go to Data Manager")
+		self.Layout()
+
 	def OnClick(self, name):
 		if os.name == 'nt':
 			os.system("start %s " % self.Applications[ name ][3])
@@ -3200,11 +3214,10 @@ class MainFrame(wx.Frame):
 			win_height = self.Height + 40
 		else :
 			win_width = win_width + 8
-			win_height = self.Height + 76			
-
-		self.dataFrame = DataFrame(self, (win_width, win_height), (win_x,win_y), ShortVersion)
-		#self.dataFrame.SetPosition((win_x,win_y))
-		self.dataFrame.OnSize(1)
+			win_height = self.Height + 76
+		
+		# 4/10/2014 brg: init depends on self.DBPath among others...
+		self.dataFrame = DataFrame(self)
 		
 		conf_str = ""
 		conf_array = []
@@ -3635,16 +3648,23 @@ class CorrelatorApp(wx.App):
 		self.frame.NewDrawing(self.cfgfile, self.new)
 		self.frame.agePanel.OnAgeViewAdjust(None)
 		self.frame.agePanel.OnDepthViewAdjust(None)
-		#self.frame.optPanel.OnDepthViewAdjust(None)
+		self.frame.optPanel.OnDepthViewAdjust(None)
+
+		# wait until now so self.frame.dataFrame exists
+		sizer = wx.BoxSizer(wx.HORIZONTAL)
+		sizer.Add(self.frame.dataFrame, 1, wx.EXPAND)
+		sizer.Add(self.frame.Window, 1, wx.EXPAND)
+		self.frame.SetSizer(sizer)
+
+		self.frame.Show(True)
+		self.frame.Window.Hide()
+		self.frame.dataFrame.Show(True)
+		self.frame.topMenu.Show(True)
 
 		#if platform_name[0] != "Windows" : 
 		#openframe.Hide()
 		#openframe.Destroy()
 		self.SetExitOnFrameDelete(False)
-
-		self.frame.Show(False)
-		self.frame.dataFrame.Show(True)
-		self.frame.topMenu.Show(True)
 
 		return True
 

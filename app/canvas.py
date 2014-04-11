@@ -16,7 +16,8 @@ from importManager import py_correlator
 
 from frames import *
 
-
+# brg 4/9/2014: Why are we defining our own wxBufferedWindow when
+# wx.BufferedWindow already exists (same interface 'n all) in wx?
 class wxBufferedWindow(wx.Window):
 
 	"""
@@ -65,10 +66,9 @@ class wxBufferedWindow(wx.Window):
 		# The Buffer init is done here, to make sure the buffer is always
 		# the same size as the Window
 		self.Width, self.Height = self.GetClientSizeTuple()
-		
 				
 		if self.CLOSEFLAG == 1 :
-				self.Width = self.Width - 45 
+			self.Width = self.Width - 45 
 		else :
 			self.Width = self.Width - self.sideTabSize
 		self.WindowUpdate = 1

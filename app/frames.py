@@ -33,7 +33,7 @@ class TopMenuFrame(wx.Frame):
 		wx.Frame.__init__(self, None, -1, "Tool Bar",
 						 wx.Point(20,100),
 						 topsize,
-						 style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
+						 style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
 		self.parent = parent
 		vbox = wx.BoxSizer(wx.VERTICAL)
@@ -168,27 +168,9 @@ class TopMenuFrame(wx.Frame):
 
 	def OnDB(self, event):
 		if self.dbbtn.GetLabel() == "Go to Data Manager" :
-			#self.OnNEW(event)
-			if self.parent.CHECK_CHANGES() == True :
-				ret = self.parent.OnShowMessage("About", "Do you want to save?", 0)
-				if ret == wx.ID_OK :
-					self.OnSAVE(event)
-
-			if self.parent.dataFrame.IsShown() == False :
-				self.parent.dataFrame.Show(True)
-				self.parent.midata.Check(True)
-			else :
-				self.parent.dataFrame.Raise()
-
-			self.dbbtn.SetLabel("Go to Display")
-		else :
-			self.parent.dataFrame.propertyIdx = None
-			
-			self.parent.dataFrame.Show(False)
-			self.parent.midata.Check(False)
-			self.parent.Show(True)
-			self.dbbtn.SetLabel("Go to Data Manager")
-
+			self.parent.ShowDataManager()
+		else:
+			self.parent.ShowDisplay()
 
 	def OnSAVE(self, event):
 		if self.parent.CurrentDir == '' : 

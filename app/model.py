@@ -803,11 +803,7 @@ class DBView:
 		if self.parent.showReportPanel == 1:
 			self.parent.OnUpdateReport()
 
-		self.parent.Show(True)
-		self.dataFrame.Show(False)
-		self.parent.midata.Check(False)
-		self.parent.topMenu.dbbtn.SetLabel("Go to Data Manager")
-
+		self.parent.ShowDisplay()
 		self.parent.SetLoadedSite(site)
 
 		# LOAD SECTION
