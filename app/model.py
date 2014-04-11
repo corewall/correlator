@@ -597,6 +597,10 @@ class DBView:
 		self.currentSite.Clear()
 		for site in siteList:
 			self.currentSite.Append(site.name, clientData=site)
+		
+		# brg 4/10/2014: Must explicitly set a current selection on Windows 
+		if self.currentSite.GetCount() > 0:
+			self.currentSite.SetSelection(0)
 
 	def SiteChanged(self, evt):
 		siteIndex = self.currentSite.GetSelection()
@@ -948,8 +952,8 @@ class DBView:
 
 	def GetCurrentSite(self):
 		if self.currentSite.GetCount() > 0:
-			id = self.currentSite.GetSelection()
-			return self.currentSite.GetClientData(id)
+			siteIndex = self.currentSite.GetSelection()
+			return self.currentSite.GetClientData(siteIndex)
 		return None
 
 class HoleGUI:
