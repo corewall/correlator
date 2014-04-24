@@ -3046,6 +3046,11 @@ class MainFrame(wx.Frame):
 	def ShowDisplay(self):
 		self.dataFrame.propertyIdx = None
 		self.dataFrame.Show(False)
+
+		# force DataCanvas to update bitmap dimensions - otherwise the
+		# control panel comes out 2x too far to the left
+		self.Window.OnSize(None)
+
 		self.Window.Show(True)
 		self.midata.Check(False)
 		self.topMenu.dbbtn.SetLabel("Go to Data Manager")
