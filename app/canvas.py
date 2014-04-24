@@ -286,7 +286,7 @@ class DataCanvas(wxBufferedWindow):
 		self.ageGap = 10 
 
 		self.HoleCount = 0
-		self.selectScroll = -1
+		self.selectScroll = 0
 		self.grabCore = -1
 		self.SPgrabCore = -1
 		self.spliceTie = -1
