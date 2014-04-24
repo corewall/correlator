@@ -1900,7 +1900,9 @@ class DataCanvas(wxBufferedWindow):
 							splicelines.append((spx, spy, sx, sy))
 						spx = sx
 						spy = sy
-						si = si + 1 
+						si = si + 1
+				elif y > self.SPrulerEndDepth:
+					break # no need to continue, this core and all below are out of view
 
 			if compositeflag == 1 :
 				if smoothed == 2 :
@@ -1917,7 +1919,9 @@ class DataCanvas(wxBufferedWindow):
 							log_max = x
 						px = x
 						py = y
-						i = i + 1 
+						i = i + 1
+					elif y > self.SPrulerEndDepth:
+						break
 				else :
 					if y >= drawing_start and y <= self.rulerEndDepth :
 						y = self.startDepth + (y - self.rulerStartDepth) * (self.length / self.gap)
@@ -1930,6 +1934,8 @@ class DataCanvas(wxBufferedWindow):
 						py = y
 						i = i + 1
 						#print "x = " + str(x) + " y = " + str(y) 
+					elif y > self.rulerEndDepth:
+						break
 
 		min_splice = min - self.minRangeSplice
 
@@ -5751,58 +5757,7 @@ class DataCanvas(wxBufferedWindow):
 							self.parent.UpdateSMOOTH_LOGSPLICE(False)
 						self.Lock = False
 					else :
-						self.parent.OnShowMessage("Error", "Please do not select bad core", 1)
-
-				elif self.isAppend == True : 
-					self.isAppend = False
-					self.SpliceDiff = self.SpliceDiff + 1
-					#print "[DEBUG] append = " + str(self.SpliceDiff)
-
-					ret = self.GetDataInfo(self.grabCore)
-					if ret[3] == '0' :
-						self.SPSelectedCore = self.grabCore
-						#print "[DEBUG] update sp selected core " +  str(self.grabCore)
-						#type = self.GetTypeID(typeA)
-						splice_data = py_correlator.first_splice(ret[0], ret[1], self.parent.smoothDisplay, 1, typeA)
-						self.parent.splicePanel.OnButtonEnable(4, True)
-						type = self.GetTypeID(typeA)
-						self.multipleType = False
-
-						s = "Splice(Append): hole " + str(ret[0]) + " core " + str(ret[1]) + ", " + str(typeA) + "\n\n"
-						self.parent.logFileptr.write(s)
-
-						self.parent.filterPanel.OnRegisterSplice()
-						new_r = None
-						splice_range = None
-						type_temp = ret[2]
-						if type_temp == "Natural Gamma" :
-							type_temp = "NaturalGamma"
-						for r in self.range :
-							if r[0] == type_temp :
-								new_r = r 
-							elif r[0] == "splice" :
-								splice_range = r
-
-						newrange = "splice", new_r[1], new_r[2], new_r[3], 0, new_r[5] 
-						if splice_range != None :
-							self.range.remove(splice_range)
-						self.range.append(newrange)
-
-						py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
-						self.parent.SpliceChange = True
-						self.parent.SpliceSectionSend(ret[0], str(ret[1]), -1, "first", -1)
-						self.selectedType = ret[2]
-						self.parent.filterPanel.OnLock()
-						self.parent.UpdateSPLICE(False)
-						self.parent.UpdateSMOOTH_SPLICE(False)
-						self.parent.filterPanel.OnRelease()
-
-						self.spliceHoleWidth = self.holeWidth
-						self.SpliceCore.append(self.grabCore)
-						self.PreviousSpliceCore = self.grabCore 
-						self.spliceCount = self.spliceCount + 1
-					else :
-						self.parent.OnShowMessage("Error", "Please do not select bad core", 1)
+						self.parent.OnShowMessage("Error", "Splice must begin with topmost core of any hole", 1)
 
 				elif self.spliceCount == splice_count and self.isLogMode == 0 : 
 					ret = self.GetDataInfo(self.grabCore)
@@ -5848,7 +5803,7 @@ class DataCanvas(wxBufferedWindow):
 							#print "[DEBUG] splice type is changed : " + str(self.selectedType)
 							self.multipleType = True
 					else :
-						self.parent.OnShowMessage("Error", "Please do not select bad core", 1)
+						self.parent.OnShowMessage("Error", "Splice must begin with topmost core of any hole", 1)
 				self.grabCore = -1
 				self.UpdateDrawing()
 				return
