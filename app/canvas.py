@@ -2378,22 +2378,17 @@ class DataCanvas(wxBufferedWindow):
 		# Here's the actual drawing code.
 		for key, data in self.DrawData.items():
 			if key == "Skin":
-				for r in data:
-					im, x, y = r
-					dc.DrawBitmap(im, self.Width + x - 1, y, 1)
+				bmp, x, y = data
+				dc.DrawBitmap(bmp, self.Width + x - 1, y, 1)
 			elif key == "HScroll":
-				for r in data:
-					im, x, y = r
-					dc.DrawBitmap(im, x, self.Height + y, 1)
+				bmp, x, y = data
+				dc.DrawBitmap(bmp, x, self.Height + y, 1)
 
 		# Here's the actual drawing code.
-		if self.spliceWindowOn == 1 :
-			for key, data in self.DrawData.items():
-				if key == "MovableSkin":
-					for r in data:
-						im, x, y = r
-						x = x + self.splicerX - 40
-						dc.DrawBitmap(im, x, y, 1)
+		if self.spliceWindowOn == 1 and "MovableSkin" in self.DrawData:
+			bmp, x, y = self.DrawData["MovableSkin"]
+			x = x + self.splicerX - 40
+			dc.DrawBitmap(bmp, x, y, 1)
 
 		if self.mode == 1 : 
 			self.statusStr = "Composite mode	 "
@@ -4373,25 +4368,13 @@ class DataCanvas(wxBufferedWindow):
 		if scroll_flag == 1 :
 			for key, data in self.DrawData.items():
 				if key == "MovableInterface":
-					im, dir, x, y = data[0]
-					self.DrawData["MovableInterface"] = []
-					l = []
-					y = scroll_y
-					#self.rulerStartDepth 
-					l.append((im, dir, x, y))
-					self.DrawData["MovableInterface"] = l
-					break
+					bmp, dir, x, y = data
+					self.DrawData["MovableInterface"] = (bmp, dir, x, scroll_y)
+
 			if self.spliceWindowOn == 1 :
-				for key, data in self.DrawData.items():
-					if key == "MovableSkin":
-						im, x, y = data[0]
-						self.DrawData["MovableSkin"] = []
-						l = []
-						y = scroll_y
-						#self.rulerStartDepth 
-						l.append((im, x, y))
-						self.DrawData["MovableSkin"] = l
-						break
+				bmp, x, y = self.DrawData["MovableSkin"]
+				self.DrawData["MovableSkin"] = (bmp, x, scroll_y)
+
 			if self.parent.client != None :
 #				# self.parent.client.send("show_depth_range\t"+str(self.rulerStartDepth)+"\t"+str(self.rulerEndDepth)+"\n") # JULIAN
 				_depth = (self.rulerStartDepth + self.rulerEndDepth) / 2.0
@@ -4400,27 +4383,14 @@ class DataCanvas(wxBufferedWindow):
 		if self.isSecondScroll == 0 : # if composite/splice windows scroll together, scroll splice too
 			scroll_flag = 2
 
+		# brgtodo 4/23/2014: MovableInterface/Skin and Interface/Skin appear to be duplicating
+		# most of their behavior/logic. Refactor into a common object.
 		if scroll_flag == 2 :
-			for key, data in self.DrawData.items():
-				if key == "Interface":
-					im, dir, x, y = data[0]
-					self.DrawData["Interface"] = []
-					l = []
-					y = scroll_y
-					#self.rulerStartDepth
-					l.append((im, dir, x, y))
-					self.DrawData["Interface"] = l
-					break
-			for key, data in self.DrawData.items():
-				if key == "Skin":
-					im, x, y = data[0]
-					self.DrawData["Skin"] = []
-					l = []
-					y = scroll_y
-					#self.rulerStartDepth
-					l.append((im, x, y))
-					self.DrawData["Skin"] = l
-					break
+			bmp, dir, x, y = self.DrawData["Interface"]
+			self.DrawData["Interface"] = (bmp, dir, x, scroll_y)
+
+			bmp, x, y = self.DrawData["Skin"]
+			self.DrawData["Skin"] = (bmp, x, scroll_y)
 
 	def OnCharUp(self, event):
 		keyid = event.GetKeyCode()
@@ -4929,9 +4899,9 @@ class DataCanvas(wxBufferedWindow):
 		pos = event.GetPositionTuple()
 		for key, data in self.DrawData.items():
 			if key == "Interface":
-				im, dir, x, y = data[0] 
+				bmp, dir, x, y = data
 				x = self.Width + x
-				w, h = im.GetWidth() , im.GetHeight()
+				w, h = bmp.GetWidth(), bmp.GetHeight()
 				reg = wx.Rect(x, y, w, h)
 				if reg.Inside(wx.Point(pos[0], pos[1])):				 
 					#self.parent.OnScroll(dir)
@@ -4941,31 +4911,29 @@ class DataCanvas(wxBufferedWindow):
 						self.grabScrollA = 1	
 					self.UpdateDrawing()
 			elif key == "MovableInterface":
-				im, dir, x, y = data[0] 
+				bmp, dir, x, y = data
 				x = x + self.splicerX - 40
-				w, h = im.GetWidth() , im.GetHeight()
+				w, h = bmp.GetWidth(), bmp.GetHeight()
 				reg = wx.Rect(x, y, w, h)
 				if reg.Inside(wx.Point(pos[0], pos[1])):				 
 					#self.parent.OnScroll(dir)
 					self.grabScrollA = 1	
 					self.UpdateDrawing()
 			elif key == "MovableSkin" and self.spliceWindowOn == 1 :
-				for r in data:
-					im, x, y = r
-					x = x + self.splicerX - 40
-					w, h = im.GetWidth() , im.GetHeight()
-					w = self.ScrollSize
-					reg = wx.Rect(x, pos[1], w, h)
-					if reg.Inside(wx.Point(pos[0], pos[1])):				 
-						self.selectScroll = 1
+				bmp, x, y = data
+				x = x + self.splicerX - 40
+				w, h = bmp.GetWidth(), bmp.GetHeight()
+				w = self.ScrollSize
+				reg = wx.Rect(x, pos[1], w, h)
+				if reg.Inside(wx.Point(pos[0], pos[1])):
+					self.selectScroll = 1
 			elif key == "HScroll":
-				for r in data:
-					im, x, y = r
-					y = self.Height + y
-					w, h = im.GetWidth() , im.GetHeight()
-					reg = wx.Rect(x, y, w, h)
-					if reg.Inside(wx.Point(pos[0], pos[1])):				 
-						self.grabScrollC = 1	
+				bmp, x, y = data
+				y = self.Height + y
+				w, h = bmp.GetWidth(), bmp.GetHeight()
+				reg = wx.Rect(x, y, w, h)
+				if reg.Inside(wx.Point(pos[0], pos[1])):				 
+					self.grabScrollC = 1	
 
 		if self.MainViewMode == True :
 			self.OnMainLMouse(event)
@@ -5594,67 +5562,12 @@ class DataCanvas(wxBufferedWindow):
 
 		self.selectScroll = 0
 		if self.grabScrollA == 1 :
-			scroll_start = self.startDepth * 0.7
-			scroll_y = pos[1] - scroll_start 
-			if scroll_y < scroll_start : 
-				scroll_y = scroll_start 
-			scroll_width = self.Height - (self.startDepth * 1.6)
-			if scroll_y > scroll_width : 
-				scroll_y = scroll_width 
-
-			for key, data in self.DrawData.items():
-				if key == "MovableInterface":
-					im, dir, x, y = data[0]
-					self.DrawData["MovableInterface"] = [] 
-					l = []			 
-					y = scroll_y 
-					l.append((im, dir, x, y)) 
-					self.DrawData["MovableInterface"] = l
-					break
-
-			for key, data in self.DrawData.items():
-				if key == "MovableSkin" and self.spliceWindowOn == 1 :
-					im, x, y = data[0]
-					self.DrawData["MovableSkin"] = [] 
-					l = []			 
-					y = scroll_y 
-					l.append((im, x, y)) 
-					self.DrawData["MovableSkin"] = l
-					break
-
-			scroll_width = scroll_width - scroll_start 
-			rate = (scroll_y - scroll_start) / (scroll_width * 1.0)
-			self.rulerStartDepth = int(self.parent.ScrollMax * rate * 100.0) / 100.0
-			if self.parent.client != None :
-				# self.parent.client.send("show_depth_range\t"+str(self.rulerStartDepth)+"\t"+str(self.rulerEndDepth)+"\n") # JULIAN
-				_depth = (self.rulerStartDepth + self.rulerEndDepth) / 2.0
-				self.parent.client.send("jump_to_depth\t" + str(_depth) + "\n")
-
-			if self.isSecondScroll == 0 : 
-				for key, data in self.DrawData.items():
-					if key == "Interface":
-						im, dir, x, y = data[0]
-						self.DrawData["Interface"] = []
-						l = []
-						y = scroll_y
-						l.append((im, dir, x, y))
-						self.DrawData["Interface"] = l
-						break
-				for key, data in self.DrawData.items():
-					if key == "Skin":
-						im, x, y = data[0]
-						self.DrawData["Skin"] = []
-						l = []
-						y = scroll_y
-						l.append((im, x, y))
-						self.DrawData["Skin"] = l
-						break
-				self.SPrulerStartDepth = int(self.parent.ScrollMax * rate * 100.0) / 100.0
+			self.UpdateScrollA(pos)
 
 			self.grabScrollA = 0
 			self.selectScroll = 0 
 			self.UpdateDrawing()
-			return ;
+			return
 
 		if self.grabScrollB == 1 :
 			scroll_start = self.startDepth * 0.7
@@ -5665,25 +5578,11 @@ class DataCanvas(wxBufferedWindow):
 			if scroll_y > scroll_width :
 				scroll_y = scroll_width
 
-			for key, data in self.DrawData.items():
-				if key == "Interface":
-					im, dir, x, y = data[0]
-					self.DrawData["Interface"] = []
-					l = []
-					y = scroll_y
-					l.append((im, dir, x, y))
-					self.DrawData["Interface"] = l
-					break
+ 			bmp, dir, x, y = self.DrawData["Interface"]
+ 			self.DrawData["Interface"] = (bmp, dir, x, scroll_y)
 
-			for key, data in self.DrawData.items():
-				if key == "Skin":
-					im, x, y = data[0]
-					self.DrawData["Skin"] = []
-					l = []
-					y = scroll_y
-					l.append((im, x, y))
-					self.DrawData["Skin"] = l
-					break
+ 			bmp, x, y = self.DrawData["Skin"]
+ 			self.DrawData["Skin"] = (bmp, x, scroll_y)
 
 			scroll_width = scroll_width - scroll_start 
 			rate = (scroll_y - scroll_start) / (scroll_width * 1.0)
@@ -5702,17 +5601,8 @@ class DataCanvas(wxBufferedWindow):
 			if scroll_x > scroll_width :
 				scroll_x = scroll_width
 
-			x = 0
-			y = 0
-			for key, data in self.DrawData.items():
-				if key == "HScroll":
-					im, x, y = data[0]
-					self.DrawData["HScroll"] = []
-					l = []
-					x = scroll_x 
-					l.append((im, x, y))
-					self.DrawData["HScroll"] = l
-					break
+			bmp, x, y = self.DrawData["HScroll"]
+			self.DrawData["HScroll"] = (bmp, scroll_x, y)
 
 			scroll_width = scroll_width - scroll_start 
 			rate = (scroll_x - scroll_start) / (scroll_width * 1.0)
@@ -6530,6 +6420,47 @@ class DataCanvas(wxBufferedWindow):
 		self.UpdateDrawing()
 
 
+	# scrollA is the CoreArea (leftmost) region
+	def UpdateScrollA(self, mousePos):
+		scroll_start = self.startDepth * 0.7
+		scroll_y = mousePos[1] - scroll_start
+		scroll_width = self.Height - (self.startDepth * 1.6)
+		if scroll_y < scroll_start :		 
+			scroll_y = scroll_start
+		if scroll_y > scroll_width :
+			scroll_y = scroll_width
+
+		for key, data in self.DrawData.items():
+			if key == "MovableInterface":
+				bmp, dir, x, y = data
+				self.DrawData["MovableInterface"] = (bmp, dir, x, scroll_y)
+
+		if self.spliceWindowOn == 1:
+			bmp, x, y = self.DrawData["MovableSkin"]
+			self.DrawData["MovableSkin"] = (bmp, x, scroll_y)
+
+		scroll_width = scroll_width - scroll_start
+		rate = (scroll_y - scroll_start) / (scroll_width * 1.0)
+		if self.MainViewMode == True :
+			self.rulerStartDepth = int( self.parent.ScrollMax * rate * 100.0 ) / 100.0
+			if self.parent.client != None :
+				_depth = (self.rulerStartDepth + self.rulerEndDepth) / 2.0
+				self.parent.client.send("jump_to_depth\t" + str(_depth) + "\n")
+		else :
+			tempDepth = int(self.parent.ScrollMax * rate) / 10
+			self.rulerStartAgeDepth = tempDepth * 10
+			self.SPrulerStartAgeDepth = tempDepth * 10
+
+		if self.isSecondScroll == 0 : 
+			bmp, dir, x, y = self.DrawData["Interface"]
+			self.DrawData["Interface"] = (bmp, dir, x, scroll_y)
+
+			bmp, x, y = self.DrawData["Skin"]
+			self.DrawData["Skin"] = (bmp, x, scroll_y)
+
+			if self.MainViewMode == True :
+				self.SPrulerStartDepth = int(self.parent.ScrollMax * rate * 100.0) / 100.0
+
 	def OnUpdateTie(self, type):
 		graphNo = 0
 		tieData = None
@@ -6619,70 +6550,7 @@ class DataCanvas(wxBufferedWindow):
 		pos = event.GetPositionTuple()
 
 		if self.grabScrollA == 1 :
-			scroll_start = self.startDepth * 0.7
-			scroll_y = pos[1] - scroll_start
-			scroll_width = self.Height - (self.startDepth * 1.6)
-			if scroll_y < scroll_start :		 
-				scroll_y = scroll_start
-			if scroll_y > scroll_width :
-				scroll_y = scroll_width
-
-			for key, data in self.DrawData.items():
-				if key == "MovableInterface":
-					im, dir, x, y = data[0]
-					self.DrawData["MovableInterface"] = []
-					l = []
-					y = scroll_y 
-					l.append((im, dir, x, y))
-					self.DrawData["MovableInterface"] = l
-					break
-
-			for key, data in self.DrawData.items():
-				if key == "MovableSkin" and self.spliceWindowOn == 1 :
-					im, x, y = data[0]
-					self.DrawData["MovableSkin"] = []
-					l = []
-					y = scroll_y 
-					l.append((im, x, y))
-					self.DrawData["MovableSkin"] = l
-					break
-
-			scroll_width = scroll_width - scroll_start
-			rate = (scroll_y - scroll_start) / (scroll_width * 1.0)
-			if self.MainViewMode == True :
-				self.rulerStartDepth = int( self.parent.ScrollMax * rate * 100.0 ) / 100.0
-				if self.parent.client != None :
-#					self.parent.client.send("show_depth_range\t"+str(self.rulerStartDepth)+"\t"+str(self.rulerEndDepth)+"\n") # JULIAN
-					_depth = (self.rulerStartDepth + self.rulerEndDepth) / 2.0
-					self.parent.client.send("jump_to_depth\t" + str(_depth) + "\n")
-
-			else :
-				tempDepth = int(self.parent.ScrollMax * rate) / 10
-				self.rulerStartAgeDepth = tempDepth * 10
-				self.SPrulerStartAgeDepth = tempDepth * 10
-
-			if self.isSecondScroll == 0 : 
-				for key, data in self.DrawData.items():
-					if key == "Interface":
-						im, dir, x, y = data[0]
-						self.DrawData["Interface"] = []
-						l = []
-						y = scroll_y
-						l.append((im, dir, x, y))
-						self.DrawData["Interface"] = l
-						break
-				for key, data in self.DrawData.items():
-					if key == "Skin":
-						im, x, y = data[0]
-						self.DrawData["Skin"] = []
-						l = []
-						y = scroll_y
-						l.append((im, x, y))
-						self.DrawData["Skin"] = l
-						break
-				if self.MainViewMode == True :
-					self.SPrulerStartDepth = int(self.parent.ScrollMax * rate * 100.0) / 100.0
-
+			self.UpdateScrollA(pos)
 			self.UpdateDrawing()
 			return ;
 
@@ -6695,25 +6563,11 @@ class DataCanvas(wxBufferedWindow):
 			if scroll_y > scroll_width :
 				scroll_y = scroll_width
 
-			for key, data in self.DrawData.items():
-				if key == "Interface":
-					im, dir, x, y = data[0]
-					self.DrawData["Interface"] = []
-					l = []
-					y = scroll_y
-					l.append((im, dir, x, y))
-					self.DrawData["Interface"] = l
-					break
+			bmp, dir, x, y = self.DrawData["Interface"]
+			self.DrawData["Interface"] = (bmp, dir, x, scroll_y)
 
-			for key, data in self.DrawData.items():
-				if key == "Skin":
-					im, x, y = data[0]
-					self.DrawData["Skin"] = []
-					l = []
-					y = scroll_y
-					l.append((im, x, y))
-					self.DrawData["Skin"] = l
-					break
+			bmp, x, y = self.DrawData["Skin"]
+			self.DrawData["Skin"] = (bmp, x, scroll_y)
 
 			scroll_width = scroll_width - scroll_start
 			rate = (scroll_y - scroll_start) / (scroll_width * 1.0)
@@ -6731,15 +6585,8 @@ class DataCanvas(wxBufferedWindow):
 			if scroll_x > scroll_width :
 				scroll_x = scroll_width
 
-			for key, data in self.DrawData.items():
-				if key == "HScroll":
-					im, x, y = data[0]
-					self.DrawData["HScroll"] = []
-					l = []
-					x = scroll_x
-					l.append((im, x, y))
-					self.DrawData["HScroll"] = l
-					break
+			bmp, x, y = self.DrawData["HScroll"]
+			self.DrawData["HScroll"] = (bmp, scroll_x, y)
 
 			scroll_width = scroll_width - scroll_start
 			rate = (scroll_x - scroll_start) / (scroll_width * 1.0)
@@ -6783,19 +6630,12 @@ class DataCanvas(wxBufferedWindow):
 				temp_splicex = self.splicerX
 				self.splicerX = pos[0]
 
-				for key, data in self.DrawData.items():
-					if key == "HScroll":
-						im, x, y = data[0]
-						scroll_rate = (x - self.compositeX) / (scroll_widthA * 1.0)
-						scroll_widthA = self.splicerX - (self.startDepth * 2.3) - self.compositeX
-						scroll_x = scroll_widthA * scroll_rate
-						scroll_x += self.compositeX
-						self.DrawData["HScroll"] = []
-						l = []
-						x = scroll_x
-						l.append((im, x, y))
-						self.DrawData["HScroll"] = l
-
+				bmp, x, y = self.DrawData["HScroll"]
+				scroll_rate = (x - self.compositeX) / (scroll_widthA * 1.0)
+				scroll_widthA = self.splicerX - (self.startDepth * 2.3) - self.compositeX
+				scroll_x = scroll_widthA * scroll_rate
+				scroll_x += self.compositeX
+				self.DrawData["HScroll"] = (bmp, scroll_x, y)
 
 	def OnMainMotion(self, event):
 		if self.showMenu == True :
@@ -7163,19 +7003,12 @@ class DataCanvas(wxBufferedWindow):
 				temp_splicex = self.splicerX
 				self.splicerX = pos[0]
 
-				for key, data in self.DrawData.items():
-					if key == "HScroll":	
-						im, x, y = data[0]
-						scroll_rate = (x - self.compositeX) / (scroll_widthA * 1.0)
-						scroll_widthA = self.splicerX - (self.startDepth * 2.3) - self.compositeX 
-						scroll_x = scroll_widthA * scroll_rate
-						scroll_x += self.compositeX
-						self.DrawData["HScroll"] = []
-						l = []
-						x = scroll_x
-						l.append((im, x, y))
-						self.DrawData["HScroll"] = l
-
+				bmp, x, y = self.DrawData["HScroll"]
+				scroll_rate = (x - self.compositeX) / (scroll_widthA * 1.0)
+				scroll_widthA = self.splicerX - (self.startDepth * 2.3) - self.compositeX 
+				scroll_x = scroll_widthA * scroll_rate
+				scroll_x += self.compositeX
+				self.DrawData["HScroll"] = (bmp, scroll_x, y)
 
 		if got == 0:
 			self.DrawData["Flash"] = []

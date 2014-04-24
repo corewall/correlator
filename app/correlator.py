@@ -400,10 +400,9 @@ class MainFrame(wx.Frame):
 
 		menuView.AppendSeparator()
 		self.miScrollbigger = menuView.Append(-1, "Bigger Scroll", "Bigger Scroll")
-		self.Bind(wx.EVT_MENU, self.SETScrollA, self.miScrollbigger)
-		
+		self.Bind(wx.EVT_MENU, self.UseWideScrollbars, self.miScrollbigger)
 		self.miScrollnormal = menuView.Append(-1, "Smaller Scroll", "Smaller Scroll")
-		self.Bind(wx.EVT_MENU, self.SETScrollB, self.miScrollnormal)		
+		self.Bind(wx.EVT_MENU, self.UseNarrowScrollbars, self.miScrollnormal)
 		
 		menuBar.Append(menuView, "&View")
 
@@ -667,56 +666,33 @@ class MainFrame(wx.Frame):
 		self.Window.startAgeDepth = self.Window.startAgeDepth -5		
 		self.Window.UpdateDrawing()
 		
-	def SETScrollA(self, evt):
+	def UseWideScrollbars(self, evt):
 		self.Window.ScrollSize = 25
 		self.UPDATESCROLL()
 		self.Window.UpdateDrawing()
 							
-	
-	def SETScrollB(self, evt):
+	def UseNarrowScrollbars(self, evt):
 		self.Window.ScrollSize = 15
 		self.UPDATESCROLL()	
 		self.Window.UpdateDrawing()
 	
-	def UPDATESCROLL(self):
-		y = 0
-		for data in self.Window.DrawData["MovableSkin"]:
-			im,x,y = data
-			self.Window.DrawData["MovableSkin"] = []	
-			l = []
-			img = wx.Image(opj("images/scrollbutton1.jpg"))
-			img.Rescale(self.Window.ScrollSize, img.GetHeight())
-			png = img.ConvertToBitmap()
-			x = -self.Window.ScrollSize - 5
-			l.append( (png,x,y) )
-			self.Window.DrawData["MovableSkin"] = l
-			break
+	# scrollTuple: (bitmap, x, y)
+	def ScaleScrollbar(self, scrollKey, newx, newy, horizontal=False):
+		bitmap, x, y = self.Window.DrawData[scrollKey]
+		image = bitmap.ConvertToImage() # must convert to bitmap to rescale
 
-		y = 0
-		for data in self.Window.DrawData["Skin"]:
-			im,x,y = data
-			self.Window.DrawData["Skin"] = []	
-			l = []
-			img = wx.Image(opj("images/scrollbutton1.jpg"))
-			img.Rescale(self.Window.ScrollSize, img.GetHeight())
-			png = img.ConvertToBitmap()
-			x = -self.Window.ScrollSize
-			l.append( (png,x,y) )
-			self.Window.DrawData["Skin"] = l
-			break
-		
-		x = 0	
-		for data in self.Window.DrawData["HScroll"]:
-			im,x,y = data	
-			self.Window.DrawData["HScroll"] = []	
-			l = []
-			img = wx.Image(opj("images/vscrollbutton1.jpg"))
-			img.Rescale(img.GetWidth(), self.Window.ScrollSize)
-			png = img.ConvertToBitmap()
-			y = -self.Window.ScrollSize
-			l.append( (png,x,y) )
-			self.Window.DrawData["HScroll"] = l
-			break
+		# rescale based on scrollbar's orientation
+		scaleWidth = self.Window.ScrollSize if not horizontal else image.GetWidth()
+		scaleHeight = image.GetHeight() if not horizontal else self.Window.ScrollSize
+		image.Rescale(scaleWidth, scaleHeight)
+
+		newScrollData = (image.ConvertToBitmap(), x if newx == None else newx, y if newy == None else newy)
+		self.Window.DrawData[scrollKey] = newScrollData
+
+	def UPDATESCROLL(self):
+		self.ScaleScrollbar("MovableSkin", -self.Window.ScrollSize - 5, None)
+		self.ScaleScrollbar("Skin", -self.Window.ScrollSize, None)
+		self.ScaleScrollbar("HScroll", None, -self.Window.ScrollSize, horizontal=True)
 				
 	def OnDisableMenu(self, type, enable):
 		if type == 1 or type == 0 : 
@@ -3075,13 +3051,6 @@ class MainFrame(wx.Frame):
 		self.topMenu.dbbtn.SetLabel("Go to Data Manager")
 		self.Layout()
 
-	def OnClick(self, name):
-		if os.name == 'nt':
-			os.system("start %s " % self.Applications[ name ][3])
-		else:
-			os.system( "xterm -sl 1000 -sb -e %s &" % self.Applications[ name ][3] )
-			## os.system( "xterm -sl 1000 -sb -e 'sh -c \"%s\"' &" % self.Applications[ name ][3] )
-
 	def OnScroll(self, dir):
 		if dir == 1 :
 			self.Window.rulerStartDepth += 1.0 
@@ -3095,7 +3064,6 @@ class MainFrame(wx.Frame):
 			self.Window.SPrulerStartDepth -= 1.0
 			if self.Window.SPrulerStartDepth < 0 :
 				self.Window.SPrulerStartDepth = 0.0
-
 
 	# brg 1/8/2014: move to utils module or the like?
 	""" Convert data type string to integer (and non-empty annotation string if data type is user-defined)"""
@@ -3520,55 +3488,33 @@ class MainFrame(wx.Frame):
 				self.optPanel.slider1.SetValue(conf_value)
 				self.optPanel.OnChangeWidth(None)
 
-		#png = wx.Image(opj("images/h_button.jpg")).ConvertToBitmap()
-		#png = wx.Image(opj("images/scrollbutton1.jpg")).ConvertToBitmap()
 		img = wx.Image(opj("images/scrollbutton1.jpg"))
 		img.Rescale(self.Window.ScrollSize, img.GetHeight())
-		png = img.ConvertToBitmap()			
-		l.append( (png,-self.Window.ScrollSize,scroll_start) )
+		bmp = img.ConvertToBitmap()			
+		DrawData["Skin"] = (bmp, -self.Window.ScrollSize, scroll_start)
 
-		DrawData["Skin"] = l
-
-		l = []
-		#png = wx.Image(opj("images/v_button.jpg")).ConvertToBitmap()
-		#png = wx.Image(opj("images/vscrollbutton1.jpg")).ConvertToBitmap()
 		img = wx.Image(opj("images/vscrollbutton1.jpg"))
 		img.Rescale(img.GetWidth(), self.Window.ScrollSize)
-		png = img.ConvertToBitmap()				
-		l.append( (png,self.Window.compositeX,-self.Window.ScrollSize) )
-		DrawData["HScroll"] = l
+		bmp = img.ConvertToBitmap()
+		DrawData["HScroll"] = (bmp, self.Window.compositeX, -self.Window.ScrollSize)
 
-		l = []
-		#png = wx.Image(opj("images/h_button.jpg")).ConvertToBitmap()
-		img = wx.Image(opj("images/scrollbutton1.jpg"))
-		img.Rescale(self.Window.ScrollSize, img.GetHeight())
-		png = img.ConvertToBitmap()
-		#png = wx.Image(opj("images/scrollbutton1.jpg")).ConvertToBitmap()
 		self.half = -self.Window.ScrollSize - 5
-		l.append( (png,self.half,scroll_start) )
-		DrawData["MovableSkin"] = l
-		
-		l = []
-		#png = wx.Image(opj("images/scrollbutton1.jpg")).ConvertToBitmap()
+
 		img = wx.Image(opj("images/scrollbutton1.jpg"))
 		img.Rescale(self.Window.ScrollSize, img.GetHeight())
-		png = img.ConvertToBitmap()
-		width = - self.Window.ScrollSize 
-		l.append( (png,-2,width,scroll_start) )
-		#l.append( (png,2,width,-100) )
-		DrawData["Interface"] = l
-
-		l = []
-		#png = wx.Image(opj("images/scrollbutton1.jpg")).ConvertToBitmap()
+		bmp = img.ConvertToBitmap()
+		DrawData["MovableSkin"] = (bmp, self.half, scroll_start)
+		
 		img = wx.Image(opj("images/scrollbutton1.jpg"))
 		img.Rescale(self.Window.ScrollSize, img.GetHeight())
-		png = img.ConvertToBitmap()		
-		l.append( (png,-1,self.half,scroll_start) )
-		DrawData["MovableInterface"] = l
+		bmp = img.ConvertToBitmap()
+		width = -self.Window.ScrollSize 
+		DrawData["Interface"] = (bmp, -2, width, scroll_start)
 
-		self.Applications = {}
-		
-		DrawData["Bitmaps"] = l
+		img = wx.Image(opj("images/scrollbutton1.jpg"))
+		img.Rescale(self.Window.ScrollSize, img.GetHeight())
+		bmp = img.ConvertToBitmap()		
+		DrawData["MovableInterface"] = (bmp, -1, self.half, scroll_start)
 
 		if self.ScrollMax != 0 :
 			self.Window.UpdateScroll(1)
