@@ -22,18 +22,18 @@ from datetime import datetime
 
 from importManager import py_correlator
 
-from canvas import * 
-from dialog import *
-from frames import *
-from dbmanager import *
-from version import *
+import canvas
+import dialog
+import frames
+import dbmanager
+import version as vers
 
 app = None 
 User_Dir = os.path.expanduser("~")
 
-myPath = User_Dir  + "/Documents/Correlator/" + BaseVersion + "/"
+myPath = User_Dir  + "/Documents/Correlator/" + vers.BaseVersion + "/"
 if platform_name[0] == "Windows" :
-	myPath =  User_Dir  + "\\Correlator\\" + BaseVersion + "\\"
+	myPath =  User_Dir  + "\\Correlator\\" + vers.BaseVersion + "\\"
 myTempPath = myPath
 WIN_WIDTH = 800
 WIN_HEIGHT = 600
@@ -48,7 +48,7 @@ def opj(path):
 
 class MainFrame(wx.Frame):
 	def __init__(self, winsize, user):
-		wx.Frame.__init__(self, None, -1, "Correlator (" + ShortVersion + ") - Display" ,
+		wx.Frame.__init__(self, None, -1, "Correlator (" + vers.ShortVersion + ") - Display" ,
 						 wx.Point(0,100),
 						 winsize)
 		# style=wxSYSTEM_MENU | wxCAPTION | wxCLOSE_BOX | wxNO_FULL_REPAINT_ON_RESIZE)
@@ -114,10 +114,9 @@ class MainFrame(wx.Frame):
 		self.noOfSameTypeHoles = 0
 		self.logFileptr = global_logFile
 		self.logName = global_logName
-		self.Window = DataCanvas(self)
-		self.topMenu = TopMenuFrame(self)
+		self.Window = canvas.DataCanvas(self)
+		self.topMenu = frames.TopMenuFrame(self)
 		self.dataFrame = None
-		#self.dataFrame = DataFrame(self)
 		self.PrevDataType = "" 
 		self.CurrentDir = ""
 		self.CurrentType = ""
@@ -1142,14 +1141,14 @@ class MainFrame(wx.Frame):
 		#print self.Window.ShiftTieList
 
 	def OnAbout(self, event):
-		dlg = AboutDialog(None, ShortVersion)
+		dlg = dialog.AboutDialog(None, vers.ShortVersion)
 		dlg.Centre()
 		dlg.ShowModal()
 		dlg.Destroy()
 
 	def OnShowMessage(self, type, msg, numButton): 
-		#dlg = MessageDialog(None, type, msg, numButton)
-		dlg = MessageDialog(self.topMenu, type, msg, numButton)
+		#dlg = dialog.MessageDialog(None, type, msg, numButton)
+		dlg = dialog.MessageDialog(self.topMenu, type, msg, numButton)
 		dlg.Centre(wx.CENTER_ON_SCREEN)
 		ret = dlg.ShowModal()
 		dlg.Destroy()
@@ -1362,7 +1361,7 @@ class MainFrame(wx.Frame):
 		if ret == wx.ID_OK :
 			cmd = "./pre2res " + path
 			os.system(cmd)
-			dlg = MessageDialog(self, "Information" , "Formatting Data", 1)
+			dlg = dialog.MessageDialog(self, "Information" , "Formatting Data", 1)
 			dlg.Centre()
 			dlg.ShowModal()
 			dlg.Destroy()
@@ -2376,7 +2375,7 @@ class MainFrame(wx.Frame):
 					print "[DEBUG] Disconnect to the corelyzer"
 					self.client.close()
 					self.client = None
-				hold_dlg = HoldDialog(self)
+				hold_dlg = dialog.HoldDialog(self)
 				hold_dlg.Show(True)
 				#print "[DEBUG] ... waiting for floating data"
 				recvdata = self.client.recv(1024)
@@ -3190,7 +3189,7 @@ class MainFrame(wx.Frame):
 			win_height = self.Height + 76
 		
 		# 4/10/2014 brg: init depends on self.DBPath among others...
-		self.dataFrame = DataFrame(self)
+		self.dataFrame = dbmanager.DataFrame(self)
 		
 		conf_str = ""
 		conf_array = []
@@ -3439,9 +3438,9 @@ class MainFrame(wx.Frame):
 
 
 		if self.DBPath == "-" :
-			self.DBPath = User_Dir  + "/Documents/Correlator/" + BaseVersion  + "/"
+			self.DBPath = User_Dir  + "/Documents/Correlator/" + vers.BaseVersion  + "/"
 			if platform_name[0] == "Windows" :
-				self.DBPath =  User_Dir  + "\\Correlator\\" + BaseVersion + "\\"
+				self.DBPath =  User_Dir  + "\\Correlator\\" + vers.BaseVersion + "\\"
 			self.dataFrame.PathTxt.SetValue("Path : " + self.DBPath)
 			
 			if os.access(self.DBPath, os.F_OK) == False :
@@ -3538,7 +3537,7 @@ class CorrelatorApp(wx.App):
 	def OnInit(self):
 		user = getpass.getuser()
 		#if platform_name[0] != "Windows" :
-		openframe = OpenFrame(None, -1, user, ShortVersion)
+		openframe = dialog.OpenFrame(None, -1, user, vers.ShortVersion)
 		openframe.Centre()
 		ret =  openframe.ShowModal()
 		user = openframe.user

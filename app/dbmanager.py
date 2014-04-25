@@ -12,12 +12,12 @@ from wx.lib import plot
 import random, sys, os, re, time, ConfigParser, string
 from datetime import datetime
 import xml.sax
-from xml_handler import *
 
 from importManager import py_correlator
 
-from dialog import *
-from model import *
+import dialog
+import xml_handler
+from model import * # brgtodo 4/24/2014: Remove import *
 
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
@@ -46,7 +46,7 @@ class DataFrame(wx.Panel):
 		self.selectedDepthType = ""
 		self.SetBackgroundColour(wx.Colour(255, 255, 255))
 		self.parser = xml.sax.make_parser()
-		self.handler = XML_Handler()
+		self.handler = xml_handler.XMLHandler()
 		self.parser.setContentHandler(self.handler)
 
 		self.sideNote = wx.Notebook(self, -1, style=wx.NB_TOP)
@@ -125,7 +125,7 @@ class DataFrame(wx.Panel):
 		self.dbPanelParent.GetSizer().Add(self.dbPanel, 1, wx.EXPAND | wx.RIGHT, 9)
 		self.sideNote.AddPage(self.dbPanelParent, 'Data List v2')
 
-		self.dataPanel = CoreSheet(self.sideNote, 120, 100)
+		self.dataPanel = dialog.CoreSheet(self.sideNote, 120, 100)
 		self.sideNote.AddPage(self.dataPanel, 'Generic Data')
 		self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.OnSELECTCELL, self.dataPanel)
 		font = self.dataPanel.GetFont()
@@ -228,7 +228,7 @@ class DataFrame(wx.Panel):
 			self.OnIMPORT_TABLE("ELD")
 		elif opId == 18 :
 			# Edit Strat Type
-			dlg = StratTypeDialog(self)
+			dlg = dialog.StratTypeDialog(self)
 			dlg.Centre()
 			ret = dlg.ShowModal()
 			dlg.Destroy()
@@ -654,7 +654,7 @@ class DataFrame(wx.Panel):
 
 
 	def EXPORT_CORE_DATA(self, selectedIdx, isType) :
-		dlg = ExportCoreDialog(self)
+		dlg = dialog.ExportCoreDialog(self)
 		dlg.Centre()
 		ret = dlg.ShowModal()
 		if ret == wx.ID_OK :
@@ -4888,7 +4888,7 @@ class DataFrame(wx.Panel):
 				site.holeSets[curType].cullTable = cull
 
 	# For some reason holes are the only data we serialize as multiple lines. Why?
-	# Maintaining as single lines (like everything else) would simplify things.
+	# Maintaining as single lines (like everything else) would simplify parsing.
 	def ParseHoles(self, site, siteLines):
 		curHole = None
 		curType = None
@@ -7639,7 +7639,7 @@ class DataFrame(wx.Panel):
 			datatype = "Other"
 		elif opId == 7 :
 			while True :
-				dlg = BoxDialog(self, "User define data type")
+				dlg = dialog.BoxDialog(self, "User define data type")
 				ret = dlg.ShowModal()
 				datatype = ""
 				if ret == wx.ID_OK :
@@ -7727,7 +7727,7 @@ class DataFrame(wx.Panel):
 		opId = event.GetId()
 		flag = False
 		if opId == 1 :
-			dlg = EditBoxDialog(self, "Leg Number")
+			dlg = dialog.EditBoxDialog(self, "Leg Number")
 			ret = dlg.ShowModal()
 			if ret == wx.ID_OK :
 				flag = True 
@@ -7736,7 +7736,7 @@ class DataFrame(wx.Panel):
 				for i in range(rows):
 					self.dataPanel.SetCellValue(i, 1, num)
 		else :
-			dlg = EditBoxDialog(self, "Site Number")
+			dlg = dialog.EditBoxDialog(self, "Site Number")
 			ret = dlg.ShowModal()
 			if ret == wx.ID_OK :
 				flag = True 

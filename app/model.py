@@ -1,7 +1,8 @@
-from importManager import py_correlator
-from dialog import *
-
 import wx
+
+from importManager import py_correlator
+
+import dialog
 
 # parse routines for members maintained as numeric/boolean/etc rather than a string
 def ParseEnableToken(enableToken):
@@ -827,7 +828,7 @@ class DBView:
 		self.dataFrame.sideNote.SetSelection(3) # File View tab
 
 	def ExportHoles(self, holeList):
-		exportDlg = ExportCoreDialog(self.dataFrame)
+		exportDlg = dialog.ExportCoreDialog(self.dataFrame)
 		exportDlg.Centre()
 		if exportDlg.ShowModal() == wx.ID_OK:
 			fileDlg = wx.FileDialog(self.dataFrame, "Select Directory for Export", self.parent.Directory, style=wx.SAVE)

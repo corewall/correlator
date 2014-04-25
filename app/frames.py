@@ -16,8 +16,7 @@ import numpy.oldnumeric as _Numeric
 
 from importManager import py_correlator
 
-from dialog import *
-from dbmanager import *
+import dialog
 
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
@@ -182,7 +181,7 @@ class TopMenuFrame(wx.Frame):
 			splice_flag = True
 			self.parent.OnShowMessage("Information", "You need to save splice table too.", 1)
 
-		savedialog = SaveTableDialog(None, -1, self.parent.AffineChange, splice_flag)
+		savedialog = dialog.SaveTableDialog(None, -1, self.parent.AffineChange, splice_flag)
 		savedialog.Centre()
 		ret = savedialog.ShowModal()
 		affine_flag = savedialog.affineCheck.GetValue()
@@ -568,7 +567,7 @@ class CompositePanel():
 		self.undoButton.Enable(False)
 
 	def OnSAVE(self, event):
-		dlg = Message3Button(self.parent, "Do you want to create new affine file?")
+		dlg = dialog.Message3Button(self.parent, "Do you want to create new affine file?")
 		ret = dlg.ShowModal()
 		dlg.Destroy()
 		if ret == wx.ID_OK or ret == wx.ID_YES :
@@ -948,7 +947,7 @@ class SplicePanel():
 	def OnSAVE(self, event):
 		#if self.parent.Window.SpliceData != [] :
 
-		dlg = Message3Button(self.parent, "Do you want to create new splice file?")
+		dlg = dialog.Message3Button(self.parent, "Do you want to create new splice file?")
 		ret = dlg.ShowModal()
 		dlg.Destroy()
 		if ret == wx.ID_OK or ret == wx.ID_YES :
@@ -1000,7 +999,7 @@ class SplicePanel():
 
 
 	def OnCREATE_ALTSPLICE(self, event):
-		dlg = AltSpliceDialog(self.parent)
+		dlg = dialog.AltSpliceDialog(self.parent)
 		dlg.Centre()
 		ret = dlg.ShowModal()
 		selectedType =  dlg.selectedType
@@ -1406,7 +1405,7 @@ class AutoPanel():
 
 	def OnSAVE(self, event):
 		if self.parent.Window.LogData != [] :
-			dlg = Message3Button(self.parent, "Do you want to create new eld file?")
+			dlg = dialog.Message3Button(self.parent, "Do you want to create new eld file?")
 			ret = dlg.ShowModal()
 			dlg.Destroy()
 			if ret == wx.ID_OK or ret == wx.ID_YES :
@@ -1852,7 +1851,7 @@ class ELDPanel():
 
 	def OnSAVE(self, event):
 		if self.parent.Window.LogData != [] :
-			dlg = Message3Button(self.parent, "Do you want to create new eld file?")
+			dlg = dialog.Message3Button(self.parent, "Do you want to create new eld file?")
 			ret = dlg.ShowModal()
 			dlg.Destroy()
 			if ret == wx.ID_OK or ret == wx.ID_YES :
@@ -2326,7 +2325,7 @@ class AgeDepthPanel():
 			self.parent.OnShowMessage("Error", "There is no userdefined age datum", 1)
 			return
 
-		dlg = Message3Button(self.parent, "Do you want to create new age/depth?")
+		dlg = dialog.Message3Button(self.parent, "Do you want to create new age/depth?")
 		ret = dlg.ShowModal()
 		dlg.Destroy()
 		if ret == wx.ID_OK or ret == wx.ID_YES :
@@ -2341,7 +2340,7 @@ class AgeDepthPanel():
 
 
 	def OnSAVETimeSeries(self, evt):
-		dlg = Message3Button(self.parent, "Do you want to create new age model?")
+		dlg = dialog.Message3Button(self.parent, "Do you want to create new age model?")
 		ret = dlg.ShowModal()
 		dlg.Destroy()
 		if ret == wx.ID_OK or ret == wx.ID_YES :
@@ -3627,7 +3626,7 @@ class PreferencesPanel():
 		self.parent.Window.shift_range = float(self.tie_shift.GetValue())
 
 	def OnChangeColor(self, event):
-		dlg = ColorTableDialog(self.parent)
+		dlg = dialog.ColorTableDialog(self.parent)
 		dlg.Centre()
 		ret = dlg.ShowModal()
 		dlg.Destroy()

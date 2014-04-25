@@ -5,7 +5,6 @@
 import platform
 platform_name = platform.uname()
 
-#from wxPython.wx import *
 import wx 
 import wx.lib.sheet as sheet
 from wx.lib import plot
@@ -14,7 +13,7 @@ import random, sys, os, re, time, ConfigParser, string
 
 from importManager import py_correlator
 
-from frames import *
+import frames
 
 # brg 4/9/2014: Why are we defining our own wxBufferedWindow when
 # wx.BufferedWindow already exists (same interface 'n all) in wx?
@@ -375,11 +374,11 @@ class DataCanvas(wxBufferedWindow):
 		self.closePanel = wx.Panel(self.sideNote, -1, (0, 50), (45, 500), style=wx.NO_BORDER)
 
 		self.compPanel = wx.Panel(self.sideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
-		self.parent.compositePanel = CompositePanel(self.parent, self.compPanel)
+		self.parent.compositePanel = frames.CompositePanel(self.parent, self.compPanel)
 		self.compPanel.Hide()
 
 		self.splicePanel = wx.Panel(self.sideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
-		self.parent.splicePanel = SplicePanel(self.parent, self.splicePanel)
+		self.parent.splicePanel = frames.SplicePanel(self.parent, self.splicePanel)
 		self.splicePanel.Hide()
 
 		start_pos = 50
@@ -393,11 +392,11 @@ class DataCanvas(wxBufferedWindow):
 		self.subSideNote.SetBackgroundColour(wx.Colour(255, 255, 255))
 
 		self.manualPanel = wx.Panel(self.subSideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
-		self.parent.eldPanel = ELDPanel(self.parent, self.manualPanel)
+		self.parent.eldPanel = frames.ELDPanel(self.parent, self.manualPanel)
 		self.manualPanel.Hide()
 
 		self.autoPanel = wx.Panel(self.subSideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
-		self.parent.autoPanel = AutoPanel(self.parent, self.autoPanel)
+		self.parent.autoPanel = frames.AutoPanel(self.parent, self.autoPanel)
 		self.autoPanel.Hide()
 
 		self.subSideNote.AddPage(self.autoPanel, 'Auto Correlation')
@@ -406,11 +405,11 @@ class DataCanvas(wxBufferedWindow):
 		self.subSideNote.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectELDNote)
 
 		self.filterPanel = wx.Panel(self.sideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
-		self.parent.filterPanel = FilterPanel(self.parent, self.filterPanel)
+		self.parent.filterPanel = frames.FilterPanel(self.parent, self.filterPanel)
 		self.filterPanel.Hide()
 
 		self.optPanel = wx.Panel(self.sideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
-		self.parent.optPanel = PreferencesPanel(self.parent, self.optPanel)
+		self.parent.optPanel = frames.PreferencesPanel(self.parent, self.optPanel)
 		self.optPanel.Hide()
 
 		#self.helpPanel = wx.Panel(self.sideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER )
@@ -418,7 +417,7 @@ class DataCanvas(wxBufferedWindow):
 		#self.logPanel = wx.Panel(self.sideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
 
 		self.agePanel = wx.Panel(self.sideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
-		self.parent.agePanel = AgeDepthPanel(self.parent, self.agePanel)
+		self.parent.agePanel = frames.AgeDepthPanel(self.parent, self.agePanel)
 		#self.agePanel.Enable(False)
 
 		#help = "About Correlator ...\n "

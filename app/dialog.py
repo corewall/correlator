@@ -5,7 +5,6 @@
 import platform
 platform_name = platform.uname()
 
-#from wxPython.wx import *
 import wx 
 import wx.lib.sheet as sheet
 from wx.lib import plot
