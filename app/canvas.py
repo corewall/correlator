@@ -2431,13 +2431,6 @@ class DataCanvas(wxBufferedWindow):
 
 		self.selectedHoleType = type
 
-		# Here's the actual drawing code.
-		for key, data in self.DrawData.items():
-			if key == "Flash":
-				for r in data:
-					im, dir, x, y = r
-					dc.DrawBitmap(im, x, y, 1)
-					
 		if self.MousePos != None :
 			dc.SetBrush(wx.TRANSPARENT_BRUSH)
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
@@ -4373,8 +4366,8 @@ class DataCanvas(wxBufferedWindow):
 		if scroll_flag == 1 :
 			for key, data in self.DrawData.items():
 				if key == "MovableInterface":
-					bmp, dir, x, y = data
-					self.DrawData["MovableInterface"] = (bmp, dir, x, scroll_y)
+					bmp, x, y = data
+					self.DrawData["MovableInterface"] = (bmp, x, scroll_y)
 
 			if self.spliceWindowOn == 1 :
 				bmp, x, y = self.DrawData["MovableSkin"]
@@ -4391,8 +4384,8 @@ class DataCanvas(wxBufferedWindow):
 		# brgtodo 4/23/2014: MovableInterface/Skin and Interface/Skin appear to be duplicating
 		# most of their behavior/logic. Refactor into a common object.
 		if scroll_flag == 2 :
-			bmp, dir, x, y = self.DrawData["Interface"]
-			self.DrawData["Interface"] = (bmp, dir, x, scroll_y)
+			bmp, x, y = self.DrawData["Interface"]
+			self.DrawData["Interface"] = (bmp, x, scroll_y)
 
 			bmp, x, y = self.DrawData["Skin"]
 			self.DrawData["Skin"] = (bmp, x, scroll_y)
@@ -4904,24 +4897,22 @@ class DataCanvas(wxBufferedWindow):
 		pos = event.GetPositionTuple()
 		for key, data in self.DrawData.items():
 			if key == "Interface":
-				bmp, dir, x, y = data
+				bmp, x, y = data
 				x = self.Width + x
 				w, h = bmp.GetWidth(), bmp.GetHeight()
 				reg = wx.Rect(x, y, w, h)
 				if reg.Inside(wx.Point(pos[0], pos[1])):				 
-					#self.parent.OnScroll(dir)
 					if self.isSecondScroll == 1 :
 						self.grabScrollB = 1	
 					elif self.isSecondScroll == 0 :
 						self.grabScrollA = 1	
 					self.UpdateDrawing()
 			elif key == "MovableInterface":
-				bmp, dir, x, y = data
+				bmp, x, y = data
 				x = x + self.splicerX - 40
 				w, h = bmp.GetWidth(), bmp.GetHeight()
 				reg = wx.Rect(x, y, w, h)
 				if reg.Inside(wx.Point(pos[0], pos[1])):				 
-					#self.parent.OnScroll(dir)
 					self.grabScrollA = 1	
 					self.UpdateDrawing()
 			elif key == "MovableSkin" and self.spliceWindowOn == 1 :
@@ -5583,8 +5574,8 @@ class DataCanvas(wxBufferedWindow):
 			if scroll_y > scroll_width :
 				scroll_y = scroll_width
 
- 			bmp, dir, x, y = self.DrawData["Interface"]
- 			self.DrawData["Interface"] = (bmp, dir, x, scroll_y)
+ 			bmp, x, y = self.DrawData["Interface"]
+ 			self.DrawData["Interface"] = (bmp, x, scroll_y)
 
  			bmp, x, y = self.DrawData["Skin"]
  			self.DrawData["Skin"] = (bmp, x, scroll_y)
@@ -6386,8 +6377,8 @@ class DataCanvas(wxBufferedWindow):
 
 		for key, data in self.DrawData.items():
 			if key == "MovableInterface":
-				bmp, dir, x, y = data
-				self.DrawData["MovableInterface"] = (bmp, dir, x, scroll_y)
+				bmp, x, y = data
+				self.DrawData["MovableInterface"] = (bmp, x, scroll_y)
 
 		if self.spliceWindowOn == 1:
 			bmp, x, y = self.DrawData["MovableSkin"]
@@ -6406,8 +6397,8 @@ class DataCanvas(wxBufferedWindow):
 			self.SPrulerStartAgeDepth = tempDepth * 10
 
 		if self.isSecondScroll == 0 : 
-			bmp, dir, x, y = self.DrawData["Interface"]
-			self.DrawData["Interface"] = (bmp, dir, x, scroll_y)
+			bmp, x, y = self.DrawData["Interface"]
+			self.DrawData["Interface"] = (bmp, x, scroll_y)
 
 			bmp, x, y = self.DrawData["Skin"]
 			self.DrawData["Skin"] = (bmp, x, scroll_y)
@@ -6517,8 +6508,8 @@ class DataCanvas(wxBufferedWindow):
 			if scroll_y > scroll_width :
 				scroll_y = scroll_width
 
-			bmp, dir, x, y = self.DrawData["Interface"]
-			self.DrawData["Interface"] = (bmp, dir, x, scroll_y)
+			bmp, x, y = self.DrawData["Interface"]
+			self.DrawData["Interface"] = (bmp, x, scroll_y)
 
 			bmp, x, y = self.DrawData["Skin"]
 			self.DrawData["Skin"] = (bmp, x, scroll_y)
@@ -6550,7 +6541,6 @@ class DataCanvas(wxBufferedWindow):
 				#self.minAgeRange = 3 * rate
 				self.minAgeRange = self.maxAgeRange * rate
 
-			self.DrawData["Flash"] = []
 			self.UpdateDrawing()
 			return ;
 
@@ -6965,7 +6955,6 @@ class DataCanvas(wxBufferedWindow):
 				self.DrawData["HScroll"] = (bmp, scroll_x, y)
 
 		if got == 0:
-			self.DrawData["Flash"] = []
 			self.DrawData["MouseInfo"] = [] 
 			self.selectedCore = -1 
 

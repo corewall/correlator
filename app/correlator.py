@@ -3055,20 +3055,6 @@ class MainFrame(wx.Frame):
 		self.topMenu.dbbtn.SetLabel("Go to Data Manager")
 		self.Layout()
 
-	def OnScroll(self, dir):
-		if dir == 1 :
-			self.Window.rulerStartDepth += 1.0 
-		elif dir == -1: 
-			self.Window.rulerStartDepth -= 1.0
-			if self.Window.rulerStartDepth < 0 :
-				self.Window.rulerStartDepth = 0.0
-		elif dir == 2: 
-			self.Window.SPrulerStartDepth += 1.0 
-		elif dir == -2: 
-			self.Window.SPrulerStartDepth -= 1.0
-			if self.Window.SPrulerStartDepth < 0 :
-				self.Window.SPrulerStartDepth = 0.0
-
 	# brg 1/8/2014: move to utils module or the like?
 	""" Convert data type string to integer (and non-empty annotation string if data type is user-defined)"""
 	def TypeStrToInt(self, typeStr):
@@ -3513,12 +3499,12 @@ class MainFrame(wx.Frame):
 		img.Rescale(self.Window.ScrollSize, img.GetHeight())
 		bmp = img.ConvertToBitmap()
 		width = -self.Window.ScrollSize 
-		DrawData["Interface"] = (bmp, -2, width, scroll_start)
+		DrawData["Interface"] = (bmp, width, scroll_start)
 
 		img = wx.Image(opj("images/scrollbutton1.jpg"))
 		img.Rescale(self.Window.ScrollSize, img.GetHeight())
 		bmp = img.ConvertToBitmap()		
-		DrawData["MovableInterface"] = (bmp, -1, self.half, scroll_start)
+		DrawData["MovableInterface"] = (bmp, self.half, scroll_start)
 
 		if self.ScrollMax != 0 :
 			self.Window.UpdateScroll(1)
