@@ -1072,7 +1072,7 @@ class SplicePanel():
 		if self.appendall == 1 and self.all.GetValue() == True:
 			self.parent.OnShowMessage("Error", "Already appended all below", 1)
 			return
-			
+
 		type = 0 
 		self.appendall = 0 
 		splice_count = len(self.parent.Window.SpliceCore)
@@ -1155,10 +1155,6 @@ class SplicePanel():
 			info = hole[0]
 			tie_max = info[8] 
 			break
-
-		#if self.parent.Window.maxSPcore >= tie_max :
-		#	self.undoButton.Enable(False)
-		#	self.appendButton.Enable(False)
 
 		if self.parent.Window.SpliceData == []:
 			self.undoButton.Enable(False)

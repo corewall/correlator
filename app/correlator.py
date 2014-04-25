@@ -229,101 +229,13 @@ class MainFrame(wx.Frame):
 
 		self.miConnection = menuFile.Append(-1, "Connect to Corelyzer", "Connect to Corelyzer")
 		self.Bind(wx.EVT_MENU, self.OnCONNECTION, self.miConnection)
-		#self.miConnection.Enable(False)
-
-		#menuFile.AppendSeparator()
-		#menuOpen = wx.Menu()
-		#self.miFileOpenda = menuFile.Append(-1, "&Open Core Data\tCtrl-O", "Open core data file")
-		#self.Bind(wx.EVT_MENU, self.OnOpenData, self.miFileOpenda)
-
-		#self.miFileOpenCull = menuOpen.Append(-1, "&Import Cull Table", "Open culling table file")
-		#self.Bind(wx.EVT_MENU, self.OnOpenCullTable, self.miFileOpenCull)
-		#menuOpen.AppendSeparator()
-		#self.miFileOpenaf = menuOpen.Append(-1, "&Import Affine Table", "Open affinetable file")
-		#self.Bind(wx.EVT_MENU, self.OnOpenAffineData, self.miFileOpenaf)
-		#self.miFileOpensp = menuOpen.Append(-1, "&Import Splicer Table", "Open splicertable file")
-		#self.Bind(wx.EVT_MENU, self.OnOpenSpliceData, self.miFileOpensp)
-
-		#self.miFileOpenELD = menuOpen.Append(-1, "&Import Equivalent Log Table", "Open ELD table data file")
-		#self.Bind(wx.EVT_MENU, self.OnOpenELD, self.miFileOpenELD)
-		##miFileOpenss = menuFile.Append(-1, "&Open Spliced Series", "Open spliced series file")
-
-		#menuOpen.AppendSeparator()
-		#self.miFileOpenlog = menuOpen.Append(-1, "&Import Log Data", "Open log data file")
-		#self.Bind(wx.EVT_MENU, self.OnOpenLogData, self.miFileOpenlog)
-
-		#self.miFileOpenan = menuOpen.Append(-1, "&Import Ancillary Data", "Open ancillary data file")
-		#self.Bind(wx.EVT_MENU, self.OnOpenAncilLogData, self.miFileOpenan)
-
-		#menuOpen.AppendSeparator()
-		#self.miFileOpenst = menuOpen.Append(-1, "&Import Stratigraphy", "Open stratigraphy file")
-		#self.Bind(wx.EVT_MENU, self.OnOpenStratData, self.miFileOpenst)
-
-		#self.miFileOpenAge = menuOpen.Append(-1, "&Import Age Series", "Open age series")
-		#self.Bind(wx.EVT_MENU, self.OnOpenAge, self.miFileOpenAge)
-		##self.miFileOpenAge.Enable(False)
-
-		#menuFile.AppendSubMenu(menuOpen, "&Import")
-
-		#self.miFileOpenss = menuFile.Append(-1, "&Open Spliced Data Record", "Open spliced data record file")
-		#self.Bind(wx.EVT_MENU, self.OnOpenSpliceRecordData, self.miFileOpenss)
-
 
 		menuFile.AppendSeparator()
-
-		#menuSave = wx.Menu()
-		#self.miFileSaveda = menuFile.Append(-1, "Save Core Data\tCtrl-S", "Save core data file")
-		#self.Bind(wx.EVT_MENU, self.OnSaveCoreData, self.miFileSaveda)
-
-		#self.miFileSaveCull = menuSave.Append(-1, "&Save Cull Table", "Save culling table file")
-		#self.Bind(wx.EVT_MENU, self.OnSaveCullTable, self.miFileSaveCull)
-
-		#menuSave.AppendSeparator()
-		#self.miFileSaveaf = menuSave.Append(-1, "Save Affine Table", "Save affinetable file")
-		#self.Bind(wx.EVT_MENU, self.OnSaveAffineData, self.miFileSaveaf)
-		#self.miFileSavesp = menuSave.Append(-1, "Save Splicer Table", "Save splicertable file")
-		#self.Bind(wx.EVT_MENU, self.OnSaveSpliceData, self.miFileSavesp)
-		#self.miFileSaveeq = menuSave.Append(-1, "Save Equivilent Log Table", "Save equivilenttable file")
-		#self.Bind(wx.EVT_MENU, self.OnSaveELD, self.miFileSaveeq)
-		#menuSave.AppendSeparator()
-		#self.miFileSavest = menuSave.Append(-1, "Save Stratigraphy", "Save stratigraphy file")
-
-		#self.miFileSaveAge = menuSave.Append(-1, "Save Age Series", "Save age series")
-		#self.Bind(wx.EVT_MENU, self.OnSaveAge, self.miFileSaveAge)
-
-		#self.miFileSaveAgeSplice = menuSave.Append(-1, "Save Age Spliced Data Record", "Save age splice data record")
-		#self.Bind(wx.EVT_MENU, self.OnSaveAgeSplice, self.miFileSaveAgeSplice)
-
-		#menuSave.AppendSeparator()
-		#self.miFileSavessd = menuSave.Append(-1, "Save Spliced Data Record", "Save spliced data record")
-		#menuFile.AppendSubMenu(menuSave, "&Save")
-		#self.Bind(wx.EVT_MENU, self.OnSaveSpliceCore, self.miFileSavessd)
 
 		self.miFileSave = menuFile.Append(-1, "Save", "Save changes")
 		self.Bind(wx.EVT_MENU, self.OnSave, self.miFileSave)
 
-		#self.miFileSavesreport = menuFile.Append(-1, "Save &Report\tCtrl-R", "Save report")
-		#self.Bind(wx.EVT_MENU, self.OnSaveReport, self.miFileSavesreport)
-
 		menuFile.AppendSeparator()
-
-		#menuClear = wx.Menu()
-		#self.miFileClearType = menuClear.Append(-1, "Clear Core", "Clear Core")
-		#self.Bind(wx.EVT_MENU, self.OnClearCoreType, self.miFileClearType)
-		#menuClear.AppendSeparator()
-		#self.miFileClearco = menuClear.Append(-1, "Clear Composite Depth Shifts", "Clear composite ties")
-		#self.Bind(wx.EVT_MENU, self.OnClearComposite, self.miFileClearco)
-		#self.miFileClearsp = menuClear.Append(-1, "Clear Splice Depth Shifts", "Clear splice ties")
-		#self.Bind(wx.EVT_MENU, self.OnClearSpliceTie, self.miFileClearsp)
-		#menuClear.AppendSeparator()
-		#self.miFileClearSplice = menuClear.Append(-1, "Clear Splice", "Clear Splice")
-		#self.Bind(wx.EVT_MENU, self.OnClearSplice, self.miFileClearSplice)
-		#self.miFileClearlog = menuClear.Append(-1, "Clear Log", "Clear Log")
-		#self.Bind(wx.EVT_MENU, self.OnClearLog, self.miFileClearlog)
-		#self.miFileClearst = menuClear.Append(-1, "Clear Stratigraphy", "Clear stratigraphy")
-		#self.Bind(wx.EVT_MENU, self.OnClearStrat, self.miFileClearst)
-		#menuFile.AppendSubMenu(menuClear, "&Clear")
-
 
 		self.miFileClear = menuFile.Append(-1, "Clear All Ties\tCtrl-C", "Clear all")
 		self.Bind(wx.EVT_MENU, self.OnClearAllData, self.miFileClear)
@@ -695,49 +607,16 @@ class MainFrame(wx.Frame):
 				
 	def OnDisableMenu(self, type, enable):
 		if type == 1 or type == 0 : 
-			# File
-			#self.miFileDB.Enable(0)
-			#self.miFileOpenaf.Enable(enable)
-			#self.miFileOpensp.Enable(enable)
-
-			#self.miFileOpenlog.Enable(enable)
-			#self.miFileOpenan.Enable(enable)
-			#self.miFileOpenst.Enable(enable)
-
-			#self.miFileOpenELD.Enable(enable)
-			#self.miFileOpenCull.Enable(enable)
-
-			#self.miFileSaveda.Enable(enable)
-			#self.miFileSaveCull.Enable(enable)
-			#self.miFileSaveaf.Enable(enable)
-			#self.miFileSavesp.Enable(enable)
-			#self.miFileSavesreport.Enable(enable)
-
-			#self.miFileSaveeq.Enable(enable)
-			#self.miFileSavest.Enable(0)
-			#self.miFileSavessd.Enable(enable)
-
-			#self.miFileOpenss.Enable(1)
-
 			self.miFileClear.Enable(enable)
 			self.miFileClearco.Enable(enable)
 			self.miFileClearsp.Enable(enable)
 			self.miFileClearsa.Enable(enable)
-
-			#self.miFileClearSplice.Enable(enable)
-			#self.miFileClearlog.Enable(enable)
-			#self.miFileClearst.Enable(enable)
-
-		#if type == 2 or type == 0 :
-		## Process 
-		#self.miFileClearst.Enable(enable)
 
 	def OnEvalSetup(self):
 		if self.depthStep < self.origin_depthStep :
 			self.OnShowMessage("Error", str(self.origin_depthStep) + " is min depth step.", 1)
 			self.depthStep  = self.origin_depthStep
 		py_correlator.setEvalGraph(self.depthStep, self.winLength, self.leadLag)
-
 
 	def OnAdjustCore(self, opt, type, offset):
 		self.Window.OnAdjustCore(opt, type, offset)
@@ -1025,7 +904,6 @@ class MainFrame(wx.Frame):
 			self.ParseData(ret, self.Window.HoleData)
 			self.UpdateMinMax()
 			self.LOCK = 1
-			#ret = "" # 9/18/2013 brg: Why? It's local and we're done with it.
 
 			self.RefreshTypeComboBoxes()
 
@@ -1036,14 +914,12 @@ class MainFrame(wx.Frame):
 			self.filterPanel.OnLock()
 			self.ParseData(ret, self.Window.SmoothData)
 			self.filterPanel.OnRelease()
-			ret =""
 
 
 	def InitSPLICE(self):
 		ret = py_correlator.getData(2)
 		if ret != "" :
 			self.ParseSpliceData(ret, False)
-			ret = "" 
 
 
 	def UpdateSPLICE(self, locked):
@@ -1352,140 +1228,6 @@ class MainFrame(wx.Frame):
 
 			self.dataFrame.OnLOADCONFIG()
 				
-
-	def OnFormatData(self, event):
-		opendlg = wx.DirDialog(self, "Select Directory", "../DATA")
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			cmd = "./pre2res " + path
-			os.system(cmd)
-			dlg = dialog.MessageDialog(self, "Information" , "Formatting Data", 1)
-			dlg.Centre()
-			dlg.ShowModal()
-			dlg.Destroy()
-
-	def OnOpenELD(self, event):
-		#opendlg = wx.FileDialog(self, "Save Equivalent Log Table", "../DATA", "",wildcard = "Equivalent Log Table (*.eld.table)|*.eld.table|XML files(*.xml)|*.xml")
-
-		opendlg = wx.FileDialog(self, "Save Equivalent Log Table", self.Directory, "",wildcard = "Equivalent Log Table (*.eld.table)|*.eld.table")
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			py_correlator.openAttributeFile(path, 1)
-			if len(self.Window.SpliceData) > 0 :
-				#self.OnGetData(self.smoothDisplay, True)
-				print "[DEBUG] Above need to open"
-			else :
-				self.UpdateData()
-			if self.Window.LogData != [] :
-				self.eldPanel.SetFlag(True)
-				mudline = py_correlator.getMudline()
-				if mudline != 0.0 :
-					self.OnUpdateLogData(True)
-				retdata = py_correlator.getData(13)
-				if retdata != "" :
-					self.ParseSaganData(retdata)
-					self.autoPanel.OnButtonEnable(0, False)
-				retdat = ""
-
-	def OnSaveELD(self, event):
-		opendlg = wx.FileDialog(self, "Save Equivalent Log Table", "../DATA", "", wildcard = "Equivalent Log Table (*.eld.table)|*.eld.table|XML files(*.xml)|*.xml" , style =wx.SAVE)
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		filterindex = opendlg.GetFilterIndex()
-		if filterindex == 0 :
-			index = path.find(".eld.table", 0)
-			if index == -1 :
-				path = path + ".eld.table"
-		elif filterindex == 1 :
-			index = path.find(".xml", 0)
-			if index == -1 :
-				path = path + ".xml"
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			if self.Window.isLogMode == 1 :	 
-				py_correlator.fixed_sagan()
-			py_correlator.saveAttributeFile(path, 4)
-
-	def OnSaveSpliceData(self, event):
-		opendlg = wx.FileDialog(self, "Save SPLICE DATA file", self.Directory, "", wildcard = "Splice Table (*.splice.table)|*.splice.table|XML files(*.xml)|*.xml" , style =wx.SAVE)
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		filterindex = opendlg.GetFilterIndex()
-		if filterindex == 0 :
-			index = path.find(".splice.table", 0)
-			if index == -1 :
-				path = path + ".splice.table"
-		elif filterindex == 1 :
-			index = path.find(".xml", 0)
-			if index == -1 :
-				path = path + ".xml"
-
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			py_correlator.saveAttributeFile(path, 2)
-
-
-	def OnSaveSpliceCore(self, event):
-		opendlg = wx.FileDialog(self, "Save SPLICE DATA RECORD file", self.Directory, "", "*.spliced.dat", style =wx.SAVE)
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		index = path.find(".spliced.dat", 0)
-		if index == -1 :
-			path = path + ".spliced.dat"
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			py_correlator.saveAttributeFile(path, 3)
-
-	def OnOpenSpliceData(self, event):
-		opendlg = wx.FileDialog(self, "Open SPLICE DATA file", self.Directory, "", wildcard = "Splice Table (*.splice.table)|*.splice.table|XML files(*.xml)|*.xml" )
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			splice_data = py_correlator.openSpliceFile(path)
-
-			if splice_data == "" : 
-				self.OnShowMessage("Error", "It could not be loaded", 1)
-			else : 
-				self.Window.SpliceHole = []
-				self.Window.SpliceTieData = []
-				self.Window.RealSpliceTie = [] 
-				self.Window.SPGuideCore = []
-				self.Window.SpliceCore = []
-
-				retdata = ""
-				retdata = py_correlator.getData(2)
-				if retdata != "" : 
-					self.ParseSpliceData(retdata, False)
-				retdat = "" 
-
-				self.Window.SpliceData = []
-				self.filterPanel.OnLock()
-				self.ParseData(splice_data, self.Window.SpliceData)
-				self.filterPanel.OnRelease()
-				self.autoPanel.SetCoreList(1, [])
-				self.Window.spliceHoleWidth = self.Window.holeWidth
-			if self.Window.SmoothData != [] :
-				splice_data = py_correlator.getData(4)
-				if splice_data != "" :
-					self.Window.SpliceSmoothData = []
-					self.filterPanel.OnLock()
-					self.ParseData(splice_data, self.Window.SpliceSmoothData)
-					self.filterPanel.OnRelease()
-
-			self.splicedOpened = 1
-			self.logFileptr.write("Splice Table:\n")
-			s = path + "\n\n"
-			self.logFileptr.write(s)
-			if self.showReportPanel == 1 :
-				self.OnUpdateReport()
-				
-			self.Window.UpdateDrawing()
-
 	def UpdateLogData(self) :
 		if len(self.Window.LogData) > 0 :	
 			self.Window.LogData = []
@@ -1498,7 +1240,6 @@ class MainFrame(wx.Frame):
 				self.Window.coefRangeLog = self.Window.logHoleWidth / (self.max - self.min)
 				#print "[DEBUG] Log data is updated"
 				self.filterPanel.OnRelease()
-				ret = ""
 				self.Window.UpdateDrawing()
 
 
@@ -1514,46 +1255,7 @@ class MainFrame(wx.Frame):
 				self.Window.coefRangeLog = self.Window.logHoleWidth / (self.max - self.min)
 				#print "[DEBUG] Log sm data is updated"
 				self.filterPanel.OnRelease()
-				ret = ""
 				#self.Window.UpdateDrawing()
-
-
-	def OnOpenLogData(self, event):
-		opendlg = wx.FileDialog(self, "Open Log DATA file", self.Directory, "", "*.log.dat")
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			self.OnClearLog(event)
-			loginfo = py_correlator.openLogFile(path, 0)
-			if loginfo != "" :
-				self.selectedColumn = 0
-				dataopendlg = OpenLogDataDialog(self, loginfo )
-				if self.selectedColumn > 0 :
-					s = "Log: " + path + " ," + str(self.selectedColumn) + "\n\n"
-					self.logFileptr.write(s)
-					if self.showReportPanel == 1 :
-						self.OnUpdateReport()
-
-					py_correlator.openLogFile(path, self.selectedColumn)
-					#self.OnClearData()
-					ret = py_correlator.getData(5)
-					if ret != "" : 
-						mudline = py_correlator.getMudline()
-						if mudline != 0.0 :
-							self.Window.isLogShifted = True 
-						self.filterPanel.OnLock()
-						self.ParseData(ret, self.Window.LogData)
-						self.Window.minRangeLog = self.min
-						self.Window.maxRangeLog = self.max
-						self.Window.coefRangeLog = self.Window.logHoleWidth / (self.max - self.min)
-						self.filterPanel.OnRelease()
-						self.Window.isLogMode = 1
-						self.Window.SpliceTieData = []
-						self.Window.CurrentSpliceCore = -1
-						self.autoPanel.OnButtonEnable(0, True)
-					ret = "" 
-					self.Window.UpdateDrawing()						
 
 	def OnUpdateLogData(self, flag):
 		self.Window.LogData = []
@@ -1565,232 +1267,8 @@ class MainFrame(wx.Frame):
 			self.Window.minRangeLog = self.min
 			self.Window.maxRangeLog = self.max
 			self.Window.coefRangeLog = self.Window.logHoleWidth / (self.max - self.min)
-			ret = ""
 		self.Window.isLogShifted = flag 
 
-	def OnOpenAncilLogData(self, event):
-		opendlg = wx.FileDialog(self, "Open Log DATA file", self.Directory, "", "*.ancill.dat")
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			loginfo = py_correlator.openLogFile(path, 0)
-			if loginfo != "" :
-				self.selectedColumn = 0
-				dataopendlg = OpenLogDataDialog(self, loginfo )
-				if self.selectedColumn > 0 :
-					s = "Log: " + path + " ," + str(self.selectedColumn) + "\n\n"
-					self.logFileptr.write(s)
-					if self.showReportPanel == 1 :
-						self.OnUpdateReport()
-					py_correlator.openLogFile(path, self.selectedColumn)
-					#self.OnClearData()
-					ret = py_correlator.getData(5)
-					self.eldPanel.SetFlag(True)
-					if ret != "" : 
-						mudline = py_correlator.getMudline()
-						if mudline != 0.0 :
-							self.Window.isLogShifted = True 
-						self.filterPanel.OnLock()
-						self.ParseData(ret, self.Window.LogData)
-						self.Window.minRangeLog = self.min
-						self.Window.maxRangeLog = self.max
-						self.Window.coefRangeLog = self.Window.logHoleWidth / (self.max - self.min)
-						self.filterPanel.OnRelease()
-						self.Window.isLogMode = 1
-						self.autoPanel.OnButtonEnable(0, True)
-					ret = "" 
-
-	def OnOpenAge(self, event):
-		if len(self.Window.StratData) == 0 :
-			s = "There is no strat data loaded."
-			self.OnShowMessage("Error", s, 1)
-			return
-		
-		opendlg = wx.FileDialog(self, "Open Age Series files", self.Directory, "", wildcard = "Age series|*.strat.table")
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		filterindex = opendlg.GetFilterIndex()
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			self.Window.AgeDataList = []
-			self.Window.AgeYRates = []
-			self.agePanel.OnInitUI()
-			ageFile = open(path, "r+")
-			order = 0
-			age = 0
-			while True :
-				stratdata = []
-				line = ageFile.readline()
-				if len(line) == 0 :
-					break
-				stratdata = line.split()
-				if stratdata[0] != "#" :
-					type = -1
-					if stratdata[6] == "Diatoms" :
-						type = 0
-					elif stratdata[6] == "Radiolaria" :
-						type = 1 
-					elif stratdata[6] == "Foraminifera" :
-						type = 2 
-					elif stratdata[6] == "Nannofossils" :
-						type = 3 
-					elif stratdata[6] == "Paleomag" :
-						type = 4 
-
-					age = float(stratdata[2])
-					if self.Window.maxAgeRange < age :
-						self.Window.maxAgeRange = int(age) + 2 
-						#self.agePanel.maxAge.SetValue(str(self.Window.maxAgeRange))
-				
-					if order > 0 : 
-						strItem = ""
-						self.Window.AgeDataList.append((order-1, float(stratdata[1]), float(stratdata[0]), float(stratdata[2]), stratdata[4], stratdata[5], type, 0.0))
-						strItem = stratdata[0] + "   " + stratdata[1] + "     " + stratdata[2] + "          " + stratdata[5] 
-						self.agePanel.OnAddAgeToList(strItem)
-						if type == -1 :
-							# name, strat, rawstart, age
-							l = []
-							l.append((stratdata[5], float(stratdata[1]), float(stratdata[0]), float(stratdata[2])))
-							self.Window.UserdefStratData.append(l)
-							
-					order = order + 1
-
-			ageFile.close()
-			self.Window.UpdateDrawing()
-
-			#success = py_correlator.openStratFile(path, filterindex)
-			#if success == 1 :
-			#	self.UpdateStratData()
-			#	s = str(len(self.Window.StratData)) + " age depth points are successfully loaded"
-			#	self.OnShowMessage("Result", s, 1)
-			#	self.agePanel.OnAddStratToList()
-			#	#self.Window.UpdateDrawing()
-			#	self.Window.UpdateAgeModel()
-			#	self.Window.UpdateDrawing()
-			#else :
-			#	s = "zero age depth point is loaded."
-			#	self.OnShowMessage("Error", s, 1)
-			pass
-
-	def OnSaveAge(self, event):
-		opendlg = wx.FileDialog(self, "Save Age Series file", self.Directory, "","*.strat.table" , style =wx.SAVE)
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		index = path.find(".strat.table", 0)
-		if index == -1 :
-			path = path + ".strat.table"
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-
-			ageFile = open(path, "w+")
-			ageFile.write("# Mbsf, Mcd, Eld, Age, Sediment rate, Age datum name, Label, type\n")
-			ageFile.write("# Generated By Correlator\n")
-			s = "# " + str(datetime.today()) + "\n"
-			ageFile.write(s)
-
-			sedrate = 0.0
-			for data in self.Window.AgeDataList :
-				idx, start, rawstart, age, name, label, type, sed = data
-				sedrate = sed
-				break
-
-			s = str(self.Window.firstPntDepth) + " \t" + str(self.Window.firstPntDepth) + " \t" + str(self.Window.firstPntDepth) + " \t" +  str(self.Window.firstPntAge) + " \t" + str(sedrate) + " \t" + "handpick" + " \t \t" + "X" + " \t" + "Handpick" + "\n"
-			ageFile.write(s)
-
-			typename = "" 
-			count = 0
-			s1 = ""
-			s2 = ""
-			for data in self.Window.AgeDataList :
-				idx, start, rawstart, age, name, label, type, sed = data
-				if type == 0 :  #DIATOMS
-					typename = "Diatoms"
-				elif type == 1 : #RADIOLARIA
-					typename = "Radiolaria"
-				elif type == 2 : #FORAMINIFERA
-					typename = "Foraminifera"
-				elif type == 3 : #NANNOFOSSILS
-					typename = "Nannofossils"
-				elif type == 4 : #PALEOMAG
-					typename = "Paleomag"
-				else :
-					typename = "HandPick"
-
-				if count == 0 :
-					s1 = str(rawstart) + " \t" + str(start) + " \t" + str(start) + " \t" + str(age) + " \t"
-					s2 = name + " \t" + label + " \t" +  typename + "\n"
-					count = 1
-				else :
-					s = s1 + str(sed) + " \t" + s2
-					ageFile.write(s)
-					s1 = str(rawstart) + " \t" + str(start) + " \t" + str(start) + " \t" + str(age) + " \t"
-					s2 = name + " \t" + label + " \t" +  typename + "\n"
-
-				sedrate = sed
-
-			if len(self.Window.AgeDataList) > 0 :
-				s = s1 + str(sedrate) + " \t" + s2
-				ageFile.write(s)
-
-			ageFile.close()
-
-			#idx = 0
-			#for data in self.Window.AgeDataList :
-			#	py_correlator.setAgeOrder(idx, data[2], data[4])
-			#	idx = idx + 1
-			#py_correlator.saveAttributeFile(path, 6)
-
-
-	def OnSaveAgeSplice(self, event):
-		opendlg = wx.FileDialog(self, "Save Age Splice file", self.Directory, "","*.age.splice.dat" , style =wx.SAVE)
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		index = path.find(".age.splice.dat", 0)
-		if index == -1 :
-			path = path + ".age.splice.dat"
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			filename = path + ".tmp"
-			ageFile = open(filename, "w+")
-			self.Window.SaveAge(ageFile)				
-			ageFile.close()
-
-			py_correlator.saveAttributeFile(path, 7)
-
-	def OnOpenStratData(self, event):
-		filterindex = 0
-		dir = self.Directory
-		#for i in range(2) :
-		while True :
-			opendlg = wx.FileDialog(self, "Open STRAT DATA files", dir, "", wildcard = "Diatoms|*.strat.out|Radioloria|*.strat.out|Foraminifera|*.strat.out|Nannofossils|*.strat.out|Paleomag|*.strat.out")
-			opendlg.SetFilterIndex(filterindex)
-			ret = opendlg.ShowModal()
-			path = opendlg.GetPath()
-			dir = opendlg.GetDirectory()
-			filterindex = opendlg.GetFilterIndex()
-			opendlg.Destroy()
-			if ret == wx.ID_OK :
-				success = py_correlator.openStratFile(path, filterindex)
-				if success == 1 :
-					s = "Strat: " + path + "\n\n"
-					self.logFileptr.write(s)
-					if self.showReportPanel == 1 :
-						self.OnUpdateReport()
-					self.UpdateStratData()
-					s = str(len(self.Window.StratData)) + " age depth points are successfully loaded"
-					self.OnShowMessage("Result", s, 1)
-					self.agePanel.OnAddStratToList()
-					self.Window.UpdateDrawing()
-				else :
-					s = "zero age depth point is loaded."
-					self.OnShowMessage("Error", s, 1)
-			else :
-				break
-
-			ret = self.OnShowMessage("About", "Any more age/depth files to add now?", 2)
-			if ret != wx.ID_OK :
-				break
 
 	def UpdateStratData(self):
 		ret = py_correlator.getData(7)
@@ -1890,7 +1368,6 @@ class MainFrame(wx.Frame):
 				last = ret.find("#", start)
 				if start == last :
 					break
-		ret = "" 
 
 	def OnNewData(self, event):
 		if self.Window.HoleData != [] :
@@ -2025,45 +1502,8 @@ class MainFrame(wx.Frame):
 		if ret == wx.ID_OK :
 			py_correlator.saveCoreData(path)
 
-
 	def OnSave(self, event):
 		self.topMenu.OnSAVE(event)
-
-
-	def OnSaveReport(self, event):
-		opendlg = wx.FileDialog(self, "Save Report file", "../DATA/REPORT", "","*.txt" , style =wx.SAVE)
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		index = path.find(".txt", 0)
-		if index == -1 :
-			path = path + ".txt"
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			self.logFileptr.close()
-			cmd = "cp " + global_logName + " " + path
-			if sys.platform == 'win32' :
-				cmd = "copy " + global_logName + " " + path
-			os.system(cmd)
-			logFile = open(path, "a+")
-			s = str(datetime.today()) + "\n"
-			logFile.write(s)
-			logFile.write("Close of Session.\n")
-			logFile.close()
-
-			global_logFile = open(self.DBPath + global_logName, "a+")
-			self.logFileptr = global_logFile
-
-
-	def OnSaveAsSession(self, event):
-		opendlg = wx.FileDialog(self, "Save Session file", "./", "","*.cfg" , style =wx.SAVE)
-		ret = opendlg.ShowModal()
-		path = opendlg.GetPath()
-		index = path.find(".cfg", 0)
-		if index == -1 :
-			path = path + ".cfg"
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			py_correlator.saveSession(path, self.selectedColumn)
 
 	# utility routine to write a single preference key-value pair to file
 	def WritePreferenceItem(self, key, value, file):
@@ -2608,7 +2048,7 @@ class MainFrame(wx.Frame):
 
 
 	def ParseHole(self, start, last, data, output):
-		hole = [] # a global used throughout this file
+		hole = []
 		# site 
 		last = data.find(",", start)
 		site = data[start:last] 
