@@ -97,6 +97,19 @@ class wxBufferedWindow(wx.Window):
 		wx.ClientDC(self).Blit(0, 0, self.Width, self.Height, dc, 0, 0)
 
 
+class CompositeTie:
+	def __init__(self, hole, core, screenX, screenY, fixed, depth):
+		self.hole = hole # hole index in currently loaded set of holes
+		self.core = core # core index in currently loaded set of holes
+		self.screenX = screenX # tied hole's x-coord
+		self.screenY = screenY # tie mouse click y-coord
+		self.fixed = fixed # is tie movable?
+		self.depth = depth # actual depth of tie
+
+	def __repr__(self):
+		return str((self.hole, self.core, self.screenX, self.screenY, self.fixed, self.depth))
+
+
 class DataCanvas(wxBufferedWindow):
 	def __init__(self, parent, id= -1):
 		## Any data the Draw() function needs must be initialized before
@@ -298,7 +311,7 @@ class DataCanvas(wxBufferedWindow):
 		self.HoleData = []
 		self.SectionData = []
 		self.SmoothData = [] 
-		self.TieData = [] 
+		self.TieData = [] # composite ties
 		self.StratData = []
 		self.UserdefStratData = []
 		self.AdjustDepthCore = []
@@ -576,6 +589,14 @@ class DataCanvas(wxBufferedWindow):
 				self.range.append(newrange)
 				break
 
+
+	# convert y coordinate to depth - for composite area
+	def getDepth(self, ycoord):
+		return (ycoord - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
+
+	# convert depth to y coordinate - for composite area
+	def getCoord(self, depth):
+		return self.startDepth + (depth - self.rulerStartDepth) * (self.length / self.gap)
 
 	def GetMINMAX(self, type):
 		for r in self.range :
@@ -1090,7 +1111,6 @@ class DataCanvas(wxBufferedWindow):
 
 
 		affine = 0.0
-		#for i in range(forcount) :
 		for i in range(len_hole) : 
 			holedata = hole[i + 1] # actually coredata
 
@@ -1237,7 +1257,6 @@ class DataCanvas(wxBufferedWindow):
 			if len_hole == 0:
 				return
 			if self.MainViewMode == True :
-				#for i in range(forcount) : 
 				for i in range(len_hole) : 
 					holedata = hole[i + 1]
 					self.DrawSpliceCore(dc, -1, holedata, 7, hole_core + holedata[0])
@@ -1253,7 +1272,6 @@ class DataCanvas(wxBufferedWindow):
 		#self.lastSpliceX = -999.99 
 		splicesize = len(self.SpliceCore) 
 		if self.MainViewMode == True :
-			#for i in range(forcount) :
 			for i in range(len_hole) : 
 				holedata = hole[i + 1]
 				if index < splicesize :
@@ -1262,7 +1280,6 @@ class DataCanvas(wxBufferedWindow):
 		else :
 			self.AgeOffset = 0.0
 			self.prevDepth = 0.0
-			#for i in range(forcount) :
 			for i in range(len_hole) :                             
 				holedata = hole[i + 1]
 				if index < splicesize :
@@ -2866,7 +2883,7 @@ class DataCanvas(wxBufferedWindow):
 						log_splice_data = self.LogSpliceSmoothData
 					else :
 						log_splice_data = self.LogSpliceData
-					#for data in self.LogSpliceData:
+
 					for data in log_splice_data:
 						for r in data:
 							hole = r 
@@ -2897,7 +2914,6 @@ class DataCanvas(wxBufferedWindow):
 								self.DrawSplice(dc, hole, 5)
 								self.DrawSplice(dc, hole, 6)
 					else : 
-						#for data in self.LogSpliceSmoothData:
 						for data in log_splice_data:
 							for r in data:
 								hole = r 
@@ -2918,31 +2934,26 @@ class DataCanvas(wxBufferedWindow):
 					log_data = self.LogData
 
 				if self.isLogShifted == False :
-					#for data in self.LogData:
+
 					for data in log_data:
 						for r in data:
 							hole = r 
-							#self.DrawHoleGraph(dc, hole, 5, self.logHoleWidth) 
 							self.DrawHoleGraph(dc, hole, 5, None)
 					log_data = []
 					if log_smooth_flag == 2 :
 						log_data = self.LogSMData
-					#for data in self.LogSMData:
 					for data in log_data:
 						for r in data:
 							hole = r 
 							self.DrawHoleGraph(dc, hole, 7, None)
 				else :
-					#for data in self.LogData:
 					for data in log_data:
 						for r in data:
 							hole = r 
-							#self.DrawHoleGraph(dc, hole, 6, self.logHoleWidth) 
 							self.DrawHoleGraph(dc, hole, 6, None)
 					log_data = []
 					if log_smooth_flag == 2 :
 						log_data = self.LogSMData
-					#for data in self.LogSMData:
 					for data in log_data:
 						for r in data:
 							hole = r 
@@ -2955,46 +2966,40 @@ class DataCanvas(wxBufferedWindow):
 
 		self.DrawRuler(dc)
 
+		### draw composite ties
 		tempx = 0
 		if self.hideTie == 0 : 
 			x = 0
 			x0 = 0
 			y = 0
 			y0 = 0
-			count = 0
 			radius = self.tieDotSize / 2
 
-			for data in self.TieData:
-				if count == 0 : 
+			for compTie in self.TieData:
+				if compTie.fixed == 1:
 					dc.SetBrush(wx.Brush(self.colorDict['fixedTie']))
 					dc.SetPen(wx.Pen(self.colorDict['fixedTie'], 1))
-				elif count == 1 : 
+				else:
 					dc.SetBrush(wx.Brush(self.colorDict['shiftTie']))
 					dc.SetPen(wx.Pen(self.colorDict['shiftTie'], 1))
 
-				for r in data :
-					y = self.startDepth + (r[6] - self.rulerStartDepth) * (self.length / self.gap)
-					tempx = r[6] 
-					tempx = round(tempx, 3)
+				y = self.startDepth + (compTie.depth - self.rulerStartDepth) * (self.length / self.gap)
+				tempx = round(compTie.depth, 3)
 
-					x = (r[0] * self.holeWidth) + (r[0] * 50) + 50 - self.minScrollRange + 40 
+				x = (compTie.hole * self.holeWidth) + (compTie.hole * 50) + 50 - self.minScrollRange + 40 
+				if compTie.depth >= self.rulerStartDepth and compTie.depth <= self.rulerEndDepth :
+					if x < (self.splicerX - self.holeWidth / 2) :
+						dc.DrawCircle(x, y, radius)
+						if compTie.fixed == 1: 
+							dc.SetPen(wx.Pen(self.colorDict['fixedTie'], self.tieline_width, style=wx.DOT))
+						else:
+							dc.DrawRectangle(x + self.holeWidth - radius, y - radius, self.tieDotSize, self.tieDotSize)
+							dc.SetPen(wx.Pen(self.colorDict['shiftTie'], self.tieline_width, style=wx.DOT))
 
-					if r[6] >= self.rulerStartDepth and r[6] <= self.rulerEndDepth :
-						if x < (self.splicerX - self.holeWidth / 2) :
-							dc.DrawCircle(x, y, radius)
-							if count == 0 : 
-								dc.SetPen(wx.Pen(self.colorDict['fixedTie'], self.tieline_width, style=wx.DOT))
-							elif count == 1 : 
-								dc.DrawRectangle(x + self.holeWidth - radius, y - radius, self.tieDotSize, self.tieDotSize)
-								dc.SetPen(wx.Pen(self.colorDict['shiftTie'], self.tieline_width, style=wx.DOT))
-
-							dc.DrawLine(x, y, x + self.holeWidth, y)
-							dc.DrawText(str(tempx), x - 45, y) 
-				if count == 1 and r[6] >= self.rulerStartDepth and r[6] <= self.rulerEndDepth :
-					count = -1 
+						dc.DrawLine(x, y, x + self.holeWidth, y)
+						dc.DrawText(str(tempx), x - 45, y) 
 				x0 = x
 				y0 = y 
-				count = count + 1
 
 			if self.spliceWindowOn == 1 :
 				count = 0
@@ -3797,23 +3802,8 @@ class DataCanvas(wxBufferedWindow):
 		opId = event.GetId() 
 		self.activeTie = -1
 		self.showMenu = False
-		if opId == 1 :
-			fixed = 0
-			if self.selectedTie >= 0 :
-				data = self.TieData[self.selectedTie]
-				for r in data :
-					x, y, n, fixed, startx, m, d = r
-			if fixed == 0 : # move tie
-				self.TieData.remove(data)
-				data = self.TieData[self.selectedTie - 1]
-				self.TieData.remove(data)
-			else :		 # fixed tie 
-				length = len(self.TieData)
-				if (self.selectedTie + 1) < length :
-					data = self.TieData[self.selectedTie + 1]
-					self.TieData.remove(data)
-				data = self.TieData[self.selectedTie]
-				self.TieData.remove(data)
+		if opId == 1 : # Clear Tie
+			self.TieData = []
 			self.GuideCore = []
 			self.parent.clearSend()
 		elif opId == 4:
@@ -3834,18 +3824,15 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.compositePanel.OnButtonEnable(1, False)
 		elif opId == 5:
 			if self.selectedTie >= 0 :
-				data = self.TieData[self.selectedTie]
-				coreId = 0
-				for r in data :
-					x, y, n, fixed, startx, m, d = r
-					coreId = n
+				tie = self.TieData[self.selectedTie]
+				coreId = data.core
 				holeA = '-'
 				coreA = -1
 				count = 0
 				for s in self.DrawData["CoreInfo"]:
 					data = s
 					for r in data:
-						if r[0] == coreId :
+						if r[0] == tie.core:
 						 holeA = r[3]
 						 coreA = r[4]
 						 count = count + 1
@@ -3871,24 +3858,13 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.compositePanel.OnButtonEnable(1, False)
 		elif opId == 3 or opId == 2:
 			if self.selectedTie >= 0 :
-				data_move = self.TieData[self.selectedTie]
-				y1 = 0
-				y2 = 0
-				coreId = 0
-				for r in data_move :
-					x, y, n, fixed, startx, m, d = r
-					mouseY = y
-					y1 = (y - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
-					coreId = n
-				self.AdjustDepthCore.append(coreId)
-				data_fix = self.TieData[self.selectedTie - 1]
-				for r in data_fix :
-					x, y, n, fixed, startx, m, d = r
-					currentY = y
-					y2 = (y - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
-					data_fix.remove(r)
+				movableTie = self.TieData[self.selectedTie]
+				self.AdjustDepthCore.append(movableTie.core)
+				fixedTie = self.TieData[self.selectedTie - 1]
+				y1 = movableTie.depth
+				y2 = fixedTie.depth
 				shift = y2 - y1
-				self.OnDataChange(coreId, shift)
+				self.OnDataChange(movableTie.core, shift)
 
 				holeA = '-' 
 				holeB = '-' 
@@ -3902,14 +3878,14 @@ class DataCanvas(wxBufferedWindow):
 				for s in self.DrawData["CoreInfo"]:
 					data = s
 					for r in data:
-						if r[0] == coreId :
+						if r[0] == movableTie.core:
 							data_type = r[10] 
 							holeA = r[3] 
 							coreA = r[4] 
 							leg = r[2]
 							site = r[1]
 							count = count + 1 
-						if r[0] == n :
+						if r[0] == fixedTie.core:
 							holeB = r[3] 
 							coreB = r[4] 
 							count = count + 1 
@@ -3917,7 +3893,6 @@ class DataCanvas(wxBufferedWindow):
 								break
 					if count >= 2 : 
 						break
-
 
 				if holeA != '-' and holeB != '-' : 
 					#print "[DEBUG] Compostie " + str(y1) +  " " + str(y2)
@@ -3941,26 +3916,6 @@ class DataCanvas(wxBufferedWindow):
 					s = holeA + " " + coreA + " " + str(y1) + " tied to " + holeB + " " + coreB + " " + str(y2) + "\n\n"
 					self.parent.logFileptr.write(s)
 
-					#self.parent.ShiftSectionSend(holeA, coreA, shift, opId)
-					#ret = self.parent.FineTuneSend(leg, site, holeA, coreA, holeB, coreB, y2)
-					#if ret != 0.0 :
-					#	print "[DEBUG] Need to shift more : " + str(ret)
-					#	coef = py_correlator.composite(holeA, int(coreA), y1, holeB, int(coreB), y1+ret, opId, data_type)
-
-					#	if opId == 3 :
-					#		s = "Composite(Fine Tune/All Below): hole " + holeA + " core " + coreA + ": " + str(datetime.today()) + "\n"
-					#		self.parent.logFileptr.write(s)
-					#	else :
-					#		s = "Composite(Fine Tune): hole " + holeA + " core " + coreA + ": " + str(datetime.today()) + "\n"
-					#		self.parent.logFileptr.write(s)
-					#	s = holeA + " " + coreA + " " + str(y1) + " tied to " + holeB + " " + coreB + " " + str(y1+ret) + "\n\n"
-					#	self.parent.logFileptr.write(s)
-
-
-					#	self.parent.UpdateData()
-					#	if opId == 3 :
-					#		self.parent.ShiftSectionSend(holeA, coreA, ret, opId)
-
 					py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
 					self.parent.ShiftSectionSend(holeA, coreA, shift, opId)
 
@@ -3981,23 +3936,13 @@ class DataCanvas(wxBufferedWindow):
 			self.selectedLastTie = len(self.TieData) - 1
 
 		if self.selectedLastTie >= 0 :
-			data_move = self.TieData[self.selectedLastTie]
-			y1 = 0
-			y2 = 0
-			coreId = 0
-			for r in data_move :
-				x, y, n, fixed, startx, m, d = r
-				mouseY = y
-				y1 = (y - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
-				coreId = n
-			self.AdjustDepthCore.append(coreId)
-			data_fix = self.TieData[self.selectedLastTie - 1]
-			for r in data_fix :
-				x, y, n, fixed, startx, m, d = r
-				currentY = y
-				y2 = (y - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
-				data_fix.remove(r)
-			shift = y2 - y1
+			movableTie = self.TieData[self.selectedLastTie]
+			self.AdjustDepthCore.append(movableTie.core)
+
+			fixedTie = self.TieData[self.selectedLastTie - 1]
+			y1 = movableTie.depth
+			y2 = fixedTie.depth
+			shift = fixedTie.depth - movableTie.depth
 			if actionType == 0 : # to best 
 				y1 = y1 + offset
 				shift = shift + offset 
@@ -4006,7 +3951,7 @@ class DataCanvas(wxBufferedWindow):
 				y1 = y2 - offset
 				shift = offset 
 
-			self.OnDataChange(coreId, shift)
+			self.OnDataChange(movableTie.core, shift)
 
 			holeA = '-'
 			holeB = '-'
@@ -4020,14 +3965,14 @@ class DataCanvas(wxBufferedWindow):
 			for s in self.DrawData["CoreInfo"]:
 				data = s
 				for r in data:
-					if r[0] == coreId :
+					if r[0] == movableTie.core:
 						data_type = r[10] 
 						holeA = r[3]
 						coreA = r[4]
 						leg = r[2]
 						site = r[1]
 						count = count + 1
-					if r[0] == n :
+					if r[0] == fixedTie.core:
 						holeB = r[3]
 						coreB = r[4]
 						count = count + 1
@@ -4065,22 +4010,6 @@ class DataCanvas(wxBufferedWindow):
 				s = holeA + " " + coreA + " " + str(y1) + " tied to " + holeB + " " + coreB + " " + str(y2) + "\n\n"
 				self.parent.logFileptr.write(s)
 
-				#self.parent.ShiftSectionSend(holeA, coreA, shift, opId)
-				#ret = self.parent.FineTuneSend(leg, site, holeA, coreA, holeB, coreB, y2)
-				#if ret != 0.0 :
-				#	print "[DEBUG] Need to shift more : " + str(ret)
-				#	#opId = 2
-				#	coef = py_correlator.composite(holeA, int(coreA), y1, holeB, int(coreB), y1+ret, opId, data_type)
-				#	if opt == 0 :
-				#		s = "Composite(Fine Tune): hole " + holeB + " core " + coreB + ": " + str(datetime.today()) + "\n"
-				#		self.parent.logFileptr.write(s)
-				#	else :
-				#		s = "Composite(Fine Tune/All Below): hole " + holeB + " core " + coreB + ": " + str(datetime.today()) + "\n"
-				#		self.parent.logFileptr.write(s)
-				#	s = holeA + " " + coreA + " " + str(y1) + " tied to " + holeB + " " + coreB + " " + str(y1+ ret) + "\n\n"
-				#	self.parent.logFileptr.write(s)
-				#	if opId == 3 :
-				#		self.parent.ShiftSectionSend(holeA, coreA, ret, opId)				
 				py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
 				self.parent.ShiftSectionSend(holeA, coreA, shift, opId)
 
@@ -4114,25 +4043,21 @@ class DataCanvas(wxBufferedWindow):
 			if self.selectedLastTie < 0 :
 				self.selectedLastTie = len(self.TieData) - 1
 			if self.selectedLastTie >= 0 and self.selectedLastTie < len(self.TieData):
-				data = self.TieData[self.selectedLastTie]
-				coreId = 0
-				for r in data :
-					x, y, n, fixed, startx, m, d = r
-					coreId = n
+				tie = self.TieData[self.selectedLastTie]
 				holeA = '-'
 				coreA = -1
 				count = 0
 				for s in self.DrawData["CoreInfo"]:
 					data = s
 					for r in data:
-						if r[0] == coreId :
-						 holeA = r[3]
-						 coreA = r[4]
-						 count = count + 1
+						if r[0] == tie.core:
+							holeA = r[3]
+							coreA = r[4]
+							count = count + 1
 						if count >= 1:
-						 break
+							break
 					if count >= 1 :
-						 break
+						break
 
 				#print "[DEBUG] " + holeA + " " + str(coreA) + " undo "
 				if holeA != '-' :
@@ -4493,27 +4418,17 @@ class DataCanvas(wxBufferedWindow):
 				self.activeTie = -1
 				return
 
-			data = self.TieData[self.activeTie]
+			movableTie = self.TieData[self.activeTie]
+			movableTie.depth += shift_delta
+			movableTie.screenY = self.startDepth + (movableTie.depth - self.rulerStartDepth) * (self.length / self.gap)
 			x = 0
 			depth = 0
 			n = 0 
-			for r in data :
-				x, y, n, f, startx, m, d = r
-				depth = d + shift_delta
-				y = self.startDepth + (depth - self.rulerStartDepth) * (self.length / self.gap)
-				newtag = (x, y, n, f, startx, m, depth)
-				data.remove(r)
-				data.insert(0, newtag)
 
-			data = []
-			data = self.TieData[self.activeTie - 1]
-			x2 = 0
-			depth2 = 0
-			n2 = 0 
-			for r in data :
-				x2 = r[0] 
-				depth2 = r[6] 
-				n2 = r[2]
+			fixedTie = self.TieData[self.activeTie - 1]
+			x2 = fixedTie.hole
+			depth2 = fixedTie.depth
+			n2 = fixedTie.core
 
 			holenoA = 'x'
 			holenoB = 'x'
@@ -4527,14 +4442,14 @@ class DataCanvas(wxBufferedWindow):
 			for s in self.DrawData["CoreInfo"]:
 				data = s
 				for r in data:
-					if r[0] == n2 :
+					if r[0] == fixedTie.core :
 						holenoA = r[3]
 						corenoA = r[4]
 						typeA = r[10]
 						leg = r[2]
 						site = r[1]
 						count = count + 1
-					elif r[0] == n :
+					elif r[0] == movableTie.core :
 						holenoB = r[3]
 						corenoB = r[4]
 						typeB = r[10]
@@ -4544,8 +4459,8 @@ class DataCanvas(wxBufferedWindow):
 				if count >= 2:
 					break
 	
-			shift = depth2 - depth 
-			shiftx = x2 - x
+			shift = fixedTie.depth - movableTie.depth
+			shiftx = fixedTie.hole - movableTie.hole
 			self.OnUpdateGuideData(self.activeCore, shiftx, shift)
 			self.parent.OnUpdateDepth(shift)
 			self.parent.TieUpdateSend(leg, site, holenoA, int(corenoA), holenoB, int(corenoB), depth, shift)
@@ -4777,32 +4692,31 @@ class DataCanvas(wxBufferedWindow):
 
 		count = 0
 		for data in self.TieData:
-			for r in data :
-				y = self.startDepth + (r[6] - self.rulerStartDepth) * (self.length / self.gap)
-				x = (r[0] * self.holeWidth) + (r[0] * 50) + 50 - self.minScrollRange
-				reg = None
-				reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
+			y = self.startDepth + (data.depth - self.rulerStartDepth) * (self.length / self.gap)
+			x = (data.hole * self.holeWidth) + (data.hole * 50) + 50 - self.minScrollRange
+			reg = None
+			reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
 
-				if reg.Inside(wx.Point(pos[0], pos[1])):
-					self.selectedTie = count
-					self.showMenu = True
-					popupMenu = wx.Menu()
-					# create Menu
-					popupMenu.Append(1, "&Clear")
-					wx.EVT_MENU(popupMenu, 1, self.OnTieSelectionCb)
-					if r[3] == 0 : # move tie	
-						popupMenu.Append(3, "&Adjust depth with this core and all below")
-						wx.EVT_MENU(popupMenu, 3, self.OnTieSelectionCb)
-						popupMenu.Append(2, "&Adjust depth with this core only")
-						wx.EVT_MENU(popupMenu, 2, self.OnTieSelectionCb)
+			if reg.Inside(wx.Point(pos[0], pos[1])):
+				self.selectedTie = count
+				self.showMenu = True
+				popupMenu = wx.Menu()
+				# create Menu
+				popupMenu.Append(1, "&Clear")
+				wx.EVT_MENU(popupMenu, 1, self.OnTieSelectionCb)
+				if data.fixed == 0 : # move tie	
+					popupMenu.Append(3, "&Adjust depth with this core and all below")
+					wx.EVT_MENU(popupMenu, 3, self.OnTieSelectionCb)
+					popupMenu.Append(2, "&Adjust depth with this core only")
+					wx.EVT_MENU(popupMenu, 2, self.OnTieSelectionCb)
 
-						popupMenu.Append(4, "&Undo to previous offset")
-						wx.EVT_MENU(popupMenu, 4, self.OnTieSelectionCb)
-						popupMenu.Append(5, "&Undo to offset of core above")
-						wx.EVT_MENU(popupMenu, 5, self.OnTieSelectionCb)
+					popupMenu.Append(4, "&Undo to previous offset")
+					wx.EVT_MENU(popupMenu, 4, self.OnTieSelectionCb)
+					popupMenu.Append(5, "&Undo to offset of core above")
+					wx.EVT_MENU(popupMenu, 5, self.OnTieSelectionCb)
 
-					self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
-					return
+				self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
+				return
 			count = count + 1
 
 		count = 0
@@ -4854,44 +4768,18 @@ class DataCanvas(wxBufferedWindow):
 			count = count + 1
 
 		if pos[0] <= self.splicerX :
-			#if len(self.DrawData["MouseInfo"]) > 0 :
 			for mouse in self.DrawData["MouseInfo"] :
 				idx = mouse[0]
 				for data in self.DrawData["CoreInfo"] :
 					for info in data :
 						if idx == info[0] :
 							popupMenu = wx.Menu()
-							#if info[11] == '0' :
-							#	popupMenu.Append(1, "&Register it as Bad Core")
-							#	wx.EVT_MENU(popupMenu, 1, self.OnSetQTCb)
-							#else :	
-							#	popupMenu.Append(2, "&Register it as Good Core")
-							#	wx.EVT_MENU(popupMenu, 2, self.OnSetQTCb)
-
-							#popupMenu.Append(4, "&Select for Splicing")
-							#wx.EVT_MENU(popupMenu, 4, self.OnSetQTCb)
-
 							if self.parent.client != None :
 								popupMenu.Append(3, "&Show it on Corelyzer")
 								wx.EVT_MENU(popupMenu, 3, self.OnSetQTCb)
-
 							self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
 							return
 				break
-
-			
-		#popupMenu = wx.Menu()
-		#popupMenu.Append(1, "&Unsmoothed only")
-		#wx.EVT_MENU(popupMenu, 1, self.OnSetFunction)
-		#popupMenu.Append(2, "&Smoothed only")
-		#wx.EVT_MENU(popupMenu, 2, self.OnSetFunction)
-		#popupMenu.Append(3, "&Smoothed & Unsmoothed")
-		#wx.EVT_MENU(popupMenu, 3, self.OnSetFunction)
-		#popupMenu.Append(4, "&Undo decimate")
-		#wx.EVT_MENU(popupMenu, 4, self.OnSetFunction)
-		#popupMenu.Append(5, "&Clear all ties")
-		#wx.EVT_MENU(popupMenu, 5, self.OnSetFunction)
-		#self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
 
 	def OnLMouse(self, event):
 		pos = event.GetPositionTuple()
@@ -4965,17 +4853,16 @@ class DataCanvas(wxBufferedWindow):
 		dotsize_x = self.tieDotSize + self.holeWidth + 10 
 		dotsize_y = self.tieDotSize + 10 
 		half = dotsize_y / 2
-		for data in self.TieData:
-			for r in data :
-				y = self.startDepth + (r[6] - self.rulerStartDepth) * (self.length / self.gap)
-				x = (r[0] * self.holeWidth) + (r[0] * 50) + 50 - self.minScrollRange
-				reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
-				if reg.Inside(wx.Point(pos[0], pos[1])):
-					if r[3] == 0 : 
-						self.selectedTie = count
-						if (count % 2) == 1 : 
-							self.activeTie = count
-						return
+		for tie in self.TieData:
+			y = self.startDepth + (tie.depth - self.rulerStartDepth) * (self.length / self.gap)
+			x = (tie.hole * self.holeWidth) + (tie.hole * 50) + 50 - self.minScrollRange
+			reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
+			if reg.Inside(wx.Point(pos[0], pos[1])):
+				if tie.fixed == 0:
+					self.selectedTie = count
+					if (count % 2) == 1:
+						self.activeTie = count
+					return
 			count = count + 1
 
 		count = 0
@@ -5047,9 +4934,9 @@ class DataCanvas(wxBufferedWindow):
 									self.selectedCore = n 
 									self.mouseX = pos[0] 
 									self.mouseY = pos[1] 
-									self.currentStartX = min 
+									self.currentStartX = min
 									self.currentHole = hole_idx 
-									break;
+									break
 							if self.drag == 1 :
 								break
 					elif key == "SpliceArea":
@@ -5240,27 +5127,14 @@ class DataCanvas(wxBufferedWindow):
 		if self.selectedTie < 0 :
 			return
 		else :
-			data = self.TieData[self.selectedTie - 1]
-			y1 = 0
-			y2 = 0
-			x2 = 0
-			x = 0
-			n = 0
-			for r in data :
-				x, y, n, f, startx, m, d = r
-				y = self.startDepth + (d - self.rulerStartDepth) * (self.length / self.gap)
-				y2 = (y - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
-			x2 = x
-			self.guideCore = n
-			data = self.TieData[self.selectedTie]
-			for r in data :
-				x, y, n, f, startx, m, d = r
-				y = self.startDepth + (d - self.rulerStartDepth) * (self.length / self.gap)
-				y1 = (y - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
+			fixedTie = self.TieData[self.selectedTie - 1]
+			self.guideCore = fixedTie.core
 
-			shift = y2 - y1
-			shiftx = x2 - x
-			self.compositeDepth = y1 + shift
+			movableTie = self.TieData[self.selectedTie]
+
+			shift = fixedTie.depth - movableTie.depth
+			shiftx = fixedTie.hole - movableTie.hole
+			self.compositeDepth = fixedTie.depth #y1 + shift
 
 			self.activeCore = self.selectedCore
 			self.OnUpdateGuideData(self.selectedCore, shiftx, shift)
@@ -5859,24 +5733,14 @@ class DataCanvas(wxBufferedWindow):
 
 		currentY = pos[1]
 		if self.selectedTie >= 0 : 
-			data = self.TieData[self.selectedTie]
-
-			n = 0
-			for r in data :
-				x, y, n, f, startx, m, d = r
-				d = (pos[1] - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
-
-			if self.selectedCore != n :
+			tie = self.TieData[self.selectedTie]
+			if self.selectedCore != tie.core:
 				return
 
-			for r in data :
-				x, y, n, f, startx, m, d = r
-				d = (pos[1] - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
-				newtag = (x, pos[1], n, f, startx, m, d)
-				data.remove(r)
-				data.insert(0, newtag)
+			tie.screenY = pos[1]
+			tie.depth = self.getDepth(pos[1])
 				
-			self.selectedCore = n
+			self.selectedCore = tie.core
 			self.selectedLastTie = self.selectedTie 
 			self.GuideCore = []	
 			# draw guide 
@@ -6106,50 +5970,38 @@ class DataCanvas(wxBufferedWindow):
 						self.drag = 0
 						self.logTie = -1
 
-				elif self.spliceTie == -1 : 
-					if  self.LogData != [] : 
+				# create composite tie
+				elif self.spliceTie == -1:
+					if self.LogData != []:
 						self.parent.OnShowMessage("Error", "You can not do composite.", 1)
-
-					else :
+					else:
 						fixed = 0 
 						length = len(self.TieData) % 2
 						if length == 0 : 
 							fixed = 1 
 						if len(self.TieData) < 2 : 
 							# Tie 
-							l = []
-							d = (pos[1] - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
-							#l.append( (pos[0],pos[1], self.selectedCore, fixed, self.currentStartX, self.minScrollRange, d) )
-							l.append((self.currentHole, pos[1], self.selectedCore, fixed, self.currentStartX, self.minScrollRange, d))
-							self.TieData.append(l) 
+							d = self.getDepth(pos[1])
+							newTie = CompositeTie(self.currentHole, self.selectedCore, self.currentStartX, pos[1], fixed, d)
+							self.TieData.append(newTie) 
 
+							# if we now have two ties, set up guide core
 							self.parent.compositePanel.OnButtonEnable(2, True)
 							length = len(self.TieData) % 2
 							if length == 0 : 
 								self.activeTie = 1
 								length = len(self.TieData) 
-								data = self.TieData[length - 2]
-								y1 = 0
-								y2 = 0
-								x1 = 0
-								x2 = 0
-								n = 0
-								for r in data :
-									x, y, n, f, startx, m, d = r
-									currentY = y 
-									y2 = (y - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
-									x2 = x
-								
-								self.guideCore = n 
-								data = self.TieData[length - 1]
-								for r in data :
-									x, y, n, f, startx, m, d = r
-									self.mouseY = y 
-									y1 = (y - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
-									x1 = x
-								shift = y2 - y1 
-								shiftx = (x2 - x) * (self.holeWidth + 50)
-								self.compositeDepth = y1 + shift
+								fixedTie = self.TieData[length - 2]
+								fixedY = self.getDepth(fixedTie.screenY)
+								fixedX = fixedTie.hole
+								self.guideCore = fixedTie.core
+
+								movableTie = self.TieData[length - 1]
+								shift = fixedTie.depth - movableTie.depth
+								shiftx = (fixedTie.hole - movableTie.hole) * (self.holeWidth + 50)
+								self.compositeDepth = fixedTie.depth
+								y2 = fixedTie.depth
+								y1 = movableTie.depth
 
 								holenoA = 'x'
 								holenoB = 'x'
@@ -6163,14 +6015,14 @@ class DataCanvas(wxBufferedWindow):
 								for s in self.DrawData["CoreInfo"]:
 									data = s
 									for r in data:
-										if r[0] == self.guideCore :
+										if r[0] == self.guideCore:
 											holenoA = r[3]
 											corenoA = r[4]
 											typeA = r[10]
 											leg = r[2]
 											site = r[1]
 											count = count + 1
-										if r[0] == n :
+										if r[0] == movableTie.core:
 											holenoB = r[3]
 											corenoB = r[4]
 											typeB = r[10]
@@ -6626,24 +6478,13 @@ class DataCanvas(wxBufferedWindow):
 			got = 1 
 
 		if self.selectedTie >= 0 :
-			data = self.TieData[self.selectedTie]
-			n = 0
-			d = 0
-			for r in data :
-				x, y, n, f, startx, m, d = r
-				d = (pos[1] - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
+			movableTie = self.TieData[self.selectedTie]
+			if self.selectedCore != movableTie.core:
+				return
 
-			if self.selectedCore != n :
-				return	
-
-			y1 = d 
-			y2 = 0
-			coreId = n
-			data = self.TieData[self.selectedTie - 1]
-			for r in data :
-				x, y, n, fixed, startx, m, d = r
-				y2 = (y - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
-		
+			fixedTie = self.TieData[self.selectedTie - 1]
+			y1 = self.getDepth(pos[1])
+			y2 = fixedTie.depth
 			shift = y2 - y1
 
 			holeA = '-'
@@ -6658,14 +6499,14 @@ class DataCanvas(wxBufferedWindow):
 			for s in self.DrawData["CoreInfo"]:
 				data = s
 				for r in data:
-					if r[0] == coreId :
+					if r[0] == movableTie.core:
 						holeA = r[3]
 						coreA = r[4]
 						typeA = r[10]
 						leg = r[2]
 						site = r[1]
 						count = count + 1
-					if r[0] == n :
+					if r[0] == fixedTie.core:
 						holeB = r[3]
 						coreB = r[4]
 						typeB = r[10]
@@ -6677,12 +6518,8 @@ class DataCanvas(wxBufferedWindow):
 
 			if self.parent.showCompositePanel == 0 :
 				data = self.TieData[self.selectedTie]
-				for r in data :
-					x, y, n, f, startx, m, d = r
-					d = y1
-					newtag = (x, pos[1], n, f, startx, m, d)
-					data.remove(r)
-					data.insert(0, newtag)
+				data.screenY = pos[1]
+				data.depth = y1
 			
 			self.parent.TieUpdateSend(leg, site, holeB, int(coreB), holeA, int(coreA), y1, shift)
 
@@ -6691,12 +6528,8 @@ class DataCanvas(wxBufferedWindow):
 				testret = py_correlator.evalcoef(typeB, holeB, int(coreB), y2, typeA, holeA, int(coreA), y1)
 				if testret != "" :
 					data = self.TieData[self.selectedTie]
-					for r in data :
-						x, y, n, f, startx, m, d = r
-						d = y1
-						newtag = (x, pos[1], n, f, startx, m, d)
-						data.remove(r)
-						data.insert(0, newtag)
+					data.screenY = pos[1]
+					data.depth = y1
 					self.parent.OnUpdateDepth(shift)
 					self.parent.OnAddFirstGraph(testret, y2, y1)
 
@@ -6711,7 +6544,7 @@ class DataCanvas(wxBufferedWindow):
 							self.parent.OnAddGraph(testret, y2, y1)
 				self.parent.OnUpdateGraph()
 
-			self.selectedCore = coreId 
+			self.selectedCore = movableTie.core
 			self.GuideCore = []
 			# draw guide
 			self.OnDrawGuide()
