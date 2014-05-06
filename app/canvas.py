@@ -109,6 +109,31 @@ class CompositeTie:
 	def __repr__(self):
 		return str((self.hole, self.core, self.screenX, self.screenY, self.fixed, self.depth))
 
+class CoreInfo:
+	def __init__(self, core, leg, site, hole, holeCore, minData, maxData, minDepth, maxDepth, stretch, type, quality, holeCount):
+		self.core = core # core index in currently loaded set of holes
+		self.leg = leg # parent hole leg
+		self.site = site # parent hole site
+		self.hole = hole # parent hole name
+		self.holeCore = holeCore # core index in parent hole's data
+		self.minData = minData
+		self.maxData = maxData
+		self.minDepth = minDepth
+		self.maxDepth = maxDepth
+		self.stretch = stretch # expansion/compression in this core, expressed as a %
+		self.type = type # hole data type
+		self.quality = quality # core quality
+		self.holeCount = holeCount # hole's index in currently loaded set of holes
+
+class DragCoreData:
+	def __init__(self, mouseX, origMouseY, deltaY=0):
+		self.x = mouseX # x-offset of dragged core
+		self.origMouseY = origMouseY # y-coordinate at start of drag action
+		self.y = deltaY # y-offset of dragged core (offset of current mouse y from origMouseY)
+
+	def update(self, curMouseX, curMouseY):
+		self.x = curMouseX
+		self.y = curMouseY - self.origMouseY
 
 class DataCanvas(wxBufferedWindow):
 	def __init__(self, parent, id= -1):
@@ -589,6 +614,46 @@ class DataCanvas(wxBufferedWindow):
 				self.range.append(newrange)
 				break
 
+	# CoreInfo finding routines
+	def findCoreInfoByIndex(self, coreIndex):
+		result = None
+		for ci in self.DrawData["CoreInfo"]:
+			if ci.core == coreIndex:
+				result = ci
+				break
+		if result == None:
+			print "Can't find matching coreinfo for index " + str(coreIndex)
+		return result
+
+	def findCoreInfoByHoleCore(self, hole, core):
+		result = None
+		for ci in self.DrawData["CoreInfo"]:
+			if ci.hole == hole and ci.holeCore == core:
+				result = ci
+				break
+		if result == None:
+			print "Can't find matching coreinfo for hole " + str(hole) + ", core (hole index) " + str(core)
+		return result
+
+	def findCoreInfoByHoleCoreType(self, hole, core, type):
+		result = None
+		for ci in self.DrawData["CoreInfo"]:
+			if ci.hole == hole and ci.holeCore == core and ci.type == type:
+				result = ci
+				break
+		if result == None:
+			print "Can't find matching coreinfo for hole " + str(hole) + ", core (hole index) " + str(core) + ", type " + str(type)
+		return result
+
+	def findCoreInfoByHoleCount(self, holeCount):
+		result = None
+		for ci in self.DrawData["CoreInfo"]:
+			if ci.holeCount == holeCount:
+				result = ci
+				break
+		if result == None:
+			print "Can't find matching coreinfo for holeCount " + str(holeCount)
+		return result
 
 	# convert y coordinate to depth - for composite area
 	def getDepth(self, ycoord):
@@ -1109,7 +1174,6 @@ class DataCanvas(wxBufferedWindow):
 						dc.DrawLines(((rangeMax, y2), (rangeMax + 15, y2)))
 						i = 0 
 
-
 		affine = 0.0
 		for i in range(len_hole) : 
 			holedata = hole[i + 1] # actually coredata
@@ -1138,10 +1202,8 @@ class DataCanvas(wxBufferedWindow):
 
 			l = []
 			if smoothed == 0 or smoothed == 5 or smoothed == 6: 
-				# index, leg, site, hole, core, min data, max data 
-				l = []
-				l.append((self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], holedata[0], holedata[3], holedata[4], depthmin, depthmax, holedata[6], holeInfo[2], holedata[8], self.HoleCount))
-				self.DrawData["CoreInfo"].append(l)
+				coreInfo = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], holedata[0], holedata[3], holedata[4], depthmin, depthmax, holedata[6], holeInfo[2], holedata[8], self.HoleCount)
+				self.DrawData["CoreInfo"].append(coreInfo)
 
 			self.coreCount = self.coreCount + 1
 
@@ -1160,22 +1222,6 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawText("Log, Range: " + str(holeInfo[5]) + ":" + str(holeInfo[6]), title_pos, 25)
 
 		return type
-
-
-	def GetCoreId(self, dc, hole, core):
-		coreid = 0
-		ret = 0
-		for data in self.DrawData["CoreInfo"]:
-			for r in data:
-				if r[3] == hole and r[4] == str(core):
-					coreid = int(r[0])
-					ret = 1
-				if ret == 1:
-					break
-			if ret == 1:
-				break
-
-		return coreid
 
 
 	def DrawSplice(self, dc, hole, smoothed):
@@ -1519,15 +1565,6 @@ class DataCanvas(wxBufferedWindow):
 			x = 0
 			y = 0
 
-			#if len(splicelines) > 0 and self.DiscretePlotMode == 0 : 
-			#	if self.lastSpliceX != -999.99 :
-			#		for r in splicelines :
-			#			px, py, x, y, f = r
-			#			dc.DrawLines(((self.lastSpliceX, self.lastSpliceY), (px, py))) 
-			#			break
-			#	self.lastSpliceX = spx 
-			#	self.lastSpliceY = spy 
-
 			if self.DiscretePlotMode == 0 :
 				for r in splicelines :
 					px, py, x, y, f = r
@@ -1580,20 +1617,6 @@ class DataCanvas(wxBufferedWindow):
 			x = 0
 			y = 0
 
-			#if len(splicelines) > 0 and self.DiscretePlotMode == 0 : 
-			#	if self.lastSpliceX != -999.99 :
-			#		for r in splicelines :
-			#			px, py, x, y, f = r
-			#			if f == 1 :
-			#				dc.SetPen(wx.Pen(wx.Colour(0, 191, 255), 1))
-			#			else :
-			#				#dc.SetPen(wx.Pen(self.colorDict['mudlineAdjust'], 1))
-			#				dc.SetPen(wx.Pen(wx.Colour(255, 184, 149), 1))
-			#			dc.DrawLines(((self.lastSpliceX, self.lastSpliceY), (px, py))) 
-			#			break
-			#	self.lastSpliceX = spx 
-			#	self.lastSpliceY = spy 
-
 			if self.DiscretePlotMode == 0 :
 				for r in splicelines :
 					px, py, x, y, f = r
@@ -1613,22 +1636,7 @@ class DataCanvas(wxBufferedWindow):
 						dc.SetPen(wx.Pen(wx.Colour(255, 184, 149), 1))
 					dc.DrawCircle(px, py, self.DiscretetSize)			
 
-		hole = '-'
-		core = -1
-		ret = 0 
-		for s in self.DrawData["CoreInfo"]:
-			data = s
-			for r in data:
-				if r[0] == index :
-					hole = r[3]
-					core = r[4]
-					ret = 1 
-					break
-			if ret == 1 :
-				break
-
 		if y > 0 and smoothed < 3 : 
-			#dc.DrawText(str(hole)+str(core), self.splicerX + 10, y-5)
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 			if len(annotation) > 0 :
 				dc.DrawText(annotation, startX - 20, y - 20)
@@ -2167,7 +2175,7 @@ class DataCanvas(wxBufferedWindow):
 		return affine
 
 
-	def DrawGraphInfo(self, dc, curCoreData, flag):
+	def DrawGraphInfo(self, dc, coreInfo, flag):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
@@ -2180,21 +2188,20 @@ class DataCanvas(wxBufferedWindow):
 			x = self.Width - 220
 
 		self.minData = -1
-		n, leg, site, hole, core, min, max, dmin, dmax, squish, type, quality, holeth = curCoreData
-		self.statusStr = self.statusStr + "Hole: " + hole + " Core: " + core
-		dc.DrawText("Hole: " + hole + " Core: " + core, x, self.startDepth)
-		dc.DrawText("Min: " + str(min) + " Max: " + str(max), x, self.startDepth + 20)
-		dc.DrawText("Stretched Ratio: " + str(squish) + "%", x, self.startDepth + 40)
+		self.statusStr = self.statusStr + "Hole: " + coreInfo.hole + " Core: " + coreInfo.holeCore
+		dc.DrawText("Hole: " + coreInfo.hole + " Core: " + coreInfo.holeCore, x, self.startDepth)
+		dc.DrawText("Min: " + str(coreInfo.minData) + " Max: " + str(coreInfo.maxData), x, self.startDepth + 20)
+		dc.DrawText("Stretched Ratio: " + str(coreInfo.stretch) + "%", x, self.startDepth + 40)
 
 		qualityStr = "Quality: "
-		qualityStr += "Good" if quality == '0' else "Bad"
+		qualityStr += "Good" if coreInfo.quality == '0' else "Bad"
 		dc.DrawText(qualityStr, x, self.startDepth + 60) 
 
-		self.minData = min 
-		return (type, holeth)
+		self.minData = coreInfo.minData
+		return (coreInfo.type, coreInfo.holeCount)
 
 
-	def DrawMouseInfo(self, dc, curCoreData, x, y, startx, flag, type):
+	def DrawMouseInfo(self, dc, coreInfo, x, y, startx, flag, type):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
@@ -2224,7 +2231,7 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawText(str(tempx), x, self.startDepth - 15)
 				break
 
-		section = self.parent.GetSectionAtDepth(curCoreData[3], int(curCoreData[4]), type, ycoord)
+		section = self.parent.GetSectionAtDepth(coreInfo.hole, int(coreInfo.holeCore), type, ycoord)
 		self.statusStr += " Section: " + str(section)
 
 		# display depth in ruler units
@@ -2271,11 +2278,6 @@ class DataCanvas(wxBufferedWindow):
 
 			#self.eldPanel.SetPosition((self.Width, 50))
 			self.subSideNote.SetSize((self.sideTabSize - 20, self.Height))
-
-			#self.logPanel.SetSize((self.sideTabSize-40,self.Height-50))
-			#self.helpPanel.SetSize((self.sideTabSize-40,self.Height-50))
-			#self.helpText.SetSize((300,self.Height-50))
-			#self.reportText.SetSize((300,self.Height-50))
 
 			if self.spliceWindowOn == 1 :
 				if self.splicerX <= self.compositeX :
@@ -2427,21 +2429,11 @@ class DataCanvas(wxBufferedWindow):
 			if key == "MouseInfo":
 				for r in data:
 					coreIndex, x, y, startx, flag = r
-					coreFound = False
-					curCoreData = []
-					for dataList in self.DrawData["CoreInfo"]:
-						for coreData in dataList:
-								if coreData[0] == coreIndex:
-									curCoreData = coreData
-									coreFound = True
-									break
-						if coreFound == True:
-							break
-
-					if coreFound == True:
-						type, holeth = self.DrawGraphInfo(dc, curCoreData, flag)
+					coreInfo = self.findCoreInfoByIndex(coreIndex)
+					if coreInfo != None:
+						type, holeth = self.DrawGraphInfo(dc, coreInfo, flag)
 						self.selectedHoleType = type
-						self.DrawMouseInfo(dc, curCoreData, x, y, startx, flag, type)
+						self.DrawMouseInfo(dc, coreInfo, x, y, startx, flag, type)
 			if type != "" :
 				break
 		self.parent.statusBar.SetStatusText(self.statusStr)
@@ -2966,6 +2958,8 @@ class DataCanvas(wxBufferedWindow):
 
 		self.DrawRuler(dc)
 
+		self.DrawDragCore(dc)
+
 		### draw composite ties
 		tempx = 0
 		if self.hideTie == 0 : 
@@ -3096,23 +3090,9 @@ class DataCanvas(wxBufferedWindow):
 
 
 	def GrabCore(self, coreindex, type, depth_t, depth_b) :
-		hole = '-'
-		coreid = -1
-		ret = 0
-		top = -1.0
-		bottom = -1.0
-		for s in self.DrawData["CoreInfo"]:
-			data = s
-			for r in data:
-				if r[0] == coreindex :
-				 hole = r[3]
-				 coreid = int(r[4])
-				 top = float(r[7])
-				 bottom = float(r[8])
-				 ret = 1
-				 break
-			if ret == 1:
-				break
+		coreInfo = self.findCoreInfoByIndex(coreindex)
+		top = float(coreInfo.minDepth)
+		bottom = float(coreInfo.maxDepth)
 
 		if type == 1 : # ABOVE 
 			bottom = depth_b
@@ -3126,7 +3106,7 @@ class DataCanvas(wxBufferedWindow):
 				bottom = depth_t
 				top = depth_b
 		l = []
-		l.append((self.SpliceCoreId, hole, coreid, top, bottom)) 
+		l.append((self.SpliceCoreId, coreInfo.hole, int(coreInfo.holeCore), top, bottom)) 
 		self.SplicedHole.append(l)
 
 
@@ -3134,27 +3114,18 @@ class DataCanvas(wxBufferedWindow):
 		self.LogTieData = []
 		for tie_data in tie_list : 
 			id, holeB, coreB, holeA, coreA, depth, depthB = tie_data 
-			coreid = 0
-			count = 0
-			for data in self.DrawData["CoreInfo"]:
-				for r in data:
-					if r[3] == holeA and r[4] == str(coreA):
-						coreid = int(r[0])
-						count = 1 
-						break
-				if count == 1:
-					break
-			# mousex, y, core id, fixed, startX, mindata, depth, splicerX, id, depth
+			coreInfo = self.findCoreInfoByHoleCore(holeA, str(coreA))
+
 			x = 100 + self.splicerX + self.holeWidth
 			y = self.startDepth + (depthB - self.SPrulerStartDepth) * (self.length / self.gap)
 			l = []
-			l.append((x, y, coreid, 1, -1, -1, depth, self.splicerX, id, depth))
+			l.append((x, y, coreInfo.core, 1, -1, -1, depth, self.splicerX, id, depth))
 			self.LogTieData.append(l)
 
 			l = []
 			x = x + self.holeWidth 
 			y = self.startDepth + (depth - self.SPrulerStartDepth) * (self.length / self.gap)
-			l.append((x, y, coreid, 0, -1, -1, depth, self.splicerX, id, depth))
+			l.append((x, y, coreInfo.core, 0, -1, -1, depth, self.splicerX, id, depth))
 			self.LogTieData.append(l)
 
 			rey1 = int(100.0 * float(depth)) / 100.0;
@@ -3199,46 +3170,29 @@ class DataCanvas(wxBufferedWindow):
 			if idback != -1 and id == -1 :
 				self.SpliceCore.append(coreidB)
 
-			coreidA = 0
-			coreidB = 0
-			count = 0
-			start = False
-			for data in self.DrawData["CoreInfo"]:
-				for r in data:
-					#if r[0] == 0 : 
-					#	start = True
-					#if start == True :
-						if r[3] == holeA and r[4] == str(coreA) and r[10] == typeA :
-							coreidA = int(r[0])
-							count = count + 1
-						if r[3] == holeB and r[4] == str(coreB) and r[10] == typeB :
-							coreidB = int(r[0])
-							count = count + 1
-						if count == 2:
-							break
-				if count == 2:
-					break
+			coreInfoA = self.findCoreInfoByHoleCoreType(holeA, str(coreA), typeA)
+			coreInfoB = self.findCoreInfoByHoleCoreType(holeB, str(coreB), typeB)
 
-			if prevCoreIndex != coreidA :
-				self.SpliceCore.append(coreidA)
-			prevCoreIndex = coreidA
+			if prevCoreIndex != coreInfoA.core :
+				self.SpliceCore.append(coreInfoA.core)
+			prevCoreIndex = coreInfoA.core
 
 			idback = id
 			if id != -1 :
 				if index == 0 : 
-					self.GrabCore(coreidB, 1, -1, depthB)
+					self.GrabCore(coreInfoB.core, 1, -1, depthB)
 					index = 1
 				else : 
-					if prevCoreIndex == coreidB : 
-						self.GrabCore(coreidB, 3, prevDepth, depthB)
+					if prevCoreIndex == coreInfoB.core : 
+						self.GrabCore(coreInfoB.core, 3, prevDepth, depthB)
 					else : 
-						self.GrabCore(coreidB, 1, -1, depthB)
+						self.GrabCore(coreInfoB.core, 1, -1, depthB)
 
 		if id != -1 :
-			self.SpliceCore.append(coreidB)
+			self.SpliceCore.append(coreInfoB.core)
 
-		prevCoreIndex = coreidA
-		self.PreviousSpliceCore = coreidB 
+		prevCoreIndex = coreInfoA.core
+		self.PreviousSpliceCore = coreInfoB.core
 		prevDepth = depthB
 
 		self.spliceCount = len(self.SpliceCore) 
@@ -3252,54 +3206,16 @@ class DataCanvas(wxBufferedWindow):
 
 	def OnSetQTCb(self, event) :
 		opId = event.GetId() 
-
-		"""
-		if opId == 1 : # register the core as bas core 
-			for mouse in self.DrawData["MouseInfo"] :
-				idx = mouse[0]
-				for data in self.DrawData["CoreInfo"] :
-					for info in data :
-						if idx == info[0] :
-							type = info[10]
-							if type == "Natural Gamma" :
-								type = "NaturalGamma"
-							py_correlator.setCoreQuality(info[3], int(info[4]), 1, type)
-							self.parent.dataFrame.OnUPDATE_CULLTABLE(type)
-							self.parent.UpdateData()
-							return	
-				break
-		elif opId == 2 : # register back it to good core
-			for mouse in self.DrawData["MouseInfo"] :
-				idx = mouse[0]
-				for data in self.DrawData["CoreInfo"] :
-					for info in data :
-						if idx == info[0] :
-							type = info[10]
-							if type == "Natural Gamma" :
-								type = "NaturalGamma"
-							py_correlator.setCoreQuality(info[3], int(info[4]), 0, type)
-							self.parent.dataFrame.OnUPDATE_CULLTABLE(type)
-							self.parent.UpdateData()
-							return	
-				break
-		elif opId == 3 : # show this core on Corelyzer 
-		"""	
-		if opId == 3 : # show this core on Corelyzer 
-			for mouse in self.DrawData["MouseInfo"] :
-				idx = mouse[0]
-				for data in self.DrawData["CoreInfo"] :
-					for info in data :
-						if idx == info[0] :
-							self.parent.ShowCoreSend(info[2], info[1], info[3], info[4])
-		elif opId == 4 : 
-			for mouse in self.DrawData["MouseInfo"] :
-				idx = mouse[0]
-				for data in self.DrawData["CoreInfo"] :
-					for info in data :
-						if idx == info[0] :
-							return	
-				break
-
+		if opId == 3: # show this core on Corelyzer
+			for mouse in self.DrawData["MouseInfo"]:
+				coreInfo = self.findCoreInfoByIndex(mouse[0])
+				self.parent.ShowCoreSend(coreInfo.leg, coreInfo.site, coreInfo.hole, coreInfo.holeCore)
+		# brgtodo 5/1/2014 unclear what we're doing here...search then return nothing on a match, set no globals, etc. ???
+		elif opId == 4:
+			for mouse in self.DrawData["MouseInfo"]:
+				coreInfo = self.findCoreInfoByIndex(mouse[0])
+				if coreInfo != None:
+					return
 
 	def OnScaleSelectionCb(self, event) :
 		opId = event.GetId() 
@@ -3431,36 +3347,17 @@ class DataCanvas(wxBufferedWindow):
 			if x1 < x2 :
 				reversed = True
 
-			holeA = '-'
-			holeB = '-'
-			coreA = -1
-			coreB = -1
-			count = 0
-			
-			for s in self.DrawData["CoreInfo"]:
-				data = s
-				for r in data:
-					if r[0] == coreidA :
-						holeA = r[3]
-						coreA = r[4]
-						count = count + 1
-					if r[0] == coreidB :
-						holeB = r[3]
-						coreB = r[4]
-						count = count + 1
-					if count >= 2:
-						break
-				if count >= 2 :
-					break
+			coreInfoA = self.findCoreInfoByIndex(coreidA)
+			coreInfoB = self.findCoreInfoByIndex(coreidB)
 
-			if holeA != '-' and holeB != '-' :
+			if coreInfoA != None and coreInfoB != None:
 				preTieNo = tieNo
 				annot_str = ""
 				rd = -999
 				if reversed == False :
-					tieNo, annot_str, rd = py_correlator.sagan(holeB, int(coreB), y1, holeA, int(coreA), y2, tieNo)
+					tieNo, annot_str, rd = py_correlator.sagan(coreInfoB.hole, int(coreInfoB.holeCore), y1, coreInfoA.hole, int(coreInfoA.holeCore), y2, tieNo)
 				else :
-					tieNo, annot_str, rd = py_correlator.sagan(holeA, int(coreA), y2, holeB, int(coreB), y1, tieNo)
+					tieNo, annot_str, rd = py_correlator.sagan(coreInfoA.hole, int(coreInfoA.holeCore), y2, coreInfoB.hole, int(coreInfoB.holeCore), y1, tieNo)
 					temp = y2
 					y2 = y1
 					y1 = temp
@@ -3497,9 +3394,9 @@ class DataCanvas(wxBufferedWindow):
 				else :
 					self.parent.UpdateTieInfo(info, rey1, self.LogselectedTie)
 
-				s = "Log/Core Match: hole " + holeA + " core " + coreA + ": " + str(datetime.today()) + "\n"
+				s = "Log/Core Match: hole " + holeInfoA.hole + " core " + holeInfoA.holeCore + ": " + str(datetime.today()) + "\n"
 				self.parent.logFileptr.write(s)
-				s = holeA + " " + coreA + " " + str(y2) + " tied to " + holeB + " " + coreB + " " + str(y1) + "\n\n"
+				s = coreInfoA.hole + " " + coreInfoA.holeCore + " " + str(y2) + " tied to " + coreInfoB.hole + " " + coreInfoB.holeCore + " " + str(y1) + "\n\n"
 				self.parent.logFileptr.write(s)
 
 				#self.SpliceData = []
@@ -3610,38 +3507,17 @@ class DataCanvas(wxBufferedWindow):
 			if x2 > x1 :
 				reversed = True
 
-			holeA = holeB = '-'
-			coreA = coreB = -1
-			typeA = typeB = ''
-			count = 0
-			for s in self.DrawData["CoreInfo"]:
-				data = s
-				for r in data:
-					if r[0] == coreidA :
-						holeA = r[3]
-						coreA = r[4]
-						typeA = r[10]
-						count = count + 1
-					if r[0] == coreidB :
-						holeB = r[3]
-						coreB = r[4]
-						typeB = r[10]
-						count = count + 1
-					if count >= 2:
-						break
-				if count >= 2 :
-					break
+			ciA = self.findCoreInfoByIndex(coreidA)
+			ciB = self.findCoreInfoByIndex(coreidB)
 
-			type_a = self.GetTypeID(typeA)
-			type_b = self.GetTypeID(typeB)
-			if type_a != type_b :
+			if self.GetTypeID(ciA.type) != self.GetTypeID(ciB.type):
 				self.multipleType = True 
 
-			if holeA != '-' and holeB != '-' :
+			if ciA != None and ciB != None:
 				if reversed == False :
-					splice_data = py_correlator.splice(typeB, holeB, int(coreB), y1, typeA, holeA, int(coreA), y2, tieNo, self.parent.smoothDisplay, 0)
+					splice_data = py_correlator.splice(ciB.type, ciB.hole, int(ciB.holeCore), y1, ciA.type, ciA.hole, int(ciA.holeCore), y2, tieNo, self.parent.smoothDisplay, 0)
 				else :
-					splice_data = py_correlator.splice(typeA, holeA, int(coreA), y2, typeB, holeB, int(coreB), y1, tieNo, self.parent.smoothDisplay, 0)
+					splice_data = py_correlator.splice(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1, tieNo, self.parent.smoothDisplay, 0)
 				self.parent.SpliceChange = True
 				py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
 
@@ -3688,16 +3564,16 @@ class DataCanvas(wxBufferedWindow):
 					if self.Constrained == 0 :
 						s = "Unconstrained Splice: "	
 						
-					s = s + "hole " + holeB + " core " + coreB + ": " + str(datetime.today()) + "\n"
+					s = s + "hole " + ciB.hole + " core " + ciB.holeCore + ": " + str(datetime.today()) + "\n"
 					self.parent.logFileptr.write(s)
-					s = holeA + " " + coreA + " " + str(y1) + " tied to " + holeB + " " + coreB + " " + str(y2) + "\n\n"
+					s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
 					self.parent.logFileptr.write(s)
 
-					self.parent.SpliceSectionSend(holeA, coreA, y1, "split", tieNo)
-					self.parent.SpliceSectionSend(holeB, coreB, y2, None, tieNo)
+					self.parent.SpliceSectionSend(ciA.hole, ciA.holeCore, y1, "split", tieNo)
+					self.parent.SpliceSectionSend(ciB.hole, ciB.holeCore, y2, None, tieNo)
 					if tieNo > 0 :
-						self.parent.SpliceSectionSend(holeA, coreA, y1, "split", -1)
-						self.parent.SpliceSectionSend(holeB, coreB, y2, None, -1)
+						self.parent.SpliceSectionSend(ciA.hole, ciA.holeCore, y1, "split", -1)
+						self.parent.SpliceSectionSend(ciB.hole, ciB.holeCore, y2, None, -1)
 
 					self.SpliceTieData = []
 					self.SpliceTieData.append(dataB)
@@ -3825,31 +3701,16 @@ class DataCanvas(wxBufferedWindow):
 		elif opId == 5:
 			if self.selectedTie >= 0 :
 				tie = self.TieData[self.selectedTie]
-				coreId = data.core
-				holeA = '-'
-				coreA = -1
-				count = 0
-				for s in self.DrawData["CoreInfo"]:
-					data = s
-					for r in data:
-						if r[0] == tie.core:
-						 holeA = r[3]
-						 coreA = r[4]
-						 count = count + 1
-						if count >= 1:
-						 break
-					if count >= 1 :
-						 break
+				coreInfo = self.findCoreInfoByIndex(tie.core)
 
-				#print "[DEBUG] " + holeA + " " + str(coreA) + " undo "
-				if holeA != '-' :
-					py_correlator.undo(2, holeA, int(coreA))
+				if coreInfo != None:
+					py_correlator.undo(2, coreInfo.hole, int(coreInfo.holeCore))
 
 					self.parent.AffineChange = True
 					py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
 					self.parent.UpdateSend()
 
-					s = "Composite undo offsets the core above: hole " + holeA + " core " + coreA + ": " + str(datetime.today()) + "\n\n" 
+					s = "Composite undo offsets the core above: hole " + coreInfo.hole + " core " + coreInfo.holeCore + ": " + str(datetime.today()) + "\n\n" 
 					self.parent.logFileptr.write(s)
 
 					self.AdjustDepthCore = []
@@ -3866,37 +3727,12 @@ class DataCanvas(wxBufferedWindow):
 				shift = y2 - y1
 				self.OnDataChange(movableTie.core, shift)
 
-				holeA = '-' 
-				holeB = '-' 
-				coreA = -1 
-				coreB = -1 
-				count = 0
-				leg = " "
-				site = " "
-				data_type = "-"
+				ciA = self.findCoreInfoByIndex(movableTie.core)
+				ciB = self.findCoreInfoByIndex(fixedTie.core)
 
-				for s in self.DrawData["CoreInfo"]:
-					data = s
-					for r in data:
-						if r[0] == movableTie.core:
-							data_type = r[10] 
-							holeA = r[3] 
-							coreA = r[4] 
-							leg = r[2]
-							site = r[1]
-							count = count + 1 
-						if r[0] == fixedTie.core:
-							holeB = r[3] 
-							coreB = r[4] 
-							count = count + 1 
-							if count >= 2:
-								break
-					if count >= 2 : 
-						break
-
-				if holeA != '-' and holeB != '-' : 
+				if ciA != None and ciB != None:
 					#print "[DEBUG] Compostie " + str(y1) +  " " + str(y2)
-					coef = py_correlator.composite(holeA, int(coreA), y1, holeB, int(coreB), y2, opId, data_type)
+					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type)
 					self.parent.AffineChange = True
 					self.parent.UpdateData()
 					self.parent.UpdateStratData()
@@ -3907,17 +3743,17 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.compositePanel.UpdateGrowthPlot()
 
 					if opId == 3 : 
-						s = "Composite(All Below): hole " + holeA + " core " + coreA + ": " + str(datetime.today()) + "\n"
+						s = "Composite(All Below): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 						self.parent.logFileptr.write(s)
 					else :
-						s = "Composite: hole " + holeA + " core " + coreA + ": " + str(datetime.today()) + "\n"
+						s = "Composite: hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 						self.parent.logFileptr.write(s)
 
-					s = holeA + " " + coreA + " " + str(y1) + " tied to " + holeB + " " + coreB + " " + str(y2) + "\n\n"
+					s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
 					self.parent.logFileptr.write(s)
 
 					py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
-					self.parent.ShiftSectionSend(holeA, coreA, shift, opId)
+					self.parent.ShiftSectionSend(ciA.hole, ciA.holeCore, shift, opId)
 
 					if self.parent.showReportPanel == 1 :
 						self.parent.OnUpdateReport()
@@ -3928,6 +3764,8 @@ class DataCanvas(wxBufferedWindow):
 		self.drag = 0 
 		self.UpdateDrawing()
 
+	# opt = 0 (adjust this core only) or 1 (adjust this and all below)
+	# actionType = 0 (best correlation), 1 (current tie), 2 (given, aka value in "Depth Adjust" field)
 	def OnAdjustCore(self, opt, actionType, strOffset):
 		self.parent.compositePanel.OnButtonEnable(0, False)
 		self.parent.compositePanel.OnButtonEnable(1, True)
@@ -3953,65 +3791,34 @@ class DataCanvas(wxBufferedWindow):
 
 			self.OnDataChange(movableTie.core, shift)
 
-			holeA = '-'
-			holeB = '-'
-			coreA = -1
-			coreB = -1
-			count = 0
-			leg = " " 
-			site = " " 
-			data_type = "-" 
+			ciA = self.findCoreInfoByIndex(movableTie.core)
+			ciB = self.findCoreInfoByIndex(fixedTie.core)
 
-			for s in self.DrawData["CoreInfo"]:
-				data = s
-				for r in data:
-					if r[0] == movableTie.core:
-						data_type = r[10] 
-						holeA = r[3]
-						coreA = r[4]
-						leg = r[2]
-						site = r[1]
-						count = count + 1
-					if r[0] == fixedTie.core:
-						holeB = r[3]
-						coreB = r[4]
-						count = count + 1
-					if count >= 2:
-						break
-				if count >= 2 :
-					break
-
-			if holeA != '-' and holeB != '-' :
+			if ciA != None and ciB != None:
 				# actionType(0=best, 1=tie, 2=given), strOffset 
 				opId = 2
 				#print "[DEBUG] Compostie " + str(y1) +  " " + str(y2)
-				if actionType < 2 : 
-					if opt == 0 :
-						opId = 2
-						coef = py_correlator.composite(holeA, int(coreA), y1, holeB, int(coreB), y2, 2, data_type)
-					else :
-						opId = 3 
-						coef = py_correlator.composite(holeA, int(coreA), y1, holeB, int(coreB), y2, 3, data_type)
+				if actionType < 2 :
+					opId = 2 if opt == 0 else 3
+					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type)
 				else :
-					if opt == 0 :
-						coef = py_correlator.composite(holeA, int(coreA), y1, holeB, int(coreB), shift, 4, data_type)
-					else :
-						coef = py_correlator.composite(holeA, int(coreA), y1, holeB, int(coreB), shift, 5, data_type)
+					givenOp = 4 if opt == 0 else 5 # brgtodo 5/1/2014: name these types!
+					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCoreB), shift, givenOp, ciA.type)
 
 				self.parent.AffineChange = True
 
 				if opt == 0 :
-					s = "Composite: hole " + holeA + " core " + coreA + ": " + str(datetime.today()) + "\n"
+					s = "Composite: hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 					self.parent.logFileptr.write(s)
 				else :
-					s = "Composite(All Below): hole " + holeA + " core " + coreA + ": " + str(datetime.today()) + "\n"
+					s = "Composite(All Below): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 					self.parent.logFileptr.write(s)
 
-				s = holeA + " " + coreA + " " + str(y1) + " tied to " + holeB + " " + coreB + " " + str(y2) + "\n\n"
+				s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
 				self.parent.logFileptr.write(s)
 
 				py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
-				self.parent.ShiftSectionSend(holeA, coreA, shift, opId)
+				self.parent.ShiftSectionSend(ciA.hole, ciA.holeCore, shift, opId)
 
 				if self.parent.showReportPanel == 1 :
 					self.parent.OnUpdateReport()
@@ -4044,29 +3851,15 @@ class DataCanvas(wxBufferedWindow):
 				self.selectedLastTie = len(self.TieData) - 1
 			if self.selectedLastTie >= 0 and self.selectedLastTie < len(self.TieData):
 				tie = self.TieData[self.selectedLastTie]
-				holeA = '-'
-				coreA = -1
-				count = 0
-				for s in self.DrawData["CoreInfo"]:
-					data = s
-					for r in data:
-						if r[0] == tie.core:
-							holeA = r[3]
-							coreA = r[4]
-							count = count + 1
-						if count >= 1:
-							break
-					if count >= 1 :
-						break
+				coreInfo = self.findCoreInfoByIndex(tie.core)
 
-				#print "[DEBUG] " + holeA + " " + str(coreA) + " undo "
-				if holeA != '-' :
-					py_correlator.undo(2, holeA, int(coreA))
+				if coreInfo != None:
+					py_correlator.undo(2, coreInfo.hole, int(coreInfo.holeCore))
 
 					self.parent.AffineChange = True
 					py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
 
-					s = "Composite undo offsets the core above: hole " + holeA + " core " + coreA + ": " + str(datetime.today()) + "\n\n"
+					s = "Composite undo offsets the core above: hole " + coreInfo.hole + " core " + coreInfo.holeCore + ": " + str(datetime.today()) + "\n\n"
 					self.parent.logFileptr.write(s)
 					self.parent.UpdateData()
 					self.parent.UpdateStratData()
@@ -4102,20 +3895,14 @@ class DataCanvas(wxBufferedWindow):
 		return type
 		
 	def GetSpliceCore(self):
+		result = None
 		lastTie = len(self.SpliceCore) - 1 
 		if lastTie >= 0 :
 			lastCore = self.SpliceCore[lastTie]
-			for s in self.DrawData["CoreInfo"]:
-				data = s
-				for r in data:
-					if r[0] == lastCore :
-	 					hole = r[3]
-	 					core = r[4]
-	 					type = r[10]
-	 					l = hole, core, type
-						return l 
-
-		return None
+			coreInfo = self.findCoreInfoByIndex(lastCore)
+			if coreInfo != None:
+				result = coreInfo.hole, coreInfo.holeCore, coreInfo.type
+		return result
 
 	def OnSpliceCore(self):
 		self.parent.splicePanel.OnButtonEnable(0, False)
@@ -4175,13 +3962,6 @@ class DataCanvas(wxBufferedWindow):
 					if self.SpliceData == [] : 
 						self.parent.splicePanel.OnButtonEnable(4, False)
 
-					#if self.SmoothData != [] :
-					#	splice_data = py_correlator.getData(4)
-					#	if splice_data != "" :
-					#		self.SpliceSmoothData = []
-					#		self.parent.filterPanel.OnLock()
-					#		self.parent.ParseData(splice_data, self.SpliceSmoothData)
-					#		self.parent.filterPanel.OnRelease()
 					self.parent.UndoSpliceSectionSend()
 
 				s = "Splice undo last spliced tie: " + str(datetime.today()) + "\n\n"
@@ -4216,11 +3996,6 @@ class DataCanvas(wxBufferedWindow):
 					self.PreviousSpliceCore = self.SpliceCore[coresize] 
 					self.CurrentSpliceCore = -1
 					#self.parent.splicePanel.OnButtonEnable(1, False)
-
-		#diffcore = len(self.SpliceCore) - len(self.RealSpliceTie)
-		#self.SpliceCore.pop()
-		#if diffcore > 1 and len(self.SpliceCore) > 1:
-		#	self.SpliceCore.pop()
 
 		ret = py_correlator.getData(2)
 		if ret != "" :
@@ -4430,54 +4205,29 @@ class DataCanvas(wxBufferedWindow):
 			depth2 = fixedTie.depth
 			n2 = fixedTie.core
 
-			holenoA = 'x'
-			holenoB = 'x'
-			corenoA = -1
-			corenoB = -1
-			typeA = ''
-			typeB = ''
-			count = 0
-			leg = " "
-			site = " "
-			for s in self.DrawData["CoreInfo"]:
-				data = s
-				for r in data:
-					if r[0] == fixedTie.core :
-						holenoA = r[3]
-						corenoA = r[4]
-						typeA = r[10]
-						leg = r[2]
-						site = r[1]
-						count = count + 1
-					elif r[0] == movableTie.core :
-						holenoB = r[3]
-						corenoB = r[4]
-						typeB = r[10]
-						count = count + 1
-					if count >= 2:
-						break
-				if count >= 2:
-					break
+			ciA = self.findCoreInfoByIndex(fixedTie.core)
+			ciB = self.findCoreInfoByIndex(movableTie.core)
 	
 			shift = fixedTie.depth - movableTie.depth
 			shiftx = fixedTie.hole - movableTie.hole
 			self.OnUpdateGuideData(self.activeCore, shiftx, shift)
 			self.parent.OnUpdateDepth(shift)
-			self.parent.TieUpdateSend(leg, site, holenoA, int(corenoA), holenoB, int(corenoB), depth, shift)
+			self.parent.TieUpdateSend(ciA.leg, ciA.site, ciA.hole, int(ciA.holeCore), ciB.hole, int(ciB.holeCore), depth, shift)
 
 			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
 			if flag == 1 :
-				testret = py_correlator.evalcoef(typeA, holenoA, int(corenoA), depth2, typeB, holenoB, int(corenoB), depth)
+				testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), depth2, ciB.type, ciB.hole, int(ciB.holeCore), depth)
 				if testret != "" :
 					self.parent.OnAddFirstGraph(testret, depth2, depth)
 
+				typeA = ciA.type # needed since we don't want to modify ciA's type
 				for data_item in self.range :
-					if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
+					if data_item[0] == "Natural Gamma" and ciA.type == "NaturalGamma" :
 						typeA = "Natural Gamma"
-					elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
+					elif data_item[0] == "NaturalGamma" and ciA.type == "Natural Gamma" :
 						typeA = "NaturalGamma"
 					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-						testret = py_correlator.evalcoef(data_item[0], holenoA, int(corenoA), depth2, data_item[0], holenoB, int(corenoB), depth)
+						testret = py_correlator.evalcoef(data_item[0], ciA.hole, int(ciA.holeCore), depth2, data_item[0], ciB.hole, int(ciB.holeCore), depth)
 						if testret != "" :
 							self.parent.OnAddGraph(testret, depth2, depth)
 
@@ -4521,31 +4271,9 @@ class DataCanvas(wxBufferedWindow):
 				else :
 					depth2 = d
 
-			holenoA = 'x'
-			holenoB = 'x'
-			corenoA = -1
-			corenoB = -1
-			typeA = ''
-			typeB = ''
-			count = 0
-			for s in self.DrawData["CoreInfo"]:
-				data = s
-				for r in data:
-					if r[0] == n2 :
-						holenoA = r[3]
-						corenoA = r[4]
-						typeA = r[10]
-						count = count + 1
-					elif r[0] == n1 :
-						holenoB = r[3]
-						corenoB = r[4]
-						typeB = r[10]
-						count = count + 1
-					if count >= 2:
-						break
-				if count >= 2:
-					break
-	
+			ciA = self.findCoreInfoByIndex(n2)
+			ciB = self.findCoreInfoByIndex(n1)
+
 			shift = depth2 - depth 
 			self.OnUpdateSPGuideData(self.activeCore, depth, shift)
 			if self.Constrained == 0 :
@@ -4555,17 +4283,18 @@ class DataCanvas(wxBufferedWindow):
 			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
 			if flag == 1 :
 
-				testret = py_correlator.evalcoef_splice(typeB, holenoB, int(corenoB), depth, depth2)
+				testret = py_correlator.evalcoef_splice(ciB.type, ciB.hole, int(ciB.holeCore), depth, depth2)
 				if testret != "" :
 					self.parent.OnAddFirstGraph(testret, depth2, depth)
 
+				typeA = ciA.type # needed since we don't want to modify ciA's type
 				for data_item in self.range :
 					if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
 						typeA = "Natural Gamma"
 					elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
 						typeA = "NaturalGamma"
 					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-						testret = py_correlator.evalcoef_splice(data_item[0], holenoB, int(corenoB), depth, depth2)
+						testret = py_correlator.evalcoef_splice(data_item[0], ciB.hole, int(ciB.holeCore), depth, depth2)
 						if testret != "" :
 							self.parent.OnAddGraph(testret, depth2, depth)
 				self.parent.OnUpdateGraph()
@@ -4600,20 +4329,7 @@ class DataCanvas(wxBufferedWindow):
 				y2 = r[6]
 				n2 = r[2] 
 
-			holenoA = 'x'
-			corenoA = -1
-			count = 0
-			for s in self.DrawData["CoreInfo"]:
-				data = s
-				for r in data:
-					if r[0] == n2 :
-						holenoA = r[3]
-						corenoA = r[4]
-						count = count + 1
-						break
-				if count >= 1:
-					break
-
+			coreInfo = self.findCoreInfoByIndex(n2)
 			count = 0
 			if len(self.SpliceCore) == 1 :
 				self.PreviewNumTies = 0
@@ -4626,7 +4342,7 @@ class DataCanvas(wxBufferedWindow):
 					start = last + 1
 					last = data.find(" ", start) # core
 					temp_core = data[start:last]
-					if temp_hole == holenoA and temp_core == corenoA :
+					if temp_hole == coreInfo.hole and temp_core == coreInfo.holeCore:
 						self.PreviewFirstNo = count * 2 + 1
 						self.PreviewNumTies = 1
 						break
@@ -4769,17 +4485,14 @@ class DataCanvas(wxBufferedWindow):
 
 		if pos[0] <= self.splicerX :
 			for mouse in self.DrawData["MouseInfo"] :
-				idx = mouse[0]
-				for data in self.DrawData["CoreInfo"] :
-					for info in data :
-						if idx == info[0] :
-							popupMenu = wx.Menu()
-							if self.parent.client != None :
-								popupMenu.Append(3, "&Show it on Corelyzer")
-								wx.EVT_MENU(popupMenu, 3, self.OnSetQTCb)
-							self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
-							return
-				break
+				if self.findCoreInfoByIndex(mouse[0]) != None:
+					popupMenu = wx.Menu()
+					if self.parent.client != None :
+						popupMenu.Append(3, "&Show it on Corelyzer")
+						wx.EVT_MENU(popupMenu, 3, self.OnSetQTCb)
+					self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
+					return
+				break # brgtodo 5/1/2014: needed? probably only have one MouseInfo at a time...
 
 	def OnLMouse(self, event):
 		pos = event.GetPositionTuple()
@@ -4973,23 +4686,14 @@ class DataCanvas(wxBufferedWindow):
 								break
 
 	def OnDataChange(self, core, shift):
-		holeno = 'x'
-		coreno = 0
-		for s in self.DrawData["CoreInfo"]:
-			data = s
-			for r in data:
-				if r[0] == core :
-					holeno = r[3]
-					coreno = r[4]
-					break
-
+		coreInfo = self.findCoreInfoByIndex(core)
 		for data in self.HoleData:
 			for record in data:
 				holeInfo = record[0]
-				if holeInfo[7] == holeno :
+				if holeInfo[7] == coreInfo.hole:
 					count = 0
-					for coredata in record :
-						if coredata[0] == coreno and count != 0 :
+					for coredata in record:
+						if coredata[0] == coreInfo.holeCore and count != 0:
 							valuelist = coredata[10]
 							count = 0
 							for v in valuelist :
@@ -4999,26 +4703,16 @@ class DataCanvas(wxBufferedWindow):
 								valuelist.remove(v)
 								valuelist.insert(count, news)
 								count = count + 1
-							return;
+							return
 						count = 1
 
 
 	def OnUpdateGuideData(self, core, shiftx, shifty):
 		self.GuideCore = []
 
-		holeno = 'x'
-		coreno = '0'
-		type = ""
-		for s in self.DrawData["CoreInfo"]:
-			data = s
-			for r in data:
-				if r[0] == core :
-				 holeno = r[3]
-				 coreno = r[4]
-				 type = r[10]
-				 break
+		coreInfo = self.findCoreInfoByIndex(core)
 
-		temp_type = type
+		temp_type = coreInfo.type
 		if temp_type == "Natural Gamma" :	
 			temp_type = "NaturalGamma"
 		smooth_id = -1
@@ -5033,10 +4727,10 @@ class DataCanvas(wxBufferedWindow):
 			for data in self.SmoothData:
 				for record in data:
 					holeInfo = record[0] 
-					if holeInfo[7] == holeno and type == holeInfo[2]: 
+					if holeInfo[7] == coreInfo.hole and type == holeInfo[2]: 
 						count = 0
 						for coredata in record : 
-							if coredata[0] == coreno and count != 0: 
+							if coredata[0] == coreInfo.holeCore and count != 0: 
 								valuelist = coredata[10]
 								for v in valuelist :
 									x, y = v
@@ -5044,57 +4738,46 @@ class DataCanvas(wxBufferedWindow):
 									l = []
 									l.append((x, y))
 									self.GuideCore.append(l) 
-								return;
+								return
 							count = 1
 		else :
 			for data in self.HoleData:
 				for record in data:
 					holeInfo = record[0] 
-					if holeInfo[7] == holeno and type == holeInfo[2]: 
+					if holeInfo[7] == coreInfo.hole and temp_type == holeInfo[2]:
 						count = 0
 						for coredata in record : 
-							if coredata[0] == coreno and count != 0: 
+							if coredata[0] == coreInfo.holeCore and count != 0:
 								valuelist = coredata[10]
-								for v in valuelist :
+								for v in valuelist:
 									x, y = v
 									x = x + shifty
 									l = []
 									l.append((x, y))
 									self.GuideCore.append(l) 
-								return;
+								return
 							count = 1
 
 
 	def OnUpdateSPGuideData(self, core, cut, shift):
 		self.SPGuideCore = []
-		holeno = 'x'
-		coreno = 0
-		type = ""
-		for s in self.DrawData["CoreInfo"]:
-			data = s
-			for r in data:
-				if r[0] == core :
-				 holeno = r[3]
-				 coreno = r[4]
-				 type = r[10]
-				 break
+		coreInfo = self.findCoreInfoByIndex(core)
 
 		data_list = []
 		if self.splice_smooth_flag == 1 :
 			data_list = self.SmoothData
 		else :
 			data_list = self.HoleData
-			
 
 		# 9/23/2013 brgtodo duplication - it's everywhere.
 		if self.Constrained == 1 :
 			for data in data_list:
 				for record in data:
 					holeInfo = record[0]
-					if holeInfo[7] == holeno and holeInfo[2] == type :
+					if holeInfo[7] == coreInfo.hole and holeInfo[2] == coreInfo.type:
 						count = 0
 						for coredata in record :
-							if coredata[0] == coreno and count != 0 :
+							if coredata[0] == coreInfo.holeCore and count != 0 :
 								valuelist = coredata[10]
 								for v in valuelist :
 									x, y = v
@@ -5109,10 +4792,10 @@ class DataCanvas(wxBufferedWindow):
 			for data in data_list:
 				for record in data:
 					holeInfo = record[0]
-					if holeInfo[7] == holeno and holeInfo[2] == type :
+					if holeInfo[7] == coreInfo.hole and holeInfo[2] == coreInfo.type:
 						count = 0
 						for coredata in record :
-							if coredata[0] == coreno and count != 0: 
+							if coredata[0] == coreInfo.holeCore and count != 0: 
 								valuelist = coredata[10]
 								for v in valuelist :
 									x, y = v
@@ -5122,6 +4805,58 @@ class DataCanvas(wxBufferedWindow):
 									self.SPGuideCore.append(l) 
 								return;
 							count = 1 
+
+	def GetStartX(self):
+		startX = 0 
+		if self.Done == False :
+			if len(self.WidthsControl) == 0 :
+				startX = self.compositeX - self.minScrollRange + 50
+				self.WidthsControl.append(startX)
+				self.WidthsControl.append(startX + self.holeWidth + 50)
+			else :
+				startX = self.WidthsControl[self.HoleCount] 
+				self.WidthsControl.append(startX + self.holeWidth + 50)
+		else :
+			if self.HoleCount < 0 :
+				startX = self.WidthsControl[0] 
+			else : 
+				startX = self.WidthsControl[self.HoleCount]
+		return startX
+	
+	def DrawDragCore(self, dc):
+		if self.grabCore != -1 and self.DrawData["DragCore"] != []:
+			xoffset = self.DrawData["DragCore"].x
+			yoffset = self.DrawData["DragCore"].y
+			dc.SetPen(wx.Pen(wx.RED, 1))
+
+			# build list of lines
+			dragCoreLines = []
+			coreInfo = self.findCoreInfoByIndex(self.grabCore)
+			startX = self.GetStartX() # x-coordinate from which core graphs are drawn
+ 			for data in self.HoleData:
+ 				for record in data:
+ 					holeInfo = record[0] 
+ 					if holeInfo[7] == coreInfo.hole:
+ 						for coredata in record : 
+ 							if coredata[0] == coreInfo.holeCore:
+ 								valuelist = coredata[10]
+ 								for v in valuelist:
+ 									depth, datum = v
+									screenx = (datum - self.minRange) * self.coefRange
+ 									x = screenx + xoffset - (startX / 2)
+									screeny = self.getCoord(depth)
+									y = screeny + yoffset
+									dragCoreLines.append((x, y))
+
+			# now draw the lines
+			dclen = len(dragCoreLines)
+			idx = 0
+			for pt in dragCoreLines:
+				dc.DrawLines((dragCoreLines[idx], dragCoreLines[idx+1]))
+				idx += 1
+				if idx >= (dclen - 1):
+					break
+
 
 	def OnDrawGuide(self):
 		if self.selectedTie < 0 :
@@ -5140,49 +4875,16 @@ class DataCanvas(wxBufferedWindow):
 			self.OnUpdateGuideData(self.selectedCore, shiftx, shift)
 
 	def GetDataInfo(self, coreindex):
-		hole = '-'
-		coreid = -1
-		type = ''
-		ret = 0
-		quality = '0'
-		no = -1
-		for s in self.DrawData["CoreInfo"]:
-			data = s
-			for r in data:
-				if r[0] == coreindex :
-					hole = r[3]
-					coreid = int(r[4])
-					type = r[10]
-					ret = 1
-					quality = r[11]
-					no = r[12]
-					break
-			if ret == 1:
-				break
-		return (hole, int(coreid), type, quality, no) 
+		coreInfo = self.findCoreInfoByIndex(coreindex)
+		return (coreInfo.hole, int(coreInfo.holeCore), coreInfo.type, coreInfo.quality, coreInfo.holeCount)
 
 
 	def isInSameHole(self, coreidA, coreidB):
-		holenoA = 'x'
-		holenoB = 'x' 
-		count = 0
-		for s in self.DrawData["CoreInfo"]:
-			data = s
-			for r in data:
-				if r[0] == coreidA :
-					holenoA = r[3]
-					count = count + 1 
-				if r[0] == coreidB :
-					holenoB = r[3]
-					count = count + 1
-				if count >= 2 :
-					break 
-			if count >= 2:
-				break
-
-		if holenoA == 'x' or holenoB == 'x' : 
+		ciA = self.findCoreInfoByIndex(coreidA)
+		ciB = self.findCoreInfoByIndex(coreidB)
+		if ciA == None or ciB == None:
 			return 0
-		if holenoA != holenoB : 
+		if ciA.hole != ciB.hole: 
 			return 1
 		return 0
 
@@ -5520,11 +5222,9 @@ class DataCanvas(wxBufferedWindow):
 						self.parent.filterPanel.OnRelease()
 
 					self.SpliceCore = []
-					for s in self.DrawData["CoreInfo"]:
-						data = s
-						for r in data:
-							if r[12] == sagan_hole :
-								self.SpliceCore.append(r[0])
+					coreInfo = self.findCoreInfoByHoleCount(sagan_hole)
+					if coreInfo != None:
+						self.SpliceCore.append(coreInfo.core)
 
 					self.LogSpliceData = []
 					self.LogSpliceSmoothData = []
@@ -5895,21 +5595,7 @@ class DataCanvas(wxBufferedWindow):
 							if addedFlag == False :
 								self.LDselectedTie = len(self.LogTieData) - 1 
 
-							holenoA = 'x'
-							corenoA = -1
-							count = 0
-							for s in self.DrawData["CoreInfo"]:
-								data = s
-								for r in data:
-									if r[0] == coreid :
-										holenoA = r[3]
-										corenoA = r[4]
-										count = count + 1
-									if count >= 1 :
-										break
-								if count >= 1:
-									break
-
+							coreInfo = self.findCoreInfoByIndex(coreid)
 							count = 0
 							if len(self.SpliceCore) == 1 :
 								self.PreviewNumTies = 0
@@ -5922,7 +5608,7 @@ class DataCanvas(wxBufferedWindow):
 									start = last + 1
 									last = data.find(" ", start) # core
 									temp_core = data[start:last]
-									if temp_hole == holenoA and temp_core == corenoA :
+									if temp_hole == coreInfo.hole and temp_core == coreInfo.holeCore:
 										self.PreviewFirstNo = count * 2 + 1
 										self.PreviewNumTies = 1
 										break
@@ -5959,10 +5645,9 @@ class DataCanvas(wxBufferedWindow):
 									self.PreviewLog[5] = y3
 									self.PreviewLog[6] = (y3 - y1) / (y3 - y2)
 
-								
 							flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-							if holenoA != 'x' and flag == 1 :
-								testret = py_correlator.evalcoefLog(holenoA, int(corenoA), y2, y1)
+							if coreInfo != None and flag == 1 :
+								testret = py_correlator.evalcoefLog(coreInfo.hole, int(coreInfo.holeCore), y2, y1)
 								if testret != "" :
 									self.parent.OnAddFirstGraph(testret, y2, y1)
 									self.parent.OnUpdateGraph()
@@ -6003,59 +5688,29 @@ class DataCanvas(wxBufferedWindow):
 								y2 = fixedTie.depth
 								y1 = movableTie.depth
 
-								holenoA = 'x'
-								holenoB = 'x'
-								corenoA = -1
-								corenoB = -1
-								typeA = ''
-								typeB = ''
-								leg = " "
-								site = " "
-								count = 0
-								for s in self.DrawData["CoreInfo"]:
-									data = s
-									for r in data:
-										if r[0] == self.guideCore:
-											holenoA = r[3]
-											corenoA = r[4]
-											typeA = r[10]
-											leg = r[2]
-											site = r[1]
-											count = count + 1
-										if r[0] == movableTie.core:
-											holenoB = r[3]
-											corenoB = r[4]
-											typeB = r[10]
-											count = count + 1
-										if count >= 2 :
-											break
-									if count >= 2:
-										break
-
-								#if typeA != typeB :
-								if False :
-									self.TieData.remove(l) 
-									self.parent.OnShowMessage("Error", "Please select same type", 1)
-								elif holenoA != 'x' and holenoA == holenoB : 
-									self.TieData.remove(l) 
+								ciA = self.findCoreInfoByIndex(self.guideCore)
+								ciB = self.findCoreInfoByIndex(movableTie.core)
+								if ciA != None and ciA.hole == ciB.hole:
+									self.TieData.remove(l) # brgtodo 5/1/2014: not getting hit but l doesn't seem like it'll be valid...
 								else :
 									self.activeCore = self.selectedCore
 									self.OnUpdateGuideData(self.selectedCore, shiftx, shift)
 									self.parent.OnUpdateDepth(shift)
-									self.parent.TieUpdateSend(leg, site, holenoA, int(corenoA), holenoB, int(corenoB), y1, shift)
+									self.parent.TieUpdateSend(ciA.leg, ciA.site, ciA.hole, int(ciA.holeCore), ciB.hole, int(ciB.holeCore), y1, shift)
 									self.parent.compositePanel.OnButtonEnable(0, True)
 									flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-									if flag == 1 :
-										testret = py_correlator.evalcoef(typeA, holenoA, int(corenoA), y2, typeB, holenoB, int(corenoB), y1)
+									if flag == 1:
+										testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
 										if testret != "" :
 											self.parent.OnAddFirstGraph(testret, y2, y1)
 										for data_item in self.range :
+											typeA = ciA.type
 											if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
 												typeA = "Natural Gamma"
 											elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
 												typeA = "NaturalGamma"
 											if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-												testret = py_correlator.evalcoef(data_item[0], holenoA, int(corenoA), y2, data_item[0], holenoB, int(corenoB), y1)
+												testret = py_correlator.evalcoef(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
 												if testret != "" :
 													self.parent.OnAddGraph(testret, y2, y1)
 
@@ -6145,37 +5800,10 @@ class DataCanvas(wxBufferedWindow):
 								self.guideSPCore = n 
 								n = tempCore
 
-							holenoA = 'x'
-							holenoB = 'x'
-							corenoA = -1
-							corenoB = -1
-							count = 0
-							typeA = ''
-							typeB = ''
-
-							for s in self.DrawData["CoreInfo"]:
-								data = s
-								for r in data:
-									if r[0] == self.guideSPCore :
-										holenoA = r[3]
-										corenoA = r[4]
-										typeA = r[10]
-										count = count + 1
-									if r[0] == n :
-										holenoB = r[3]
-										corenoB = r[4]
-										typeB = r[10]
-										count = count + 1
-									if count >= 2 :
-										break
-								if count >= 2:
-									break
-							#if typeA != typeB :
-							if False :
-								self.SpliceTieData.remove(l)
-								self.parent.OnShowMessage("Error", "Please select same type", 1)
-							elif holenoA != 'x' and holenoA == holenoB :
-								self.SpliceTieData.remove(l)
+							ciA = self.findCoreInfoByIndex(self.guideSPCore)
+							ciB = self.findCoreInfoByIndex(n)
+							if ciA != None and ciA.hole == ciB.hole:
+								self.SpliceTieData.remove(l) # brgtodo 5/1/2014 zuh?
 							else :
 								if reversed == False :
 									self.activeCore = self.selectedCore
@@ -6184,23 +5812,24 @@ class DataCanvas(wxBufferedWindow):
 									self.activeCore = tempCore
 									self.OnUpdateSPGuideData(tempCore, depth, shift)
 
-								self.parent.splicePanel.OnButtonEnable(0, True)	
+								self.parent.splicePanel.OnButtonEnable(0, True)
 
 								flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-								if flag == 1 :
-									testret = py_correlator.evalcoef_splice(typeB, holenoB, int(corenoB), y1, y2)
+								if flag == 1:
+									testret = py_correlator.evalcoef_splice(ciB.type, ciB.hole, int(ciB.holeCore), y1, y2)
 									if testret != "" :
 										if self.Constrained == 0 :
 											self.parent.splicePanel.OnUpdateDepth(shift)
 										self.parent.OnAddFirstGraph(testret, y2, y1)
 
-									for data_item in self.range :
+									for data_item in self.range:
+										typeA = ciA.type
 										if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
 											typeA = "Natural Gamma"
 										elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
 											typeA = "NaturalGamma"
 										if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-											testret = py_correlator.evalcoef_splice(data_item[0], holenoB, int(corenoB), y1, y2)
+											testret = py_correlator.evalcoef_splice(data_item[0], ciB.hole, int(ciB.holeCore), y1, y2)
 											if testret != "" :
 												self.parent.OnAddGraph(testret, y2, y1)
 									self.parent.OnUpdateGraph()
@@ -6258,10 +5887,10 @@ class DataCanvas(wxBufferedWindow):
 			if self.MainViewMode == True :
 				self.SPrulerStartDepth = int(self.parent.ScrollMax * rate * 100.0) / 100.0
 
-	def OnUpdateTie(self, type):
+	def OnUpdateTie(self, tieType):
 		graphNo = 0
 		tieData = None
-		if type == 1 : # composite
+		if tieType == 1 : # composite
 			rulerStart = self.rulerStartDepth
 			tieData = self.TieData
 		else : 
@@ -6270,76 +5899,57 @@ class DataCanvas(wxBufferedWindow):
 			graphNo = 1 
 
 		max = len(tieData)
-		length = max % 2
-		if length == 0 and max != 0 : 
-			length = len(tieData) 
-			data = tieData[length - 2]
-			y1 = 0			 
-			y2 = 0			 
-			n1 = 0
-			n2 = 0
-			for r in data :				
-				y2 = (r[1] - self.startDepth) / (self.length / self.gap) + rulerStart 
-				n1 = r[2]				
-			data = tieData[length - 1]		 
-			for r in data :			 
-				y1 = (r[1] - self.startDepth) / (self.length / self.gap) + rulerStart 
-				n2 = r[2]				
+		if tieType == 1 and max == 2: # composite tie
+			y2 = self.getDepth(tieData[0].screenY)
+			n1 = tieData[0].core
+			y1 = self.getDepth(tieData[1].screenY)
+			n2 = tieData[1].core
+		else: # splice tie
+			length = max % 2
+			if length == 0 and max != 0 : 
+				length = len(tieData) 
+				data = tieData[length - 2]
+				y1 = 0			 
+				y2 = 0			 
+				n1 = 0
+				n2 = 0
+				for r in data :				
+					y2 = (r[1] - self.startDepth) / (self.length / self.gap) + rulerStart 
+					n1 = r[2]				
+				data = tieData[length - 1]		 
+				for r in data :			 
+					y1 = (r[1] - self.startDepth) / (self.length / self.gap) + rulerStart 
+					n2 = r[2]
 
-			holenoA = 'x'
-			holenoB = 'x'
-			corenoA = -1
-			corenoB = -1
-			count = 0
-			typeA = '' 
-			typeB = '' 
-			leg = " "
-			site = " "
-			for s in self.DrawData["CoreInfo"]:
-				data = s
-				for r in data:
-					if r[0] == n1 :
-						holenoA = r[3]
-						corenoA = r[4]
-						typeA = r[10]
-						leg = r[2]
-						site = r[1]
-						count = count + 1
-					if r[0] == n2 :
-						holenoB = r[3]
-						corenoB = r[4]
-						typeB = r[10]
-						count = count + 1
-					if count >= 2 :
-						break
-				if count >= 2:
-					break
+		ciA = self.findCoreInfoByIndex(n1)
+		ciB = self.findCoreInfoByIndex(n2)
 
-			if type == 1 : # composite
-				shift = y2 - y1
-				self.parent.TieUpdateSend(leg, site, holenoA, int(corenoA), holenoB, int(corenoB), y1, shift)
+		if tieType == 1 : # composite
+			shift = y2 - y1
+			self.parent.TieUpdateSend(ciA.leg, ciA.site, ciA.hole, int(ciA.holeCore), ciB.hole, int(ciB.holeCore), y1, shift)
 
-			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-			if holenoA != 'x' and holenoB != 'x' and flag == 1:
-				if type == 1 : # composite
-					testret = py_correlator.evalcoef(typeA, holenoA, int(corenoA), y2, typeB, holenoB, int(corenoB), y1)
-				else :
-					testret = py_correlator.evalcoef_splice(typeB, holenoB, int(corenoB), y1, y2)
-				if testret != "" :
-					self.parent.OnAddFirstGraph(testret, y2, y1)
-				for data_item in self.range :
-					if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
-						typeA = "Natural Gamma"
-					elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
-						typeA = "NaturalGamma"
-					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-						if type == 1 : # composite
-							testret = py_correlator.evalcoef(data_item[0], holenoA, int(corenoA), y2, data_item[0], holenoB, int(corenoB), y1)
-						else :
-							testret = py_correlator.evalcoef_splice(data_item[0], holenoB, int(corenoB), y1, y2)
-						if testret != "" :
-							self.parent.OnAddGraph(testret, y2, y1)
-				self.parent.OnUpdateGraph()
+		flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
+		if ciA != None and ciB != None and flag == 1:
+			if tieType == 1 : # composite
+				testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
+			else :
+				testret = py_correlator.evalcoef_splice(ciB.type, ciB.hole, int(ciB.holeCore), y1, y2)
+			if testret != "" :
+				self.parent.OnAddFirstGraph(testret, y2, y1)
+			for data_item in self.range :
+				typeA = ciA.type
+				if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
+					typeA = "Natural Gamma"
+				elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
+					typeA = "NaturalGamma"
+				if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
+					if tieType == 1 : # composite
+						testret = py_correlator.evalcoef(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
+					else :
+						testret = py_correlator.evalcoef_splice(data_item[0], ciB.hole, int(ciB.holeCore), y1, y2)
+					if testret != "" :
+						self.parent.OnAddGraph(testret, y2, y1)
+			self.parent.OnUpdateGraph()
 
 
 	# 9/20/2012 brgtodo: duplication
@@ -6487,45 +6097,19 @@ class DataCanvas(wxBufferedWindow):
 			y2 = fixedTie.depth
 			shift = y2 - y1
 
-			holeA = '-'
-			holeB = '-'
-			coreA = -1
-			coreB = -1
-			count = 0
-			typeA = ''
-			typeB = ''
-			leg = " "
-			site = " "
-			for s in self.DrawData["CoreInfo"]:
-				data = s
-				for r in data:
-					if r[0] == movableTie.core:
-						holeA = r[3]
-						coreA = r[4]
-						typeA = r[10]
-						leg = r[2]
-						site = r[1]
-						count = count + 1
-					if r[0] == fixedTie.core:
-						holeB = r[3]
-						coreB = r[4]
-						typeB = r[10]
-						count = count + 1
-					if count >= 2:
-						break
-				if count >= 2 :
-					break
+			ciA = self.findCoreInfoByIndex(movableTie.core)
+			ciB = self.findCoreInfoByIndex(fixedTie.core)
 
 			if self.parent.showCompositePanel == 0 :
 				data = self.TieData[self.selectedTie]
 				data.screenY = pos[1]
 				data.depth = y1
 			
-			self.parent.TieUpdateSend(leg, site, holeB, int(coreB), holeA, int(coreA), y1, shift)
+			self.parent.TieUpdateSend(ciA.leg, ciA.site, ciB.hole, int(ciB.holeCore), ciA.hole, int(ciA.holeCore), y1, shift)
 
 			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-			if holeA != '-' and holeB != '-' and flag == 1:
-				testret = py_correlator.evalcoef(typeB, holeB, int(coreB), y2, typeA, holeA, int(coreA), y1)
+			if ciA.hole != None and ciB.hole != None and flag == 1:
+				testret = py_correlator.evalcoef(ciB.type, ciB.hole, int(ciB.holeCore), y2, ciA.type, ciA.hole, int(ciA.holeCore), y1)
 				if testret != "" :
 					data = self.TieData[self.selectedTie]
 					data.screenY = pos[1]
@@ -6534,12 +6118,13 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.OnAddFirstGraph(testret, y2, y1)
 
 				for data_item in self.range :
+					typeA = ciA.type
 					if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
 						typeA = "Natural Gamma"
 					elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
 						typeA = "NaturalGamma"
 					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-						testret = py_correlator.evalcoef(data_item[0], holeB, int(coreB), y2, data_item[0], holeA, int(coreA), y1)
+						testret = py_correlator.evalcoef(data_item[0], ciB.hole, int(ciB.holeCore), y2, data_item[0], ciA.hole, int(ciA.holeCore), y1)
 						if testret != "" :
 							self.parent.OnAddGraph(testret, y2, y1)
 				self.parent.OnUpdateGraph()
@@ -6600,34 +6185,12 @@ class DataCanvas(wxBufferedWindow):
 				self.guideSPCore = self.selectedCore
 				self.selectedCore = tempCore
 
-			holeA = '-'
-			holeB = '-'
-			coreA = -1
-			coreB = -1
-			count = 0
-			typeA = ''
-			typeB = ''
-			for s in self.DrawData["CoreInfo"]:
-				data = s
-				for r in data:
-					if r[0] == self.selectedCore :
-					 holeA = r[3]
-					 coreA = r[4]
-					 typeA = r[10]
-					 count = count + 1
-					if r[0] == self.guideSPCore :
-					 holeB = r[3]
-					 coreB = r[4]
-					 typeB = r[10]
-					 count = count + 1
-					if count >= 2:
-					 break
-				if count >= 2 :
-					break
+			ciA = self.findCoreInfoByIndex(self.selectedCore)
+			ciB = self.findCoreInfoByIndex(self.guideSPCore)
 
 			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-			if holeA != '-' and holeB != '-' and flag == 1 :
-				testret = py_correlator.evalcoef_splice(typeA, holeA, int(coreA), y1, y2)
+			if ciA.hole != None and ciB.hole != None and flag == 1:
+				testret = py_correlator.evalcoef_splice(ciA.type, ciA.hole, int(ciA.holeCore), y1, y2)
 				if testret != "" :
 					if self.Constrained == 0 :
 						shift = y2 - y1
@@ -6635,12 +6198,13 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.OnAddFirstGraph(testret, y2, y1)
 
 				for data_item in self.range :
+					typeA = ciA.type
 					if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
 						typeA = "Natural Gamma"
 					elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
 						typeA = "NaturalGamma"
 					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-						testret = py_correlator.evalcoef_splice(data_item[0], holeA, int(coreA), y1, y2)
+						testret = py_correlator.evalcoef_splice(data_item[0], ciA.hole, int(ciA.holeCore), y1, y2)
 						if testret != "" :
 							self.parent.OnAddGraph(testret, y2, y1)
 				self.parent.OnUpdateGraph()
@@ -6653,7 +6217,6 @@ class DataCanvas(wxBufferedWindow):
 			got = 1
 
 		if self.LogselectedTie >= 0 :
-
 			logtieNo = self.LogselectedTie
 			if (self.LogselectedTie % 2) == 0 : 
 				logtieNo = self.LogselectedTie + 1 
@@ -6700,20 +6263,7 @@ class DataCanvas(wxBufferedWindow):
 
 				self.saganDepth = y2 
 
-				holenoA = '-'
-				corenoA = -1
-				count = 0
-				for s in self.DrawData["CoreInfo"]:
-					data = s
-					for r in data:
-						if r[0] == n :
-							holenoA = r[3]
-							corenoA = r[4]
-							count = count + 1
-						if count >= 1:
-							break
-					if count >= 1 :
-						break
+				coreInfo = self.findCoreInfoByIndex(n)
 
 				self.PreviewLog = [-1, -1, 1.0, 0, -1, -1, 1.0]
 				if logtieNo == 1 :
@@ -6765,8 +6315,8 @@ class DataCanvas(wxBufferedWindow):
 						self.PreviewLog[6] = (y3 - y1) / (y3 - y2)
 
 				flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-				if holenoA != '-' and flag == 1 :
-					testret = py_correlator.evalcoefLog(holenoA, int(corenoA), y2, y1)
+				if coreInfo != None and flag == 1 :
+					testret = py_correlator.evalcoefLog(coreInfo.hole, int(coreInfo.holeCore), y2, y1)
 					if testret != "" :
 						self.parent.OnAddFirstGraph(testret, y2, y1)
 						self.parent.OnUpdateGraph()
@@ -6786,6 +6336,16 @@ class DataCanvas(wxBufferedWindow):
 				scroll_x = scroll_widthA * scroll_rate
 				scroll_x += self.compositeX
 				self.DrawData["HScroll"] = (bmp, scroll_x, y)
+
+		# store data needed to draw "ghost" of core being dragged:
+		# x is the current mouse x, y is the offset between current and original mouse y
+		if self.grabCore != -1:
+			if self.DrawData["DragCore"] == []:
+				self.DrawData["DragCore"] = DragCoreData(pos[0], pos[1])
+			else:
+				self.DrawData["DragCore"].update(pos[0], pos[1])
+		else:
+			self.DrawData["DragCore"] = []
 
 		if got == 0:
 			self.DrawData["MouseInfo"] = [] 
