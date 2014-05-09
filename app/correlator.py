@@ -2473,7 +2473,7 @@ class MainFrame(wx.Frame):
 	def ShowDataManager(self):
 		if self.CHECK_CHANGES() == True :
 			ret = self.OnShowMessage("About", "Do you want to save?", 0)
-			if ret == wx.ID_OK :
+			if ret == wx.ID_YES:
 				self.topMenu.OnSAVE(None) # dummy event
 		if self.dataFrame.IsShown() == False :
 			self.Window.Hide()
