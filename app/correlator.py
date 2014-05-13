@@ -27,6 +27,7 @@ import dialog
 import frames
 import dbmanager
 import version as vers
+import model
 
 app = None 
 User_Dir = os.path.expanduser("~")
@@ -133,7 +134,7 @@ class MainFrame(wx.Frame):
 		wx.EVT_IDLE(self, self.OnIDLE)
 
 	def SetLoadedSite(self, siteData):
-		if isinstance(siteData, SiteData):
+		if isinstance(siteData, model.SiteData):
 			self.loadedSite = siteData
 
 	def GetLoadedSite(self):
@@ -2180,6 +2181,10 @@ class MainFrame(wx.Frame):
 				corelist.append((v_value, v_data))
 				last = data.find(":", start)
 				if start == last :
+					# Create a "core data" item, which looks like the following: 
+					# (1-based core index in hole, top, bottom, mindata, maxdata, affine offset, stretch, annotated type,
+					# core quality, sections (list of each sections' top depth), list of all cores's depth/data tuple-pairs
+					# a list of all the core's depth/data pairs.
 					coreinfo = temp[0], temp[1], temp[2], temp[3], temp[4], temp[5], temp[6], annot, quality, sections, corelist
 					hole.append(coreinfo)
 					start = last + 1

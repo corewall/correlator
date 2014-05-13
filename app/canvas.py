@@ -110,7 +110,8 @@ class CompositeTie:
 		return str((self.hole, self.core, self.screenX, self.screenY, self.fixed, self.depth))
 
 class CoreInfo:
-	def __init__(self, core, leg, site, hole, holeCore, minData, maxData, minDepth, maxDepth, stretch, type, quality, holeCount):
+	def __init__(self, core, leg, site, hole, holeCore, minData, maxData, minDepth, maxDepth,
+				 stretch, type, quality, holeCount):
 		self.core = core # core index in currently loaded set of holes
 		self.leg = leg # parent hole leg
 		self.site = site # parent hole site
@@ -124,6 +125,11 @@ class CoreInfo:
 		self.type = type # hole data type
 		self.quality = quality # core quality
 		self.holeCount = holeCount # hole's index in currently loaded set of holes
+
+	def __repr__(self):
+		return str((self.core, self.leg, self.site, self.hole, self.holeCore, self.minData, self.maxData,
+					self.minDepth, self.maxDepth, self.stretch, self.type, self.quality, self.holeCount))
+
 
 class DragCoreData:
 	def __init__(self, mouseX, origMouseY, deltaY=0):
@@ -268,7 +274,9 @@ class DataCanvas(wxBufferedWindow):
 		self.spliceHoleWidth = 300
 		self.logHoleWidth = 210
 		
-		self.startDepth = 60.0
+		# y-coordinate where the first depth ruler tick is drawn
+		self.startDepth = 60
+
 		self.rulerHeight = 0 
 		self.rulerStartDepth = 0.0 
 		self.rulerEndDepth = 0.0
@@ -333,7 +341,19 @@ class DataCanvas(wxBufferedWindow):
 		self.squishValue = 100
 		self.squishCoreId = -1 
 
+		# contains all data for the currently loaded holes: each HoleData is a list whose first
+		# element describes the hole itself: (site, leg, data type, hole's min depth, hole's max depth,
+		# hole's mindata, hole's maxdata, hole name, number of cores in hole).
+		# 
+		# The remaining elements represent each core's data: a coreinfo tuple: 
+		# (1-based core index in hole, top, bottom, mindata, maxdata, affine offset, stretch, annotated type,
+		# core quality, sections (list of each sections' top depth), list of all cores's depth/data tuple-pairs
+		# a list of all the core's depth/data pairs.
+		#
+		# Note: top and bottom don't seem to reflect the actual core top and bottom at all. In some cases the core's
+		# depths fall outside of this interval, so take it with a large grain of salt. May be (almost) unused.
 		self.HoleData = []
+
 		self.SectionData = []
 		self.SmoothData = [] 
 		self.TieData = [] # composite ties
@@ -495,6 +515,7 @@ class DataCanvas(wxBufferedWindow):
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 		wx.EVT_KEY_UP(self.sidePanel, self.OnCharUp)
 
+	# 5/9/2014 brgtodo: Duplication in this routine and __init__ above
 	def OnInit(self):
 		self.GuideCore = []
 		self.Highlight_Tie = -1
@@ -1069,21 +1090,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetTextForeground(self.colorDict['foreground'])
 		dc.SetFont(self.font2)
 
-		startX = 0 
-		if self.Done == False :
-			if len(self.WidthsControl) == 0 :
-				startX = self.compositeX - self.minScrollRange + 50
-				self.WidthsControl.append(startX)
-				self.WidthsControl.append(startX + self.holeWidth + 50)
-			else :
-				startX = self.WidthsControl[self.HoleCount] 
-				self.WidthsControl.append(startX + self.holeWidth + 50)
-		else :
-			if self.HoleCount < 0 :
-				startX = self.WidthsControl[0] 
-			else : 
-				startX = self.WidthsControl[self.HoleCount] 
-
+		startX = self.GetStartX()
 		rangeMax = startX + self.holeWidth
 
 		if self.showHoleGrid == True :
@@ -1200,7 +1207,6 @@ class DataCanvas(wxBufferedWindow):
 			datamax = len(coreData) - 1
 			depthmax, temp = coreData[datamax]
 
-			l = []
 			if smoothed == 0 or smoothed == 5 or smoothed == 6: 
 				coreInfo = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], holedata[0], holedata[3], holedata[4], depthmin, depthmax, holedata[6], holeInfo[2], holedata[8], self.HoleCount)
 				self.DrawData["CoreInfo"].append(coreInfo)
@@ -2958,7 +2964,18 @@ class DataCanvas(wxBufferedWindow):
 
 		self.DrawRuler(dc)
 
-		self.DrawDragCore(dc)
+		# 5/12/2013 brgtodo: Showing dragged core not quite ready for primetime, need to
+		# fix scaling and properly determine x-position on horizontal scrollbar changes
+		#if self.grabCore != -1:
+		#	self.DrawDragCore(dc)
+
+		# UI debugging helpers
+# 		dc.SetPen(wx.Pen(wx.RED))
+# 		dc.DrawLine(0, self.startDepth, 1000, self.startDepth)
+# 		dc.SetPen(wx.Pen(wx.GREEN))
+# 		dc.DrawLine(self.compositeX, 0, self.compositeX, 900)
+# 		dc.DrawLine(self.splicerX, 0, self.splicerX, 900)
+		
 
 		### draw composite ties
 		tempx = 0
@@ -3087,7 +3104,6 @@ class DataCanvas(wxBufferedWindow):
 						x0 = x
 						y0 = y 
 						count = count + 1
-
 
 	def GrabCore(self, coreindex, type, depth_t, depth_b) :
 		coreInfo = self.findCoreInfoByIndex(coreindex)
@@ -4824,29 +4840,38 @@ class DataCanvas(wxBufferedWindow):
 		return startX
 	
 	def DrawDragCore(self, dc):
-		if self.grabCore != -1 and self.DrawData["DragCore"] != []:
+		if self.DrawData["DragCore"] != []:
 			xoffset = self.DrawData["DragCore"].x
 			yoffset = self.DrawData["DragCore"].y
 			dc.SetPen(wx.Pen(wx.RED, 1))
 
-			# build list of lines
+			# build list of core graph lines
 			dragCoreLines = []
 			coreInfo = self.findCoreInfoByIndex(self.grabCore)
 			startX = self.GetStartX() # x-coordinate from which core graphs are drawn
- 			for data in self.HoleData:
- 				for record in data:
- 					holeInfo = record[0] 
- 					if holeInfo[7] == coreInfo.hole:
- 						for coredata in record : 
- 							if coredata[0] == coreInfo.holeCore:
- 								valuelist = coredata[10]
- 								for v in valuelist:
- 									depth, datum = v
-									screenx = (datum - self.minRange) * self.coefRange
- 									x = screenx + xoffset - (startX / 2)
-									screeny = self.getCoord(depth)
-									y = screeny + yoffset
-									dragCoreLines.append((x, y))
+			foundMatch = False
+ 			for hole in self.HoleData:
+				if foundMatch:
+					break
+
+				# each element of HoleData is a list containing another list that
+				# contains the data we're interested in
+				holeData = hole[0]
+				holeInfo = holeData[0]
+				if holeInfo[7] == coreInfo.hole and holeInfo[2] == coreInfo.type:
+					for coredata in holeData[1:]: # every item after index 0 is a core in that hole
+						if coredata[0] == coreInfo.holeCore:
+							valuelist = coredata[10]
+							for v in valuelist:
+								depth, datum = v
+								screenx = (datum - self.minRange) * self.coefRange
+								x = screenx + xoffset - (startX / 2)
+								screeny = self.getCoord(depth)
+								y = screeny + yoffset
+								dragCoreLines.append((x, y))
+
+							foundMatch = True
+							break
 
 			# now draw the lines
 			dclen = len(dragCoreLines)
@@ -4856,7 +4881,6 @@ class DataCanvas(wxBufferedWindow):
 				idx += 1
 				if idx >= (dclen - 1):
 					break
-
 
 	def OnDrawGuide(self):
 		if self.selectedTie < 0 :
@@ -4879,14 +4903,13 @@ class DataCanvas(wxBufferedWindow):
 		return (coreInfo.hole, int(coreInfo.holeCore), coreInfo.type, coreInfo.quality, coreInfo.holeCount)
 
 
-	def isInSameHole(self, coreidA, coreidB):
-		ciA = self.findCoreInfoByIndex(coreidA)
-		ciB = self.findCoreInfoByIndex(coreidB)
-		if ciA == None or ciB == None:
-			return 0
-		if ciA.hole != ciB.hole: 
-			return 1
-		return 0
+	def CanSpliceCore(self, prevCore, coreToSplice):
+		result = False
+		ciA = self.findCoreInfoByIndex(prevCore)
+		ciB = self.findCoreInfoByIndex(coreToSplice)
+		if ciA != None and ciB != None and ciA.hole != ciB.hole:
+			result = True
+		return result
 
 	def UpdateAgeModel(self):
 		space_bar = ""
@@ -5169,7 +5192,9 @@ class DataCanvas(wxBufferedWindow):
 			scroll_x = pos[0]
 			if scroll_x < scroll_start :
 				scroll_x = scroll_start
-			scroll_width = self.splicerX - (self.startDepth * 2.3) 
+
+			# brgtodo 5/12/2014 unclear how startDepth is related to horizontal positioning
+			scroll_width = self.splicerX - (self.startDepth * 2.3)
 			if scroll_x > scroll_width :
 				scroll_x = scroll_width
 
@@ -5271,7 +5296,7 @@ class DataCanvas(wxBufferedWindow):
 					self.grabCore = -1
 					self.UpdateDrawing()
 					return
-				if self.spliceCount == 0 :
+				if self.spliceCount == 0: # add first splice core
 					ret = self.GetDataInfo(self.grabCore)
 					if ret[3] == '0': 
 						#type = self.GetTypeID(ret[2])
@@ -5321,11 +5346,17 @@ class DataCanvas(wxBufferedWindow):
 							self.parent.UpdateSMOOTH_LOGSPLICE(False)
 						self.Lock = False
 					else :
-						self.parent.OnShowMessage("Error", "Splice must begin with topmost core of any hole", 1)
+						self.parent.OnShowMessage("Error", "Please choose a core of Good quality.", 1)
 
-				elif self.spliceCount == splice_count and self.isLogMode == 0 : 
+				# exactly one splice core, add additional core
+				elif self.isLogMode == 0:
+					# "selected" core (core to be tied to current splice) present, remove it and
+					# replace with current grabCore (core being dragged)
+					if self.spliceCount + 1 == len(self.SpliceCore):
+						self.SpliceCore.pop()
+					
 					ret = self.GetDataInfo(self.grabCore)
-					if ret[3] == '0': 
+					if ret[3] == '0': # ret[3] is core quality: '0' == Good
 						# INFORMATION - for Multiple data type splice
 						#if self.selectedType == ret[2] :
 						if True :
@@ -5333,12 +5364,12 @@ class DataCanvas(wxBufferedWindow):
 							self.PreviousSpliceCore = self.SpliceCore[index]
 							self.SpliceCore.append(self.grabCore)
 							if self.PreviousSpliceCore >= 0 : 
-								result = self.isInSameHole(self.grabCore, self.PreviousSpliceCore)
-								if result == 1 :
+								if self.CanSpliceCore(self.PreviousSpliceCore, self.grabCore):
 									self.CurrentSpliceCore = self.grabCore
 									self.PreviousSpliceCore = self.CurrentSpliceCore
 								else : 
-									self.parent.OnShowMessage("Error", "It should be from different hole.", 1)
+									errStr = "The previously spliced core is from Hole %s, please select a core from a different hole." % ret[0]
+									self.parent.OnShowMessage("Error", errStr, 1)
 									self.SpliceCore.pop()
 						else :
 							self.parent.OnShowMessage("Error", "Please select same type", 1)
@@ -5367,7 +5398,7 @@ class DataCanvas(wxBufferedWindow):
 							#print "[DEBUG] splice type is changed : " + str(self.selectedType)
 							self.multipleType = True
 					else :
-						self.parent.OnShowMessage("Error", "Splice must begin with topmost core of any hole", 1)
+						self.parent.OnShowMessage("Error", "Please choose a core of Good quality.", 1)
 				self.grabCore = -1
 				self.UpdateDrawing()
 				return

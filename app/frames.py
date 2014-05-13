@@ -975,7 +975,7 @@ class SplicePanel():
 
 			py_correlator.init_splice()
 
-			ret = self.parent.OnShowMessage("About", "Do you want to keep current splice?", 2)
+			ret = self.parent.OnShowMessage("About", "Do you want to keep the current splice?", 2)
 			if ret == wx.ID_OK :
 				type_range = None 
 				alt_splice = None
@@ -1102,7 +1102,7 @@ class SplicePanel():
 
 		if splice_data[1] != "" :
 			self.parent.Window.SpliceData = []
-			ret = py_correlator.getData(2)
+			ret = py_correlator.getData(2) # get splice tie info
 			if ret != "" :
 				self.parent.ParseSpliceData(ret, True)
 				l = []
@@ -3024,13 +3024,13 @@ class FilterPanel():
 		if typeStr == 'All Holes' or typeStr == 'Log' or typeStr == 'Spliced Records':
 			return
 
-		site = self.parent.GetLoadedSite()
-		strippedType = typeStr[4:] # strip off 'All '
-		if strippedType in site.holeSets:
-			holeSet = site.holeSets[strippedType]
-		else:
-			print "Couldn't find type " + strippedType + " in site.holeSets, bailing"
-			return
+# 		site = self.parent.GetLoadedSite()
+# 		strippedType = typeStr[4:] # strip off 'All '
+# 		if strippedType in site.holeSets:
+# 			holeSet = site.holeSets[strippedType]
+# 		else:
+# 			print "Couldn't find type " + strippedType + " in site.holeSets, bailing"
+# 			return
 
 		self.decimate.SetValue(str(holeSet.decimate))
 		self.UpdateSmooth(holeSet.smooth)
@@ -3171,10 +3171,10 @@ class FilterPanel():
 				if allType == 'Spliced Records' :
 					continue
 				py_correlator.decimate(allType, deciValue)
-				site.SetDecimate(allType[4:], deciValue)
+				#site.SetDecimate(allType[4:], deciValue)
 		else :
 			py_correlator.decimate(type, deciValue)
-			site.SetDecimate(type[4:], deciValue)
+			#site.SetDecimate(type[4:], deciValue)
 
 		self.deciBackup = [ self.all.GetValue(), self.decimate.GetValue() ]
 
@@ -3190,7 +3190,7 @@ class FilterPanel():
 		#	type = "All NaturalGamma"
 		#self.parent.dataFrame.OnUPDATEDECIMATE(type, deciValue)
 
-		site.SyncToData()
+		#site.SyncToData()
 		self.parent.Window.UpdateDrawing()
 
 	""" Return integer smooth style (unsmoothed, smoothed, or combo) based on current smooth combobox selection """
@@ -3300,16 +3300,16 @@ class FilterPanel():
 				if all_type == 'Spliced Records' :
 					continue
 				start = all_type.find("All", 0)
-				if start >= 0:
+				if start >= 0 or all_type == 'Log':
 					py_correlator.smooth(all_type, smoothWidth, smoothUnit)
-					site.SetSmooth(all_type[4:], self.MakeSmoothString(str(smoothWidth), smoothUnitStr, smoothStyleStr))
-				elif all_type == 'Log' :
-					py_correlator.smooth(all_type, smoothWidth, smoothUnit)
+					#site.SetSmooth(all_type[4:], self.MakeSmoothString(str(smoothWidth), smoothUnitStr, smoothStyleStr))
+				#elif all_type == 'Log' :
+					#py_correlator.smooth(all_type, smoothWidth, smoothUnit)
 		else :
 			py_correlator.smooth(type, smoothWidth, smoothUnit)
-			site.SetSmooth(type[4:], self.MakeSmoothString(str(smoothWidth), smoothUnitStr, smoothStyleStr))
+			#site.SetSmooth(type[4:], self.MakeSmoothString(str(smoothWidth), smoothUnitStr, smoothStyleStr))
 
-		site.SyncToData()
+		#site.SyncToData()
 
 		#HYEJUNG CHANGING NOW
 		if type == 'Spliced Records' :
