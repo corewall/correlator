@@ -3184,7 +3184,7 @@ class DataCanvas(wxBufferedWindow):
 				self.RealSpliceTie.append(l)
 				self.RealSpliceTie.append(l)
 			if idback != -1 and id == -1 :
-				self.SpliceCore.append(coreidB)
+				self.SpliceCore.append(coreB)
 
 			coreInfoA = self.findCoreInfoByHoleCoreType(holeA, str(coreA), typeA)
 			coreInfoB = self.findCoreInfoByHoleCoreType(holeB, str(coreB), typeB)
@@ -5935,22 +5935,22 @@ class DataCanvas(wxBufferedWindow):
 			n1 = tieData[0].core
 			y1 = self.getDepth(tieData[1].screenY)
 			n2 = tieData[1].core
-		else: # splice tie
-			length = max % 2
-			if length == 0 and max != 0 : 
-				length = len(tieData) 
-				data = tieData[length - 2]
-				y1 = 0			 
-				y2 = 0			 
-				n1 = 0
-				n2 = 0
-				for r in data :				
-					y2 = (r[1] - self.startDepth) / (self.length / self.gap) + rulerStart 
-					n1 = r[2]				
-				data = tieData[length - 1]		 
-				for r in data :			 
-					y1 = (r[1] - self.startDepth) / (self.length / self.gap) + rulerStart 
-					n2 = r[2]
+		elif max != 0 and max % 2 == 0: # splice tie
+			length = len(tieData)
+			data = tieData[length - 2]
+			y1 = 0
+			y2 = 0
+			n1 = 0
+			n2 = 0
+			for r in data:
+				y2 = (r[1] - self.startDepth) / (self.length / self.gap) + rulerStart
+				n1 = r[2]
+			data = tieData[length - 1]
+			for r in data:
+				y1 = (r[1] - self.startDepth) / (self.length / self.gap) + rulerStart
+				n2 = r[2]
+		else: # no tie to update, bail
+			return
 
 		ciA = self.findCoreInfoByIndex(n1)
 		ciB = self.findCoreInfoByIndex(n2)
