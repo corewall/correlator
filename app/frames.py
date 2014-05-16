@@ -16,6 +16,7 @@ import numpy.oldnumeric as _Numeric
 
 from importManager import py_correlator
 
+import canvas
 import dialog
 
 def opj(path):
@@ -1105,10 +1106,8 @@ class SplicePanel():
 			ret = py_correlator.getData(2) # get splice tie info
 			if ret != "" :
 				self.parent.ParseSpliceData(ret, True)
-				l = []
-				l.append((-1, -1, -1, -1, -1, -1, -1, -1, -1))
-				self.parent.Window.RealSpliceTie.append(l)
-				self.parent.Window.RealSpliceTie.append(l)
+				self.parent.Window.RealSpliceTie.append(canvas.SpliceTie(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1))
+				self.parent.Window.RealSpliceTie.append(canvas.SpliceTie(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1))
 				ret = "" 
 			self.parent.filterPanel.OnLock()
 			self.parent.ParseData(splice_data[1], self.parent.Window.SpliceData)
@@ -1132,11 +1131,6 @@ class SplicePanel():
 			self.appendall = 0
 			splice_data = py_correlator.undoAppend(self.parent.smoothDisplay)
 			if splice_data[1] != "" :
-				#lastTie = len(self.parent.Window.RealSpliceTie) -1
-				#data = self.parent.Window.RealSpliceTie[lastTie]
-				#self.parent.Window.RealSpliceTie.remove(data)
-				#data = self.parent.Window.RealSpliceTie[lastTie-1]
-				#self.parent.Window.RealSpliceTie.remove(data)
 				self.parent.Window.RealSpliceTie.pop()
 				self.parent.Window.RealSpliceTie.pop()
 
