@@ -3621,7 +3621,7 @@ class DataCanvas(wxBufferedWindow):
 		self.drag = 0 
 		self.UpdateDrawing()
 
-	def MakeStraightLie(self) :
+	def MakeStraightLine(self):
 		last = len(self.LogTieData) 
 		length = last % 2
 		if length == 0 and last != 0 :

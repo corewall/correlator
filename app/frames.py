@@ -1929,7 +1929,7 @@ class ELDPanel():
 		#self.parent.ClearSaganTie(-1)
 
 	def OnStraightTie(self, evt):
-		self.parent.Window.MakeStraightLie()
+		self.parent.Window.MakeStraightLine()
 
 	def OnClearTie(self, evt):
 		self.parent.Window.activeSATie = -1
