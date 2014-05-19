@@ -1106,8 +1106,8 @@ class SplicePanel():
 			ret = py_correlator.getData(2) # get splice tie info
 			if ret != "" :
 				self.parent.ParseSpliceData(ret, True)
-				self.parent.Window.RealSpliceTie.append(canvas.SpliceTie(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1))
-				self.parent.Window.RealSpliceTie.append(canvas.SpliceTie(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1))
+				self.parent.Window.RealSpliceTie.append(canvas.DefaultSpliceTie())
+				self.parent.Window.RealSpliceTie.append(canvas.DefaultSpliceTie())
 				ret = "" 
 			self.parent.filterPanel.OnLock()
 			self.parent.ParseData(splice_data[1], self.parent.Window.SpliceData)

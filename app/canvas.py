@@ -110,21 +110,23 @@ class CompositeTie:
 		return str((self.hole, self.core, self.screenX, self.screenY, self.fixed, self.depth))
 
 class SpliceTie:
-	def __init__(self, x, y, core, fixed, startX, minData, depth, splicerX, tie, constrained):
+	def __init__(self, x, y, core, fixed, startX, minData, depth, tie, constrained):
 		self.x = x
-		self.y = x
+		self.y = y
 		self.core = core
 		self.fixed = fixed
 		self.startX = startX
 		self.minData = minData
 		self.depth = depth
-		self.splicerX = splicerX # may not be needed, never used, only set
 		self.tie = tie # index/number of tie (within SpliceTieData?)
 		self.constrained = constrained
 
 	def __repr__(self):
 		return str((self.x, self.y, self.core, self.fixed, self.startX, self.minData, self.depth,
-					self.splicerX, self.tie, self.constrained))
+					self.tie, self.constrained))
+
+def DefaultSpliceTie():
+	return SpliceTie(-1, -1, -1, -1, -1, -1, -1, -1, -1)
 
 class CoreInfo:
 	def __init__(self, core, leg, site, hole, holeCore, minData, maxData, minDepth, maxDepth,
@@ -2992,7 +2994,7 @@ class DataCanvas(wxBufferedWindow):
 # 		dc.DrawLine(self.splicerX, 0, self.splicerX, 900)
 		
 
-		### draw composite ties
+		### draw ties
 		tempx = 0
 		if self.hideTie == 0 : 
 			x = 0
@@ -3001,7 +3003,7 @@ class DataCanvas(wxBufferedWindow):
 			y0 = 0
 			radius = self.tieDotSize / 2
 
-			for compTie in self.TieData:
+			for compTie in self.TieData: # draw composite ties
 				if compTie.fixed == 1:
 					dc.SetBrush(wx.Brush(self.colorDict['fixedTie']))
 					dc.SetPen(wx.Pen(self.colorDict['fixedTie'], 1))
@@ -3027,7 +3029,7 @@ class DataCanvas(wxBufferedWindow):
 				x0 = x
 				y0 = y 
 
-			if self.spliceWindowOn == 1 :
+			if self.spliceWindowOn == 1 : # draw splice ties
 				count = 0
 				diff = 0
 				dc.SetTextBackground(self.colorDict['background'])
@@ -3171,8 +3173,8 @@ class DataCanvas(wxBufferedWindow):
 				typeB = 'Bulk Density(GRA)'
 
 			if flag == False : # create dummy splice ties
-				self.RealSpliceTie.append(SpliceTie(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1))
-				self.RealSpliceTie.append(SpliceTie(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1))
+				self.RealSpliceTie.append(DefaultSpliceTie())
+				self.RealSpliceTie.append(DefaultSpliceTie())
 
 			if prevId != -1 and id == -1:
 				self.SpliceCore.append(coreB)
@@ -5383,13 +5385,11 @@ class DataCanvas(wxBufferedWindow):
 
 			spliceTie.y = pos[1]
 			spliceTie.depth = newDepth
-			spliceTie.splicerX = self.splicerX
 
 			if self.Constrained == 1 :
 				prevSpliceTie = self.SpliceTieData[self.SPselectedTie - 1]
 				prevSpliceTie.y = pos[1]
 				prevSpliceTie.depth = newDepth
-				prevSpliceTie.splicerX = self.splicerX
 			self.parent.splicePanel.OnButtonEnable(3, True)
 
 			if self.SPselectedTie < 2 :
@@ -5632,18 +5632,15 @@ class DataCanvas(wxBufferedWindow):
 						if length == 0 : 
 							fixed = 1 
 
-						# Tie 
-						#l = []
 						depth = (pos[1] - self.startDepth) / (self.length / self.gap) + self.SPrulerStartDepth
 						if self.SPSelectedCore >= 0:
 							spliceTie = SpliceTie(self.currentStartX, pos[1], self.SPSelectedCore, fixed, 
-												  self.minScrollRange, self.minData, depth, self.splicerX, -1, self.Constrained)
+												  self.minScrollRange, self.minData, depth, -1, self.Constrained)
 							self.SPSelectedCore = -1
 							self.selectedCore = -1
 						else :
 							spliceTie = SpliceTie(self.currentStartX, pos[1], self.selectedCore, fixed,
-												  self.minScrollRange, self.minData, depth, self.splicerX, -1, self.Constrained)
-							#l.append((
+												  self.minScrollRange, self.minData, depth, -1, self.Constrained)
 
 						self.parent.splicePanel.OnButtonEnable(1, False)
 						self.parent.splicePanel.OnButtonEnable(2, True)
@@ -5661,11 +5658,8 @@ class DataCanvas(wxBufferedWindow):
 							if diff == self.SpliceDiff :
 								splicecoreno = splicecoreno - 1
 								self.selectedCore = self.SpliceCore[splicecoreno]
-								#l = []
-								#splicewidth = self.holeWidth + 50
 								spliceTie = SpliceTie(self.currentStartX, pos[1], self.selectedCore, 0, # fixed = 0
-													  self.minScrollRange, self.minData, depth, self.splicerX, -1, self.Constrained)
-								#l.append((
+													  self.minScrollRange, self.minData, depth, -1, self.Constrained)
 								self.SpliceTieData.append(spliceTie) 
 								length = 0
 
@@ -5679,7 +5673,6 @@ class DataCanvas(wxBufferedWindow):
 							if self.Constrained == 1: 
 								prevSpliceTie.y = pos[1]
 								prevSpliceTie.depth = depth
-								prevSpliceTie.splicerX = self.splicerX
 
 							self.guideSPCore = prevSpliceTie.core
 
@@ -6038,7 +6031,6 @@ class DataCanvas(wxBufferedWindow):
 			depth = (pos[1] - self.startDepth) / (self.length / self.gap) + self.SPrulerStartDepth
 			spliceTie.y = pos[1]
 			spliceTie.depth = depth
-			spliceTie.splicerX = self.splicerX
 			self.selectedCore = spliceTie.core
 			y1 = depth
 			x2 = spliceTie.startX
@@ -6047,7 +6039,6 @@ class DataCanvas(wxBufferedWindow):
 			if self.Constrained == 1 :
 				prevSpliceTie.y = pos[1]
 				prevSpliceTie.depth = depth
-				prevSpliceTie.splicerX = self.splicerX
 				y2 = y1
 
 			elif self.Constrained == 0 :
