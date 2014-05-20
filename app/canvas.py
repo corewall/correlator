@@ -110,23 +110,22 @@ class CompositeTie:
 		return str((self.hole, self.core, self.screenX, self.screenY, self.fixed, self.depth))
 
 class SpliceTie:
-	def __init__(self, x, y, core, fixed, startX, minData, depth, tie, constrained):
+	def __init__(self, x, y, core, fixed, minData, depth, tie, constrained):
 		self.x = x
 		self.y = y
 		self.core = core
 		self.fixed = fixed
-		self.startX = startX
 		self.minData = minData
 		self.depth = depth
 		self.tie = tie # index/number of tie (within SpliceTieData?)
 		self.constrained = constrained
 
 	def __repr__(self):
-		return str((self.x, self.y, self.core, self.fixed, self.startX, self.minData, self.depth,
+		return str((self.x, self.y, self.core, self.fixed, self.minData, self.depth,
 					self.tie, self.constrained))
 
 def DefaultSpliceTie():
-	return SpliceTie(-1, -1, -1, -1, -1, -1, -1, -1, -1)
+	return SpliceTie(-1, -1, -1, -1, -1, -1, -1, -1)
 
 class CoreInfo:
 	def __init__(self, core, leg, site, hole, holeCore, minData, maxData, minDepth, maxDepth,
@@ -3478,79 +3477,84 @@ class DataCanvas(wxBufferedWindow):
 		self.LogselectedTie = index 
 
 	def ApplySplice(self, tieIndex) :
-		if tieIndex >= 0:
-			spliceTieA = self.SpliceTieData[tieIndex]
+		if tieIndex < 0:
+			print "ApplySplice: invalid tie index {}".format(tieIndex)
+			return
 
-			coreidB = spliceTieA.core
-			y1 = spliceTieA.depth
-			x1 = spliceTieA.startX
+		spliceTieA = self.SpliceTieData[tieIndex]
 
-			spliceTieB = self.SpliceTieData[tieIndex - 1]
-			coreidA = spliceTieB.core
-			depth = spliceTieB.depth
-			y2 = spliceTieB.depth
-			tieNo = spliceTieB.tie
-			x2 = spliceTieB.startX
+		coreidB = spliceTieA.core
+		#print "core B id = spliceTieA's core(???): " + str(spliceTieA.core)
+		y1 = spliceTieA.depth
 
-			ciA = self.findCoreInfoByIndex(coreidA)
-			ciB = self.findCoreInfoByIndex(coreidB)
+		spliceTieB = self.SpliceTieData[tieIndex - 1]
+		#print "core A id = spliceTieB's core(???): " + str(spliceTieB.core)
+		coreidA = spliceTieB.core
+		depth = spliceTieB.depth
+		y2 = spliceTieB.depth
+		tieNo = spliceTieB.tie
 
-			if self.GetTypeID(ciA.type) != self.GetTypeID(ciB.type):
-				self.multipleType = True 
+		ciA = self.findCoreInfoByIndex(coreidA)
+		ciB = self.findCoreInfoByIndex(coreidB)
+		if ciA == None or ciB == None:
+			return
 
-			if ciA != None and ciB != None:
-				reversed = False if x1 >= x2 else True
-				if reversed == False :
-					splice_data = py_correlator.splice(ciB.type, ciB.hole, int(ciB.holeCore), y1, ciA.type, ciA.hole, int(ciA.holeCore), y2, tieNo, self.parent.smoothDisplay, 0)
-				else :
-					splice_data = py_correlator.splice(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1, tieNo, self.parent.smoothDisplay, 0)
-				self.parent.SpliceChange = True
-				py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
+		#print "Core A: " + str(ciA)
+		#print "Core B: " + str(ciB)
 
-				if tieNo <= 0 and splice_data[0] > 0 : 
-					self.spliceCount = self.spliceCount + 1
-					self.RealSpliceTie.append(spliceTieB)
-					self.RealSpliceTie.append(spliceTieA)
-				if splice_data[0] == -1 : 
-					self.parent.OnShowMessage("Error", "It can not find value point.", 1)
-					self.parent.splicePanel.OnButtonEnable(0, True)
-					self.parent.splicePanel.OnButtonEnable(1, False)
-					return
+		if self.GetTypeID(ciA.type) != self.GetTypeID(ciB.type):
+			self.multipleType = True
+		
+		splice_data = py_correlator.splice(ciB.type, ciB.hole, int(ciB.holeCore), y1, ciA.type, 
+										   ciA.hole, int(ciA.holeCore), y2, tieNo, self.parent.smoothDisplay, 0)
 
-				if spliceTieA.constrained == 1:
-					spliceTieA.depth = splice_data[2]
-				if spliceTieB.constrained == 1:
-					spliceTieB.depth = splice_data[2]
+		self.parent.SpliceChange = True
+		py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
 
-				if splice_data[1] != "" :
-					self.SpliceData = []
-					self.parent.filterPanel.OnLock()
-					self.parent.ParseData(splice_data[1], self.SpliceData)
-					self.parent.filterPanel.OnRelease()
-					self.parent.UpdateSMOOTH_SPLICE(False)
+		if tieNo <= 0 and splice_data[0] > 0 : 
+			self.spliceCount = self.spliceCount + 1
+			self.RealSpliceTie.append(spliceTieB)
+			self.RealSpliceTie.append(spliceTieA)
+		if splice_data[0] == -1 : 
+			self.parent.OnShowMessage("Error", "It can not find value point.", 1)
+			self.parent.splicePanel.OnButtonEnable(0, True)
+			self.parent.splicePanel.OnButtonEnable(1, False)
+			return
 
-					# brgtodo 5/15/2014: This logic in button splice but not right-click splice.
-					self.parent.splicePanel.OnButtonEnable(0, False)
-					self.parent.splicePanel.OnButtonEnable(1, True)
+		if spliceTieA.constrained == 1:
+			spliceTieA.depth = splice_data[2]
+		if spliceTieB.constrained == 1:
+			spliceTieB.depth = splice_data[2]
 
-					s = "Constrained Splice: "	
-					if self.Constrained == 0 :
-						s = "Unconstrained Splice: "	
-						
-					s = s + "hole " + ciB.hole + " core " + ciB.holeCore + ": " + str(datetime.today()) + "\n"
-					self.parent.logFileptr.write(s)
-					s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
-					self.parent.logFileptr.write(s)
+		if splice_data[1] != "" :
+			self.SpliceData = []
+			self.parent.filterPanel.OnLock()
+			self.parent.ParseData(splice_data[1], self.SpliceData)
+			self.parent.filterPanel.OnRelease()
+			self.parent.UpdateSMOOTH_SPLICE(False)
 
-					self.parent.SpliceSectionSend(ciA.hole, ciA.holeCore, y1, "split", tieNo)
-					self.parent.SpliceSectionSend(ciB.hole, ciB.holeCore, y2, None, tieNo)
-					if tieNo > 0 :
-						self.parent.SpliceSectionSend(ciA.hole, ciA.holeCore, y1, "split", -1)
-						self.parent.SpliceSectionSend(ciB.hole, ciB.holeCore, y2, None, -1)
+			# brgtodo 5/15/2014: This logic in button splice but not right-click splice.
+			self.parent.splicePanel.OnButtonEnable(0, False)
+			self.parent.splicePanel.OnButtonEnable(1, True)
 
-					self.SpliceTieData = []
-					self.SpliceTieData.append(spliceTieB)
-					self.SpliceTieData.append(spliceTieA)
+			s = "Constrained Splice: "	
+			if self.Constrained == 0 :
+				s = "Unconstrained Splice: "	
+
+			s = s + "hole " + ciB.hole + " core " + ciB.holeCore + ": " + str(datetime.today()) + "\n"
+			self.parent.logFileptr.write(s)
+			s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
+			self.parent.logFileptr.write(s)
+
+			self.parent.SpliceSectionSend(ciA.hole, ciA.holeCore, y1, "split", tieNo)
+			self.parent.SpliceSectionSend(ciB.hole, ciB.holeCore, y2, None, tieNo)
+			if tieNo > 0 :
+				self.parent.SpliceSectionSend(ciA.hole, ciA.holeCore, y1, "split", -1)
+				self.parent.SpliceSectionSend(ciB.hole, ciB.holeCore, y2, None, -1)
+
+			self.SpliceTieData = []
+			self.SpliceTieData.append(spliceTieB)
+			self.SpliceTieData.append(spliceTieA)
 
 		self.SPselectedTie = -1
 		self.SPGuideCore = []
@@ -4791,7 +4795,7 @@ class DataCanvas(wxBufferedWindow):
 
 			shift = fixedTie.depth - movableTie.depth
 			shiftx = fixedTie.hole - movableTie.hole
-			self.compositeDepth = fixedTie.depth #y1 + shift
+			self.compositeDepth = fixedTie.depth
 
 			self.activeCore = self.selectedCore
 			self.OnUpdateGuideData(self.selectedCore, shiftx, shift)
@@ -5635,22 +5639,22 @@ class DataCanvas(wxBufferedWindow):
 						depth = (pos[1] - self.startDepth) / (self.length / self.gap) + self.SPrulerStartDepth
 						if self.SPSelectedCore >= 0:
 							spliceTie = SpliceTie(self.currentStartX, pos[1], self.SPSelectedCore, fixed, 
-												  self.minScrollRange, self.minData, depth, -1, self.Constrained)
+												  self.minData, depth, -1, self.Constrained)
 							self.SPSelectedCore = -1
 							self.selectedCore = -1
 						else :
 							spliceTie = SpliceTie(self.currentStartX, pos[1], self.selectedCore, fixed,
-												  self.minScrollRange, self.minData, depth, -1, self.Constrained)
+												  self.minData, depth, -1, self.Constrained)
 
 						self.parent.splicePanel.OnButtonEnable(1, False)
 						self.parent.splicePanel.OnButtonEnable(2, True)
 						self.SpliceTieData.append(spliceTie) 
 
-						self.SPGuideCore = []	
+						self.SPGuideCore = []
 						length = len(self.SpliceTieData) % 2
 
 						if length == 1 and self.Constrained == 1:
-							splicecoreno = len(self.SpliceCore) 
+							splicecoreno = len(self.SpliceCore)
 							diff = splicecoreno - (len(self.RealSpliceTie) / 2)
 							if self.begin_append == True :
 								diff = diff - 1
@@ -5659,62 +5663,45 @@ class DataCanvas(wxBufferedWindow):
 								splicecoreno = splicecoreno - 1
 								self.selectedCore = self.SpliceCore[splicecoreno]
 								spliceTie = SpliceTie(self.currentStartX, pos[1], self.selectedCore, 0, # fixed = 0
-													  self.minScrollRange, self.minData, depth, -1, self.Constrained)
-								self.SpliceTieData.append(spliceTie) 
+													  self.minData, depth, -1, self.Constrained)
+								self.SpliceTieData.append(spliceTie)
 								length = 0
 
 						if length == 0 :
 							self.activeSPTie = len(self.SpliceTieData) - 1
 							shift = 0.0
-							n = 0
 
-							length = len(self.SpliceTieData) 
+							length = len(self.SpliceTieData)
 							prevSpliceTie = self.SpliceTieData[length - 2]
-							if self.Constrained == 1: 
+							if self.Constrained == 1:
 								prevSpliceTie.y = pos[1]
 								prevSpliceTie.depth = depth
 
 							self.guideSPCore = prevSpliceTie.core
 
 							curSpliceTie = self.SpliceTieData[length - 1]
-							n = curSpliceTie.core
-							
 							if self.Constrained == 0:
 								shift = prevSpliceTie.depth - curSpliceTie.depth
 
 							self.spliceDepth = curSpliceTie.depth
 
-							# 5/15/2014 brgtodo: Given above, these startX values will always be equal
-							reversed = False 
-							tempCore = -1
-							if prevSpliceTie.startX > curSpliceTie.startX:
-								reversed = True
-								tempCore = self.guideSPCore
-								self.guideSPCore = curSpliceTie.core
-								n = tempCore
-
 							ciA = self.findCoreInfoByIndex(self.guideSPCore)
-							ciB = self.findCoreInfoByIndex(n)
+							ciB = self.findCoreInfoByIndex(curSpliceTie.core) #(n)
 							if ciA != None and ciB != None and ciA.hole == ciB.hole:
 								self.SpliceTieData.remove(spliceTie) # brgtodo 5/1/2014 zuh?
-							else :
-								if reversed == False :
-									self.activeCore = self.selectedCore
-									self.OnUpdateSPGuideData(self.selectedCore, depth, shift)
-								else :
-									self.activeCore = tempCore
-									self.OnUpdateSPGuideData(tempCore, depth, shift)
-
+							else:
+								self.activeCore = self.selectedCore
+								self.OnUpdateSPGuideData(self.selectedCore, depth, shift)
 								self.parent.splicePanel.OnButtonEnable(0, True)
 
 								flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
 								if flag == 1:
 									testret = py_correlator.evalcoef_splice(ciB.type, ciB.hole, int(ciB.holeCore), 
-																			curSpliceTie.depth, prevSpliceTie.depth) #y1, y2)
+																			curSpliceTie.depth, prevSpliceTie.depth)
 									if testret != "" :
 										if self.Constrained == 0 :
 											self.parent.splicePanel.OnUpdateDepth(shift)
-										self.parent.OnAddFirstGraph(testret, prevSpliceTie.depth, curSpliceTie.depth) #y2, y1)
+										self.parent.OnAddFirstGraph(testret, prevSpliceTie.depth, curSpliceTie.depth)
 
 									for data_item in self.range:
 										typeA = ciA.type
@@ -6025,15 +6012,12 @@ class DataCanvas(wxBufferedWindow):
 			shift = 0
 			y1 = 0
 			y2 = 0
-			x1 = 0
-			x2 = 0
 
 			depth = (pos[1] - self.startDepth) / (self.length / self.gap) + self.SPrulerStartDepth
 			spliceTie.y = pos[1]
 			spliceTie.depth = depth
 			self.selectedCore = spliceTie.core
 			y1 = depth
-			x2 = spliceTie.startX
 
 			prevSpliceTie = self.SpliceTieData[self.SPselectedTie - 1]
 			if self.Constrained == 1 :
@@ -6046,17 +6030,8 @@ class DataCanvas(wxBufferedWindow):
 				depth = prevSpliceTie.depth
 				y2 = prevSpliceTie.depth
 
-			x1 = prevSpliceTie.startX
 			self.guideSPCore = prevSpliceTie.core
 			self.spliceDepth = depth
-
-			reversed = False
-			tempCore = -1
-			if x2 < x1 :
-				reversed = True
-				tempCore = self.guideSPCore
-				self.guideSPCore = self.selectedCore
-				self.selectedCore = tempCore
 
 			ciA = self.findCoreInfoByIndex(self.selectedCore)
 			ciB = self.findCoreInfoByIndex(self.guideSPCore)
@@ -6083,11 +6058,7 @@ class DataCanvas(wxBufferedWindow):
 				self.parent.OnUpdateGraph()
 
 			self.SPGuideCore = []
-			if reversed == False :
-				self.OnUpdateSPGuideData(self.selectedCore, depth, shift)
-			else :
-				self.OnUpdateSPGuideData(tempCore, depth, shift)
-			got = 1
+			self.OnUpdateSPGuideData(self.selectedCore, depth, shift)
 
 		if self.LogselectedTie >= 0 :
 			logtieNo = self.LogselectedTie
