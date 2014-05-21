@@ -63,8 +63,11 @@ public:
 	int splice( int tie_id, int typeA, char* annotA, char* holeA, int coreidA, double posA, int typeB, char* annotB, char* holeB, int coreidB, double posB, bool append = false );
 	
 	int splice( int tie_id, Core* coreA, Core* coreB, double posA, double posB, bool append = false, bool appendbegin =false );
-	int splice( int coreidA, double relativeposA, int coreidB, double relativeposB );
-	int splice( int tieindex, int coreidA, double relativeposA, int coreidB, double relativeposB );	
+
+	// brg 5/19/2014: unused
+	//int splice( int coreidA, double relativeposA, int coreidB, double relativeposB );
+	//int splice( int tieindex, int coreidA, double relativeposA, int coreidB, double relativeposB );	
+
 	int splice( void);
 	
 	int appendSplice( bool allflag );
@@ -200,7 +203,7 @@ protected:
 protected:
 	std::vector<Hole*> m_splicerholes;
 	std::vector<Tie*> m_splicerties;
-	Hole* m_mainHole[3];
+	Hole* m_mainHole[3]; // brg 4/28/2014 hole 0 = splice hole? seems like hole 1 is also used as splice hole at times...
 	Data m_correlatorData;
 	Value* m_tiepoint;
 	

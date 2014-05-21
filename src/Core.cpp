@@ -1264,7 +1264,7 @@ void Core::setDepthOffset( double offset, bool applied, bool fromfile )
 
 void Core::setDepthOffset( double offset, char valuetype, bool applied, bool fromfile )
 {
-	m_affine[1].matrix[12] = m_affine[1].matrix[11];
+	m_affine[1].matrix[12] = m_affine[1].matrix[11]; // matrix[12] = previous offset?
 
 	m_affine[1].matrix[11] = offset;
 	m_affine[1].valuetype = valuetype;	

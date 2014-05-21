@@ -204,6 +204,10 @@
 #define PLUSMINUS_STD				3.0		//number of std awy from mean to set variable axis min & max
 
 
+// brgtodo 5/19/2014: Totally unclear on what most of the matrix array values are used for.
+// Indices 0, 5, 10, 15 seem to be always set to 1.0. 11 contains the current offset. 12 appears
+// to be used to back up the current offset(?).  Other than that, values are only copied from other
+// matrices.
 struct data_affine {
 	double matrix[16];
 	bool applied;
