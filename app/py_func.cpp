@@ -1142,15 +1142,15 @@ static PyObject* getData(PyObject *self, PyObject *args)
 			dataptr->getTuple(g_data, SMOOTH);
 			break;
 		case 2 : 	// splice tie info 
-           		correlator.getSpliceTuple(g_data);
+			correlator.getSpliceTuple(g_data);
 			break;
 		case 3 :	// splice hole data 
-   				correlator.generateSpliceHole();
-           		correlator.getTuple(g_data, SPLICEDATA);
+			correlator.generateSpliceHole();
+			correlator.getTuple(g_data, SPLICEDATA);
 			break;
 		case 4 :	// splice hole smooth data 
-   				correlator.generateSpliceHole();
-           		correlator.getTuple(g_data, SPLICESMOOTH);
+			correlator.generateSpliceHole();
+			correlator.getTuple(g_data, SPLICESMOOTH);
 			break;
 		case 7 :	// strat data 
 			if(dataptr != NULL)
@@ -1161,36 +1161,36 @@ static PyObject* getData(PyObject *self, PyObject *args)
 		case 8 :	// log splice hole data 
 			//cout << "case 8 " << endl;
 			correlator.generateSaganHole();
-           		correlator.getTuple(g_data, LOG);
+			correlator.getTuple(g_data, LOG);
 			break;
 		case 9 :	// log splice hole data 
-           		correlator.getTuple(g_data, DATA);
+			correlator.getTuple(g_data, DATA);
 			break;
 		case 10 :	// log splice hole data 
 			correlator.generateSaganHole();
-           		correlator.getTuple(g_data, LOGSMOOTH);
+			correlator.getTuple(g_data, LOGSMOOTH);
 			break;
 		case 11 :	// log splice hole data 
-           		correlator.getTuple(g_data, SMOOTH);
+			correlator.getTuple(g_data, SMOOTH);
 			break;
 		case 12 :	// sagan tie info
-           		correlator.getSaganTuple(g_data);
+			correlator.getSaganTuple(g_data);
 			break;
 		case 13 :	// sagan tie info
-           		correlator.getSaganTuple(g_data, true);
+			correlator.getSaganTuple(g_data, true);
 			break;
 		case 14 :	// log splice hole data 
 			//cout << "case 14 " << endl;
-           		correlator.getTuple(g_data, LOG);
+			correlator.getTuple(g_data, LOG);
 			break;
 		case 15 :	// splice hole data 
-           		correlator.getTuple(g_data, SPLICEDATA);
+			correlator.getTuple(g_data, SPLICEDATA);
 			break;
 		case 16 :	// splice hole smooth data 
-           		correlator.getTuple(g_data, SPLICESMOOTH);
+			correlator.getTuple(g_data, SPLICESMOOTH);
 			break;
 		case 17 :	// log splice hole data 
-           		correlator.getTuple(g_data, LOGSMOOTH);
+			correlator.getTuple(g_data, LOGSMOOTH);
 			break;
 		case 18 :	// section data
 			if(dataptr != NULL)
@@ -1211,7 +1211,6 @@ static PyObject* getData(PyObject *self, PyObject *args)
 			}
 			break;
 		}
-				
 	}
 	
 	if(logdataptr)
@@ -1389,7 +1388,7 @@ static PyObject* first_splice(PyObject *self, PyObject *args)
 	if (append == 0)
 		ret = correlator.splice(hole, coreid, coretype, annotation);
 	else
-		ret = correlator.splice(hole, coreid, coretype, annotation, true);
+		ret = correlator.splice(hole, coreid, coretype, annotation, true); // brg never called
 
 	g_data = ""; 
 	if(ret > 0 ) 
