@@ -1413,9 +1413,7 @@ class MainFrame(wx.Frame):
 		self.Window.RealSpliceTie = []
 		self.Window.SPGuideCore = []
 		self.Window.SpliceCore = []
-		self.Window.PreviousSpliceCore = -1
 		self.Window.CurrentSpliceCore = -1
-		self.Window.spliceCount = 0
 		self.Window.isLogShifted = False 
 		self.Window.LogTieData = [] 
 		self.Window.logTie = -1
@@ -1472,9 +1470,7 @@ class MainFrame(wx.Frame):
 		self.Window.SPGuideCore = []
 		self.Window.SpliceCore = []
 		self.Window.RealSpliceTie = []
-		self.Window.PreviousSpliceCore = -1
 		self.Window.CurrentSpliceCore = -1
-		self.Window.spliceCount = 0
 		self.UpdateData()
 
 	def OnClearLog(self, event):

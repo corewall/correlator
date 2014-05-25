@@ -230,14 +230,12 @@ class DataCanvas(wxBufferedWindow):
 		self.LogAutoMode = 1
 		self.isAppend = False 
 		self.SPSelectedCore = -1 
-		self.SpliceDiff = 2
 		self.MainViewMode = True
 		self.mbsfDepthPlot = 0 
 		self.firstPntAge = 0.0
 		self.firstPntDepth = 0.0
 		self.SelectedAge = -1
 		self.AgeDataList = []
-		self.maxSPcore = 0
 		self.AgeYRates = []
 		self.AgeEnableDrag = 0
 		self.AgeShiftX = 0
@@ -389,19 +387,16 @@ class DataCanvas(wxBufferedWindow):
 		self.SpliceTieData = [] # splice tie
 		self.RealSpliceTie = []	 # splice tie
 		self.SPGuideCore = []	# splice guide 
-		self.SpliceCore = []	 # core numbers in splice region
+		self.SpliceCore = []	 # indexes of cores in splice
 		self.SpliceData = []
 		self.AltSpliceData = []
 		self.LogSpliceData = []
 		self.LogSpliceSmoothData = []
 		self.LogTieData = [] # splice tie
-		self.spliceCount = 0
-		self.begin_append = False 
-		self.CurrentSpliceCore = -1
-		self.PreviousSpliceCore = -1
+		self.CurrentSpliceCore = -1 # index of core to be spliced onto splice
 
 		self.drag = 0
-		self.selectedCore = -1 
+		self.selectedCore = -1
 		self.LogselectedCore = -1 
 		self.selectedTie = -1 
 		self.activeTie = -1 
@@ -573,10 +568,7 @@ class DataCanvas(wxBufferedWindow):
 		self.SpliceCore = []
 		self.UserdefStratData = []
 		self.AdjustDepthCore = []
-		self.spliceCount = 0
-		self.begin_append = False 
 		self.CurrentSpliceCore = -1
-		self.PreviousSpliceCore = -1
 		self.selectedCore = -1
 		self.LogselectedCore = -1
 		self.selectedTie = -1
@@ -598,14 +590,10 @@ class DataCanvas(wxBufferedWindow):
 		self.SpliceTieData = []
 		self.RealSpliceTie = []
 		self.SpliceCore = []
-		self.spliceCount = 0
-		self.begin_append = False 
 		self.CurrentSpliceCore = -1
-		self.PreviousSpliceCore = -1
 		self.selectedTie = -1
 		self.selectedLastTie = -1
 		self.guideSPCore = -1
-		self.SpliceDiff = 2
 		self.selectedType = "" 
 		self.altMultipleType = self.multipleType
 		self.multipleType = False 
@@ -1173,7 +1161,6 @@ class DataCanvas(wxBufferedWindow):
 
 		rangeMax = startX
 		spliceflag = 0 
-		drawSplicerflag = 0
 
 		len_hole = len(hole) - 1
 		if len_hole == 0 :
@@ -1203,7 +1190,6 @@ class DataCanvas(wxBufferedWindow):
 
 			if self.CurrentSpliceCore == self.coreCount :
 				spliceflag = 1	
-				drawSplicerflag = 1 
 
 			for autoHole in self.autocoreNo : 
 				if autoHole == self.HoleCount :
@@ -1277,8 +1263,6 @@ class DataCanvas(wxBufferedWindow):
 		if self.multipleType == True :
 			type = "Multiple data type"
 
-
-		# draw graph tick marks
 		# 0 : unsmoothed, 1 : smoothed, 2 : both
 		if smoothed == 0 or smoothed == 1 :
 			rangeMax = self.splicerX + 50
@@ -1774,6 +1758,7 @@ class DataCanvas(wxBufferedWindow):
 		quality = holedata[8] 
 		sections = holedata[9]
 
+		# draw dotted line separating splice from next splice hole (or core to be spliced)
 		if spliceflag == 1 :
 			spliceholewidth = self.splicerX + self.holeWidth + 100
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
@@ -2057,6 +2042,7 @@ class DataCanvas(wxBufferedWindow):
 
 		lines = []
 
+		# draw CurrentSpliceCore
 		dc.SetPen(wx.Pen(wx.Colour(255, 130, 71), 1))
 		y = 0
 		for r in splicelines :
@@ -3158,7 +3144,6 @@ class DataCanvas(wxBufferedWindow):
 		index = 0
 		prevCoreIndex = -1 
 		prevDepth = 0.0
-		self.maxSPcore = 0
 
 		id = -1
 		prevId = -1 
@@ -3191,16 +3176,9 @@ class DataCanvas(wxBufferedWindow):
 			self.SpliceCore.append(coreInfoB.core)
 
 		prevCoreIndex = coreInfoA.core
-		self.PreviousSpliceCore = coreInfoB.core
 		prevDepth = depthB
 
-		self.spliceCount = len(self.SpliceCore) 
-		self.maxSPcore = self.spliceCount 
 		self.SpliceTieFromFile = len(self.RealSpliceTie)
-
-		if self.spliceCount >= 2 :
-			if self.SpliceCore[0] == self.SpliceCore[1] :
-				self.begin_append = True 
 
 
 	def OnSetQTCb(self, event) :
@@ -3393,7 +3371,7 @@ class DataCanvas(wxBufferedWindow):
 				else :
 					self.parent.UpdateTieInfo(info, rey1, self.LogselectedTie)
 
-				s = "Log/Core Match: hole " + holeInfoA.hole + " core " + holeInfoA.holeCore + ": " + str(datetime.today()) + "\n"
+				s = "Log/Core Match: hole " + coreInfoA.hole + " core " + coreInfoA.holeCore + ": " + str(datetime.today()) + "\n"
 				self.parent.logFileptr.write(s)
 				s = coreInfoA.hole + " " + coreInfoA.holeCore + " " + str(y2) + " tied to " + coreInfoB.hole + " " + coreInfoB.holeCore + " " + str(y1) + "\n\n"
 				self.parent.logFileptr.write(s)
@@ -3484,15 +3462,14 @@ class DataCanvas(wxBufferedWindow):
 		spliceTieA = self.SpliceTieData[tieIndex]
 
 		coreidB = spliceTieA.core
-		#print "core B id = spliceTieA's core(???): " + str(spliceTieA.core)
 		y1 = spliceTieA.depth
 
 		spliceTieB = self.SpliceTieData[tieIndex - 1]
-		#print "core A id = spliceTieB's core(???): " + str(spliceTieB.core)
 		coreidA = spliceTieB.core
 		depth = spliceTieB.depth
 		y2 = spliceTieB.depth
-		tieNo = spliceTieB.tie
+		tieNo = spliceTieA.tie
+		#print "spliceTieA.tie = {}, spliceTieB.tie = {}, tieNo = {}".format(spliceTieA.tie, spliceTieB.tie, tieNo)
 
 		ciA = self.findCoreInfoByIndex(coreidA)
 		ciB = self.findCoreInfoByIndex(coreidB)
@@ -3509,18 +3486,20 @@ class DataCanvas(wxBufferedWindow):
 										   ciA.hole, int(ciA.holeCore), y2, tieNo, self.parent.smoothDisplay, 0)
 
 		self.parent.SpliceChange = True
-		py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
+		py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table', 2)
 
 		if tieNo <= 0 and splice_data[0] > 0 : 
-			self.spliceCount = self.spliceCount + 1
 			self.RealSpliceTie.append(spliceTieB)
 			self.RealSpliceTie.append(spliceTieA)
+			self.SpliceCore.append(spliceTieA.core)
 		if splice_data[0] == -1 : 
 			self.parent.OnShowMessage("Error", "It can not find value point.", 1)
 			self.parent.splicePanel.OnButtonEnable(0, True)
 			self.parent.splicePanel.OnButtonEnable(1, False)
 			return
 
+		spliceTieA.tie = splice_data[0]
+		spliceTieB.tie = splice_data[0]
 		if spliceTieA.constrained == 1:
 			spliceTieA.depth = splice_data[2]
 		if spliceTieB.constrained == 1:
@@ -3573,9 +3552,11 @@ class DataCanvas(wxBufferedWindow):
 				else :
 					self.OnClearTies(1)
 			else :
-				if self.SpliceTieFromFile != len(self.RealSpliceTie) :
+				if self.SpliceTieFromFile != len(self.RealSpliceTie):
+					#print "self.SpliceTieFromFile != len(self.RealSpliceTie), undo"
 					self.OnUndoSplice()
 				else :
+					#print "self.SpliceTieFromFile == len(self.RealSpliceTie), clear ties"
 					self.OnClearTies(1)
 			self.SPselectedTie = -1
 			self.SPGuideCore = []
@@ -3585,12 +3566,12 @@ class DataCanvas(wxBufferedWindow):
 			self.ApplySplice(self.SPselectedTie)
 
 	def OnClearTies(self, mode) :
-		if mode == 0 :
+		if mode == 0 : # composite
 			self.TieData = []
 			self.GuideCore = []
 			self.selectedTie = -1
 			self.parent.clearSend()
-		elif mode == 1 :
+		elif mode == 1 : # splice
 			realties = len(self.RealSpliceTie)
 			curties = len(self.SpliceTieData)
 			if realties == 0 and curties <= 2 :
@@ -3604,7 +3585,7 @@ class DataCanvas(wxBufferedWindow):
 
 			self.SPGuideCore = []
 			self.SPselectedTie = -1
-		elif mode == 2 :
+		elif mode == 2 : # log
 			last = self.LogselectedTie + 1
 			length = last % 2
 			if length == 0 and last != 0 :
@@ -3656,7 +3637,7 @@ class DataCanvas(wxBufferedWindow):
 			self.TieData = []
 			self.GuideCore = []
 			self.parent.clearSend()
-		elif opId == 4:
+		elif opId == 4: # undo to previous offset
 			py_correlator.undo(1, "X", 0)
 			self.parent.AffineChange = True
 			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
@@ -3672,7 +3653,7 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.UpdateData()
 			self.parent.UpdateStratData()
 			self.parent.compositePanel.OnButtonEnable(1, False)
-		elif opId == 5:
+		elif opId == 5: # undo to offset of core above
 			if self.selectedTie >= 0 :
 				tie = self.TieData[self.selectedTie]
 				coreInfo = self.findCoreInfoByIndex(tie.core)
@@ -3691,7 +3672,7 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.UpdateData()
 					self.parent.UpdateStratData()
 					self.parent.compositePanel.OnButtonEnable(1, False)
-		elif opId == 3 or opId == 2:
+		elif opId == 3 or opId == 2: # adjust this core and all below (2), adjust this core only (3)
 			if self.selectedTie >= 0 :
 				movableTie = self.TieData[self.selectedTie]
 				self.AdjustDepthCore.append(movableTie.core)
@@ -3898,10 +3879,10 @@ class DataCanvas(wxBufferedWindow):
 
 			# delete splice tie
 			if tieNo >= 0 :
+				self.SpliceCore.pop()
 				splice_data = py_correlator.delete_splice(tieNo, self.parent.smoothDisplay)
 				py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
 				self.parent.SpliceChange = True
-				self.spliceCount = self.spliceCount - 1
 				if splice_data != "" :
 					self.SpliceData = []
 					self.parent.filterPanel.OnLock()
@@ -3924,7 +3905,6 @@ class DataCanvas(wxBufferedWindow):
 				
 		if len(self.RealSpliceTie) == 0 :
 			self.parent.splicePanel.OnButtonEnable(1, False)
-			self.PreviousSpliceCore = self.SpliceCore[0] 
 			self.CurrentSpliceCore = -1 
 
 		self.SpliceTieData = []
@@ -3932,24 +3912,19 @@ class DataCanvas(wxBufferedWindow):
 			realties = len(self.RealSpliceTie) - 2
 			prevSpliceTie = self.RealSpliceTie[realties]
 			if prevSpliceTie.core >= 0 : 
-				self.PreviousSpliceCore = prevSpliceTie.core
-				self.PreviousSpliceCore = self.CurrentSpliceCore
 				self.SpliceTieData.append(prevSpliceTie)
-
 				curSpliceTie = self.RealSpliceTie[realties + 1]
 				self.CurrentSpliceCore = curSpliceTie.core
 				self.SpliceTieData.append(curSpliceTie)
 			else :
-				coresize = len(self.SpliceCore) - 2
-				self.PreviousSpliceCore = self.SpliceCore[coresize] 
 				self.CurrentSpliceCore = -1
 
 		ret = py_correlator.getData(2)
 		if ret != "" :
 			self.parent.ParseSpliceData(ret, True)
 			ret = "" 
-
-		self.spliceCount = len(self.SpliceCore)
+		else:
+			print "No py_correlator splice data"
 
 		self.UpdateDrawing()
 
@@ -4220,7 +4195,7 @@ class DataCanvas(wxBufferedWindow):
 							self.parent.OnAddGraph(testret, prevSpliceTie.depth, curSpliceTie.depth)
 				self.parent.OnUpdateGraph()
 
-		else :
+		else : # update log tie
 			if len(self.LogTieData) < self.activeSATie :
 				self.activeSATie = -1
 				return
@@ -4273,7 +4248,7 @@ class DataCanvas(wxBufferedWindow):
 			if len(self.LogTieData) == 2 or self.PreviewNumTies == 0 :
 				self.PreviewFirstNo = self.activeSATie
 				self.PreviewLog[3] = y1 - y2
-				if self.Flating == False :				
+				if self.Floating == False:
 					self.PreviewLog[0] = self.FirstDepth 
 					self.PreviewLog[1] = y2
 					self.PreviewLog[2] = (y1 - self.FirstDepth) / (y2 - self.FirstDepth)
@@ -4303,8 +4278,8 @@ class DataCanvas(wxBufferedWindow):
 					self.PreviewLog[6] = (y3 - y1) / (y3 - y2)
 
 			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-			if holenoA != 'x' and flag == 1 :
-				testret = py_correlator.evalcoefLog(holenoA, int(corenoA), y2, y1)
+			if coreInfo.hole != 'x' and flag == 1 :
+				testret = py_correlator.evalcoefLog(coreInfo.hole, int(coreInfo.holeCore), y2, y1)
 				if testret != "" :
 					self.parent.OnAddFirstGraph(testret, y2, y1)
 					self.parent.OnUpdateGraph()
@@ -4500,7 +4475,7 @@ class DataCanvas(wxBufferedWindow):
 
 		count = 0
 		for spliceTie in self.SpliceTieData:
-			if (count % 2) == 1: 
+			if (count % 2) == 1:
 				y = self.startDepth + (spliceTie.depth - self.SPrulerStartDepth) * (self.length / self.gap)
 				x = self.splicerX + self.holeWidth + 100
 				reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
@@ -4552,8 +4527,8 @@ class DataCanvas(wxBufferedWindow):
 
 		# make tie 
 		if self.pressedkeyShift == 1 :
-		 if self.drag == 0 :
-			 for key, data in self.DrawData.items():
+			if self.drag == 0 :
+				for key, data in self.DrawData.items():
 					if key == "CoreArea":
 						for s in data :
 							area = s 
@@ -4807,6 +4782,7 @@ class DataCanvas(wxBufferedWindow):
 
 	def CanSpliceCore(self, prevCore, coreToSplice):
 		result = False
+		#print "CanSpliceCore: prevCore = {}, toSplice = {}".format(prevCore, coreToSplice)
 		ciA = self.findCoreInfoByIndex(prevCore)
 		ciB = self.findCoreInfoByIndex(coreToSplice)
 		if ciA != None and ciB != None and ciA.hole != ciB.hole:
@@ -5117,8 +5093,8 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.OnShowMessage("Error", "Appending all blocks more splicing", 1)
 					self.grabCore = -1
 					return
+
 				# grab by default
-				splice_count = len(self.SpliceCore)
 				if self.isLogMode == 1 and self.parent.splicedOpened == 0 : 
 					ret = self.GetDataInfo(self.grabCore)
 					type = self.GetTypeID(ret[2])
@@ -5198,7 +5174,8 @@ class DataCanvas(wxBufferedWindow):
 					self.grabCore = -1
 					self.UpdateDrawing()
 					return
-				if self.spliceCount == 0: # add first splice core
+
+				if len(self.SpliceCore) == 0: # add first splice core
 					ret = self.GetDataInfo(self.grabCore)
 					if ret[3] == '0': 
 						#type = self.GetTypeID(ret[2])
@@ -5237,8 +5214,6 @@ class DataCanvas(wxBufferedWindow):
 						self.PreviewFirstNo = 0
 						
 						self.SpliceCore.append(self.grabCore)
-						self.PreviousSpliceCore = self.grabCore 
-						self.spliceCount = self.spliceCount + 1
 
 						self.Lock = True
 						self.parent.UpdateSPLICE(False)
@@ -5250,31 +5225,16 @@ class DataCanvas(wxBufferedWindow):
 					else :
 						self.parent.OnShowMessage("Error", "Please choose a core of Good quality.", 1)
 
-				# exactly one splice core, add additional core
-				elif self.isLogMode == 0:
-					# "selected" core (core to be tied to current splice) present, remove it and
-					# replace with current grabCore (core being dragged)
-					if self.spliceCount + 1 == len(self.SpliceCore):
-						self.SpliceCore.pop()
-					
+				#  >= 1 splice core
+				elif len(self.SpliceCore) >= 1 and self.isLogMode == 0:
 					ret = self.GetDataInfo(self.grabCore)
 					if ret[3] == '0': # ret[3] is core quality: '0' == Good
-						# INFORMATION - for Multiple data type splice
-						#if self.selectedType == ret[2] :
-						if True :
-							index = len(self.SpliceCore) - 1
-							self.PreviousSpliceCore = self.SpliceCore[index]
-							self.SpliceCore.append(self.grabCore)
-							if self.PreviousSpliceCore >= 0 : 
-								if self.CanSpliceCore(self.PreviousSpliceCore, self.grabCore):
-									self.CurrentSpliceCore = self.grabCore
-									self.PreviousSpliceCore = self.CurrentSpliceCore
-								else : 
-									errStr = "The previously spliced core is from Hole %s, please select a core from a different hole." % ret[0]
-									self.parent.OnShowMessage("Error", errStr, 1)
-									self.SpliceCore.pop()
-						else :
-							self.parent.OnShowMessage("Error", "Please select same type", 1)
+						if len(self.SpliceCore) >= 1:
+							if self.CanSpliceCore(self.SpliceCore[-1], self.grabCore):
+								self.CurrentSpliceCore = self.grabCore
+							else:
+								errStr = "The previously spliced core is from Hole %s, please select a core from a different hole." % ret[0]
+								self.parent.OnShowMessage("Error", errStr, 1)
 
 						# UPDATE SETTYPE FOR SPLICE
 						type = ret[2]
@@ -5309,7 +5269,6 @@ class DataCanvas(wxBufferedWindow):
 
 		# handle core dragged from splice area to composite area
 		if pos[0] < self.splicerX :
-			splice_count = len(self.SpliceCore)
 			if self.SPgrabCore >= 0 :
 				if self.isLogMode == 1 : 
 					self.LogSpliceData = []
@@ -5317,8 +5276,7 @@ class DataCanvas(wxBufferedWindow):
 					self.SpliceData = []
 					self.SpliceSmoothData = []
 					self.hole_sagan = -1
-				elif splice_count == 1 :
-					self.PreviousSpliceCore = -1
+				elif len(self.SpliceCore) == 1:
 					self.CurrentSpliceCore = -1
 					splice_data = py_correlator.delete_splice(-1, self.parent.smoothDisplay)
 					self.parent.splicePanel.OnButtonEnable(4, False)
@@ -5339,22 +5297,8 @@ class DataCanvas(wxBufferedWindow):
 					self.SpliceData = []
 					self.SpliceSmoothData = []
 					self.SpliceCore = []
-					self.spliceCount = 0
-				else : 
-					if splice_count > self.spliceCount : 
-						size = splice_count
-						if size > 0 :
-							self.SpliceCore.pop();
-							size = size - 1
-							if size > 1 :
-								self.CurrentSpliceCore = self.SpliceCore[size - 1]
-								self.PreviousSpliceCore = -1
-							else : 
-								self.CurrentSpliceCore = -1
-								self.PreviousSpliceCore = -1
-							size = size - 1
-							if size > 0 :
-								self.PreviousSpliceCore = self.SpliceCore[size - 1]
+				# brg 5/24/2014 ignore case where len(self.SpliceCore) > 1 for now, user
+				# can change the current core by dragging it from comp to splice area
 				self.SPgrabCore = -1
 				self.UpdateDrawing()
 				return
@@ -5381,7 +5325,7 @@ class DataCanvas(wxBufferedWindow):
 			self.OnDrawGuide()
 			self.selectedTie = -1 
 
-		if self.SPselectedTie >= 0 : 
+		if self.SPselectedTie >= 0 :
 			spliceTie = self.SpliceTieData[self.SPselectedTie]
 			self.SPselectedLastTie = self.SPselectedTie 
 
@@ -5648,24 +5592,17 @@ class DataCanvas(wxBufferedWindow):
 
 						self.parent.splicePanel.OnButtonEnable(1, False)
 						self.parent.splicePanel.OnButtonEnable(2, True)
-						self.SpliceTieData.append(spliceTie) 
+						self.SpliceTieData.append(spliceTie)
 
 						self.SPGuideCore = []
 						length = len(self.SpliceTieData) % 2
 
+						# created first tie - if constrained, create second tie at same depth
 						if length == 1 and self.Constrained == 1:
-							splicecoreno = len(self.SpliceCore)
-							diff = splicecoreno - (len(self.RealSpliceTie) / 2)
-							if self.begin_append == True :
-								diff = diff - 1
-
-							if diff == self.SpliceDiff :
-								splicecoreno = splicecoreno - 1
-								self.selectedCore = self.SpliceCore[splicecoreno]
-								spliceTie = SpliceTie(self.currentStartX, pos[1], self.selectedCore, 0, # fixed = 0
-													  self.minData, depth, -1, self.Constrained)
-								self.SpliceTieData.append(spliceTie)
-								length = 0
+							spliceTie = SpliceTie(self.currentStartX, pos[1], self.CurrentSpliceCore, 0, # fixed = 0
+												  self.minData, depth, -1, self.Constrained)
+							self.SpliceTieData.append(spliceTie)
+							length = 0
 
 						if length == 0 :
 							self.activeSPTie = len(self.SpliceTieData) - 1
@@ -5683,7 +5620,7 @@ class DataCanvas(wxBufferedWindow):
 							if self.Constrained == 0:
 								shift = prevSpliceTie.depth - curSpliceTie.depth
 
-							self.spliceDepth = curSpliceTie.depth
+							self.spliceDepth = prevSpliceTie.depth
 
 							ciA = self.findCoreInfoByIndex(self.guideSPCore)
 							ciB = self.findCoreInfoByIndex(curSpliceTie.core) #(n)
@@ -5691,7 +5628,7 @@ class DataCanvas(wxBufferedWindow):
 								self.SpliceTieData.remove(spliceTie) # brgtodo 5/1/2014 zuh?
 							else:
 								self.activeCore = self.selectedCore
-								self.OnUpdateSPGuideData(self.selectedCore, depth, shift)
+								self.OnUpdateSPGuideData(self.CurrentSpliceCore, depth, shift)
 								self.parent.splicePanel.OnButtonEnable(0, True)
 
 								flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
