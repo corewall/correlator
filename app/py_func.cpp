@@ -1491,6 +1491,7 @@ static PyObject* undoAppend(PyObject *self, PyObject *args)
 static PyObject* append_at_begin(PyObject *self, PyObject *args)
 {
 	correlator.splice();
+	correlator.generateSpliceHole();
 	return Py_None;
 }
 

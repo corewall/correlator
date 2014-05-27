@@ -1080,7 +1080,7 @@ class SplicePanel():
 		splice_data = "" 
 
 		if self.selected.GetValue() == True :
-			if splice_count <= 2 :
+			if splice_count <= 1:
 				py_correlator.append_at_begin()
 
 			l = self.parent.GetSpliceCore()

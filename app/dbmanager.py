@@ -4071,10 +4071,12 @@ class DataFrame(wx.Panel):
 
 		if tableLoaded != [] :
 			if tableLoaded[1] == True :
-				self.parent.OnInitDataUpdate()			
+				self.parent.OnInitDataUpdate()
 				self.parent.InitSPLICE()
 				self.parent.UpdateSPLICE(False)
 				#self.parent.UpdateSMOOTH_SPLICE(False)
+				if len(self.parent.Window.SpliceCore) > 0:
+					self.parent.splicePanel.OnButtonEnable(4, True) # enable Append button
 				self.parent.autoPanel.SetCoreList(1, [])
 				self.parent.filterPanel.OnRegisterHole("Spliced Records")
 				r = self.parent.Window.range[0]
