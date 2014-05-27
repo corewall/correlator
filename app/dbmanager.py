@@ -111,19 +111,19 @@ class DataFrame(wx.Panel):
 		self.sideNote.AddPage(self.treeListPanel, 'Data List')
 		self.tree.GetMainWindow().Bind(wx.EVT_RIGHT_DOWN, self.SelectTREE)
 
-		self.dbPanelParent = wx.Panel(self.sideNote, -1)
-		self.dbPanelParent.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		#self.dbPanelParent = wx.Panel(self.sideNote, -1)
+		#self.dbPanelParent.SetSizer(wx.BoxSizer(wx.VERTICAL))
 
-		self.dbPanel = wx.ScrolledWindow(self.dbPanelParent, -1)
-		self.dbPanel.SetScrollbars(5, 5, 1200, 800) #1/6/2014 brgtodo
-		self.dbPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
-		self.dbPanel.SetBackgroundColour('white')
+# 		self.dbPanel = wx.ScrolledWindow(self.dbPanelParent, -1)
+# 		self.dbPanel.SetScrollbars(5, 5, 1200, 800) #1/6/2014 brgtodo
+# 		self.dbPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+# 		self.dbPanel.SetBackgroundColour('white')
 
 		# 1/6/2014 brg: On Mac, only left half of vertical scrollbar appears. Seems the ScrolledWindow
 		# is too wide for the parent window. Add to a Panel so we can use a fudged border on the right
 		# to make things look correct.
-		self.dbPanelParent.GetSizer().Add(self.dbPanel, 1, wx.EXPAND | wx.RIGHT, 9)
-		self.sideNote.AddPage(self.dbPanelParent, 'Data List v2')
+		#self.dbPanelParent.GetSizer().Add(self.dbPanel, 1, wx.EXPAND | wx.RIGHT, 9)
+		#self.sideNote.AddPage(self.dbPanelParent, 'Data List v2')
 
 		self.dataPanel = dialog.CoreSheet(self.sideNote, 120, 100)
 		self.sideNote.AddPage(self.dataPanel, 'Generic Data')
@@ -4949,7 +4949,7 @@ class DataFrame(wx.Panel):
 		# self - old dbmanager (has required variables and methods)
 		# self.dbPanel - Notebook panel in which to embed DBView
 		# self.loadedSites - list of sites loaded from root datalist.db
-		self.dbview = DBView(self.parent, self, self.dbPanel, self.loadedSites)
+		#self.dbview = DBView(self.parent, self, self.dbPanel, self.loadedSites)
 
 		root_f = open(self.parent.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
