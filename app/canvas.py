@@ -5125,10 +5125,10 @@ class DataCanvas(wxBufferedWindow):
 						self.parent.filterPanel.OnRelease()
 
 					self.SpliceCore = []
-					coreInfo = self.findCoreInfoByHoleCount(sagan_hole)
-					if coreInfo != None:
-						self.SpliceCore.append(coreInfo.core)
-
+					for ci in self.DrawData["CoreInfo"]:
+						if ci.holeCount == sagan_hole:
+							self.SpliceCore.append(ci.core)
+					
 					self.LogSpliceData = []
 					self.LogSpliceSmoothData = []
 					icount = 0
