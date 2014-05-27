@@ -3851,12 +3851,9 @@ class DataCanvas(wxBufferedWindow):
 		
 	def GetSpliceCore(self):
 		result = None
-		lastTie = len(self.SpliceCore) - 1 
-		if lastTie >= 0 :
-			lastCore = self.SpliceCore[lastTie]
-			coreInfo = self.findCoreInfoByIndex(lastCore)
-			if coreInfo != None:
-				result = coreInfo.hole, coreInfo.holeCore, coreInfo.type
+		coreInfo = self.findCoreInfoByIndex(self.CurrentSpliceCore)
+		if coreInfo != None:
+			result = coreInfo.hole, coreInfo.holeCore, coreInfo.type
 		return result
 
 	def OnSpliceCore(self):

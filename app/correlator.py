@@ -1430,11 +1430,6 @@ class MainFrame(wx.Frame):
 		self.UpdateData()
 		#self.Window.UpdateDrawing()
 
-	def OnClearSplice(self, event):
-		py_correlator.cleanData(7)
-		self.OnClearSpliceAll()
-		self.autoPanel.SetCoreList(0, self.Window.HoleData)
-
 	def OnClearSpliceTie(self, event):
 		py_correlator.cleanData(4)
 		self.OnClearSpliceAll()
