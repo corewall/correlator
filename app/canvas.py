@@ -3459,45 +3459,40 @@ class DataCanvas(wxBufferedWindow):
 			print "ApplySplice: invalid tie index {}".format(tieIndex)
 			return
 
-		spliceTieA = self.SpliceTieData[tieIndex]
+		spliceTieA = self.SpliceTieData[tieIndex] # tie on core being added to splice
+		spliceTieB = self.SpliceTieData[tieIndex - 1] # tie on current splice core
 
-		coreidB = spliceTieA.core
-		y1 = spliceTieA.depth
-
-		spliceTieB = self.SpliceTieData[tieIndex - 1]
-		coreidA = spliceTieB.core
-		depth = spliceTieB.depth
-		y2 = spliceTieB.depth
-		tieNo = spliceTieA.tie
-		#print "spliceTieA.tie = {}, spliceTieB.tie = {}, tieNo = {}".format(spliceTieA.tie, spliceTieB.tie, tieNo)
-
-		ciA = self.findCoreInfoByIndex(coreidA)
-		ciB = self.findCoreInfoByIndex(coreidB)
-		if ciA == None or ciB == None:
+		coreA = self.findCoreInfoByIndex(spliceTieA.core)
+		coreB = self.findCoreInfoByIndex(spliceTieB.core)
+		if coreA == None or coreB == None:
 			return
 
 		#print "Core A: " + str(ciA)
 		#print "Core B: " + str(ciB)
 
-		if self.GetTypeID(ciA.type) != self.GetTypeID(ciB.type):
+		if self.GetTypeID(coreA.type) != self.GetTypeID(coreB.type):
 			self.multipleType = True
 		
-		splice_data = py_correlator.splice(ciB.type, ciB.hole, int(ciB.holeCore), y1, ciA.type, 
-										   ciA.hole, int(ciA.holeCore), y2, tieNo, self.parent.smoothDisplay, 0)
+		y1 = spliceTieA.depth
+		y2 = spliceTieB.depth
+		splice_data = py_correlator.splice(coreA.type, coreA.hole, int(coreA.holeCore), y1,
+										   coreB.type, coreB.hole, int(coreB.holeCore), y2,
+										   spliceTieA.tie, self.parent.smoothDisplay, 0)
 
 		self.parent.SpliceChange = True
 		py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table', 2)
 
-		if tieNo <= 0 and splice_data[0] > 0 : 
+		if spliceTieA.tie <= 0 and splice_data[0] > 0:
 			self.RealSpliceTie.append(spliceTieB)
 			self.RealSpliceTie.append(spliceTieA)
 			self.SpliceCore.append(spliceTieA.core)
-		if splice_data[0] == -1 : 
+		if splice_data[0] == -1:
 			self.parent.OnShowMessage("Error", "It can not find value point.", 1)
 			self.parent.splicePanel.OnButtonEnable(0, True)
 			self.parent.splicePanel.OnButtonEnable(1, False)
 			return
 
+		prevTie = spliceTieA.tie
 		spliceTieA.tie = splice_data[0]
 		spliceTieB.tie = splice_data[0]
 		if spliceTieA.constrained == 1:
@@ -3520,16 +3515,16 @@ class DataCanvas(wxBufferedWindow):
 			if self.Constrained == 0 :
 				s = "Unconstrained Splice: "	
 
-			s = s + "hole " + ciB.hole + " core " + ciB.holeCore + ": " + str(datetime.today()) + "\n"
+			s = s + "hole " + coreA.hole + " core " + coreA.holeCore + ": " + str(datetime.today()) + "\n"
 			self.parent.logFileptr.write(s)
-			s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
+			s = coreB.hole + " " + coreB.holeCore + " " + str(y1) + " tied to " + coreA.hole + " " + coreA.holeCore + " " + str(y2) + "\n\n"
 			self.parent.logFileptr.write(s)
 
-			self.parent.SpliceSectionSend(ciA.hole, ciA.holeCore, y1, "split", tieNo)
-			self.parent.SpliceSectionSend(ciB.hole, ciB.holeCore, y2, None, tieNo)
-			if tieNo > 0 :
-				self.parent.SpliceSectionSend(ciA.hole, ciA.holeCore, y1, "split", -1)
-				self.parent.SpliceSectionSend(ciB.hole, ciB.holeCore, y2, None, -1)
+			self.parent.SpliceSectionSend(coreB.hole, coreB.holeCore, y1, "split", prevTie)
+			self.parent.SpliceSectionSend(coreA.hole, coreA.holeCore, y2, None, prevTie)
+			if prevTie > 0 :
+				self.parent.SpliceSectionSend(coreB.hole, coreB.holeCore, y1, "split", -1)
+				self.parent.SpliceSectionSend(coreA.hole, coreA.holeCore, y2, None, -1)
 
 			self.SpliceTieData = []
 			self.SpliceTieData.append(spliceTieB)
