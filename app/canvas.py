@@ -4594,11 +4594,11 @@ class DataCanvas(wxBufferedWindow):
 
 	def OnUpdateGuideData(self, core, shiftx, shifty):
 		self.GuideCore = []
-
 		coreInfo = self.findCoreInfoByIndex(core)
 
+		# determine smoothing type
 		temp_type = coreInfo.type
-		if temp_type == "Natural Gamma" :	
+		if temp_type == "Natural Gamma":
 			temp_type = "NaturalGamma"
 		smooth_id = -1
 		for r in self.range :
@@ -4606,90 +4606,50 @@ class DataCanvas(wxBufferedWindow):
 				smooth_id = r[4]
 				break
 
-		# 9/19/2013 brg: duplication - these routines are EXACTLY THE SAME
-		# except one uses SmoothData and one uses HoleData
-		if smooth_id == 1 :
-			for data in self.SmoothData:
-				for record in data:
-					holeInfo = record[0] 
-					if holeInfo[7] == coreInfo.hole and type == holeInfo[2]: 
-						count = 0
-						for coredata in record : 
-							if coredata[0] == coreInfo.holeCore and count != 0: 
-								valuelist = coredata[10]
-								for v in valuelist :
-									x, y = v
-									x = x + shifty
-									l = []
-									l.append((x, y))
-									self.GuideCore.append(l) 
-								return
-							count = 1
-		else :
-			for data in self.HoleData:
-				for record in data:
-					holeInfo = record[0] 
-					if holeInfo[7] == coreInfo.hole and temp_type == holeInfo[2]:
-						count = 0
-						for coredata in record : 
-							if coredata[0] == coreInfo.holeCore and count != 0:
-								valuelist = coredata[10]
-								for v in valuelist:
-									x, y = v
-									x = x + shifty
-									l = []
-									l.append((x, y))
-									self.GuideCore.append(l) 
-								return
-							count = 1
+		# create guide core's draw data from smoothed/unsmoothed
+		dataSource = self.SmoothData if smooth_id == 1 else self.HoleData
+		for data in dataSource:
+			for record in data:
+				holeInfo = record[0]
+				if holeInfo[7] == coreInfo.hole and holeInfo[2] == coreInfo.type:
+					count = 0
+					for coredata in record : 
+						if coredata[0] == coreInfo.holeCore and count != 0:
+							valuelist = coredata[10]
+							for v in valuelist:
+								x, y = v
+								x = x + shifty
+								l = []
+								l.append((x, y))
+								self.GuideCore.append(l) 
+							return
+						count = 1
 
 
 	def OnUpdateSPGuideData(self, core, cut, shift):
 		self.SPGuideCore = []
 		coreInfo = self.findCoreInfoByIndex(core)
 
-		data_list = []
-		if self.splice_smooth_flag == 1 :
-			data_list = self.SmoothData
-		else :
-			data_list = self.HoleData
-
-		# 9/23/2013 brgtodo duplication - it's everywhere.
-		if self.Constrained == 1 :
-			for data in data_list:
-				for record in data:
-					holeInfo = record[0]
-					if holeInfo[7] == coreInfo.hole and holeInfo[2] == coreInfo.type:
-						count = 0
-						for coredata in record :
-							if coredata[0] == coreInfo.holeCore and count != 0 :
-								valuelist = coredata[10]
-								for v in valuelist :
-									x, y = v
-									x = x + shift
-									if x >= cut :
-										l = []
-										l.append((x, y))
-										self.SPGuideCore.append(l) 
-								return;
-							count = 1 
-		else :
-			for data in data_list:
-				for record in data:
-					holeInfo = record[0]
-					if holeInfo[7] == coreInfo.hole and holeInfo[2] == coreInfo.type:
-						count = 0
-						for coredata in record :
-							if coredata[0] == coreInfo.holeCore and count != 0: 
-								valuelist = coredata[10]
-								for v in valuelist :
-									x, y = v
-									x = x + shift
+		# create guide core's draw data from smoothed/unsmoothed
+		dataSource = self.SmoothData if self.splice_smooth_flag == 1 else self.HoleData
+		for data in dataSource:
+			for record in data:
+				holeInfo = record[0]
+				if holeInfo[7] == coreInfo.hole and holeInfo[2] == coreInfo.type:
+					count = 0
+					for coredata in record :
+						if coredata[0] == coreInfo.holeCore and count != 0:
+							valuelist = coredata[10]
+							for v in valuelist:
+								x, y = v
+								x = x + shift
+								if self.Constrained == 0 or (self.Constrained == 1 and x >= cut):
 									l = []
 									l.append((x, y))
 									self.SPGuideCore.append(l) 
-								return;
-							count = 1 
+							return
+						count = 1 
+
 
 	def GetStartX(self):
 		startX = 0 
