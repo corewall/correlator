@@ -2966,10 +2966,8 @@ class DataCanvas(wxBufferedWindow):
 
 		self.DrawRuler(dc)
 
-		# 5/12/2013 brgtodo: Showing dragged core not quite ready for primetime, need to
-		# fix scaling and properly determine x-position on horizontal scrollbar changes
-		#if self.grabCore != -1:
-		#	self.DrawDragCore(dc)
+		if self.grabCore != -1:
+			self.DrawDragCore(dc)
 
 		# UI debugging helpers
 # 		dc.SetPen(wx.Pen(wx.RED))
@@ -4494,7 +4492,7 @@ class DataCanvas(wxBufferedWindow):
 
 
 		# grab core --> for copy core to splice space
-		if self.selectScroll == 0 :
+		if self.selectScroll == 0 and self.grabScrollC == 0: # avoid dragging core during horizontal scroll
 			if pos[0] <= self.splicerX :
 				for key, data in self.DrawData.items():
 					if key == "CoreArea":
@@ -4677,24 +4675,31 @@ class DataCanvas(wxBufferedWindow):
 			# build list of core graph lines
 			dragCoreLines = []
 			coreInfo = self.findCoreInfoByIndex(self.grabCore)
-			startX = self.GetStartX() # x-coordinate from which core graphs are drawn
+			
 			foundMatch = False
  			for hole in self.HoleData:
 				if foundMatch:
 					break
 
-				# each element of HoleData is a list containing another list that
-				# contains the data we're interested in
 				holeData = hole[0]
 				holeInfo = holeData[0]
 				if holeInfo[7] == coreInfo.hole and holeInfo[2] == coreInfo.type:
+					for r in self.range:
+						if r[0] == holeInfo[2].replace(' ', ''): # find matching type (account for space in "Natural Gamma")
+							typeMin = r[1]
+							typeMax = r[2]
+							if r[3] != 0.0:
+								typeCoefRange = self.holeWidth / r[3]
+							else :
+								self.coefRange = 0 
+							break
 					for coredata in holeData[1:]: # every item after index 0 is a core in that hole
 						if coredata[0] == coreInfo.holeCore:
 							valuelist = coredata[10]
 							for v in valuelist:
 								depth, datum = v
-								screenx = (datum - self.minRange) * self.coefRange
-								x = screenx + xoffset - (startX / 2)
+								screenx = (datum - typeMin) * typeCoefRange
+								x = screenx + xoffset - (self.holeWidth / 2)
 								screeny = self.getCoord(depth)
 								y = screeny + yoffset
 								dragCoreLines.append((x, y))
