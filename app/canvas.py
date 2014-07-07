@@ -4685,7 +4685,8 @@ class DataCanvas(wxBufferedWindow):
 				holeInfo = holeData[0]
 				if holeInfo[7] == coreInfo.hole and holeInfo[2] == coreInfo.type:
 					for r in self.range:
-						if r[0] == holeInfo[2].replace(' ', ''): # find matching type (account for space in "Natural Gamma")
+						# find matching type (account for space mismatch in "Natural Gamma" types)
+						if r[0] == holeInfo[2] or r[0] == holeInfo[2].replace(' ', ''):
 							typeMin = r[1]
 							typeMax = r[2]
 							if r[3] != 0.0:
