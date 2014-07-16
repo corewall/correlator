@@ -13,6 +13,7 @@ import random, sys, os, re, time, ConfigParser, string
 from datetime import datetime
 
 import numpy.oldnumeric as _Numeric
+import numpy
 
 from importManager import py_correlator
 
@@ -435,13 +436,20 @@ class CompositePanel():
 		self.growthPlotCanvas.SetBackgroundColour('White')
 		self.growthPlotCanvas.Show(True)
 
+		self.grPanel = wx.Panel(self.plotNote, -1)
+		self.grText = wx.StaticText(self.grPanel, -1, "Super status of some kind.")
+		self.grPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.grPanel.GetSizer().Add(self.growthPlotCanvas, 1, wx.EXPAND)
+		self.grPanel.GetSizer().Add(self.grText, 0, wx.EXPAND)
+
 		self.plotNote.AddPage(self.corrPlotCanvas, 'Evaluation')
-		self.plotNote.AddPage(self.growthPlotCanvas, 'Growth Rate')
+		#self.plotNote.AddPage(self.growthPlotCanvas, 'Growth Rate')
+		self.plotNote.AddPage(self.grPanel, "Growth Rate")
 
 		# add Notebook to main panel
 		self.plotNote.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectPlotNote)
 		self.plotNote.SetSelection(1)
-		vbox.Add(self.plotNote, 1, wx.EXPAND | wx.ALL, 5)
+		vbox.Add(self.plotNote, 5, wx.EXPAND | wx.ALL, 5)
 
 		# update drawings
 		xdata = [ (-self.leadLagValue, 0), (self.leadLagValue, 0) ]
@@ -513,7 +521,7 @@ class CompositePanel():
 
 		hbox3.Add(sizer32, 1)
 		panel3.SetSizer(hbox3)
-		vbox.Add(panel3, 0, wx.BOTTOM, 9)
+		vbox.Add(panel3, 1, wx.BOTTOM, 9)
 
 		buttonsize = 130
 		if platform_name[0] == "Windows" :
@@ -714,6 +722,8 @@ class CompositePanel():
 
 	def UpdateGrowthPlotData(self):
 		maxMbsfDepth = 0.0
+		minMcd = 10000.0
+		maxMcd = -10000.0
 		growthRateLines = []
 		holeNum = 0
 		holeSet = set([]) # avoid duplicate holes with different datatypes
@@ -733,8 +743,16 @@ class CompositePanel():
 					offset = hole[0][core + 1][5]
 					topSectionMcd = hole[0][core + 1][9][0]
 					mbsfDepth = topSectionMcd - offset
+
+					# determine min/max for plotting purposes
 					if mbsfDepth > maxMbsfDepth:
 						maxMbsfDepth = mbsfDepth
+					if mbsfDepth >= self.parent.Window.rulerStartDepth and mbsfDepth <= self.parent.Window.rulerEndDepth:
+						if topSectionMcd < minMcd:
+							minMcd = topSectionMcd
+						if topSectionMcd > maxMcd:
+							maxMcd = topSectionMcd
+
 					offsetMbsfPair = (mbsfDepth, topSectionMcd)
 					growthRatePoints.append(offsetMbsfPair)
 
@@ -746,7 +764,7 @@ class CompositePanel():
 				growthRateLines.append(plot.PolyLine(growthRatePoints, colour='black', width=1))
 				holeNum = (holeNum + 1) % len(holeMarker) # make sure we don't overrun marker/color lists
 
-		return growthRateLines, maxMbsfDepth
+		return growthRateLines, maxMbsfDepth, minMcd, maxMcd
 
 	def UpdateGrowthPlot(self):
 		# 9/18/2013 brg: Was unable to get Window attribute on init without adding this
@@ -756,17 +774,33 @@ class CompositePanel():
 		# Window in DataCanvas.init() were also unavailable. Funky.
 		growthRateLines = []
 		if hasattr(self.parent, 'Window'):
-			growthRateLines, maxMbsfDepth = self.UpdateGrowthPlotData()
+			growthRateLines, maxMbsfDepth, minMcd, maxMcd = self.UpdateGrowthPlotData()
 		else:
 			return
 		
+		if len(growthRateLines) == 0:
+			return
+
 		tenPercentLine = plot.PolyLine([(0,0),(maxMbsfDepth, maxMbsfDepth * 1.1)], legend='10%', colour='black', width=2)
 		# order matters: draw 10% line, then data lines, then data markers/points
 		self.growthPlotData = [tenPercentLine] + self.growthPlotData
 		self.growthPlotData = growthRateLines + self.growthPlotData
 
 		gc = plot.PlotGraphics(self.growthPlotData, 'Growth Rate', 'mbsf', 'mcd')
-		self.growthPlotCanvas.Draw(gc, xAxis = (0, maxMbsfDepth), yAxis = (0, maxMbsfDepth * 1.1))
+		
+		xmin = self.parent.Window.rulerStartDepth
+		xmax = self.parent.Window.rulerEndDepth
+		if xmax > self.parent.ScrollMax:
+			xmax = self.parent.ScrollMax
+#		if xmax > maxMcd:
+#			xmax = maxMcd
+		xax = (xmin, xmax)
+#		print "xmin = {}, xmax = {}".format(xmin, xmax)
+
+		yax = (round(minMcd, 0) - 5, round(maxMcd, 0) + 5)
+		if minMcd >= maxMcd:
+			yax = None
+		self.growthPlotCanvas.Draw(gc, xAxis = xax, yAxis = yax)
 		self.growthPlotData = []
 
 	def OnUpdateDrawing(self):
