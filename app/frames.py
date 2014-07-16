@@ -554,6 +554,10 @@ class CompositePanel():
 
 		vbox.Add(wx.StaticText(self.mainPanel, -1, '*Sub menu for tie: On dot, right mouse button.', (5, 5)), 0, wx.BOTTOM, 5)
 
+		self.projectButton = wx.Button(self.mainPanel, -1, "Project...", size=(buttonsize, 30))
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnProject, self.projectButton)
+		vbox.Add(self.projectButton, 0, wx.BOTTOM, 5)
+
 		self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine Table", size =(150, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
 		vbox.Add(self.saveButton, 0, wx.ALIGN_CENTER_VERTICAL)
@@ -640,6 +644,24 @@ class CompositePanel():
 		self.parent.OnUpdateGraphSetup(1)
 		if len(self.parent.Window.TieData) > 0 :
 			self.parent.Window.OnUpdateTie(1)
+
+	def OnProject(self, evt):
+		dlg = dialog.ProjectDialog(self.parent)
+		result = dlg.ShowModal()
+		if result == wx.ID_OK:
+			py_correlator.project(dlg.outHole, int(dlg.outCore), dlg.outType, dlg.outOffset)
+
+			self.parent.AffineChange = True
+			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
+
+			# todo: notify Corelyzer of change
+			#self.parent.ShiftSectionSend(ciA.hole, ciA.holeCore, shift, opId)
+
+			if self.parent.showReportPanel == 1:
+				self.parent.OnUpdateReport()
+
+			self.parent.UpdateData()
+			self.parent.UpdateStratData()
 
 	def OnUpdate(self):
 		self.leadLagValue = float(self.leadlag.GetValue())

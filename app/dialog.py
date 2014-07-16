@@ -9,6 +9,7 @@ import wx
 import wx.lib.sheet as sheet
 from wx.lib import plot
 import random, sys, os, re, time, ConfigParser, string
+import numpy
 
 from importManager import py_correlator
 
@@ -860,6 +861,157 @@ class ColorTableDialog(wx.Dialog):
 		for i in range(9) :
 			self.parent.Window.overlapcolorList.insert(i, self.overlapcolorList[i])
 		self.parent.Window.UpdateDrawing()
+
+
+# adjust a core's MCD based on previous cores' growth rate
+class ProjectDialog(wx.Dialog):
+	def __init__(self, parent):
+		self.parent = parent
+		self.coreData = {}
+		self.lastHole = -1
+		self.HoleData = self.parent.Window.HoleData
+
+		# vars for output
+		self.outHole = ""
+		self.outCore = ""
+		self.outType = None
+		self.outOffset = 0
+
+		wx.Dialog.__init__(self, parent, -1, "Project", size=(300,200), style=wx.DEFAULT_DIALOG_STYLE |
+						   wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
+		dlgSizer = wx.BoxSizer(wx.VERTICAL)
+		
+		corePanel = wx.Panel(self, -1)
+		coreSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.holeChoice = wx.Choice(corePanel, -1, size=(70,-1))
+		self.coreChoice = wx.Choice(corePanel, -1, size=(70,-1))
+		coreSizer.Add(wx.StaticText(corePanel, -1, "Hole:"), 0, wx.TOP | wx.BOTTOM, 5)
+		coreSizer.Add(self.holeChoice, 0, wx.ALL, 5)
+		coreSizer.Add(wx.StaticText(corePanel, -1, "Core:"), 0, wx.TOP | wx.BOTTOM, 5)
+		coreSizer.Add(self.coreChoice, 0, wx.ALL, 5)
+		corePanel.SetSizer(coreSizer)
+
+		self.growthRateText = wx.StaticText(self, -1, "Growth Rate at [previous core] = [GR])")
+		self.mbsfText = wx.StaticText(self, -1, "MBSF/CSF-A of [current core name] = [mbsf]")
+
+		shiftPanel = wx.Panel(self, -1)
+		shiftSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.shiftLabel = wx.StaticText(shiftPanel, -1, "Suggested shift: ")
+		self.shiftField = wx.TextCtrl(shiftPanel, -1, "1.000")
+		shiftSizer.Add(self.shiftLabel, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+		shiftSizer.Add(self.shiftField, 0)
+		shiftPanel.SetSizer(shiftSizer)
+
+		buttonPanel = wx.Panel(self, -1)
+		buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.cancelButton = wx.Button(buttonPanel, wx.ID_CANCEL, "Cancel")
+		self.applyButton = wx.Button(buttonPanel, wx.ID_OK, "Apply")
+		buttonSizer.Add(self.cancelButton, 0, wx.ALL, 5)
+		buttonSizer.Add(self.applyButton, 0, wx.ALL, 5)
+		buttonPanel.SetSizer(buttonSizer)
+
+		dlgSizer.Add(corePanel, 0, wx.ALL | wx.EXPAND, 10)
+		dlgSizer.Add(self.mbsfText, 0, wx.LEFT, 10)
+		dlgSizer.AddStretchSpacer()
+		dlgSizer.Add(self.growthRateText, 0, wx.LEFT, 10)
+		dlgSizer.AddStretchSpacer()
+		dlgSizer.Add(shiftPanel, 0, wx.LEFT, 10)
+		dlgSizer.AddStretchSpacer()
+		dlgSizer.Add(buttonPanel, 0, wx.ALIGN_RIGHT | wx.ALL, border=5)
+	
+		self.SetSizer(dlgSizer)
+
+		self.InitChoices()
+
+		self.Bind(wx.EVT_CHOICE, self.UpdateCoreChoice, self.holeChoice)
+		self.Bind(wx.EVT_CHOICE, self.UpdateText, self.coreChoice)
+		self.Bind(wx.EVT_BUTTON, self.OnApply, self.applyButton)
+
+	def OnApply(self, evt):
+		print "OnApply called"
+		self.outHole = self.holeChoice.GetStringSelection()
+		self.outCore = self.coreChoice.GetStringSelection()
+		self.outOffset = float(self.shiftField.GetValue())
+		# self.outType already set
+		self.EndModal(wx.ID_OK)
+
+
+	def InitChoices(self):
+		self.coreData = {}
+		self.holeChoice.Clear()
+		coreDict = {}
+		for hole in self.HoleData:
+			if self.outType == None:
+				self.outType = hole[0][0][2]
+			holeName = hole[0][0][7]
+			if holeName not in coreDict:
+				coreDict[holeName] = {}
+				self.holeChoice.Append(holeName)
+
+			# gather core data: core sets may be inconsistent for different datatypes in same hole
+			mbsfVals = []
+			mcdVals = []
+			for core in hole[0][1:len(hole[0])]:
+				coreName = core[0]
+				if coreName not in coreDict[holeName]:
+					mcd = core[9][0] # first element in section depth list
+					mcdVals.append(mcd)
+					mbsf = mcd - core[5] # offset
+					mbsfVals.append(mbsf)
+					growthRate = numpy.polyfit(mbsfVals, mcdVals, 1)
+					#print "msbf = {}, mcd = {}, gr = {}".format(mbsfVals, mcdVals, growthRate)
+					coreDict[holeName][coreName] = (coreName, mbsf, mcd, round(growthRate[0], 3))
+
+		# update self.coreData
+		for hole in coreDict:
+			self.coreData[hole] = []
+			s = sorted(coreDict[hole], key=int)
+			for key in s:
+				self.coreData[hole].append(coreDict[hole][key])
+			
+		if self.holeChoice.GetCount() > 0:
+			self.holeChoice.Select(0)
+			self.UpdateCoreChoice()
+
+	def UpdateCoreChoice(self, evt=None):
+		curHoleIndex = self.holeChoice.GetSelection()
+		if self.lastHole == curHoleIndex:
+			return
+		self.lastHole = curHoleIndex
+		self.coreChoice.Clear()
+		curHoleStr = self.holeChoice.GetStringSelection()
+		for coreTuple in self.coreData[curHoleStr]:
+			self.coreChoice.Append(coreTuple[0])
+		if self.coreChoice.GetCount() > 0:
+			self.coreChoice.Select(0)
+			self.UpdateText()
+
+	def UpdateText(self, evt=None):
+		coreIndex = self.coreChoice.GetSelection()
+		curHole = self.holeChoice.GetStringSelection()
+		self.UpdateGrowthRateText(coreIndex, curHole)
+		self.UpdateMbsfText(coreIndex, curHole)
+
+	def UpdateGrowthRateText(self, coreIndex, curHole):
+		if coreIndex > 0:
+			coreTuple = self.coreData[curHole][coreIndex - 1]
+			belowMbsf = self.coreData[curHole][coreIndex][1]
+			coreName = curHole + str(coreTuple[0])
+			if coreIndex == 1:
+				gr = coreTuple[2] # use mcd depth (assuming 0.0 mbsf)
+			else:
+				gr = coreTuple[3]
+			self.growthRateText.SetLabel("Growth Rate at core " + coreName + " = " + str(round(gr, 3)))
+			suggShift = belowMbsf * gr - belowMbsf
+			self.shiftField.SetValue(str(suggShift))
+		else:
+			self.growthRateText.SetLabel("Growth Rate undefined at topmost core")
+			self.shiftField.SetValue("")
+
+	def UpdateMbsfText(self, coreIndex, curHole):
+		coreTuple = self.coreData[curHole][coreIndex]
+		coreName = curHole + str(coreTuple[0])
+		self.mbsfText.SetLabel("MBSF/CSF-A of core " + coreName + " = " + str(coreTuple[1]))
 
 
 

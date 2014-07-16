@@ -42,6 +42,7 @@ static PyObject* getRange(PyObject *self, PyObject *args);
 static PyObject* getRatio(PyObject *self, PyObject *args);
 static PyObject* finalize(PyObject *self, PyObject *args);
 static PyObject* composite(PyObject *self, PyObject *args);
+static PyObject* project(PyObject *self, PyObject *args);
 static PyObject* evalcoef(PyObject *self, PyObject *args);
 static PyObject* evalcoef_splice(PyObject *self, PyObject *args);
 static PyObject* evalcoefLog(PyObject *self, PyObject *args);
@@ -134,6 +135,9 @@ static PyMethodDef PyCoreMethods[] = {
 
     {"composite", composite, METH_VARARGS,
      "Composite Data."},
+
+    {"project", project, METH_VARARGS,
+     "Composite Shift by Growth Rate."},
 
     {"evalcoef", evalcoef, METH_VARARGS,
      "Evaluate Cores."},
@@ -1284,6 +1288,25 @@ static PyObject* composite(PyObject *self, PyObject *args)
 
 	//Py_INCREF(Py_None);
 	//return Py_None;
+	return Py_BuildValue("f", ret);
+}
+
+static PyObject* project(PyObject *self, PyObject *args)
+{
+	char *hole = NULL;
+	int core = 0;
+	char *type = NULL;
+	float offset = 0.0f;
+
+	if (!PyArg_ParseTuple(args, "sisf", &hole, &core, &type, &offset))
+		return NULL;
+
+	char* annotation = NULL;
+	int coretype = USERDEFINEDTYPE;
+	getTypeAndAnnot(type, coretype, &annotation);
+
+	float ret = (float) correlator.project(hole, core, coretype, annotation, offset);
+
 	return Py_BuildValue("f", ret);
 }
 

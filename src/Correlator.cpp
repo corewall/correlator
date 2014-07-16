@@ -909,6 +909,27 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 	return 1.0f;
 }
 
+double Correlator::project(char *hole, int core, int coretype, char *annot, float offset)
+{
+	cout << "Correlator::project offset of " << offset << endl;
+	Core *c = findCore(coretype, hole, core, annot);
+	if (c == NULL)
+	{
+		cout << "[Project] Error: Cannot find core" << endl;
+		return -1;
+	}
+
+	Value *val = c->getValue(0);
+	if (val != NULL)
+	{
+		c->disableTies();
+		c->setDepthOffset(offset, val->getType(), true);
+		m_dataptr->update();
+	}
+
+	return 0.0;
+}
+
 double Correlator::getRate(double depth)
 {
 	if(m_mainHole[0] == NULL) return 1.0;
