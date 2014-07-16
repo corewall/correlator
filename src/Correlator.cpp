@@ -868,6 +868,7 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 	Core* coreptr;
 	char* hole_ptr;
 	
+	// apply offset to same core in other datatypes
 	for(int i=0; i < numHoles; i++)
 	{
 		holeptr = m_dataptr->getHole(i);
@@ -4229,6 +4230,7 @@ void Correlator::generateSagan(void)
 #endif
 }
 
+#if 0 // brg 6/27/2014 unused
 Tie* Correlator::createTie( int type, int coreidA, double relativeposA, int coreidB, double relativeposB )
 {
 	if(m_dataptr == NULL) return NULL;
@@ -4238,29 +4240,24 @@ Tie* Correlator::createTie( int type, int coreidA, double relativeposA, int core
 	Core* coreB = findCore(coreidB);	// coreto
 	if(coreA == NULL || coreB == NULL) return NULL;
 
-        double posA = (coreA->getBottom() - coreA->getTop()) * relativeposA;
-        double posB = (coreB->getBottom() - coreB->getTop()) * relativeposB;
+	double posA = (coreA->getBottom() - coreA->getTop()) * relativeposA;
+	double posB = (coreB->getBottom() - coreB->getTop()) * relativeposB;
+
+	cout << "Creating tie, relativeposA = " << relativeposA << ", relativeposB = " << relativeposB << ", posA = " << posA << ", posB = " << posB << endl;
 
 	Tie* pTie = createTie(type, coreA, posA, coreB, posB);
 	return pTie;
 }
+#endif // #if 0
 
 Tie* Correlator::createTie( int type, Core* coreA, double posA, Core* coreB, double posB )
 {
 	if(m_dataptr == NULL) return NULL;
 	if(coreA == NULL || coreB == NULL) return NULL;
 
-	// calculate all inforamtion : top/bottom...
-	// top, bottom
-	data_range rangeA, rangeB;
-	rangeA.top = posA;
-	rangeB.top = posB;
-	rangeA.bottom = rangeA.top;
-	rangeB.bottom = rangeB.top;
-
 	// find value.....
-	Value* valueA = findValue(coreA, rangeA.top);
-	Value* valueB = findValue(coreB, rangeB.top);
+	Value* valueA = findValue(coreA, posA);
+	Value* valueB = findValue(coreB, posB);
 	if(valueA == NULL || valueB == NULL) 
 	{
 #ifdef DEBUG
@@ -4279,6 +4276,7 @@ Tie* Correlator::createTie( int type, Core* coreA, double posA, Core* coreB, dou
 		return NULL; 
 	}
 
+	data_range rangeA, rangeB;
 	rangeA.top = valueA->getTop();
 	rangeA.bottom = rangeA.top;
 	rangeB.top = valueB->getTop();
@@ -4333,6 +4331,7 @@ Tie* Correlator::createTie( int type, Core* coreA, double posA, Core* coreB, dou
 }
 
 
+#if 0 // brg 6/29/2014 unused
 Tie* Correlator::createTie( int type, int tieindex, int coreidA, double relativeposA, int coreidB, double relativeposB )
 {
 	if(m_dataptr == NULL) return NULL;
@@ -4400,6 +4399,7 @@ Tie* Correlator::createTie( int type, int tieindex, int coreidA, double relative
 
 	return tieptr;
 }
+#endif // #if 0
 
 Value* Correlator::assignAboveValues( Core* coreptr, Core* source, Value* valueptr, bool isConstrained, double tie_depth, double offset)
 {

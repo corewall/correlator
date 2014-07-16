@@ -604,9 +604,10 @@ void Core::getTuple( std::string& data, int type )
 		}*/
 	}
 
-	int affine = 0;
-	if((m_affine[1].applied == true) && (m_shiftByaboveCore == false))
-		affine = 1;
+	// brg unused
+	//int affine = 0;
+	//if((m_affine[1].applied == true) && (m_shiftByaboveCore == false))
+	//	affine = 1;
 
 	if (m_values.size() > 0)
 	{
@@ -628,13 +629,13 @@ void Core::getTuple( std::string& data, int type )
 				
 	vector<Value*>::iterator iter;
 	Value* tempValue = NULL;
-	for(iter = m_values.begin(); iter != m_values.end(); iter++)
+	for (iter = m_values.begin(); iter != m_values.end(); iter++)
 	{
-			tempValue = (Value*) *iter;
-			if (tempValue == NULL) continue;
-			tempValue->getTuple(data, type);
+		tempValue = (Value*) *iter;
+		if (tempValue == NULL) continue;
+		tempValue->getTuple(data, type);
 	}
-	data +=":";
+	data += ":";
 }
 
 void Core::setRange( data_range range )

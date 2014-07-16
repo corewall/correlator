@@ -1806,7 +1806,8 @@ class ELDPanel():
 		panel3.SetSizer(hbox3)
 		vbox.Add(panel3, 0, wx.BOTTOM, 5)
 
-		self.showClue = wx.CheckBox(self.mainPanel, -1, 'Show depth adjust clue')
+		# brgtodo 6/25/2014: better var name
+		self.showClue = wx.CheckBox(self.mainPanel, -1, 'Show depth adjust arrows')
 		self.showClue.SetValue(True)
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowClue, self.showClue)
 		vbox.Add(self.showClue, 0, wx.BOTTOM, 5)

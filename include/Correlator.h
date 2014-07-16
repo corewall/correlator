@@ -168,8 +168,8 @@ public:
 	
 protected:
 	Tie* createTie( int type, Core* coreA, double posA, Core* coreB, double posB );
-	Tie* createTie( int type, int coreidA, double relativeposA, int coreidB, double relativeposB );
-	Tie* createTie( int type, int tieindex, int coreidA, double relativeposA, int coreidB, double relativeposB );	
+	//Tie* createTie( int type, int coreidA, double relativeposA, int coreidB, double relativeposB );
+	//Tie* createTie( int type, int tieindex, int coreidA, double relativeposA, int coreidB, double relativeposB );	
 
 	Core* findCore( int index );
 	Core* findCoreinSplice( int index );

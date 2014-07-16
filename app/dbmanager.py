@@ -6233,7 +6233,7 @@ class DataFrame(wx.Panel):
 
 			# CHECK TYPE
 			for i in range(len(self.paths)) :
-				if i == 4 : 
+				if i == 4 : # brgtodo 6/17/2014 why bail on 5th file? Can we only load four at a time?
 					break
 				path = self.paths[i]
 				xml_flag = path.find(".xml", 0)
@@ -7389,7 +7389,7 @@ class DataFrame(wx.Panel):
 		stamp = tempstamp[0:last]
 
 		for i in range(len(self.paths)) :
-			if i == 4 :
+			if i == 4 : # brgtodo 6/17/2014
 				break
 
 			idx = datasort[2] +1

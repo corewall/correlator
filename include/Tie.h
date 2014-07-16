@@ -150,6 +150,8 @@ public:
 	bool isAppend(void);
 	bool isAll(void);
 	
+	// brgtodo 6/25/2014: isActive() never called, enable() never called,  m_active only
+	// referred to in one case (TIE_SHIFT)
 	void disable(void) { m_active= false; }
 	void enable(void) { m_active = true; }
 	bool isActive(void) { return m_active; }

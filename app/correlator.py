@@ -2201,7 +2201,7 @@ class MainFrame(wx.Frame):
 			last = data.find(",", start)
 			# max
 			value = float(data[start:last]) 
-			self.ScrollMax = value;
+			self.ScrollMax = value
 			start = last +1
 
 			while True:

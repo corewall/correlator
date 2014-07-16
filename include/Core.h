@@ -170,7 +170,7 @@ protected:
 	std::vector<Strat*> m_strats;
 	std::vector<Section*> m_sections;
 	
-	struct data_affine m_affine[2]; // index 0 appears related to files, 1 to in-memory data(?)
+	struct data_affine m_affine[2]; // index 0 refers to file (aka "raw") data, 1 to in-memory data
 	
 	int m_type;
 	int m_smoothStatus;	

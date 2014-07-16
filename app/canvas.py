@@ -179,13 +179,17 @@ class DataCanvas(wxBufferedWindow):
 		self.DrawData = {}
 		self.Highlight_Tie = -1
 		self.SpliceTieFromFile = 0
-		self.LogTieList = []
+
+		# brgtodo 6/26/2014: ShiftTieList is populated with new composite shifts only,
+		# but shift arrows still draw correctly without this, even for a new shift. Remove?
 		self.ShiftTieList = []
-		self.ShiftClue = True 
-		self.LogClue = True 
-		self.Floating = False 
-		self.hole_sagan = -1 
-		self.sagan_type = "" 
+		self.ShiftClue = True  # brgtodo 6/25/2014 grab state from checkbox in frames and dump this var
+		self.LogTieList = []
+		self.LogClue = True    # brgtodo ditto
+
+		self.Floating = False
+		self.hole_sagan = -1
+		self.sagan_type = ""
 		self.fg = wx.Colour(255, 255, 255)
 		# 1 = Composite, 2 = Splice, 3 = Sagan
 		self.mode = 1 
@@ -357,14 +361,16 @@ class DataCanvas(wxBufferedWindow):
 		self.squishValue = 100
 		self.squishCoreId = -1 
 
-		# contains all data for the currently loaded holes: each HoleData is a list whose first
-		# element describes the hole itself: (site, leg, data type, hole's min depth, hole's max depth,
-		# hole's mindata, hole's maxdata, hole name, number of cores in hole).
+		# Each element of HoleData is a list containing a list (yes, redundant) containing elements
+		# describing all hole and core data for a single hole+type.
+		#
+		# The first element is a tuple of hole metadata:
+		#    (site, leg, data type, hole's min depth, hole's max depth,
+		#     hole's mindata, hole's maxdata, hole name, number of cores in hole)
 		# 
-		# The remaining elements represent each core's data: a coreinfo tuple: 
-		# (1-based core index in hole, top, bottom, mindata, maxdata, affine offset, stretch, annotated type,
-		# core quality, sections (list of each sections' top depth), list of all cores's depth/data tuple-pairs
-		# a list of all the core's depth/data pairs.
+		# Subsequent elements are tuples of each core's metadata + all depth/data pairs:
+		#    (1-based core index in hole, top, bottom, mindata, maxdata, affine offset, stretch, annotated type,
+		#     core quality, list of sections' top depths, list of core's depth/data tuples)
 		#
 		# Note: top and bottom don't seem to reflect the actual core top and bottom at all. In some cases the core's
 		# depths fall outside of this interval, so take it with a large grain of salt. May be (almost) unused.
@@ -1292,7 +1298,7 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawText(type, rangeMax, 25)
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 			dc.DrawLines(((rangeMax, self.startDepth - 20), (rangeMax, self.Height)))
-		elif smoothed == 7 :
+		elif smoothed == 7 : # draw alternate splice
 			type = self.altType
 			if self.altMultipleType == True :
 				type = "Multiple data type"
@@ -1314,7 +1320,7 @@ class DataCanvas(wxBufferedWindow):
 					self.DrawSpliceCore(dc, -1, holedata, 7, hole_core + holedata[0])
 			return
 		
-		len_hole = len(hole) - 1;	
+		len_hole = len(hole) - 1
 		if len_hole == 0:
 			return
 
@@ -1323,7 +1329,7 @@ class DataCanvas(wxBufferedWindow):
 		ret = 0
 		#self.lastSpliceX = -999.99 
 		splicesize = len(self.SpliceCore) 
-		if self.MainViewMode == True :
+		if self.MainViewMode == True : # draw splice
 			for i in range(len_hole) : 
 				holedata = hole[i + 1]
 				if index < splicesize :
@@ -1531,13 +1537,14 @@ class DataCanvas(wxBufferedWindow):
 							max = sx
 						spx = sx
 						spy = sy
-						si = si + 1 
+						si = si + 1
 			else :
 				drawing_start = self.SPrulerStartDepth - 5.0
 
 				for r in coreData :
 					y, x = r
 					if y >= drawing_start and y <= self.SPrulerEndDepth :
+						# brgtodo 6/4/2014 block duplicated below
 						if self.PreviewLog[0] == -1 :
 							y = y + self.PreviewLog[3]
 						elif y >= self.PreviewLog[0] and y <= self.PreviewLog[1] :
@@ -1566,7 +1573,8 @@ class DataCanvas(wxBufferedWindow):
 							max = sx
 						spx = sx
 						spy = sy 
-						si = si + 1 
+						si = si + 1
+						# end duplicate block
 
 			x = 0
 			y = 0
@@ -1590,6 +1598,7 @@ class DataCanvas(wxBufferedWindow):
 					f = 0
 					if y >= lead and y <= lag :
 						f = 1
+					# brgtodo 6/4/2014 duplicate block above
 					if self.PreviewLog[0] == -1 :
 						y = y + self.PreviewLog[3]
 					elif y >= self.PreviewLog[0] and y <= self.PreviewLog[1] :
@@ -1611,14 +1620,15 @@ class DataCanvas(wxBufferedWindow):
 					sx = x - self.minRange 
 					sx = (sx * self.coefRangeSplice) + startX
 					if si > 0 : 
-						splicelines.append((spx, spy, sx, sy, f))
+						splicelines.append((spx, spy, sx, sy, f)) # f here vs 0 above is only difference
 					if min > sx : 
 						min = sx
 					if max < sx : 
 						max = sx
 					spx = sx
 					spy = sy 
-					si = si + 1 
+					si = si + 1
+					# end duplicate block
 
 			x = 0
 			y = 0
@@ -1758,7 +1768,7 @@ class DataCanvas(wxBufferedWindow):
 		quality = holedata[8] 
 		sections = holedata[9]
 
-		# draw dotted line separating splice from next splice hole (or core to be spliced)
+		# draw vertical dotted line separating splice from next splice hole (or core to be spliced)
 		if spliceflag == 1 :
 			spliceholewidth = self.splicerX + self.holeWidth + 100
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
@@ -1784,6 +1794,7 @@ class DataCanvas(wxBufferedWindow):
 			depth_tie = -999
 			data_tie = -999
 
+			# draw composite depth shift arrows
 			if self.ShiftClue == True :
 				if startX < self.splicerX :
 					coreno = int(coreno)
@@ -2975,7 +2986,6 @@ class DataCanvas(wxBufferedWindow):
 # 		dc.SetPen(wx.Pen(wx.GREEN))
 # 		dc.DrawLine(self.compositeX, 0, self.compositeX, 900)
 # 		dc.DrawLine(self.splicerX, 0, self.splicerX, 900)
-		
 
 		### draw ties
 		tempx = 0
@@ -3476,6 +3486,11 @@ class DataCanvas(wxBufferedWindow):
 		splice_data = py_correlator.splice(coreA.type, coreA.hole, int(coreA.holeCore), y1,
 										   coreB.type, coreB.hole, int(coreB.holeCore), y2,
 										   spliceTieA.tie, self.parent.smoothDisplay, 0)
+		
+		# splice_data array looks like this:
+		# 0: C++ side tie ID
+		# 1: hole data followed by coredata for each core
+		# 2: tie depth
 
 		self.parent.SpliceChange = True
 		py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table', 2)
@@ -3665,7 +3680,7 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.UpdateData()
 					self.parent.UpdateStratData()
 					self.parent.compositePanel.OnButtonEnable(1, False)
-		elif opId == 3 or opId == 2: # adjust this core and all below (2), adjust this core only (3)
+		elif opId == 2 or opId == 3: # adjust this core and all below (2), adjust this core only (3)
 			if self.selectedTie >= 0 :
 				movableTie = self.TieData[self.selectedTie]
 				self.AdjustDepthCore.append(movableTie.core)
@@ -3679,7 +3694,7 @@ class DataCanvas(wxBufferedWindow):
 				ciB = self.findCoreInfoByIndex(fixedTie.core)
 
 				if ciA != None and ciB != None:
-					#print "[DEBUG] Compostie " + str(y1) +  " " + str(y2)
+					#print "[DEBUG] Composite " + str(y1) +  " " + str(y2)
 					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type)
 					self.parent.AffineChange = True
 					self.parent.UpdateData()
@@ -4617,6 +4632,9 @@ class DataCanvas(wxBufferedWindow):
 							for v in valuelist:
 								x, y = v
 								x = x + shifty
+
+								# brgtodo 7/2/2014 idiom of needless nesting
+								# (why does each tuple need its own list???)
 								l = []
 								l.append((x, y))
 								self.GuideCore.append(l) 
@@ -5622,7 +5640,7 @@ class DataCanvas(wxBufferedWindow):
 		self.UpdateDrawing()
 
 
-	# scrollA is the CoreArea (leftmost) region
+	# scrollA = vertical scrolling of the CoreArea (leftmost) region
 	def UpdateScrollA(self, mousePos):
 		scroll_start = self.startDepth * 0.7
 		scroll_y = mousePos[1] - scroll_start
