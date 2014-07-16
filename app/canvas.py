@@ -1054,6 +1054,7 @@ class DataCanvas(wxBufferedWindow):
 				break
 
 		self.rulerEndDepth = pos + 2.0
+		self.parent.compositePanel.UpdateGrowthPlot()
 
 		# Draw ruler on splicer space
 		if self.spliceWindowOn == 1 :
@@ -1523,8 +1524,14 @@ class DataCanvas(wxBufferedWindow):
 					return
 				drawing_start = self.SPrulerStartDepth - 5.0
 
+				depthmin = 9999.0
+				depthmax = -9999.0
 				for r in coreData :
 					y, x = r
+					if y < depthmin:
+						depthmin = y
+					if y > depthmax:
+						depthmax = y
 					if y >= drawing_start and y <= self.SPrulerEndDepth :
 						sy = self.startDepth + (y - self.SPrulerStartDepth) * (self.length / self.gap)
 						sx = x - self.minRange 
