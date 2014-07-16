@@ -868,6 +868,7 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 	Core* coreptr;
 	char* hole_ptr;
 	
+	// apply offset to same core in other datatypes
 	for(int i=0; i < numHoles; i++)
 	{
 		holeptr = m_dataptr->getHole(i);
@@ -908,6 +909,27 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 	return 1.0f;
 }
 
+double Correlator::project(char *hole, int core, int coretype, char *annot, float offset)
+{
+	cout << "Correlator::project offset of " << offset << endl;
+	Core *c = findCore(coretype, hole, core, annot);
+	if (c == NULL)
+	{
+		cout << "[Project] Error: Cannot find core" << endl;
+		return -1;
+	}
+
+	Value *val = c->getValue(0);
+	if (val != NULL)
+	{
+		c->disableTies();
+		c->setDepthOffset(offset, val->getType(), true);
+		m_dataptr->update();
+	}
+
+	return 0.0;
+}
+
 double Correlator::getRate(double depth)
 {
 	if(m_mainHole[0] == NULL) return 1.0;
@@ -921,7 +943,7 @@ double Correlator::getRate(double depth)
 }
 
 	
-int Correlator::splice(char* hole, int coreid, int type, char* annot, bool append)
+int Correlator::splice(char* hole, int coreid, int type, char* annot, bool append /* = false */)
 {
 	if(m_dataptr == NULL) return -1;
 
@@ -935,11 +957,12 @@ int Correlator::splice(char* hole, int coreid, int type, char* annot, bool appen
 		return -1;
 	}
 	int ret;	
-	ret = splice(source, append);	
+	ret = splice(source, append);
 	updateSaganTies();
 	return ret;
 }
 
+// used to add first core section to splice
 int Correlator::splice(Core* source, bool append)
 {
 	if(m_dataptr == NULL) return -1;
@@ -994,8 +1017,10 @@ int Correlator::splice(Core* source, bool append)
 	return 1;
 }
 
-//int Correlator::splice(int id, char holeA, int coreidA, double posA, char holeB, int coreidB, double posB, int type, bool append)
-int Correlator::splice(int tie_id, int typeA, char* annotA, char* holeA, int coreidA, double posA, int typeB, char* annotB, char* holeB, int coreidB, double posB, bool append)
+
+int Correlator::splice(int tie_id, int typeA, char* annotA, char* holeA,
+                       int coreidA, double posA, int typeB, char* annotB,
+                       char* holeB, int coreidB, double posB, bool append)
 {
 	if(m_dataptr == NULL) return -1;
 	m_tiepoint = NULL;
@@ -1033,6 +1058,7 @@ int Correlator::splice(int tie_id, int typeA, char* annotA, char* holeA, int cor
 	return ret;
 }
 
+#if 0 // brgtodo 5/19/2014: unused
 int Correlator::splice(int coreidA, double relativeposA, int coreidB, double relativeposB)
 {
 	if(m_dataptr == NULL) return -1;
@@ -1058,8 +1084,10 @@ int Correlator::splice(int coreidA, double relativeposA, int coreidB, double rel
 
 	return 1;
 }
+#endif // if 0
 
 
+// called for Append (py_correlator.append_on_begin)
 int Correlator::splice(void)
 {
 	if(m_mainHole[0] != NULL) 
@@ -1083,7 +1111,8 @@ int Correlator::splice(void)
 }
 
 
-int Correlator::splice(int tie_id, Core* coreA, Core* coreB, double posA, double posB, bool append, bool appendbegin)
+int Correlator::splice(int tie_id, Core* coreA, Core* coreB, double posA,
+                       double posB, bool append /* = false */, bool appendbegin /* = false */)
 {
 	int type = REAL_TIE;
 	//if(appendbegin == true)
@@ -1145,20 +1174,21 @@ int Correlator::splice(int tie_id, Core* coreA, Core* coreB, double posA, double
 		newValue = coreA->createInterpolatedValue(depth);
 		if(newValue && (newValue->getMbsf() != depth))
 		{
-				newValue->copy(valueA);
-				newValue->setValueType(INTERPOLATED_VALUE);
-				
-				newValue->setDepth(depth);
-				newValue->applyAffine(coreA->getDepthOffset(), newValue->getType());
-				newValue->setB(offset);
-				// need to update data and bottom/top value
-				newValue->setRawData(temp_data);
-				newValue->setTop(temp_top);
-				valueA = newValue;
-				//std::cout << "--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << " " << valueA->getNumber() << std::endl;
+			newValue->copy(valueA);
+			newValue->setValueType(INTERPOLATED_VALUE);
+			
+			newValue->setDepth(depth);
+			newValue->applyAffine(coreA->getDepthOffset(), newValue->getType());
+			newValue->setB(offset); // brgtodo only difference between this block and valueB block
+			// need to update data and bottom/top value
+			newValue->setRawData(temp_data);
+			newValue->setTop(temp_top);
+			valueA = newValue;
+			std::cout << "--> new value is created.... "  << newValue->getTop() << " " << newValue->getMbsf() << ", " << newValue->getMcd() << " " << valueA->getNumber() << std::endl;
 		}
 	}
 	
+	// brgtodo identical to valueA block above except for setB() call
 	Value* valueB = findValue(coreB, rangeB.top);
 	if(valueB && valueB->getMcd() != rangeB.top)
 	{
@@ -1298,9 +1328,9 @@ int Correlator::splice(int tie_id, Core* coreA, Core* coreB, double posA, double
 	update();
 
 	return tieptr->getId();
-
 }
 
+#if 0 // brgtodo 5/15/2014: unused
 int Correlator::splice(int tieindex, int coreidA, double relativeposA, int coreidB, double relativeposB)
 {
 	if(m_dataptr == NULL) return -1;
@@ -1389,15 +1419,17 @@ int Correlator::splice(int tieindex, int coreidA, double relativeposA, int corei
 
 	return 1;
 }
+#endif // if 0
 
 int Correlator::appendSplice( bool allflag )
 {
 	if(m_dataptr == NULL) return -1;
 	
-	Tie* tieptr = (Tie*) m_ties.back(); 
-	if(tieptr == NULL) return 0;		
+	if (m_splicerties.size() == 0) return 0;
+	Tie * tieptr = (Tie*)m_splicerties.back();
+	if (tieptr == NULL) return 0;
 	Tie* tieptrNew = NULL;
-		
+
 	if(allflag == true)
 	{
 		if((tieptr->isAppend() == true) && tieptr->isAll() == false)
@@ -1418,7 +1450,8 @@ int Correlator::appendSplice( bool allflag )
 					if(tieptrNew == NULL) return -1;
 					tieptrNew->setOrder(m_spliceOrder);
 					m_spliceOrder++;
-					m_ties.push_back(tieptrNew);
+					//m_ties.push_back(tieptrNew);
+					cout << "appendSplice (all below), m_ties.size() = " << m_ties.size() << endl;
 					data_range range;
 					range.top = 0.0f;
 					tieptrNew->setAppend(true, true);
@@ -1498,8 +1531,8 @@ int Correlator::appendSplice( bool allflag )
 		}
 		
 	}
-	
-	return 1;	
+
+	return 1;
 }
 
 
@@ -1507,8 +1540,9 @@ int Correlator::appendSelectedSplice(int type, char* annot, char* hole, int core
 {
 	if(m_dataptr == NULL) return -1;
 	
-	Tie* tieptr = (Tie*) m_ties.back(); 
-	if(tieptr == NULL) return 0;		
+	if (m_splicerties.size() == 0) return 0;
+	Tie* tieptr = (Tie*) m_splicerties.back();
+	if(tieptr == NULL) return 0;
 	Tie* tieptrNew = NULL;
 		
 	Core* coreA = tieptr->getTieTo();			// previous core
@@ -1533,6 +1567,7 @@ int Correlator::appendSelectedSplice(int type, char* annot, char* hole, int core
 			tieptrNew->setOrder(m_spliceOrder);
 			m_spliceOrder++;
 			m_ties.push_back(tieptrNew);
+			cout << "appendSelectedSplice, m_ties.size() = " << m_ties.size() << endl;
 			data_range range;
 			tieptrNew->setAppend(true, false);
 			tieptrNew->setTied(coreA, 'x', "0", range);	
@@ -1543,7 +1578,11 @@ int Correlator::appendSelectedSplice(int type, char* annot, char* hole, int core
 
 			cout << "[Splice] append one core below : " << coreptr->getName() << coreptr->getNumber()  << endl;
 #endif						
+		} else {
+			cout << "NULL coreptr, coreid = " << coreid << ", bailing" << endl;
 		}
+	} else {
+		cout << "appendSelectedSplice: NULL hole pointer, bailing" << endl;
 	}
 		
 	return 1;	
@@ -1553,26 +1592,27 @@ int Correlator::undoAppendSplice(void)
 {
 	if(m_dataptr == NULL) return -1;
 	
-	Tie* tieptr = (Tie*) m_ties.back(); 
-	if(tieptr == NULL) return 0;	
+	if (m_splicerties.size() == 0) return 0;
+	Tie* tieptr = (Tie*) m_splicerties.back();
+	if(tieptr == NULL) return 0;
 
-	if((tieptr->isAppend() == true) && (tieptr->isAll() == false))
+	if ((tieptr->isAppend() == true) && (tieptr->isAll() == false))
 	{
 		int tieid = tieptr->getId();
 		Core* coreptr = tieptr->getTied();
 
-		if(coreptr != NULL) 
+		if(coreptr != NULL)
 		{
 			coreptr->deleteTie(tieid);
 		}
 		delete tieptr;
 		tieptr = NULL;
 		m_spliceOrder--;
-		
-		m_ties.pop_back();	
+
+		//m_ties.pop_back();
 		
 	} else {
-		tieptr->setAppend(false, false);	
+		tieptr->setAppend(false, false);
 	}
 
 #ifdef DEBUG
@@ -1593,10 +1633,10 @@ void Correlator::deleteAllSplice(void)
 		if(tieptr->getType() == REAL_TIE)
 		{
 			m_ties.erase(iter);
-        		coreptr = tieptr->getTied();
-        		coreptr->deleteTie(tieptr->getId());
-        		delete tieptr;
-        		tieptr = NULL;
+			coreptr = tieptr->getTied();
+			coreptr->deleteTie(tieptr->getId());
+			delete tieptr;
+			//tieptr = NULL;
 		}	
 	}
 	m_spliceOrder =0;
@@ -1611,11 +1651,11 @@ int Correlator::deleteSplice(int tieid)
 	
 	if(tieid == 0)
 	{
-		tieptr = (Tie*) m_ties.back(); 
-		if(tieptr == NULL) return 0;	
+		if (m_splicerties.size() == 0) return 0;
+		tieptr = (Tie*) m_splicerties.back();
+		if (tieptr == NULL) return 0;	
 		tieid = tieptr->getId();	
-	} else 
-	{
+	} else {
 		Tie* tempTieptr;       
 		std::vector<Tie*>::iterator iter = m_ties.end();   
 		
@@ -1669,10 +1709,10 @@ int Correlator::deleteSplice(int tieid)
 		cout << endl;	*/
 	
 	delete tieptr;
-	tieptr = NULL;
+	//tieptr = NULL;
 	m_spliceOrder--;
 	
-	m_ties.pop_back();
+	//m_ties.pop_back();
 
 	int ret = 0;
 	if(m_spliceOrder <= 0) 
@@ -1981,7 +2021,7 @@ void Correlator::generateSpliceHole(Hole* newSpliceHole) {
 
 		} else if ((tieptr->isAppend() == true) && tieptr->isAll() == true)
 		{
-			if(append == true) 
+			if(append == true)
 			{
 #ifdef DEBUG			
 				std::cout << "true --- appended -----------" << std::endl;
@@ -2236,6 +2276,8 @@ void Correlator::generateSpliceHole(Hole* newSpliceHole) {
 		
 	}
 	
+	//cout << "generateSpliceHole complete, m_splicerties.size() = " << m_splicerties.size() << endl;
+
 	if(newSpliceHole)
 	{
 		newSpliceHole->update();
@@ -3016,7 +3058,7 @@ void Correlator::getSpliceTuple( string& data )
 						//cout << coreptr->getName() << coreno << endl;
 						if(annotation == NULL)
 							sprintf(info, "%d,%d,-,%s,%d,%f,%d,-,%s,%d,%f,:", -1, coreptr->getType(), coreptr->getName(), coreptr->getNumber(), 0.0f, coreptr->getType(), coreptr->getName(), coreptr->getNumber(), 0.0f);
-						else 
+						else
 							sprintf(info, "%d,%d,%s,%s,%d,%f,%d,%s,%s,%d,%f,:", -1, coreptr->getType(), annotation, coreptr->getName(), coreptr->getNumber(), 0.0f, coreptr->getType(), annotation, coreptr->getName(), coreptr->getNumber(), 0.0f);
 						//std::cout << info << std::endl;
 						data += info;	
@@ -3024,7 +3066,6 @@ void Correlator::getSpliceTuple( string& data )
 				}
 			}		
 		}
-
 	} 
 	
 	if(m_splicerties.size() > 0)
@@ -4210,6 +4251,7 @@ void Correlator::generateSagan(void)
 #endif
 }
 
+#if 0 // brg 6/27/2014 unused
 Tie* Correlator::createTie( int type, int coreidA, double relativeposA, int coreidB, double relativeposB )
 {
 	if(m_dataptr == NULL) return NULL;
@@ -4219,29 +4261,24 @@ Tie* Correlator::createTie( int type, int coreidA, double relativeposA, int core
 	Core* coreB = findCore(coreidB);	// coreto
 	if(coreA == NULL || coreB == NULL) return NULL;
 
-        double posA = (coreA->getBottom() - coreA->getTop()) * relativeposA;
-        double posB = (coreB->getBottom() - coreB->getTop()) * relativeposB;
+	double posA = (coreA->getBottom() - coreA->getTop()) * relativeposA;
+	double posB = (coreB->getBottom() - coreB->getTop()) * relativeposB;
+
+	cout << "Creating tie, relativeposA = " << relativeposA << ", relativeposB = " << relativeposB << ", posA = " << posA << ", posB = " << posB << endl;
 
 	Tie* pTie = createTie(type, coreA, posA, coreB, posB);
 	return pTie;
 }
+#endif // #if 0
 
 Tie* Correlator::createTie( int type, Core* coreA, double posA, Core* coreB, double posB )
 {
 	if(m_dataptr == NULL) return NULL;
 	if(coreA == NULL || coreB == NULL) return NULL;
 
-	// calculate all inforamtion : top/bottom...
-	// top, bottom
-	data_range rangeA, rangeB;
-	rangeA.top = posA;
-	rangeB.top = posB;
-	rangeA.bottom = rangeA.top;
-	rangeB.bottom = rangeB.top;
-
 	// find value.....
-	Value* valueA = findValue(coreA, rangeA.top);
-	Value* valueB = findValue(coreB, rangeB.top);
+	Value* valueA = findValue(coreA, posA);
+	Value* valueB = findValue(coreB, posB);
 	if(valueA == NULL || valueB == NULL) 
 	{
 #ifdef DEBUG
@@ -4260,6 +4297,7 @@ Tie* Correlator::createTie( int type, Core* coreA, double posA, Core* coreB, dou
 		return NULL; 
 	}
 
+	data_range rangeA, rangeB;
 	rangeA.top = valueA->getTop();
 	rangeA.bottom = rangeA.top;
 	rangeB.top = valueB->getTop();
@@ -4286,7 +4324,8 @@ Tie* Correlator::createTie( int type, Core* coreA, double posA, Core* coreB, dou
 	//coreB->addTie(tieptr);
 
 
-	m_ties.push_back(tieptr);
+	//m_ties.push_back(tieptr);
+	//cout << "createTie, m_ties.size() = " << m_ties.size() << endl;
 	
 
 #ifdef DEBUG
@@ -4313,6 +4352,7 @@ Tie* Correlator::createTie( int type, Core* coreA, double posA, Core* coreB, dou
 }
 
 
+#if 0 // brg 6/29/2014 unused
 Tie* Correlator::createTie( int type, int tieindex, int coreidA, double relativeposA, int coreidB, double relativeposB )
 {
 	if(m_dataptr == NULL) return NULL;
@@ -4380,6 +4420,7 @@ Tie* Correlator::createTie( int type, int tieindex, int coreidA, double relative
 
 	return tieptr;
 }
+#endif // #if 0
 
 Value* Correlator::assignAboveValues( Core* coreptr, Core* source, Value* valueptr, bool isConstrained, double tie_depth, double offset)
 {
@@ -4872,8 +4913,8 @@ int Correlator::deleteTie( int tieindex )
 	
 	tieptr->getTieTo()->deleteTie(tieptr->getId());
 	delete tieptr;
-	tieptr = NULL;
-	m_ties.erase(iter);
+	//tieptr = NULL;
+	//m_ties.erase(iter);
 	
 	// todo
 	// if splice...
@@ -4952,6 +4993,7 @@ int Correlator::evalCoreLog(char* holeA, int coreidA, double posA, double posB)
 
 int Correlator::evalSpliceCore(int coretypeB, char* annotB, char* holeB, int coreidB, double posB, double posA)
 {
+	//cout << "evalSpliceCore: coretypeB =" << coretypeB << " coreidB = " << coreidB << " posB = " << posB << " posA = " << posA << endl;
 	if(m_dataptr == NULL) return 0;
 	if(m_mainHole[0] == NULL) return 0;
 
@@ -5671,13 +5713,13 @@ Value* Correlator::findValueInHole( Hole* holeptr, double depth )
 	return NULL;
 }
 
-Value* Correlator::findValue( Core* coreptr, double top, int idx  )
+Value* Correlator::findValue( Core* coreptr, double top, int idx )
 {
 	if(coreptr == NULL) return NULL;
 	if(coreptr->getMinDepth() > top)
 		return NULL;
 	if(coreptr->getMaxDepth() < top)
-		return NULL;	
+		return NULL;
 		
 	// find value
  	int size = coreptr->getNumOfValues();

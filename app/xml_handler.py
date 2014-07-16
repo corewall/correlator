@@ -1,6 +1,6 @@
 import xml.sax.handler
 
-class XML_Handler(xml.sax.handler.ContentHandler):
+class XMLHandler(xml.sax.handler.ContentHandler):
 	def __init__(self):
 		self.type = ""
 		self.site = ""

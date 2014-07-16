@@ -57,14 +57,19 @@ public:
 	int composite( char* holeA, int coreidA, double offset, int coretype, char* annot );	
 	int compositeBelow( char* holeA, int coreidA, double offset, int coretype, char* annot );
 
+	double project(char *hole, int core, int coretype, char* annot, float offset);
+
 	int splice( char* hole, int coreid, int type, char* annot, bool append = false );
 	int splice( Core* source, bool append = false );
 	//int splice( int id, char holeA, int coreidA, double posA, char holeB, int coreidB, double posB, int type, bool append = false );
 	int splice( int tie_id, int typeA, char* annotA, char* holeA, int coreidA, double posA, int typeB, char* annotB, char* holeB, int coreidB, double posB, bool append = false );
 	
 	int splice( int tie_id, Core* coreA, Core* coreB, double posA, double posB, bool append = false, bool appendbegin =false );
-	int splice( int coreidA, double relativeposA, int coreidB, double relativeposB );
-	int splice( int tieindex, int coreidA, double relativeposA, int coreidB, double relativeposB );	
+
+	// brg 5/19/2014: unused
+	//int splice( int coreidA, double relativeposA, int coreidB, double relativeposB );
+	//int splice( int tieindex, int coreidA, double relativeposA, int coreidB, double relativeposB );	
+
 	int splice( void);
 	
 	int appendSplice( bool allflag );
@@ -165,8 +170,8 @@ public:
 	
 protected:
 	Tie* createTie( int type, Core* coreA, double posA, Core* coreB, double posB );
-	Tie* createTie( int type, int coreidA, double relativeposA, int coreidB, double relativeposB );
-	Tie* createTie( int type, int tieindex, int coreidA, double relativeposA, int coreidB, double relativeposB );	
+	//Tie* createTie( int type, int coreidA, double relativeposA, int coreidB, double relativeposB );
+	//Tie* createTie( int type, int tieindex, int coreidA, double relativeposA, int coreidB, double relativeposB );	
 
 	Core* findCore( int index );
 	Core* findCoreinSplice( int index );
@@ -200,7 +205,7 @@ protected:
 protected:
 	std::vector<Hole*> m_splicerholes;
 	std::vector<Tie*> m_splicerties;
-	Hole* m_mainHole[3];
+	Hole* m_mainHole[3]; // brg 4/28/2014 hole 0 = splice hole? seems like hole 1 is also used as splice hole at times...
 	Data m_correlatorData;
 	Value* m_tiepoint;
 	

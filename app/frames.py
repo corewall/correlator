@@ -13,11 +13,12 @@ import random, sys, os, re, time, ConfigParser, string
 from datetime import datetime
 
 import numpy.oldnumeric as _Numeric
+import numpy
 
 from importManager import py_correlator
 
-from dialog import *
-from dbmanager import *
+import canvas
+import dialog
 
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
@@ -33,7 +34,7 @@ class TopMenuFrame(wx.Frame):
 		wx.Frame.__init__(self, None, -1, "Tool Bar",
 						 wx.Point(20,100),
 						 topsize,
-						 style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
+						 style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
 		self.parent = parent
 		vbox = wx.BoxSizer(wx.VERTICAL)
@@ -168,27 +169,9 @@ class TopMenuFrame(wx.Frame):
 
 	def OnDB(self, event):
 		if self.dbbtn.GetLabel() == "Go to Data Manager" :
-			#self.OnNEW(event)
-			if self.parent.CHECK_CHANGES() == True :
-				ret = self.parent.OnShowMessage("About", "Do you want to save?", 0)
-				if ret == wx.ID_OK :
-					self.OnSAVE(event)
-
-			if self.parent.dataFrame.IsShown() == False :
-				self.parent.dataFrame.Show(True)
-				self.parent.midata.Check(True)
-			else :
-				self.parent.dataFrame.Raise()
-
-			self.dbbtn.SetLabel("Go to Display")
-		else :
-			self.parent.dataFrame.propertyIdx = None
-			
-			self.parent.dataFrame.Show(False)
-			self.parent.midata.Check(False)
-			self.parent.Show(True)
-			self.dbbtn.SetLabel("Go to Data Manager")
-
+			self.parent.ShowDataManager()
+		else:
+			self.parent.ShowDisplay()
 
 	def OnSAVE(self, event):
 		if self.parent.CurrentDir == '' : 
@@ -200,7 +183,7 @@ class TopMenuFrame(wx.Frame):
 			splice_flag = True
 			self.parent.OnShowMessage("Information", "You need to save splice table too.", 1)
 
-		savedialog = SaveTableDialog(None, -1, self.parent.AffineChange, splice_flag)
+		savedialog = dialog.SaveTableDialog(None, -1, self.parent.AffineChange, splice_flag)
 		savedialog.Centre()
 		ret = savedialog.ShowModal()
 		affine_flag = savedialog.affineCheck.GetValue()
@@ -453,13 +436,20 @@ class CompositePanel():
 		self.growthPlotCanvas.SetBackgroundColour('White')
 		self.growthPlotCanvas.Show(True)
 
+		self.grPanel = wx.Panel(self.plotNote, -1)
+		self.grText = wx.StaticText(self.grPanel, -1, "Super status of some kind.")
+		self.grPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.grPanel.GetSizer().Add(self.growthPlotCanvas, 1, wx.EXPAND)
+		self.grPanel.GetSizer().Add(self.grText, 0, wx.EXPAND)
+
 		self.plotNote.AddPage(self.corrPlotCanvas, 'Evaluation')
-		self.plotNote.AddPage(self.growthPlotCanvas, 'Growth Rate')
+		#self.plotNote.AddPage(self.growthPlotCanvas, 'Growth Rate')
+		self.plotNote.AddPage(self.grPanel, "Growth Rate")
 
 		# add Notebook to main panel
 		self.plotNote.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectPlotNote)
 		self.plotNote.SetSelection(1)
-		vbox.Add(self.plotNote, 1, wx.EXPAND | wx.ALL, 5)
+		vbox.Add(self.plotNote, 5, wx.EXPAND | wx.ALL, 5)
 
 		# update drawings
 		xdata = [ (-self.leadLagValue, 0), (self.leadLagValue, 0) ]
@@ -531,7 +521,7 @@ class CompositePanel():
 
 		hbox3.Add(sizer32, 1)
 		panel3.SetSizer(hbox3)
-		vbox.Add(panel3, 0, wx.BOTTOM, 9)
+		vbox.Add(panel3, 1, wx.BOTTOM, 9)
 
 		buttonsize = 130
 		if platform_name[0] == "Windows" :
@@ -572,6 +562,10 @@ class CompositePanel():
 
 		vbox.Add(wx.StaticText(self.mainPanel, -1, '*Sub menu for tie: On dot, right mouse button.', (5, 5)), 0, wx.BOTTOM, 5)
 
+		self.projectButton = wx.Button(self.mainPanel, -1, "Project...", size=(buttonsize, 30))
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnProject, self.projectButton)
+		vbox.Add(self.projectButton, 0, wx.BOTTOM, 5)
+
 		self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine Table", size =(150, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
 		vbox.Add(self.saveButton, 0, wx.ALIGN_CENTER_VERTICAL)
@@ -586,7 +580,7 @@ class CompositePanel():
 		self.undoButton.Enable(False)
 
 	def OnSAVE(self, event):
-		dlg = Message3Button(self.parent, "Do you want to create new affine file?")
+		dlg = dialog.Message3Button(self.parent, "Do you want to create new affine file?")
 		ret = dlg.ShowModal()
 		dlg.Destroy()
 		if ret == wx.ID_OK or ret == wx.ID_YES :
@@ -659,6 +653,24 @@ class CompositePanel():
 		if len(self.parent.Window.TieData) > 0 :
 			self.parent.Window.OnUpdateTie(1)
 
+	def OnProject(self, evt):
+		dlg = dialog.ProjectDialog(self.parent)
+		result = dlg.ShowModal()
+		if result == wx.ID_OK:
+			py_correlator.project(dlg.outHole, int(dlg.outCore), dlg.outType, dlg.outOffset)
+
+			self.parent.AffineChange = True
+			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
+
+			# todo: notify Corelyzer of change
+			#self.parent.ShiftSectionSend(ciA.hole, ciA.holeCore, shift, opId)
+
+			if self.parent.showReportPanel == 1:
+				self.parent.OnUpdateReport()
+
+			self.parent.UpdateData()
+			self.parent.UpdateStratData()
+
 	def OnUpdate(self):
 		self.leadLagValue = float(self.leadlag.GetValue())
 		self.corrPlotCanvas.Clear()
@@ -710,6 +722,8 @@ class CompositePanel():
 
 	def UpdateGrowthPlotData(self):
 		maxMbsfDepth = 0.0
+		minMcd = 10000.0
+		maxMcd = -10000.0
 		growthRateLines = []
 		holeNum = 0
 		holeSet = set([]) # avoid duplicate holes with different datatypes
@@ -729,8 +743,16 @@ class CompositePanel():
 					offset = hole[0][core + 1][5]
 					topSectionMcd = hole[0][core + 1][9][0]
 					mbsfDepth = topSectionMcd - offset
+
+					# determine min/max for plotting purposes
 					if mbsfDepth > maxMbsfDepth:
 						maxMbsfDepth = mbsfDepth
+					if mbsfDepth >= self.parent.Window.rulerStartDepth and mbsfDepth <= self.parent.Window.rulerEndDepth:
+						if topSectionMcd < minMcd:
+							minMcd = topSectionMcd
+						if topSectionMcd > maxMcd:
+							maxMcd = topSectionMcd
+
 					offsetMbsfPair = (mbsfDepth, topSectionMcd)
 					growthRatePoints.append(offsetMbsfPair)
 
@@ -742,7 +764,7 @@ class CompositePanel():
 				growthRateLines.append(plot.PolyLine(growthRatePoints, colour='black', width=1))
 				holeNum = (holeNum + 1) % len(holeMarker) # make sure we don't overrun marker/color lists
 
-		return growthRateLines, maxMbsfDepth
+		return growthRateLines, maxMbsfDepth, minMcd, maxMcd
 
 	def UpdateGrowthPlot(self):
 		# 9/18/2013 brg: Was unable to get Window attribute on init without adding this
@@ -752,17 +774,33 @@ class CompositePanel():
 		# Window in DataCanvas.init() were also unavailable. Funky.
 		growthRateLines = []
 		if hasattr(self.parent, 'Window'):
-			growthRateLines, maxMbsfDepth = self.UpdateGrowthPlotData()
+			growthRateLines, maxMbsfDepth, minMcd, maxMcd = self.UpdateGrowthPlotData()
 		else:
 			return
 		
+		if len(growthRateLines) == 0:
+			return
+
 		tenPercentLine = plot.PolyLine([(0,0),(maxMbsfDepth, maxMbsfDepth * 1.1)], legend='10%', colour='black', width=2)
 		# order matters: draw 10% line, then data lines, then data markers/points
 		self.growthPlotData = [tenPercentLine] + self.growthPlotData
 		self.growthPlotData = growthRateLines + self.growthPlotData
 
 		gc = plot.PlotGraphics(self.growthPlotData, 'Growth Rate', 'mbsf', 'mcd')
-		self.growthPlotCanvas.Draw(gc, xAxis = (0, maxMbsfDepth), yAxis = (0, maxMbsfDepth * 1.1))
+		
+		xmin = self.parent.Window.rulerStartDepth
+		xmax = self.parent.Window.rulerEndDepth
+		if xmax > self.parent.ScrollMax:
+			xmax = self.parent.ScrollMax
+#		if xmax > maxMcd:
+#			xmax = maxMcd
+		xax = (xmin, xmax)
+#		print "xmin = {}, xmax = {}".format(xmin, xmax)
+
+		yax = (round(minMcd, 0) - 5, round(maxMcd, 0) + 5)
+		if minMcd >= maxMcd:
+			yax = None
+		self.growthPlotCanvas.Draw(gc, xAxis = xax, yAxis = yax)
 		self.growthPlotData = []
 
 	def OnUpdateDrawing(self):
@@ -966,7 +1004,7 @@ class SplicePanel():
 	def OnSAVE(self, event):
 		#if self.parent.Window.SpliceData != [] :
 
-		dlg = Message3Button(self.parent, "Do you want to create new splice file?")
+		dlg = dialog.Message3Button(self.parent, "Do you want to create new splice file?")
 		ret = dlg.ShowModal()
 		dlg.Destroy()
 		if ret == wx.ID_OK or ret == wx.ID_YES :
@@ -994,7 +1032,7 @@ class SplicePanel():
 
 			py_correlator.init_splice()
 
-			ret = self.parent.OnShowMessage("About", "Do you want to keep current splice?", 2)
+			ret = self.parent.OnShowMessage("About", "Do you want to keep the current splice?", 2)
 			if ret == wx.ID_OK :
 				type_range = None 
 				alt_splice = None
@@ -1018,7 +1056,7 @@ class SplicePanel():
 
 
 	def OnCREATE_ALTSPLICE(self, event):
-		dlg = AltSpliceDialog(self.parent)
+		dlg = dialog.AltSpliceDialog(self.parent)
 		dlg.Centre()
 		ret = dlg.ShowModal()
 		selectedType =  dlg.selectedType
@@ -1091,14 +1129,14 @@ class SplicePanel():
 		if self.appendall == 1 and self.all.GetValue() == True:
 			self.parent.OnShowMessage("Error", "Already appended all below", 1)
 			return
-			
+
 		type = 0 
 		self.appendall = 0 
 		splice_count = len(self.parent.Window.SpliceCore)
 		splice_data = "" 
 
 		if self.selected.GetValue() == True :
-			if splice_count <= 2 :
+			if splice_count <= 1:
 				py_correlator.append_at_begin()
 
 			l = self.parent.GetSpliceCore()
@@ -1121,13 +1159,11 @@ class SplicePanel():
 
 		if splice_data[1] != "" :
 			self.parent.Window.SpliceData = []
-			ret = py_correlator.getData(2)
+			ret = py_correlator.getData(2) # get splice tie info
 			if ret != "" :
 				self.parent.ParseSpliceData(ret, True)
-				l = []
-				l.append((-1, -1, -1, -1, -1, -1, -1, -1, -1))
-				self.parent.Window.RealSpliceTie.append(l)
-				self.parent.Window.RealSpliceTie.append(l)
+				self.parent.Window.RealSpliceTie.append(canvas.DefaultSpliceTie())
+				self.parent.Window.RealSpliceTie.append(canvas.DefaultSpliceTie())
 				ret = "" 
 			self.parent.filterPanel.OnLock()
 			self.parent.ParseData(splice_data[1], self.parent.Window.SpliceData)
@@ -1151,11 +1187,6 @@ class SplicePanel():
 			self.appendall = 0
 			splice_data = py_correlator.undoAppend(self.parent.smoothDisplay)
 			if splice_data[1] != "" :
-				#lastTie = len(self.parent.Window.RealSpliceTie) -1
-				#data = self.parent.Window.RealSpliceTie[lastTie]
-				#self.parent.Window.RealSpliceTie.remove(data)
-				#data = self.parent.Window.RealSpliceTie[lastTie-1]
-				#self.parent.Window.RealSpliceTie.remove(data)
 				self.parent.Window.RealSpliceTie.pop()
 				self.parent.Window.RealSpliceTie.pop()
 
@@ -1174,10 +1205,6 @@ class SplicePanel():
 			info = hole[0]
 			tie_max = info[8] 
 			break
-
-		#if self.parent.Window.maxSPcore >= tie_max :
-		#	self.undoButton.Enable(False)
-		#	self.appendButton.Enable(False)
 
 		if self.parent.Window.SpliceData == []:
 			self.undoButton.Enable(False)
@@ -1424,7 +1451,7 @@ class AutoPanel():
 
 	def OnSAVE(self, event):
 		if self.parent.Window.LogData != [] :
-			dlg = Message3Button(self.parent, "Do you want to create new eld file?")
+			dlg = dialog.Message3Button(self.parent, "Do you want to create new eld file?")
 			ret = dlg.ShowModal()
 			dlg.Destroy()
 			if ret == wx.ID_OK or ret == wx.ID_YES :
@@ -1835,7 +1862,8 @@ class ELDPanel():
 		panel3.SetSizer(hbox3)
 		vbox.Add(panel3, 0, wx.BOTTOM, 5)
 
-		self.showClue = wx.CheckBox(self.mainPanel, -1, 'Show depth adjust clue')
+		# brgtodo 6/25/2014: better var name
+		self.showClue = wx.CheckBox(self.mainPanel, -1, 'Show depth adjust arrows')
 		self.showClue.SetValue(True)
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowClue, self.showClue)
 		vbox.Add(self.showClue, 0, wx.BOTTOM, 5)
@@ -1870,7 +1898,7 @@ class ELDPanel():
 
 	def OnSAVE(self, event):
 		if self.parent.Window.LogData != [] :
-			dlg = Message3Button(self.parent, "Do you want to create new eld file?")
+			dlg = dialog.Message3Button(self.parent, "Do you want to create new eld file?")
 			ret = dlg.ShowModal()
 			dlg.Destroy()
 			if ret == wx.ID_OK or ret == wx.ID_YES :
@@ -1958,7 +1986,7 @@ class ELDPanel():
 		#self.parent.ClearSaganTie(-1)
 
 	def OnStraightTie(self, evt):
-		self.parent.Window.MakeStraightLie()
+		self.parent.Window.MakeStraightLine()
 
 	def OnClearTie(self, evt):
 		self.parent.Window.activeSATie = -1
@@ -2344,7 +2372,7 @@ class AgeDepthPanel():
 			self.parent.OnShowMessage("Error", "There is no userdefined age datum", 1)
 			return
 
-		dlg = Message3Button(self.parent, "Do you want to create new age/depth?")
+		dlg = dialog.Message3Button(self.parent, "Do you want to create new age/depth?")
 		ret = dlg.ShowModal()
 		dlg.Destroy()
 		if ret == wx.ID_OK or ret == wx.ID_YES :
@@ -2359,7 +2387,7 @@ class AgeDepthPanel():
 
 
 	def OnSAVETimeSeries(self, evt):
-		dlg = Message3Button(self.parent, "Do you want to create new age model?")
+		dlg = dialog.Message3Button(self.parent, "Do you want to create new age model?")
 		ret = dlg.ShowModal()
 		dlg.Destroy()
 		if ret == wx.ID_OK or ret == wx.ID_YES :
@@ -2721,7 +2749,6 @@ class AgeDepthPanel():
 		self.parent.Window.UpdateDrawing()
 		self.parent.TimeChange = True
 
-
 class FilterPanel():
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
@@ -3024,8 +3051,47 @@ class FilterPanel():
 			self.all.Append(holename)
 			self.parent.optPanel.OnRegisterHole(holename)
 
+	def ParseSmoothString(self, smoothStr):
+		tokens = smoothStr.split(' ')
+		if len(tokens) != 3:
+			return []
+		return tokens
+
+	def MakeSmoothString(self, width, units, smoothStyle):
+		return width + " " + units + " " + smoothStyle
+
+	def UpdateSmooth(self, smoothStr):
+		smoothList = self.ParseSmoothString(smoothStr)
+		if smoothList == []:
+			return
+		self.smoothcmd.SetStringSelection("Gaussian")
+		self.width.SetValue(smoothList[0])
+		self.unitscmd.SetStringSelection(smoothList[1])
+		self.plotcmd.SetStringSelection(smoothList[2])
+
+	# brg 1/29/2014: new-fangled SetTYPE()
+	def TypeChoiceChanged(self, event):
+		typeStr = self.all.GetValue()
+		if typeStr == 'All Holes' or typeStr == 'Log' or typeStr == 'Spliced Records':
+			return
+
+# 		site = self.parent.GetLoadedSite()
+# 		strippedType = typeStr[4:] # strip off 'All '
+# 		if strippedType in site.holeSets:
+# 			holeSet = site.holeSets[strippedType]
+# 		else:
+# 			print "Couldn't find type " + strippedType + " in site.holeSets, bailing"
+# 			return
+
+		self.decimate.SetValue(str(holeSet.decimate))
+		self.UpdateSmooth(holeSet.smooth)
+
 
 	def SetTYPE(self, event):
+		if self.parent.GetLoadedSite() != None:
+			self.TypeChoiceChanged(event)
+			return
+
 		type = self.all.GetValue()
 		if type  == 'All Holes' :
 			return
@@ -3035,23 +3101,26 @@ class FilterPanel():
 			return
 		else :
 			size = len(type)
-			type = type[4:size]
+			type = type[4:size] # strip off 'All '
 
 		# Update decivalue & smooth
 		if type == "Natural Gamma" :
 			type = "NaturalGamma"
 		data = self.parent.dataFrame.GetDECIMATE(type)
-		if data == None and type == "Natural Gamma" :
-			type = "NaturalGamma"
-			data = self.parent.dataFrame.GetDECIMATE(type)
+		
+		# this will never, ever, ever happen because we pull the space from "Natural Gamma" directly above
+#		if data == None and type == "Natural Gamma" :
+#			type = "NaturalGamma"
+#			data = self.parent.dataFrame.GetDECIMATE(type)
+
 		if data != None :
 			self.decimate.SetValue(data[0])
 			if data[1] != "" :
 				smooth_array = data[1].split(' ')
 				self.smoothcmd.SetStringSelection("Gaussian")
-				self.width.SetValue(smooth_array[0]) 
+				self.width.SetValue(smooth_array[0])
 				self.unitscmd.SetStringSelection(smooth_array[1])
-				self.plotcmd.SetStringSelection(smooth_array[2]) 			
+				self.plotcmd.SetStringSelection(smooth_array[2])
 			else :
 				self.smoothcmd.SetStringSelection("None")
 		else :
@@ -3061,10 +3130,11 @@ class FilterPanel():
 		# Update cull
 		cullData = self.parent.dataFrame.GetCULL(type)
 		if cullData == None :
-			if type == "Natural Gamma" :
-				type = "NaturalGamma"
-				cullData = self.parent.dataFrame.GetCULL(type)
-			elif type == "NaturalGamma" :
+			# this will never happen because we already pulled space from "Natural Gamma"
+#			if type == "Natural Gamma" :
+#				type = "NaturalGamma"
+#				cullData = self.parent.dataFrame.GetCULL(type)
+			if type == "NaturalGamma" :
 				type = "Natural Gamma"
 				cullData = self.parent.dataFrame.GetCULL(type)
 
@@ -3122,6 +3192,7 @@ class FilterPanel():
 					self.valueE.SetValue(cullData[7])
 
 
+	# brg 1/29/2014: Ignore undo for now - seems pointless for decimate
 	def OnUNDODecimate(self, event):
 		opt = self.deciUndo[0]
 		deci = self.deciUndo[1]
@@ -3132,8 +3203,8 @@ class FilterPanel():
 		self.OnDecimate(event)
 		
 
+	# brg 1/29/2014: Ignore undo for now - seems pointless for decimate
 	def OnDecimate(self, event):
-
 		type = self.all.GetValue()
 		if type == 'Spliced Records' :
 			self.parent.OnShowMessage("Error", "Splice Records can not be decimated", 1)
@@ -3144,18 +3215,17 @@ class FilterPanel():
 
 		deciValue = int(self.decimate.GetValue())
 
+		site = self.parent.GetLoadedSite()
 		if type == "All Holes" :
-			max = self.all.GetCount()
-			start = 1
-			#if self.parent.Window.LogData == [] :
-			#	start = 2 
-			for i in range(start, max) :
-				all_type = self.all.GetString(i)
-				if all_type == 'Spliced Records' :
+			for index in range(1, self.all.GetCount()):
+				allType = self.all.GetString(index)
+				if allType == 'Spliced Records' :
 					continue
-				py_correlator.decimate(all_type, deciValue)
+				py_correlator.decimate(allType, deciValue)
+				#site.SetDecimate(allType[4:], deciValue)
 		else :
 			py_correlator.decimate(type, deciValue)
+			#site.SetDecimate(type[4:], deciValue)
 
 		self.deciBackup = [ self.all.GetValue(), self.decimate.GetValue() ]
 
@@ -3167,12 +3237,37 @@ class FilterPanel():
 		else :
 			self.parent.UpdateLogData()
 
-		if type == "All Natural Gamma" :
-			type = "All NaturalGamma"
+		#if type == "All Natural Gamma" :
+		#	type = "All NaturalGamma"
+		#self.parent.dataFrame.OnUPDATEDECIMATE(type, deciValue)
 
-		self.parent.dataFrame.OnUPDATEDECIMATE(type, deciValue)
+		#site.SyncToData()
 		self.parent.Window.UpdateDrawing()
 
+	""" Return integer smooth style (unsmoothed, smoothed, or combo) based on current smooth combobox selection """
+	def GetSmoothStyle(self):
+		smoothStyle = 0 # no smooth - should really define constant, named values
+		if self.plotcmd.GetValue() == "SmoothedOnly":
+			smoothStyle = 1
+		elif self.plotcmd.GetValue() == "Smoothed&Unsmoothed":
+			smoothStyle = 2
+		return smoothStyle
+
+	""" Return integer width or -1 if "None" smooth type is selected """
+	def GetSmoothWidth(self):
+		smoothWidth = -1
+		if self.smoothcmd.GetValue() == "Gaussian":
+			smoothWidth = int(self.width.GetValue())
+		return smoothWidth
+
+	""" Return current smooth unit """
+	def GetSmoothUnit(self):
+		smoothUnit = 2 if self.unitscmd.GetValue() == "Depth(cm)" else 1
+		return smoothUnit
+
+	""" Return True if smooth is enabled ("Gaussian" type is selected) else False """
+	def GetSmoothEnable(self):
+		return False if self.smoothcmd.GetValue() == "None" else True
 
 	def OnUNDOSmooth(self, event):
 		if self.smUndo == [] :
@@ -3197,30 +3292,19 @@ class FilterPanel():
 
 	def OnSmooth(self, event):
 		self.smundoBtn.Enable(True)
-
-		smoothEnable = 1 
-
 		self.smUndo = self.smBackup
 
-		if self.smoothcmd.GetValue() == "None" : 
-			smoothEnable = 0 
+		smoothEnable = self.GetSmoothEnable()
+		smoothWidth = self.GetSmoothWidth()
+		smoothUnit = self.GetSmoothUnit()
+		smoothUnitStr = self.unitscmd.GetValue()
+		smoothStyle = self.GetSmoothStyle()
+		smoothStyleStr = self.plotcmd.GetValue()
 
-		smoothWidth = -1
-		if self.smoothcmd.GetValue() == "Gaussian" :
-			smoothWidth = int(self.width.GetValue())
-
-		smoothUnit = 1
-		if self.unitscmd.GetValue() == "Depth(cm)" :
-			smoothUnit = 2
-
-		plot = 1
-		if self.plotcmd.GetValue() == "SmoothedOnly" :
-			plot = 2
-		elif self.plotcmd.GetValue() == "Smoothed&Unsmoothed" :
-			plot = 3
-
+		site = self.parent.GetLoadedSite()
 		type = self.all.GetValue()
 
+		# 1/29/2014 brg: Looks like this takes effect when only smoothStyle has changed.
 		if self.smBackup != [] : 
 			if type == self.smBackup[0] and self.smoothcmd.GetValue() == self.smBackup[1] and self.width.GetValue() == self.smBackup[2] and self.unitscmd.GetValue() == self.smBackup[3] :
 				if type  != 'All Holes' and type != 'Log' and type != 'Spliced Records' :
@@ -3230,65 +3314,69 @@ class FilterPanel():
 					type = "NaturalGamma"
 
 				if type == 'Spliced Records' :
-					self.parent.Window.UpdateSMOOTH('splice', plot-1)
+					self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
 				elif type == 'Log' :
-					self.parent.Window.UpdateSMOOTH('log', plot-1)
+					self.parent.Window.UpdateSMOOTH('log', smoothStyle)
 				else :
 					self.parent.dataFrame.OnUPDATE_SMOOTH(type, self.smoothcmd.GetValue(), str(self.width.GetValue()), self.unitscmd.GetValue(), self.plotcmd.GetValue() )
 					if type == 'All Holes' :
-						self.parent.Window.UpdateSMOOTH('splice', plot-1)
+						self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
 						
 				self.parent.Window.UpdateDrawing()
 				#print "[DEBUG] Display is updated : " + self.plotcmd.GetValue()
 				return
 
-
-		if smoothEnable == 0 : 
+		if not smoothEnable:
 			smoothUnit = -1
 
-		if type == 'Spliced Records' : 
-			max = self.all.GetCount()
-			start = 1
-			#if self.parent.Window.LogData == [] :
-			#	start = 2
-			for i in range(start, max) :
-				all_type = self.all.GetString(i)
-				if all_type == 'Spliced Records' :
-					continue
-				start = all_type.find("All", 0)
-				if start >= 0 : 
-					py_correlator.smooth(all_type, smoothWidth, smoothUnit)
+		# brgtodo 1/29/2014: ??? If type is spliced records, why are we doing everything
+		# *but* modifying spliced records???
+#  		if type == 'Spliced Records' : 
+#  			max = self.all.GetCount()
+#  			start = 1
+#  			#if self.parent.Window.LogData == [] :
+#  			#	start = 2
+#  			for i in range(start, max) :
+#  				all_type = self.all.GetString(i)
+#  				if all_type == 'Spliced Records' :
+#  					continue
+#  				start = all_type.find("All", 0)
+#  				if start >= 0 : 
+#  					py_correlator.smooth(all_type, smoothWidth, smoothUnit)
 
+		# brgtodo 1/29/2014: Pretty sure this does exactly the same thing as above block
 		if type == 'All Holes' : 
-			max = self.all.GetCount()
-			start = 1
-			#if self.parent.Window.LogData == [] :
-			#	start = 2
-			for i in range(start, max) :
+			for i in range(1, self.all.GetCount()) :
 				all_type = self.all.GetString(i)
 				if all_type == 'Spliced Records' :
 					continue
 				start = all_type.find("All", 0)
-				if start >= 0 or all_type == 'Log' : 
+				if start >= 0 or all_type == 'Log':
 					py_correlator.smooth(all_type, smoothWidth, smoothUnit)
+					#site.SetSmooth(all_type[4:], self.MakeSmoothString(str(smoothWidth), smoothUnitStr, smoothStyleStr))
+				#elif all_type == 'Log' :
+					#py_correlator.smooth(all_type, smoothWidth, smoothUnit)
 		else :
 			py_correlator.smooth(type, smoothWidth, smoothUnit)
+			#site.SetSmooth(type[4:], self.MakeSmoothString(str(smoothWidth), smoothUnitStr, smoothStyleStr))
+
+		#site.SyncToData()
 
 		#HYEJUNG CHANGING NOW
 		if type == 'Spliced Records' :
 			self.parent.UpdateSMOOTH_SPLICE(False)
 			if self.parent.Window.LogData != [] and self.parent.Window.SpliceData != [] :
 				self.parent.UpdateSMOOTH_LOGSPLICE(True)
-			self.parent.Window.UpdateSMOOTH('splice', plot-1)
+			self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
 		elif type == 'Log' :
 			#self.parent.UpdateLogData()
 			self.parent.UpdateSMOOTH_LogData()
-			self.parent.Window.UpdateSMOOTH('log', plot-1)
+			self.parent.Window.UpdateSMOOTH('log', smoothStyle)
 		else :
 			self.parent.UpdateSMOOTH_CORE()
 			if type == 'All Holes' :
 				self.parent.UpdateSMOOTH_SPLICE(False)
-				self.parent.Window.UpdateSMOOTH('splice', plot-1)
+				self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
 		###
 
 		self.smBackup = [ self.all.GetValue(), self.smoothcmd.GetValue(), self.width.GetValue(), self.unitscmd.GetValue(), self.plotcmd.GetValue()]
@@ -3585,7 +3673,7 @@ class PreferencesPanel():
 		self.parent.Window.shift_range = float(self.tie_shift.GetValue())
 
 	def OnChangeColor(self, event):
-		dlg = ColorTableDialog(self.parent)
+		dlg = dialog.ColorTableDialog(self.parent)
 		dlg.Centre()
 		ret = dlg.ShowModal()
 		dlg.Destroy()

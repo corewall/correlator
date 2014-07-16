@@ -67,7 +67,7 @@ Tie::Tie( Core* tiedcore, char valuetype, char* section, data_range range, doubl
 	//	cout << ">>>>>>>>>>> m_tiedcore tied " << m_tiedcore.m_valueptr->getELD();
 }
 
-Tie::Tie( int type, bool fromFile ) :
+Tie::Tie( int type /* = REAL_TIE */, bool fromFile /* = false */) :
   m_tietype(type), m_sharedFlag(false), m_nx(0), m_ref_count(0),
   m_coef(1.0f), m_offset(0.0f), m_cumOffset(0.0f), m_dummy(false),
   m_lead_lag(0), m_leadlag_in_meter(0.0f), m_constrained(true),  m_isAll(false), m_active(true),
@@ -75,7 +75,7 @@ Tie::Tie( int type, bool fromFile ) :
   m_affine_status(NO), m_corr_status(NO), m_status(TIE_OK), m_straightFlag(false), m_isFirstShift(false)
 {
 	m_tiedcore.m_coreptr = NULL;
-	m_tieTocore.m_coreptr = NULL;		
+	m_tieTocore.m_coreptr = NULL;
 }
 
 Tie::~Tie( void )
@@ -352,7 +352,7 @@ void Tie::getTuple( string& data, int type )
 	data += info;
 }
 
-int Tie::applyAffine( double offset, char type, int iscoreto )
+int Tie::applyAffine( double offset, char type, int iscoreto /* = 1 */ )
 {	
 	//cout << "1 affine ";
 	if(iscoreto == 1)
@@ -875,11 +875,12 @@ bool Tie::getSharedFlag( void )
 }
 
 	
+// indicate that tie is to be applied (versus undone)
 void Tie::setApply( int applied )
 {
 	m_applied = applied;
 	m_updated = true;
-}	
+}
 
 void Tie::setStretch( double stretch, int iscoreto )
 {
@@ -996,6 +997,7 @@ Value* Tie::findValue( int iscoreto )
 	double top, bottom, mbsf;
 	if(iscoreto == 1)
 	{
+		// brgtodo 5/27/2014: else block uses m_tiedCore instead of m_tieTocore, otherwise identical
 		coreptr = m_tieTocore.m_coreptr;
 		strcpy(section, m_tieTocore.m_section);
 		top =  m_tieTocore.m_top;

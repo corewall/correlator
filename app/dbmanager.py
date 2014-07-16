@@ -3,7 +3,6 @@
 ## For Mac-OSX
 #/usr/bin/env pythonw
 
-#from wxPython.wx import *
 import platform
 platform_name = platform.uname()
 
@@ -13,27 +12,23 @@ from wx.lib import plot
 import random, sys, os, re, time, ConfigParser, string
 from datetime import datetime
 import xml.sax
-from xml_handler import *
 
 from importManager import py_correlator
 
-from dialog import *
+import dialog
+import xml_handler
+from model import * # brgtodo 4/24/2014: Remove import *
 
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
 	return apply(os.path.join, tuple(path.split('/')))
 
 
-class DataFrame(wx.Frame):
-	def __init__(self, parent, winsize, points):
-		wx.Frame.__init__(self, None, -1, "Correlator Data Manager",
-						 points, size=(winsize[0],winsize[1]))
+class DataFrame(wx.Panel):
+	def __init__(self, parent):
+		wx.Panel.__init__(self, parent, -1)
 
-		winsize = parent.GetClientSizeTuple()
 		self.parent = parent
-		self.statusBar = self.CreateStatusBar()
-		panelx = winsize[0] - 150
-		panely = winsize[1] - 50 
 		self.selectedCol = -1
 		self.paths = ""
 		self.EditRow = -1
@@ -51,30 +46,40 @@ class DataFrame(wx.Frame):
 		self.selectedDepthType = ""
 		self.SetBackgroundColour(wx.Colour(255, 255, 255))
 		self.parser = xml.sax.make_parser()
-		self.handler = XML_Handler()
+		self.handler = xml_handler.XMLHandler()
 		self.parser.setContentHandler(self.handler)
-
-		#vbox_top = wx.BoxSizer(wx.HORIZONTAL)
-
-		self.PathTxt = wx.TextCtrl(self, -1, "Path : " + self.parent.DBPath, (5, panely+10), size=(500, 25))
-		self.PathTxt.SetEditable(False)
-
-		self.importbtn = wx.Button(self, -1, "Import",(400, panely+10), size=(100,30))
-		self.Bind(wx.EVT_BUTTON, self.OnIMPORT, self.importbtn)
-		self.importbtn.Enable(False)
-
-		#self.startupbtn = wx.CheckBox(self, -1, 'Open at Start Up', (530, panely+10))
-		#self.startupbtn.SetValue(True)
-
-		self.okbtn = wx.Button(self, -1, "Dismiss",(550, panely+10), size=(100,30))
-		self.Bind(wx.EVT_BUTTON, self.OnDISMISS, self.okbtn)
 
 		self.sideNote = wx.Notebook(self, -1, style=wx.NB_TOP)
 		self.sideNote.SetBackgroundColour(wx.Colour(255, 255, 255))
+		
+		self.pathPanel = wx.Panel(self, -1)
+		self.PathTxt = wx.TextCtrl(self.pathPanel, -1, "Path : " + self.parent.DBPath)
+		self.PathTxt.SetEditable(False)
+
+		self.importbtn = wx.Button(self.pathPanel, -1, "Import")
+		self.Bind(wx.EVT_BUTTON, self.OnIMPORT, self.importbtn)
+		self.importbtn.Enable(False)
+
+		# 1/8/2014 brgtodo: What is the point of the Dismiss button??? It just hides the data manager, f'nality
+		# more usefully implemented in the "Go to Display/Data Manager" button in the toolbar. Why would a user
+		# want to just hide the Data Manager?  Strong candidate for removal.
+		self.okbtn = wx.Button(self.pathPanel, -1, "Dismiss")
+		self.Bind(wx.EVT_BUTTON, self.OnDISMISS, self.okbtn)
+
+		pathPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
+		pathPanelSizer.Add(self.PathTxt, 1, wx.LEFT | wx.RIGHT, 5)
+		pathPanelSizer.Add(self.importbtn, 0, wx.LEFT | wx.RIGHT, 5)
+		pathPanelSizer.Add(self.okbtn, 0, wx.LEFT | wx.RIGHT, 5)
+		self.pathPanel.SetSizer(pathPanelSizer)
+
+		self.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.GetSizer().Add(self.sideNote, 1, wx.EXPAND)
+		self.GetSizer().Add(self.pathPanel, 0, wx.EXPAND | wx.BOTTOM, 5)
 
 		self.treeListPanel = wx.Panel(self.sideNote, -1)
-		self.tree = gizmos.TreeListCtrl(self.treeListPanel, -1, style = wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT)
+		#self.treeListPanel = wx.Panel(self, -1)
 
+		self.tree = gizmos.TreeListCtrl(self.treeListPanel, -1, style = wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT)
 		self.tree.AddColumn(" ")
 		self.tree.SetColumnWidth(0, 200)
 		self.tree.AddColumn("Data")
@@ -100,10 +105,27 @@ class DataFrame(wx.Frame):
 		self.tree.SetMainColumn(0)
 		self.root = self.tree.AddRoot("Root")
 		self.tree.Expand(self.root)
+
+		self.treeListPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.treeListPanel.GetSizer().Add(self.tree, 1, wx.EXPAND)
 		self.sideNote.AddPage(self.treeListPanel, 'Data List')
 		self.tree.GetMainWindow().Bind(wx.EVT_RIGHT_DOWN, self.SelectTREE)
 
-		self.dataPanel = CoreSheet(self.sideNote, 120, 100)
+		#self.dbPanelParent = wx.Panel(self.sideNote, -1)
+		#self.dbPanelParent.SetSizer(wx.BoxSizer(wx.VERTICAL))
+
+# 		self.dbPanel = wx.ScrolledWindow(self.dbPanelParent, -1)
+# 		self.dbPanel.SetScrollbars(5, 5, 1200, 800) #1/6/2014 brgtodo
+# 		self.dbPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+# 		self.dbPanel.SetBackgroundColour('white')
+
+		# 1/6/2014 brg: On Mac, only left half of vertical scrollbar appears. Seems the ScrolledWindow
+		# is too wide for the parent window. Add to a Panel so we can use a fudged border on the right
+		# to make things look correct.
+		#self.dbPanelParent.GetSizer().Add(self.dbPanel, 1, wx.EXPAND | wx.RIGHT, 9)
+		#self.sideNote.AddPage(self.dbPanelParent, 'Data List v2')
+
+		self.dataPanel = dialog.CoreSheet(self.sideNote, 120, 100)
 		self.sideNote.AddPage(self.dataPanel, 'Generic Data')
 		self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.OnSELECTCELL, self.dataPanel)
 		font = self.dataPanel.GetFont()
@@ -113,102 +135,37 @@ class DataFrame(wx.Frame):
 		self.filePanel = wx.Panel(self.sideNote, -1)
 		self.fileText = wx.TextCtrl(self.filePanel, -1, "", style=wx.TE_MULTILINE|wx.TE_READONLY|wx.VSCROLL|wx.TE_WORDWRAP)
 		self.fileText.SetEditable(False)
+		self.fileText.SetFont(wx.Font(14,wx.FONTFAMILY_TELETYPE,wx.FONTSTYLE_NORMAL,wx.FONTWEIGHT_NORMAL)) # fixed-width font
 		self.sideNote.AddPage(self.filePanel, 'Data File')
-
 
 		self.dataPanel.SetColLabelValue(0, "Data Type")
 		self.dataPanel.SetColSize(0, 150)
 		for i in range(1, 39) :
 			self.dataPanel.SetColLabelValue(i, "?")
 
-		#vbox_top.Add(self.sideNote, 0, wx.LEFT | wx.TOP, 9)
-
-		#self.sidePanel = wx.Panel(self, -1, (panelx, 0), size=(145, panely) )
-		self.sidePanel = wx.Panel(self, -1)
-
-		vbox_right = wx.BoxSizer(wx.VERTICAL)
-
 		self.initialize = False
 
-		self.sidePanel.SetSizer(vbox_right)
-
-		#self.UPDATESize(winsize[0],winsize[1], 0, 45)
-
 		self.repCount = 0
-		wx.EVT_SIZE(self, self.OnSize)
 		wx.EVT_CLOSE(self, self.OnHide)
-		wx.EVT_MOVE(self, self.OnMOVE)
 
 	def OnHide(self,event):
 		self.Show(False)
 		self.parent.midata.Check(False)
 
-	def OnMOVE(self,event):
-		pos = self.GetPosition()
-		self.parent.SetPosition(pos)
-
-	def OnSize(self,event):
-		winx, winy = self.GetClientSizeTuple()
-		if sys.platform != 'win32' :
-			self.parent.SetSize((winx, winy+ 40))
-		else :
-			self.parent.SetClientSize((winx, winy-20))
-	
-		x, y = self.GetPosition()
-	
-		gabx = winx * 0.01
-		gaby = winy * 0.03
-		percentx = 1 - (160.0 / winx)
-		winxa = winx - gabx
-
-		if platform_name[0] == "Windows" :	
-			winya = winy  * 0.86 - gaby
-		else :
-			winya = winy * 0.88 - gaby
-			
-		self.dataPanel.SetSize((winxa, winya))
-		self.treeListPanel.SetSize((winxa, winya))
-		self.tree.SetSize((winxa, winya))
-		self.filePanel.SetSize((winxa, winya))
-		self.fileText.SetSize((winxa, winya))
-
-		self.PathTxt.SetPosition((5, winy - 30))
-		self.PathTxt.SetSize((winxa - 400, 25))
-		#self.startupbtn.SetPosition((winxa - 250, winy - 30))
-		self.okbtn.SetPosition((winxa - 250, winy - 30))
-		self.importbtn.SetPosition((winxa - 370, winy - 30))
-
-		
-		winxa = winxa  + gabx
-		winya = winya + gaby
-		self.sideNote.SetSize((winxa, winya))
-		self.sideNote.SetPageSize((winxa, winya))
-		self.UpdateWindowUI()
-		
-		gabx = winx * 0.02
-		winxa = winxa  + gabx
-		self.sidePanel.SetPosition((winxa, 0))
-		self.sidePanel.SetSize((145, winya))
-		
-		self.UpdateWindowUI()
-
-
+	# handles all of the many many many right-click commands in Data Manager
 	def OnPOPMENU(self, event):
 		opId = event.GetId()
 		self.currentIdx = self.tree.GetSelections()
-		if opId == 1 :
-			# LOAD CORE
+		if opId == 1 :	# LOAD CORE
 			self.OnLOAD()
-		elif opId == 2 :
-			# VIEW FILE
+		elif opId == 2 : # VIEW FILE
 			filename = self.tree.GetItemText(self.selectedIdx, 8)
 			if filename != "" :
 				filename = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + filename
 				self.fileText.Clear()
 				self.fileText.LoadFile(filename)
 				self.sideNote.SetSelection(2)
-		elif opId == 3 :
-			# EDIT CORE
+		elif opId == 3 : # EDIT CORE
 			self.importType = "CORE"
 			self.importLabel = []
 			self.selectedDataType = ""
@@ -271,7 +228,7 @@ class DataFrame(wx.Frame):
 			self.OnIMPORT_TABLE("ELD")
 		elif opId == 18 :
 			# Edit Strat Type
-			dlg = StratTypeDialog(self)
+			dlg = dialog.StratTypeDialog(self)
 			dlg.Centre()
 			ret = dlg.ShowModal()
 			dlg.Destroy()
@@ -341,6 +298,7 @@ class DataFrame(wx.Frame):
 		elif opId == 21 :
 			self.OnIMPORT_IMAGE()
 		elif opId == 22 :
+			print "Export XML Data!"
 			# EXPORT XML TABLES
 			type = self.tree.GetItemText(self.selectedIdx, 1)
 			path = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10)
@@ -372,10 +330,12 @@ class DataFrame(wx.Frame):
 			else :
 				self.SAVE_CULL_TO_XML(path, filename)
 		elif opId == 23 :
+			print "Export Core Data!"
 			self.EXPORT_CORE_DATA(self.selectedIdx, False)
 		elif opId == 24 :
 			self.IMPORT_AGE_MODEL()
 		elif opId == 25 :
+			print "Export Core Data (typed)!"
 			self.EXPORT_CORE_DATA(self.selectedIdx, True)
 		elif opId == 26 :
 			self.tree.SetItemText(self.selectedIdx, "Discrete", 1) 
@@ -459,32 +419,13 @@ class DataFrame(wx.Frame):
 								os.system('rm \"'+ self.parent.DBPath +filename + '\"')
 
 				self.tree.Delete(self.selectedIdx)
-				log_report = self.tree.AppendItem(self.root, 'Session Reports')
-				list = os.listdir(self.parent.DBPath + 'log/')
-				for dir in list :
-					if dir != ".DS_Store" :
-						report_item = self.tree.AppendItem(log_report, 'Report')
-						self.tree.SetItemText(report_item, dir, 1)
-						last = dir.find(".", 0)
-						user = dir[0:last]
-						self.tree.SetItemText(report_item, user, 7)
-						start = last + 1
-						last = dir.find("-", start)
-						last = dir.find("-", last+1)
-						last = dir.find("-", last+1)
-						time = dir[start:last] + " "
-						start = last + 1
-						last = dir.find("-", start)
-						time += dir[start:last] + ":"
-						start = last + 1
-						last = dir.find(".", start)
-						time += dir[start:last]
-						self.tree.SetItemText(report_item, time, 6)
+				self.LoadSessionReports()
 				self.parent.OnShowMessage("Information", "Successfully deleted", 1)
 		elif opId == 31 :
 			# EXPORT SESSION REPORT
 			self.EXPORT_REPORT()
 		elif opId == 32 :
+			# 12/9/2013 brg: Import Universal cull table - menu item commented at present
 			self.OnIMPORT_CULLTABLE(True)
 		elif opId == 33 :
 			self.IMPORT_TIME_SERIES()
@@ -492,6 +433,8 @@ class DataFrame(wx.Frame):
 		self.selectedIdx = None
 
 
+	# build appropriate right-click menu based on selection type - rather than pulling
+	# text strings from the View to determine what's what, we should be asking the Model!
 	def SelectTREE(self, event):
 		pos = event.GetPosition()
 		idx, flags, col = self.tree.HitTest(pos)
@@ -711,7 +654,7 @@ class DataFrame(wx.Frame):
 
 
 	def EXPORT_CORE_DATA(self, selectedIdx, isType) :
-		dlg = ExportCoreDialog(self)
+		dlg = dialog.ExportCoreDialog(self)
 		dlg.Centre()
 		ret = dlg.ShowModal()
 		if ret == wx.ID_OK :
@@ -807,31 +750,8 @@ class DataFrame(wx.Frame):
 								log_item = child_item
 								break
 
-			type = 7
-			annot = ""
-			if datatype == "NaturalGamma" :
-				type = 4
-				datatype = "ngadj"
-			elif datatype == "Natural Gamma" :
-				type = 4
-				datatype = "ngadj"
-			elif datatype == "Susceptibility" :
-				type = 3
-				datatype = "susadj"
-			elif datatype == "Reflectance" :
-				type = 5
-				datatype = "refladj"
-			elif datatype == "Bulk Density(GRA)" :
-				type = 1
-				datatype = "gradj"
-			elif datatype == "Pwave" :
-				type = 2
-				datatype = "pwadj"
-			elif datatype == "PWave" :
-				type = 2
-				datatype = "pwadj"
-			else :
-				annot = datatype
+			type, annot = self.parent.TypeStrToInt(datatype)
+			datatype = self.parent.TypeStrToFileSuffix(datatype, True)
 
 			if isType == False :
 				parentItem = self.tree.GetItemParent(selectedIdx)
@@ -1526,6 +1446,31 @@ class DataFrame(wx.Frame):
 		fout.close()
 		fin.close()
 
+	""" Bare-bones validation of image listing files: Count tokens in first non-comment line """
+	def ValidateImageListingFile(self, file):
+		valid = False
+		f = open(file, 'r')
+		lines = f.readlines()
+		for line in lines[1:]: # skip first line
+			if line[0] == '#':
+				continue
+
+			# There are two acceptable formats:
+			# LIMS format is 11+ tokens with space-separated fields. Columns: expedition site hole
+			# core coreType section topOffset bottomOffset depth length image_id
+			# Chronos format is 14 tokens with tab-separated fields. Columns: expedition site hole core
+			# sectionNumber sectionID sectionType coreType curatedLength linearLength MBSF FORMAT DPI imageURL
+			spaceTokens = line.split(' ')
+			tabTokens = line.split('\t')
+			if len(spaceTokens) >= 11 or len(tabTokens) == 14:
+				valid = True
+				break
+
+		if not valid:
+			self.parent.OnShowMessage("Error", "Invalid image listing file, expected either LIMS or Chronos format", 1)
+
+		return valid
+
 
 	def OnIMPORT_IMAGE(self):
 		opendlg = wx.FileDialog(self, "Open Image Data file", self.parent.Directory, "", wildcard = "*.*")
@@ -1534,7 +1479,7 @@ class DataFrame(wx.Frame):
 		source_name = opendlg.GetFilename()
 		self.parent.Directory = opendlg.GetDirectory()
 		opendlg.Destroy()
-		if ret == wx.ID_OK :
+		if ret == wx.ID_OK and self.ValidateImageListingFile(path):
 			item = self.tree.GetSelection()
 			idx = self.tree.GetChildrenCount(item, False)
 			parentItem = self.tree.GetItemParent(item)
@@ -1707,9 +1652,46 @@ class DataFrame(wx.Frame):
 	def OnIMPORT_STRAT(self):
 		while True :
 			self.OnIMPORT_STRAT1()
+			# 1/22/2014 brgtodo: Allow multiple selection to avoid nagging here?
 			ret = self.parent.OnShowMessage("About", "Any more stratigraphy files to add now?", 2)
 			if ret != wx.ID_OK :
 				break
+
+	def ValidateStratFile(self, stratFile, leg, site, title):
+		valid = False
+
+		# account for off-chance user selects an app bundle on OSX
+		if not os.path.isfile(stratFile):
+			self.parent.OnShowMessage("Error", "Invalid file selected", 1)
+			return False
+
+		f = open(stratFile, 'r+')
+		for line in f :
+			max = len(line)
+			if max == 1 : 
+				continue
+				
+			modifiedLine = line[0:-1].split()
+			if modifiedLine[0] == 'null' :
+				continue
+			max = len(modifiedLine)
+			if max == 1 : 
+				modifiedLine = line[0:-1].split('\t')
+				max = len(modifiedLine)
+			if modifiedLine[max-1] == '\r' :
+				max =  max -1
+			if max >= 20 :
+				if modifiedLine[4] == leg and modifiedLine[5] == site :
+					valid = True
+				else:
+					self.parent.OnShowMessage("Error", "This stratigraphy data is not for " + title , 1)
+					break
+			else :
+				self.parent.OnShowMessage("Error", "Invalid stratigraphy file", 1)
+				break
+
+		f.close()
+		return valid
 
 	def OnIMPORT_STRAT1(self):
 		filterindex = 0
@@ -1730,37 +1712,7 @@ class DataFrame(wx.Frame):
 			leg = title[0:last]
 			site = title[last+1:max]
 
-			valid = False
-			f = open(path, 'r+')
-			for line in f :
-				max = len(line)
-				if max == 1 : 
-					continue
-					
-				modifiedLine = line[0:-1].split()
-				if modifiedLine[0] == 'null' :
-					continue
-				max = len(modifiedLine)
-				if max == 1 : 
-					modifiedLine = line[0:-1].split('\t')
-					max = len(modifiedLine)
-
-				if modifiedLine[max-1] == '\r' :
-					max =  max -1
-			
-				if max >= 20 :
-					if modifiedLine[4] == leg and modifiedLine[5] == site :
-						valid = True
-				else :
-					self.parent.OnShowMessage("Error", "It is not Stratigraphy file", 1)
-					f.close()
-					return
-
-				break
-			f.close()
-
-			if valid == False :
-				self.parent.OnShowMessage("Error", "This Stratigraphy is not for " + title , 1)
+			if not self.ValidateStratFile(path, leg, site, title):
 				return
 
 		 	tempstamp = str(datetime.today())
@@ -2998,6 +2950,8 @@ class DataFrame(wx.Frame):
 							culltable_item = child_item
 						else :
 							self.OnSAVE_DB_ITEM(fout, type, child_item, "")
+
+							# DUPLICATE AAA
 							if len(self.tree.GetItemText(selectItem, 1)) == 0 :
 								s = 'typeData: Continuous\n'
 								fout.write(s)
@@ -3013,6 +2967,7 @@ class DataFrame(wx.Frame):
 							fout.write(s)
 							s = 'typeMax: ' + self.tree.GetItemText(selectItem, 5) + '\n'
 							fout.write(s)
+							#END DUPLICATE AAA
 
 						for l in range(1, totalcount) :
 							child_item = self.tree.GetNextSibling(child_item)
@@ -3023,6 +2978,7 @@ class DataFrame(wx.Frame):
 								source_filename = self.tree.GetItemText(culltable_item, 9) 
 								self.OnSAVE_DB_ITEM(fout, type, culltable_item, source_filename)
 
+								# DUPLICATE AAA
 								if len(self.tree.GetItemText(selectItem, 1)) == 0 :
 									s = 'typeData: Continuous\n'
 									fout.write(s)
@@ -3038,6 +2994,7 @@ class DataFrame(wx.Frame):
 								fout.write(s)
 								s = 'typeMax: ' + self.tree.GetItemText(selectItem, 5) + '\n'
 								fout.write(s)
+								# END DUPLICATE AAA
 								culltable_item = None
 
 		fout.close()
@@ -3060,28 +3017,9 @@ class DataFrame(wx.Frame):
 		if decivalue != '' :
 			ndecivalue = int(decivalue)
 
-		annot = ""
 		coretype = self.tree.GetItemText(parentItem, 0)
 		self.parent.CurrentType = coretype
-		type = 7
-		if coretype == "Bulk Density(GRA)" :
-			type = 1 
-		elif coretype == "Pwave" :
-			type = 2 
-		elif coretype == "PWave" :
-			type = 2 
-		elif coretype == "Susceptibility" :
-			type = 3 
-		elif coretype == "NaturalGamma" :
-			type = 4 
-		elif coretype == "Natural Gamma" :
-			type = 4 
-		elif coretype == "Reflectance" :
-			type = 5 
-		elif coretype == "Other" :	
-			type = 6
-		else :
-			annot = coretype	
+		type, annot = self.parent.TypeStrToInt(coretype)
 
 		if self.parent.Window.timeseries_flag == False  :
 			y_data = self.tree.GetItemText(selectItem, 13)
@@ -3567,24 +3505,7 @@ class DataFrame(wx.Frame):
 		filename += self.tree.GetItemText(selectItem, 8)
 
 		if filename != "" :
-			coretype = 7
-			annot = ""
-			if type == "Bulk Density(GRA)" :
-				coretype = 1
-			elif type == "Pwave" :
-				coretype = 2
-			elif type == "Susceptibility" :
-				coretype = 3
-			elif type == "NaturalGamma" :
-				coretype = 4
-			elif type == "Natural Gamma" :
-				coretype = 4
-			elif type == "Reflectance" :
-				coretype = 5
-			elif type == "Other" :
-				coretype = 6
-			else :
-				annot = type
+			coretype, annot = self.parent.TypeStrToInt(type)
 
 			py_correlator.openCullTable(filename, coretype, annot)
 			s = "Cull Table: " + filename + " For type-" + type + "\n"
@@ -3653,22 +3574,7 @@ class DataFrame(wx.Frame):
 						break
 
 			if filename != "" :
-				coretype = 7
-				annot = ""
-				if type == "Bulk Density(GRA)" :
-					coretype = 1
-				elif type == "Pwave" :
-					coretype = 2
-				elif type == "Susceptibility" :
-					coretype = 3
-				elif type == "NaturalGamma" :
-					coretype = 4
-				elif type == "Reflectance" :
-					coretype = 5
-				elif type == "Other" :
-					coretype = 6
-				else :
-					annot = type
+				coretype, annot = self.parent.TypeStrToInt(type)
 
 				py_correlator.openCullTable(filename, coretype, annot)
 				s = "Cull Table: " + filename + " For type-" + type + "\n"
@@ -3867,6 +3773,7 @@ class DataFrame(wx.Frame):
 
 				self.parent.logFileptr.write("Load Files: \n")
 
+				# hole node
 				if len(self.tree.GetItemText(selectItem, 8)) > 0 :
 					parentItem = self.tree.GetItemParent(selectItem)
 					type = self.tree.GetItemText(parentItem, 0)
@@ -3874,6 +3781,10 @@ class DataFrame(wx.Frame):
 						cull_parentItem = self.tree.GetItemParent(parentItem)
 						universal_cull_item = self.Find_UCULL(cull_parentItem) 
 
+					# it appears that a cull table will never be loaded for a single hole
+					# since multiple selection is impossible thus previousType will == "" when
+					# we reach this point. Strangely, that's for the best since loading a cull
+					# table before loading data results in a C++ side crash (because dataptr is NULL).
 					if previousType != "" and previousType != type and count_load > 0 :
 						ret = self.OnLOAD_CULLTABLE(parentItem, type)
 						if ret == "" :
@@ -3914,9 +3825,9 @@ class DataFrame(wx.Frame):
 							previousType = type 
 							previousItem = selectItem
 
-				else :
+				else : # not hole node, other types?
 					type = self.tree.GetItemText(selectItem, 0)
-					if type.find("-", 0) == -1 :
+					if type.find("-", 0) == -1 : # if non-site node, appears to be holeset
 						parentItem = self.tree.GetItemParent(selectItem)
 						if universal_cull_item == None :
 							universal_cull_item = self.Find_UCULL(parentItem) 
@@ -3972,7 +3883,7 @@ class DataFrame(wx.Frame):
 								newrange = type, min, max, coef, smooth, continue_flag
 								self.parent.Window.range.append(newrange) 
 
-					else :
+					else : # must be a site node
 						parentItem = selectItem
 						if universal_cull_item == None :
 							universal_cull_item = self.Find_UCULL(parentItem) 
@@ -4160,10 +4071,12 @@ class DataFrame(wx.Frame):
 
 		if tableLoaded != [] :
 			if tableLoaded[1] == True :
-				self.parent.OnInitDataUpdate()			
+				self.parent.OnInitDataUpdate()
 				self.parent.InitSPLICE()
 				self.parent.UpdateSPLICE(False)
 				#self.parent.UpdateSMOOTH_SPLICE(False)
+				if len(self.parent.Window.SpliceCore) > 0:
+					self.parent.splicePanel.OnButtonEnable(4, True) # enable Append button
 				self.parent.autoPanel.SetCoreList(1, [])
 				self.parent.filterPanel.OnRegisterHole("Spliced Records")
 				r = self.parent.Window.range[0]
@@ -4196,10 +4109,8 @@ class DataFrame(wx.Frame):
 
 		if self.parent.showReportPanel == 1 :
 			self.parent.OnUpdateReport()
-		self.parent.Show(True)
-		self.Show(False)
-		self.parent.midata.Check(False)
-		self.parent.topMenu.dbbtn.SetLabel("Go to Data Manager")
+
+		self.parent.ShowDisplay()
 
 		# LOAD SECTION
 		self.parent.NewDATA_SEND()
@@ -4226,7 +4137,6 @@ class DataFrame(wx.Frame):
 		
 
 	def Add_TABLE(self, title, sub_title, updateflag, importflag, source_filename):
-			
 		if importflag == False and len(self.selectBackup) == 0 :
 			self.parent.OnShowMessage("Error", "Could not find selected items", 1)
 			return
@@ -4655,12 +4565,12 @@ class DataFrame(wx.Frame):
 			if str(data[0]) == type :
 				self.cullData.remove(data)
 				break
-		if bcull == 0 :
+		if bcull == 0 : # remove existing cull ("No Cull" radio checked)
 			l = []
 			l.append(type)
 			l.append(False)
 			self.cullData.append(l)
-		else :
+		else : # cull parameters
 			l = []
 			l.append(type)
 			l.append(True)
@@ -4682,7 +4592,6 @@ class DataFrame(wx.Frame):
 			if cullNumber >= 0 :
 				l.append(str(cullNumber))
 			self.cullData.append(l)
-
 
 	def GetDECIMATE(self, type):
 		self.Update_PROPERTY_ITEM(self.selectBackup)
@@ -4814,22 +4723,23 @@ class DataFrame(wx.Frame):
 						self.OnUPDATE_DB_FILE(title, parentItem)
 
 
-	def OnUPDATEMINMAX(self, min, max, type):
-		#selectrows = self.listPanel.GetSelectedRows()
-		strdatatype = ""
-		if type == "All Natural Gamma" :
-			strdatatype = "NaturalGamma"	
-		elif type == "All Susceptibility" :
-			strdatatype = "Susceptibility"
-		elif type == "All Reflectance" :
-			strdatatype = "Reflectance"
-		elif type == "All Bulk Density(GRA)" : 
-			strdatatype = "Bulk Density(GRA)"
-		elif type == "All Pwave" : 
-			strdatatype = "Pwave"
-		elif type == "All Other" : 
-			strdatatype = "Other"
-			
+	# brgtodo never used
+# 	def OnUPDATEMINMAX(self, min, max, type):
+# 		#selectrows = self.listPanel.GetSelectedRows()
+# 		strdatatype = ""
+# 		if type == "All Natural Gamma" :
+# 			strdatatype = "NaturalGamma"	
+# 		elif type == "All Susceptibility" :
+# 			strdatatype = "Susceptibility"
+# 		elif type == "All Reflectance" :
+# 			strdatatype = "Reflectance"
+# 		elif type == "All Bulk Density(GRA)" : 
+# 			strdatatype = "Bulk Density(GRA)"
+# 		elif type == "All Pwave" : 
+# 			strdatatype = "Pwave"
+# 		elif type == "All Other" : 
+# 			strdatatype = "Other"
+#			
 		#if strdatatype != "" :
 		#	for row in selectrows :
 		#		if self.listPanel.GetCellValue(row, 10) == strdatatype:
@@ -4841,7 +4751,10 @@ class DataFrame(wx.Frame):
 		#		self.listPanel.SetCellValue(row, 18, str(min))
 		#		self.listPanel.SetCellValue(row, 19, str(max))
 
-	def OnLOADCONFIG(self):
+
+	""" Confirm existence of dirs and files corresponding to sites listed in root-level
+	datalist.db. If not, regenerate root datalist.db to reflect filesystem state. """
+	def ValidateDatabase(self):
 		if os.access(self.parent.DBPath + 'db/', os.F_OK) == False :
 			os.mkdir(self.parent.DBPath + 'db/')
 
@@ -4859,6 +4772,7 @@ class DataFrame(wx.Frame):
 				if os.access(self.parent.DBPath + 'db/' + data_item + '/datalist.db', os.F_OK) == False :
 					validate = False 
 					break
+
 		root_f.close()
 		if validate == False :
 			print "[ERROR] Data list is not valide, DATALIST WILL BE RE-GENERATED"
@@ -4871,6 +4785,7 @@ class DataFrame(wx.Frame):
 							root_f.write(dir + "\n")
 			root_f.close()
 
+	def LoadSessionReports(self):
 		log_report = self.tree.AppendItem(self.root, 'Session Reports')
 		list = os.listdir(self.parent.DBPath + 'log/')
 		for dir in list :
@@ -4895,6 +4810,149 @@ class DataFrame(wx.Frame):
 		if len(list) >= 50 :
 			self.parent.OnShowMessage("Information", "Please, Clean Session Reports", 1)
 
+	def LoadDatabase(self):
+		self.ValidateDatabase()
+		self.LoadSessionReports()
+		siteNames = self.LoadSiteNames()
+		self.loadedSites = self.LoadSites(siteNames) # return instead?
+
+	def LoadSiteNames(self):
+		dbRootFile = open(self.parent.DBPath + 'db/datalist.db', 'r+')
+		loadedSites = []
+		for site in dbRootFile:
+			site = site.strip()
+			if site == '' or site in loadedSites:
+				continue
+			else:
+				loadedSites.append(site)
+		return loadedSites
+
+	# parse single-line types
+	def ParseOthers(self, site, siteLines):
+		for line in siteLines:
+			tokens = line.split(': ')
+			if tokens[0] == 'affinetable':
+				affine = AffineData()
+				affine.FromTokens(tokens)
+				site.affineTables.append(affine)
+			elif tokens[0] == 'splicetable':
+				splice = SpliceData()
+				splice.FromTokens(tokens)
+				site.spliceTables.append(splice)
+			elif tokens[0] == 'eldtable':
+				eld = EldData()
+				eld.FromTokens(tokens)
+				site.eldTables.append(eld)
+			elif tokens[0] == 'log':
+				log = DownholeLogTable()
+				log.FromTokens(tokens)
+				site.logTables.append(log)
+			elif tokens[0] == 'strat':
+				strat = StratTable()
+				strat.FromTokens(tokens)
+				site.stratTables.append(strat)
+			elif tokens[0] == 'age':
+				age = AgeTable()
+				age.FromTokens(tokens)
+				site.ageTables.append(age)
+			elif tokens[0] == 'series':
+				series = SeriesTable()
+				series.FromTokens(tokens)
+				site.seriesTables.append(series)
+			elif tokens[0] == 'image':
+				image = ImageTable()
+				image.FromTokens(tokens)
+				site.imageTables.append(image)
+
+	def ParseHoleSets(self, site, siteLines):
+		curType = None
+		for line in siteLines:
+			tokens = line.split(': ')
+			#if tokens[0] == 'type' and tokens[1] not in site.holeSets:
+			#	curType = tokens[1]
+			#	site.holeSets[tokens[1]] = HoleSet(curType)
+			if tokens[0] == 'type':
+				curType = tokens[1]
+				site.AddHoleSet(curType)
+			elif tokens[0] == 'typeData':
+				site.holeSets[curType].continuous = ParseContinuousToken(tokens[1])
+			elif tokens[0] == 'typeDecimate':
+				site.holeSets[curType].decimate = ParseDecimateToken(tokens[1])
+			elif tokens[0] == 'typeSmooth':
+				site.holeSets[curType].smooth = tokens[1]
+			elif tokens[0] == 'typeMin':
+				site.holeSets[curType].min = tokens[1]
+			elif tokens[0] == 'typeMax':
+				site.holeSets[curType].max = tokens[1]
+			elif tokens[0] == 'culltable' or tokens[0] == 'uni_culltable':
+				cull = CullTable()
+				cull.FromTokens(tokens)
+				site.holeSets[curType].cullTable = cull
+
+	# For some reason holes are the only data we serialize as multiple lines. Why?
+	# Maintaining as single lines (like everything else) would simplify parsing.
+	def ParseHoles(self, site, siteLines):
+		curHole = None
+		curType = None
+		for line in siteLines:
+			token = line.split(': ')
+			if token[0] == 'hole':
+				if curHole != None:
+					site.AddHole(curType, curHole)
+				curHole = HoleData(token[1])
+			elif token[0] == 'type':
+				curType = token[1]
+ 			elif token[0] == "dataName":
+				curHole.dataName = token[1]
+ 			elif token[0] == "depth" :
+				curHole.depth = token[1]
+ 			elif token[0] == "file" :
+				curHole.file = token[1]
+ 			elif token[0] == "min" :
+				curHole.min = token[1]
+ 			elif token[0] == "max" :
+				curHole.max = token[1]
+ 			elif token[0] == "updatedTime" :
+				curHole.updatedTime = token[1]
+ 			elif token[0] == "enable" :
+				curHole.enable = ParseEnableToken(token[1])
+ 			elif token[0] == "byWhom" :
+				curHole.byWhom = token[1]
+ 			elif token[0] == "source" :
+				curHole.origSource = token[1]
+ 			elif token[0] == "data" :
+				curHole.data = token[1]
+		if curHole != None:
+			site.AddHole(curType, curHole)
+
+	def LoadSites(self, siteNames):
+		loadedSites = []
+		for siteName in siteNames:
+			site = SiteData(siteName)
+
+			siteFile = open(self.parent.DBPath + 'db/' + siteName + '/datalist.db', 'r+')
+			siteLines = siteFile.readlines()
+			for idx, line in enumerate(siteLines):
+				siteLines[idx] = siteLines[idx].strip('\r\n')
+
+			self.ParseHoleSets(site, siteLines)
+			self.ParseHoles(site, siteLines)
+			self.ParseOthers(site, siteLines)
+			site.dump()
+			loadedSites.append(site)
+
+		return loadedSites
+
+	# brg 12/4/2013: Builds data manager UI
+	def OnLOADCONFIG(self):
+		self.LoadDatabase()
+
+		# self.parent - "master" Correlator class
+		# self - old dbmanager (has required variables and methods)
+		# self.dbPanel - Notebook panel in which to embed DBView
+		# self.loadedSites - list of sites loaded from root datalist.db
+		#self.dbview = DBView(self.parent, self, self.dbPanel, self.loadedSites)
+
 		root_f = open(self.parent.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
 		loaded_item_list = []
@@ -4915,7 +4973,9 @@ class DataFrame(wx.Frame):
 
 				sub_f = open(self.parent.DBPath + 'db/' + data_item + '/datalist.db', 'r+')
 
-				root = self.tree.AppendItem(self.root, data_item)
+				curSite = SiteData(data_item)
+
+				root = self.tree.AppendItem(self.root, data_item) # site name
 				self.tree.SetItemBold(root, True)
 				property_child = self.tree.AppendItem(root, 'Saved Tables')
 				log_child = self.tree.AppendItem(root, 'Downhole Log Data')
@@ -4929,12 +4989,15 @@ class DataFrame(wx.Frame):
 				token_nums = 0
 
 				for sub_line in sub_f :
+					# 12/4/2013 brg: Pretty sure this is unnecessary as each sub_line
+					# should already be a single line of sub_f without extra linebreaks,
+					# i.e. this just makes a singleton list containing sub_line
 					lines = sub_line.splitlines()
 
 					for line in lines :
 						token = line.split(': ')
 						token_nums = len(token) 
-						if token[0] == "hole" :
+						if token[0] == "hole" : # start a new hole
 							hole = token[1]
 							child = None
 							hole_child = None
@@ -5552,13 +5615,13 @@ class DataFrame(wx.Frame):
 					if valid == True and main_form == False :
 						filename = ".tmp_table"
 						if sys.platform == 'win32' :
-                                                        self.OnFORMATTING(path, self.parent.Directory + "\\.tmp_table", tableType)
-                                                        path = self.parent.Directory + "\\.tmp_table"
-                                                else :
-                                                        self.OnFORMATTING(path, self.parent.Directory + "/.tmp_table", tableType)
-                                                        path = self.parent.Directory + "/.tmp_table"
+							self.OnFORMATTING(path, self.parent.Directory + "\\.tmp_table", tableType)
+							path = self.parent.Directory + "\\.tmp_table"
+						else :
+							self.OnFORMATTING(path, self.parent.Directory + "/.tmp_table", tableType)
+							path = self.parent.Directory + "/.tmp_table"
 
-				else :
+				else : # last >= 0
 					self.handler.init()
 					if sys.platform == 'win32' :
                                                 self.handler.openFile(self.parent.Directory + "\\.tmp_table")
@@ -5577,6 +5640,7 @@ class DataFrame(wx.Frame):
 						siteflag = True
 					else :
 						valid = False 
+
 				if valid == True :
 					type = self.Add_TABLE('AFFINE' , 'affine', False, True, source_filename)
 					self.parent.OnShowMessage("Information", "Successfully imported", 1)
@@ -6169,7 +6233,7 @@ class DataFrame(wx.Frame):
 
 			# CHECK TYPE
 			for i in range(len(self.paths)) :
-				if i == 4 : 
+				if i == 4 : # brgtodo 6/17/2014 why bail on 5th file? Can we only load four at a time?
 					break
 				path = self.paths[i]
 				xml_flag = path.find(".xml", 0)
@@ -6397,24 +6461,7 @@ class DataFrame(wx.Frame):
 		f.close()
 		fout.close()
 
-		type = 7
-		annot = ""
-		if datatype == "NaturalGamma" :			
-			type = 4
-		elif datatype == "Natural Gamma" :			
-			type = 4
-		elif datatype == "Susceptibility" :
-			type = 3
-		elif datatype == "Reflectance" :
-			type = 5
-		elif datatype == "Bulk Density(GRA)" :
-			type = 1
-		elif datatype == "Pwave" :
-			type = 2
-		elif datatype == "PWave" :
-			type = 2
-		else :
-			annot = datatype
+		type, annot = self.parent.TypeStrToInt(datatype)
 
 		self.parent.OnNewData(None)
 		self.parent.LOCK = 0
@@ -7342,7 +7389,7 @@ class DataFrame(wx.Frame):
 		stamp = tempstamp[0:last]
 
 		for i in range(len(self.paths)) :
-			if i == 4 :
+			if i == 4 : # brgtodo 6/17/2014
 				break
 
 			idx = datasort[2] +1
@@ -7594,7 +7641,7 @@ class DataFrame(wx.Frame):
 			datatype = "Other"
 		elif opId == 7 :
 			while True :
-				dlg = BoxDialog(self, "User define data type")
+				dlg = dialog.BoxDialog(self, "User define data type")
 				ret = dlg.ShowModal()
 				datatype = ""
 				if ret == wx.ID_OK :
@@ -7682,7 +7729,7 @@ class DataFrame(wx.Frame):
 		opId = event.GetId()
 		flag = False
 		if opId == 1 :
-			dlg = EditBoxDialog(self, "Leg Number")
+			dlg = dialog.EditBoxDialog(self, "Leg Number")
 			ret = dlg.ShowModal()
 			if ret == wx.ID_OK :
 				flag = True 
@@ -7691,7 +7738,7 @@ class DataFrame(wx.Frame):
 				for i in range(rows):
 					self.dataPanel.SetCellValue(i, 1, num)
 		else :
-			dlg = EditBoxDialog(self, "Site Number")
+			dlg = dialog.EditBoxDialog(self, "Site Number")
 			ret = dlg.ShowModal()
 			if ret == wx.ID_OK :
 				flag = True 
@@ -7762,5 +7809,3 @@ class DataFrame(wx.Frame):
 			self.dataPanel.SetColLabelValue(self.selectedCol, "Depth")
 
 		self.selectedCol = -1
-
-

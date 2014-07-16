@@ -42,6 +42,7 @@ static PyObject* getRange(PyObject *self, PyObject *args);
 static PyObject* getRatio(PyObject *self, PyObject *args);
 static PyObject* finalize(PyObject *self, PyObject *args);
 static PyObject* composite(PyObject *self, PyObject *args);
+static PyObject* project(PyObject *self, PyObject *args);
 static PyObject* evalcoef(PyObject *self, PyObject *args);
 static PyObject* evalcoef_splice(PyObject *self, PyObject *args);
 static PyObject* evalcoefLog(PyObject *self, PyObject *args);
@@ -134,6 +135,9 @@ static PyMethodDef PyCoreMethods[] = {
 
     {"composite", composite, METH_VARARGS,
      "Composite Data."},
+
+    {"project", project, METH_VARARGS,
+     "Composite Shift by Growth Rate."},
 
     {"evalcoef", evalcoef, METH_VARARGS,
      "Evaluate Cores."},
@@ -1142,15 +1146,15 @@ static PyObject* getData(PyObject *self, PyObject *args)
 			dataptr->getTuple(g_data, SMOOTH);
 			break;
 		case 2 : 	// splice tie info 
-           		correlator.getSpliceTuple(g_data);
+			correlator.getSpliceTuple(g_data);
 			break;
 		case 3 :	// splice hole data 
-   				correlator.generateSpliceHole();
-           		correlator.getTuple(g_data, SPLICEDATA);
+			correlator.generateSpliceHole();
+			correlator.getTuple(g_data, SPLICEDATA);
 			break;
 		case 4 :	// splice hole smooth data 
-   				correlator.generateSpliceHole();
-           		correlator.getTuple(g_data, SPLICESMOOTH);
+			correlator.generateSpliceHole();
+			correlator.getTuple(g_data, SPLICESMOOTH);
 			break;
 		case 7 :	// strat data 
 			if(dataptr != NULL)
@@ -1161,36 +1165,36 @@ static PyObject* getData(PyObject *self, PyObject *args)
 		case 8 :	// log splice hole data 
 			//cout << "case 8 " << endl;
 			correlator.generateSaganHole();
-           		correlator.getTuple(g_data, LOG);
+			correlator.getTuple(g_data, LOG);
 			break;
 		case 9 :	// log splice hole data 
-           		correlator.getTuple(g_data, DATA);
+			correlator.getTuple(g_data, DATA);
 			break;
 		case 10 :	// log splice hole data 
 			correlator.generateSaganHole();
-           		correlator.getTuple(g_data, LOGSMOOTH);
+			correlator.getTuple(g_data, LOGSMOOTH);
 			break;
 		case 11 :	// log splice hole data 
-           		correlator.getTuple(g_data, SMOOTH);
+			correlator.getTuple(g_data, SMOOTH);
 			break;
 		case 12 :	// sagan tie info
-           		correlator.getSaganTuple(g_data);
+			correlator.getSaganTuple(g_data);
 			break;
 		case 13 :	// sagan tie info
-           		correlator.getSaganTuple(g_data, true);
+			correlator.getSaganTuple(g_data, true);
 			break;
 		case 14 :	// log splice hole data 
 			//cout << "case 14 " << endl;
-           		correlator.getTuple(g_data, LOG);
+			correlator.getTuple(g_data, LOG);
 			break;
 		case 15 :	// splice hole data 
-           		correlator.getTuple(g_data, SPLICEDATA);
+			correlator.getTuple(g_data, SPLICEDATA);
 			break;
 		case 16 :	// splice hole smooth data 
-           		correlator.getTuple(g_data, SPLICESMOOTH);
+			correlator.getTuple(g_data, SPLICESMOOTH);
 			break;
 		case 17 :	// log splice hole data 
-           		correlator.getTuple(g_data, LOGSMOOTH);
+			correlator.getTuple(g_data, LOGSMOOTH);
 			break;
 		case 18 :	// section data
 			if(dataptr != NULL)
@@ -1211,7 +1215,6 @@ static PyObject* getData(PyObject *self, PyObject *args)
 			}
 			break;
 		}
-				
 	}
 	
 	if(logdataptr)
@@ -1285,6 +1288,25 @@ static PyObject* composite(PyObject *self, PyObject *args)
 
 	//Py_INCREF(Py_None);
 	//return Py_None;
+	return Py_BuildValue("f", ret);
+}
+
+static PyObject* project(PyObject *self, PyObject *args)
+{
+	char *hole = NULL;
+	int core = 0;
+	char *type = NULL;
+	float offset = 0.0f;
+
+	if (!PyArg_ParseTuple(args, "sisf", &hole, &core, &type, &offset))
+		return NULL;
+
+	char* annotation = NULL;
+	int coretype = USERDEFINEDTYPE;
+	getTypeAndAnnot(type, coretype, &annotation);
+
+	float ret = (float) correlator.project(hole, core, coretype, annotation, offset);
+
 	return Py_BuildValue("f", ret);
 }
 
@@ -1389,7 +1411,7 @@ static PyObject* first_splice(PyObject *self, PyObject *args)
 	if (append == 0)
 		ret = correlator.splice(hole, coreid, coretype, annotation);
 	else
-		ret = correlator.splice(hole, coreid, coretype, annotation, true);
+		ret = correlator.splice(hole, coreid, coretype, annotation, true); // brg never called
 
 	g_data = ""; 
 	if(ret > 0 ) 
@@ -1492,6 +1514,7 @@ static PyObject* undoAppend(PyObject *self, PyObject *args)
 static PyObject* append_at_begin(PyObject *self, PyObject *args)
 {
 	correlator.splice();
+	correlator.generateSpliceHole();
 	return Py_None;
 }
 
@@ -2206,25 +2229,23 @@ static int getType(char *typeStr)
 }
 
 // 9/9/2013 brg
-// Given typeStr, attempt to find an integer type - if none can be found,
+// Given typeStr, find matching integer type. If it's not a built-in type,
 // set outAnnot = to typeStr. This logic is duplicated throughout py_func.cpp.
 // I'm not in love with using parameters for output, but it's less offensive
 // than the duplication by a long shot.
 static bool getTypeAndAnnot(char *typeStr, int &outType, char **outAnnot)
 {
-	bool foundType = false;
-	const int type = getType(typeStr);
-	if (type != -1)
+	bool builtInType = false;
+	outType = getType(typeStr);
+	if (outType != USERDEFINEDTYPE)
 	{
-		outType = type;
 		*outAnnot = NULL;
-		foundType = true;
+		builtInType = true;
 	}
 	else
 	{
-		outType = USERDEFINEDTYPE;
 		*outAnnot = typeStr;
 	}
 
-	return foundType;
+	return builtInType;
 }
