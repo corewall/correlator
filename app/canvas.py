@@ -325,6 +325,7 @@ class DataCanvas(wxBufferedWindow):
 		self.autocoreNo = [] 
 
 		# type, min, max, coef, smooth_mode, continous_type[True/False]
+		# 7/17/2014 brgtodo: looks like range only has one element per type, try dict keyed on type name?
 		self.range = [] 
 		self.continue_flag = True 
 		self.timeseries_flag = False 
@@ -622,9 +623,9 @@ class DataCanvas(wxBufferedWindow):
 
 
 	def UpdateSMOOTH(self, type, smooth):
-		for r in self.range :
-			if r[0] == type :
-				newrange = type, r[1], r[2], r[3], smooth, r[5] 
+		for r in self.range:
+			if r[0] == type:
+				newrange = type, r[1], r[2], r[3], smooth, r[5]
 				self.range.remove(r)
 				self.range.append(newrange)
 				break
