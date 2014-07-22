@@ -2,6 +2,7 @@ import wx
 
 from importManager import py_correlator
 
+import constants as const
 import dialog
 
 # parse routines for members maintained as numeric/boolean/etc rather than a string
@@ -18,6 +19,22 @@ def ParseDecimateToken(decToken):
 	except ValueError:
 		return 1
 
+def ParseSmoothToken(smoothToken):
+	if smoothToken == "":
+		return SmoothData()
+	else:
+		toks = smoothToken.split()
+		width = int(toks[0])
+		unit = const.DEPTH if toks[1] == "Depth(cm)" else const.POINTS
+		if toks[2] == "UnsmoothedOnly":
+			style = const.UNSMOOTHED
+		elif toks[2] == "SmoothedOnly":
+			style = const.SMOOTHED
+		elif toks[2] == "Smoothed&Unsmoothed":
+			style = const.BOTH
+
+	return SmoothData(width, unit, style)
+
 def MakeRangeString(min, max):
 	return "Range: (" + min + ", " + max + ")"
 
@@ -33,13 +50,17 @@ def MakeRangeList(data, name):
 	min = float(data.min)
 	max = float(data.max)
 	coef = max - min
-	if isinstance(data, HoleData):
-		continuous = data.holeSet.continuous
-		smooth = data.holeSet.smooth
-	else: # DownholeLogTable
-		continuous = True
-		smooth = data.smooth
-	return [name, min, max, coef, smooth, continuous]
+	smoothStyle = data.holeSet.smooth.style
+	continuous = data.holeSet.continuous if isinstance(data, HoleData) else True
+
+	return [name, min, max, coef, smoothStyle, continuous]
+
+""" Convert "Natural Gamma" to "NaturalGamma" """
+def FixType(typeStr):
+	if typeStr == "Natural Gamma":
+		typeStr = "NaturalGamma"
+	return typeStr
+
 
 # FileMetadata a better name?
 class TableData:
@@ -82,6 +103,38 @@ class HoleData(TableData):
 	def __repr__(self):
 		return "Hole %s: %s %s %s %s %s %s %s %s %s %s" % (self.name, self.dataName, self.depth, self.min, self.max, self.data, str(self.enable), self.file, self.origSource, self.updatedTime, self.byWhom)
 
+class SmoothData:
+	def __init__(self, width=-1, unit=-1, style=-1):
+		self.width = width
+		self.unit = unit
+		self.style = style
+	
+	def __repr__(self):
+		if self.IsValid():
+			return "{} {} {}".format(self.width, self.GetUnitStr(), self.GetStyleStr())
+		else:
+			return ""
+
+	def IsValid(self):
+		return self.width != -1 and self.unit != -1 and self.style != -1
+
+	def GetUnitStr(self):
+		if self.unit == const.POINTS:
+			return "Points"
+		else:
+			return "Depth(cm)"
+
+	def GetStyleStr(self):
+		if self.style == const.SMOOTHED:
+			return "SmoothedOnly"
+		elif self.style == const.UNSMOOTHED:
+			return "UnsmoothedOnly"
+		else:
+			return "Smoothed&Unsmoothed"
+
+	def MakeToken(self):
+		return str(self)
+
 class HoleSet:
 	def __init__(self, type):
 		self.holes = {} # dict of HoleData objects
@@ -89,7 +142,7 @@ class HoleSet:
 		self.type = type # built-in type string e.g. NaturalGamma, Pwave, or Other
 		self.continuous = True # if False, discrete
 		self.decimate = '[no decimate]' # numeric?
-		self.smooth = '[no smooth]'
+		self.smooth = SmoothData()
 		self.min = '[no min]'
 		self.max = '[no max]'
 		self.site = None # parent SiteData
@@ -132,6 +185,9 @@ class HoleSet:
 	# return string for use in title of a hole set's CollapsiblePane
 	def GetTitleStr(self):
 		return self.type + " - Range: (" + self.min + ", " + self.max + "); " + self.continuous + "; " + "Decimate: " + str(self.decimate) + "; " + "Smoothing: " + self.smooth
+
+	def GetSmoothStr(self):
+		return str(self.smooth)
 
 class SiteData:
 	def __init__(self, name):
@@ -225,14 +281,16 @@ class SiteData:
 		return result
 
 	def SetDecimate(self, type, decimate):
+		type = FixType(type)
 		if type in self.holeSets:
 			self.holeSets[type].decimate = decimate
 		else:
 			print "Couldn't find type " + type + " in site " + self.name + " holeSets"
 
-	def SetSmooth(self, type, smoothStr):
+	def SetSmooth(self, type, smooth):
+		type = FixType(type)
 		if type in self.holeSets:
-			self.holeSets[type].smooth = smoothStr
+			self.holeSets[type].smooth = smooth
 		else:
 			print "Couldn't find type " + type + " in site " + self.name + " holeSets"
 
@@ -341,7 +399,7 @@ class DownholeLogTable(TableData):
 		self.min = '[no min]'
 		self.max = '[no max]'
 		self.decimate = '[no decimate]'
-		self.smooth = '[no smooth]'
+		self.smooth = SmoothData()
 		self.gui = None # LogTableGUI
 
 	def __repr__(self):
@@ -364,7 +422,7 @@ class DownholeLogTable(TableData):
 		if len(tokens) >= 11:
 			self.decimate = ParseDecimateToken(tokens[10])
 		if len(tokens) >= 12:
-			self.smooth = tokens[11]
+			self.smooth = ParseSmoothToken(tokens[11])
 
 class DBView:
 	def __init__(self, parent, dataFrame, parentPanel, siteList):
@@ -697,19 +755,32 @@ class DBView:
 			if ret == 1:
 				self.parent.LOCK = 1
 
-			# set range
-			holeRange = MakeRangeList(hole, type)
-			self.parent.Window.range.append(holeRange)
+			# set type's range if necessary
+			typeRangeFound = False
+			for range in self.parent.Window.range:
+				if range[0] == type:
+					typeRangeFound = True
+					break
+
+			if not typeRangeFound:
+				holeRange = MakeRangeList(hole, type)
+				self.parent.Window.range.append(holeRange)
 
 		# load cull tables
 		culledTypes = []
 		for hole in holeList:
 			if hole.holeSet.type not in culledTypes and hole.holeSet.IsCullEnabled():
-				print "loading cull"
 				coretype, annot = self.parent.TypeStrToInt(hole.holeSet.type)
-				print "coretype = " + str(coretype) + ", annot = " + annot
 				py_correlator.openCullTable(sitePath + hole.holeSet.cullTable.file, coretype, annot)
 				culledTypes.append(hole.holeSet.type)
+
+		# smoothing occurs at HoleSet level
+		smoothedTypes = []
+		for hole in holeList:
+			if hole.holeSet.type not in smoothedTypes and hole.holeSet.smooth is not None:
+				sm = hole.holeSet.smooth
+				py_correlator.smooth(hole.holeSet.type, sm.width, sm.unit)
+				smoothedTypes.append(hole.holeSet.type)
 
 		# load log
 		logLoaded = False
@@ -986,7 +1057,7 @@ class HoleSetGUI:
 		contIdx = 0 if self.holeSet.continuous else 1
 		self.continuousChoice.SetSelection(contIdx)
 		self.decimateText.SetLabel(MakeDecimateString(self.holeSet.decimate))
-		self.smoothText.SetLabel(self.holeSet.smooth)
+		self.smoothText.SetLabel(self.holeSet.GetSmoothStr())
 		self.cullEnabledCb.Enable(self.holeSet.HasCull())
 		self.cullEnabledCb.SetValue(self.holeSet.IsCullEnabled())
 

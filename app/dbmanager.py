@@ -41,7 +41,7 @@ class DataFrame(wx.Panel):
 		self.importLabel = [] 
 		self.logHole = "" 
 		self.cullData = [] 
-		self.selectBackup = None
+		self.selectBackup = []
 		self.selectedDataType = ""
 		self.selectedDepthType = ""
 		self.SetBackgroundColour(wx.Colour(255, 255, 255))
@@ -111,19 +111,19 @@ class DataFrame(wx.Panel):
 		self.sideNote.AddPage(self.treeListPanel, 'Data List')
 		self.tree.GetMainWindow().Bind(wx.EVT_RIGHT_DOWN, self.SelectTREE)
 
-		#self.dbPanelParent = wx.Panel(self.sideNote, -1)
-		#self.dbPanelParent.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.dbPanelParent = wx.Panel(self.sideNote, -1)
+		self.dbPanelParent.SetSizer(wx.BoxSizer(wx.VERTICAL))
 
-# 		self.dbPanel = wx.ScrolledWindow(self.dbPanelParent, -1)
-# 		self.dbPanel.SetScrollbars(5, 5, 1200, 800) #1/6/2014 brgtodo
-# 		self.dbPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
-# 		self.dbPanel.SetBackgroundColour('white')
+ 		self.dbPanel = wx.ScrolledWindow(self.dbPanelParent, -1)
+ 		self.dbPanel.SetScrollbars(5, 5, 1200, 800) #1/6/2014 brgtodo
+ 		self.dbPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+ 		self.dbPanel.SetBackgroundColour('white')
 
 		# 1/6/2014 brg: On Mac, only left half of vertical scrollbar appears. Seems the ScrolledWindow
 		# is too wide for the parent window. Add to a Panel so we can use a fudged border on the right
 		# to make things look correct.
-		#self.dbPanelParent.GetSizer().Add(self.dbPanel, 1, wx.EXPAND | wx.RIGHT, 9)
-		#self.sideNote.AddPage(self.dbPanelParent, 'Data List v2')
+		self.dbPanelParent.GetSizer().Add(self.dbPanel, 1, wx.EXPAND | wx.RIGHT, 9)
+		self.sideNote.AddPage(self.dbPanelParent, 'Data List v2')
 
 		self.dataPanel = dialog.CoreSheet(self.sideNote, 120, 100)
 		self.sideNote.AddPage(self.dataPanel, 'Generic Data')
@@ -4814,7 +4814,7 @@ class DataFrame(wx.Panel):
 		self.ValidateDatabase()
 		self.LoadSessionReports()
 		siteNames = self.LoadSiteNames()
-		self.loadedSites = self.LoadSites(siteNames) # return instead?
+		self.loadedSites = self.LoadSites(siteNames)
 
 	def LoadSiteNames(self):
 		dbRootFile = open(self.parent.DBPath + 'db/datalist.db', 'r+')
@@ -4825,7 +4825,7 @@ class DataFrame(wx.Panel):
 				continue
 			else:
 				loadedSites.append(site)
-		return loadedSites
+		return sorted(loadedSites)
 
 	# parse single-line types
 	def ParseOthers(self, site, siteLines):
@@ -4879,7 +4879,7 @@ class DataFrame(wx.Panel):
 			elif tokens[0] == 'typeDecimate':
 				site.holeSets[curType].decimate = ParseDecimateToken(tokens[1])
 			elif tokens[0] == 'typeSmooth':
-				site.holeSets[curType].smooth = tokens[1]
+				site.holeSets[curType].smooth = ParseSmoothToken(tokens[1])
 			elif tokens[0] == 'typeMin':
 				site.holeSets[curType].min = tokens[1]
 			elif tokens[0] == 'typeMax':
@@ -4938,7 +4938,7 @@ class DataFrame(wx.Panel):
 			self.ParseHoleSets(site, siteLines)
 			self.ParseHoles(site, siteLines)
 			self.ParseOthers(site, siteLines)
-			site.dump()
+			#site.dump()
 			loadedSites.append(site)
 
 		return loadedSites
@@ -4951,7 +4951,7 @@ class DataFrame(wx.Panel):
 		# self - old dbmanager (has required variables and methods)
 		# self.dbPanel - Notebook panel in which to embed DBView
 		# self.loadedSites - list of sites loaded from root datalist.db
-		#self.dbview = DBView(self.parent, self, self.dbPanel, self.loadedSites)
+		self.dbview = DBView(self.parent, self, self.dbPanel, self.loadedSites)
 
 		root_f = open(self.parent.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
