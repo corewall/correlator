@@ -1,6 +1,7 @@
 cd ../bin/static
-rm correlator.py
 rm canvas.py
+rm constants.py
+rm correlator.py
 rm dbmanager.py
 rm dialog.py
 rm frames.py
@@ -19,6 +20,7 @@ ls
 cd ../../app
 
 cp canvas.py ../bin/static/
+cp constants.py ../bin/static/
 cp correlator.py ../bin/static/
 cp dbmanager.py ../bin/static/
 cp dialog.py ../bin/static/
