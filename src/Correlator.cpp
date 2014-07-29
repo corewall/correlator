@@ -34,9 +34,7 @@
 #include <Strat.h>
 #include <Value.h>
 
-#ifdef DEBUG
 #include <iostream>
-#endif
 
 using namespace std;
 
