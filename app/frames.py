@@ -437,10 +437,10 @@ class CompositePanel():
 		self.growthPlotCanvas.Show(True)
 
 		self.grPanel = wx.Panel(self.plotNote, -1)
-		self.grText = wx.StaticText(self.grPanel, -1, "Super status of some kind.")
+		#self.grText = wx.StaticText(self.grPanel, -1, "Super status of some kind.")
 		self.grPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.grPanel.GetSizer().Add(self.growthPlotCanvas, 1, wx.EXPAND)
-		self.grPanel.GetSizer().Add(self.grText, 0, wx.EXPAND)
+		#self.grPanel.GetSizer().Add(self.grText, 0, wx.EXPAND)
 
 		self.plotNote.AddPage(self.corrPlotCanvas, 'Evaluation')
 		#self.plotNote.AddPage(self.growthPlotCanvas, 'Growth Rate')
@@ -562,9 +562,10 @@ class CompositePanel():
 
 		vbox.Add(wx.StaticText(self.mainPanel, -1, '*Sub menu for tie: On dot, right mouse button.', (5, 5)), 0, wx.BOTTOM, 5)
 
-		self.projectButton = wx.Button(self.mainPanel, -1, "Project...", size=(buttonsize, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnProject, self.projectButton)
-		vbox.Add(self.projectButton, 0, wx.BOTTOM, 5)
+		# brg 7/29/2014: temporarily remove for 1.8 build
+		#self.projectButton = wx.Button(self.mainPanel, -1, "Project...", size=(buttonsize, 30))
+		#self.mainPanel.Bind(wx.EVT_BUTTON, self.OnProject, self.projectButton)
+		#vbox.Add(self.projectButton, 0, wx.BOTTOM, 5)
 
 		self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine Table", size =(150, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
