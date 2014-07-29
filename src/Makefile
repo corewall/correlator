@@ -3,10 +3,11 @@
 #	
 #	
 COMPILER=g++
-MYFLAGS=-I../include  -m32
+#MYFLAGS=-I../include -g -m64 -DCORRELATOR_MACOSX -DDEBUG
+MYFLAGS=-I../include -m64 -DCORRELATOR_MACOSX
 # MYFLAGS=-mmacosx-version-min=10.4 -I../include -I/Users/julian/dev/EVL/corelyzer/branches/required/mac/src/xerces-c-src_2_8_0/include -arch i386 
 
-LIBS = -m32
+LIBS = -m64
 #LIBS=-L../../xerces-c_2_8_0-x86-macosx-gcc_4_0/lib -lxerces-c  
 #LIBS=-L../../xerces-c_2_8_0-x86-macosx-gcc_4_0/lib -lxerces-c -lm -ldl 
 # LIBS=-L/Users/julian/dev/EVL/corelyzer/branches/required/mac/src/xerces-c-src_2_8_0/lib -lxerces-c -lm -ldl 
