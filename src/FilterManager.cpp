@@ -330,6 +330,7 @@ void FilterManager::apply( void )
 					holeptr = m_dataptr->getHole(i);
 					if(holeptr->getTopAvailable() == false)
 					{
+						cout << "setting cull top to 0.0, top unavailable" << endl;
 						cullFilter->setCullTop(0.0);
 					}
 					
