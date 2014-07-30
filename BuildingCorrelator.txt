@@ -1,0 +1,25 @@
+-------------------------------------------------------------------
+Building standalone Correlator packages on Windows with PyInstaller
+Brian Grivna, 7/29/2014
+-------------------------------------------------------------------
+
+First, you'll need to build 32-bit and 64-bit .pyd files, which requires Visual Studio 2008.
+Open the py_correlator solution in
+
+    [correlator root]/win32
+
+then build whatever flavor (Debug/Release, 32/64-bit) your heart desires.
+Once you have .pyd files, you're ready to create a Correlator executable
+using PyInstaller (version 2.0 at present).
+
+PyInstaller spec files live in the app directory:
+- correlator.spec for 32-bit
+- correlator64.spec for 64-bit
+
+To build 64-bit, use a 64-bit python.  Ditto for 32-bit. The following command will do the rest:
+
+[python] [path to pyinstaller.py] [specfile]
+
+The generated .exe can be found in [correlator root]/app/dist
+
+To force a rebuild, touch any .py file and run the above command again.
