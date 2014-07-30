@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="ks_c_5601-1987"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="Core"
 	ProjectGUID="{8D6B40DE-AFDE-4357-8483-3DA850CF7A29}"
 	RootNamespace="Core"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
 			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
 		/>
 	</Platforms>
 	<ToolFiles>
@@ -63,6 +67,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\spam.dll"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -81,9 +87,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -152,6 +155,145 @@
 				CommandLine="copy $(OutDir)\\Core.lib ..\\lib\\"
 			/>
 		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="../include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+				DisableSpecificWarnings="4267;4996;4244;4018"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\spam.dll"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="copy $(OutDir)\\spam.dll ..\\lib\\"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="../include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="copy $(OutDir)\\Core.lib ..\\lib\\"
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -166,7 +308,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\AutoCorrelater.cpp"
+				RelativePath="..\src\AutoCorrelator.cpp"
 				>
 			</File>
 			<File
@@ -178,7 +320,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\Correlater.cpp"
+				RelativePath="..\src\Correlator.cpp"
 				>
 			</File>
 			<File
@@ -202,11 +344,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\FilterManager.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\src\GaussianFilter.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\GrapeValue.cpp"
+				RelativePath="..\src\GraValue.cpp"
 				>
 			</File>
 			<File
@@ -223,6 +369,10 @@
 			</File>
 			<File
 				RelativePath="..\src\ReflectanceValue.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\Section.cpp"
 				>
 			</File>
 			<File
@@ -252,7 +402,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\include\AutoCorrelater.h"
+				RelativePath="..\include\AutoCorrelator.h"
 				>
 			</File>
 			<File
@@ -268,7 +418,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\include\Correlater.h"
+				RelativePath="..\include\Correlator.h"
 				>
 			</File>
 			<File
@@ -292,11 +442,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\include\FilterManager.h"
+				>
+			</File>
+			<File
 				RelativePath="..\include\GaussianFilter.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\GrapeValue.h"
+				RelativePath="..\include\GraValue.h"
 				>
 			</File>
 			<File
@@ -313,6 +467,10 @@
 			</File>
 			<File
 				RelativePath="..\include\ReflectanceValue.h"
+				>
+			</File>
+			<File
+				RelativePath="..\include\Section.h"
 				>
 			</File>
 			<File
