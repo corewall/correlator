@@ -2,6 +2,7 @@
 
 # build the py_correlator library and put it in the correct place (CORE_DIRECTORY/lib)
 echo "building py_correlator library"
+
 /usr/local/bin/python setup.py install --install-lib=$CORE_DIRECTORY/lib
 #python2.5 setup.py install --install-lib=$CORE_DIRECTORY/lib
 #python setup.py install --install-lib=/Users/hjhur/Project/correlator-svn/lib

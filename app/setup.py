@@ -5,10 +5,11 @@ Usage:
     python setup.py py2app
 """
 
+#from distutils.core import setup, Extension
 from setuptools import setup, Extension
 import os
 
-#from distutils.core import
+import py2exe
 
 coreDir = os.environ["CORE_DIRECTORY"]
 
@@ -35,3 +36,15 @@ setup(
 		))),
     ext_modules=[module1]
 )
+
+# branch version - we're not even using setup.py so it shouldn't matter, but
+# wanted to hold onto this for now just in case...
+#===============================================================================
+# setup (
+#        name = 'py_correlator',
+#        version = '0.1',
+#        options = {'py2exe': {'bundle_files': 1, 'compressed': True}},
+#        author = 'Hyejung Hur',
+#        description = 'This is a python-correlator interface that enables you to use python for correlator apps',
+#        ext_modules = [module1])
+#===============================================================================
