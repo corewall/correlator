@@ -1045,38 +1045,36 @@ class AboutDialog(wx.Dialog):
 
 
 class BackgroundPanel(wx.Panel):
-        def __init__(self, parent, background, panel_size):
-                wx.Panel.__init__(self, parent, -1, size=panel_size, style=wx.WANTS_CHARS)
-        
-                img = wx.Image(background, wx.BITMAP_TYPE_ANY)
-                self.buffer = wx.BitmapFromImage(img)
-                dc = wx.BufferedDC(wx.ClientDC(self), self.buffer)
-            
-                self.Bind(wx.EVT_PAINT, self.OnPaint)
+	def __init__(self, parent, background, panel_size):
+		wx.Panel.__init__(self, parent, -1, size=panel_size, style=wx.WANTS_CHARS)
+		img = wx.Image(background, wx.BITMAP_TYPE_ANY)
+		self.buffer = wx.BitmapFromImage(img)
+		dc = wx.BufferedDC(wx.ClientDC(self), self.buffer)
+		self.Bind(wx.EVT_PAINT, self.OnPaint)
 
-        def OnPaint(self, evt):
-                dc = wx.BufferedPaintDC(self, self.buffer)
-        
+	def OnPaint(self, evt):
+		dc = wx.BufferedPaintDC(self, self.buffer)
+
 # 9/17/2013 brg: rename to splash?
 class OpenFrame(wx.Dialog):
 	def __init__(self, parent, id, user, version):
-                panel_size=(800, 370)
+		panel_size=(800, 370)
 		wx.Dialog.__init__(self, parent, id, "Correlator " + version, size=panel_size,style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
 		panel = BackgroundPanel(self, 'images/corewall_suite.jpg', panel_size)
- 
+
 		self.version = version
 		wx.StaticText(self, -1, 'COMPOSITE, SPLICE, CORE-LOG INTEGRATION, AGE MODEL', (60, 30))
 
 		wx.StaticText(self, -1, 'User Name : ', (250, 220))
 		self.name = wx.TextCtrl(self, -1, user, (340, 220), size=(150, 25))
-		     
+
 		okBtn = wx.Button(panel, -1, "Start", (500, 213), size=(80, 30))
 		self.Bind(wx.EVT_BUTTON, self.OnSTART, okBtn)
 
 		self.user = user
 		if platform_name[0] == "Windows" :
-			cancelBtn = wx.Button(panel, wx.ID_CANCEL, "Cancel", (580, 220), size=(80, 30))
+			cancelBtn = wx.Button(panel, wx.ID_CANCEL, "Cancel", (580, 213), size=(80, 30))
 
 		wx.HyperlinkCtrl(self, -1, 'Go to Correlator Web', 'http://www.corewall.org', (60, 300))
 

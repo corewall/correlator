@@ -428,7 +428,11 @@ class CompositePanel():
 		self.corrPlotCanvas.Show(True)
 
 		# Growth Rate graph panel
-		self.growthPlotCanvas = BetterLegendPlotCanvas(self.plotNote)
+		self.grPanel = wx.Panel(self.plotNote, -1)
+		#self.grText = wx.StaticText(self.grPanel, -1, "Status text")
+		self.grPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+
+		self.growthPlotCanvas = BetterLegendPlotCanvas(self.grPanel)
 		self.growthPlotCanvas.SetEnableGrid(True)
 		self.growthPlotCanvas.SetEnableTitle(False)
 		self.growthPlotCanvas.SetEnableLegend(True)
@@ -436,14 +440,10 @@ class CompositePanel():
 		self.growthPlotCanvas.SetBackgroundColour('White')
 		self.growthPlotCanvas.Show(True)
 
-		self.grPanel = wx.Panel(self.plotNote, -1)
-		#self.grText = wx.StaticText(self.grPanel, -1, "Super status of some kind.")
-		self.grPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.grPanel.GetSizer().Add(self.growthPlotCanvas, 1, wx.EXPAND)
 		#self.grPanel.GetSizer().Add(self.grText, 0, wx.EXPAND)
 
 		self.plotNote.AddPage(self.corrPlotCanvas, 'Evaluation')
-		#self.plotNote.AddPage(self.growthPlotCanvas, 'Growth Rate')
 		self.plotNote.AddPage(self.grPanel, "Growth Rate")
 
 		# add Notebook to main panel
