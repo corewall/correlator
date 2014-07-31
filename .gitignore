@@ -4,7 +4,9 @@
 *.[ao]
 
 # ignored directories
+app/build/
 app/dist/
+
 
 # this and a few subfiles are in the repo, but I don't think it's being used at all
 bin/Correlator.app/
@@ -17,4 +19,6 @@ bin/static/Correlator.app/
 lib/
 releases/
 
-
+win32/Debug/
+win32/Release/
+win32/x64/
