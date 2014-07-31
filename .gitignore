@@ -1,2 +1,20 @@
+# ignored files
 .svn
 .DS_Store
+*.[ao]
+
+# ignored directories
+app/dist/
+
+# this and a few subfiles are in the repo, but I don't think it's being used at all
+bin/Correlator.app/
+
+bin/CorrelatorNoFrame.app/
+bin/public-export/
+bin/static/build/
+bin/static/Correlator.app/
+
+lib/
+releases/
+
+
