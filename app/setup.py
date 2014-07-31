@@ -9,8 +9,6 @@ Usage:
 from setuptools import setup, Extension
 import os
 
-import py2exe
-
 coreDir = os.environ["CORE_DIRECTORY"]
 
 # 1/30/2014 brg: argv_emulation allows dropping of files onto application bundle to
