@@ -2879,31 +2879,26 @@ class FilterPanel():
 
 		grid31 = wx.FlexGridSizer(2, 4)
 		grid31.Add(wx.StaticText(panel3, -1, ""), 0, wx.RIGHT, 3)
-		self.cmd = wx.ComboBox(panel3, -1, ">", (0,0), (50,-1), ("<", ">"), wx.CB_DROPDOWN)
-		self.cmd.SetForegroundColour(wx.BLACK)
-		self.cmd.SetEditable(False)
+		self.cmd = wx.Choice(panel3, -1, (0,0), (50,-1), choices=[">", "<"], name=">")
 
 		grid31.Add(self.cmd, 0, wx.RIGHT, 9)
 		self.valueA = wx.TextCtrl(panel3, -1, "9999.99", size=(80, 25), style=wx.SUNKEN_BORDER )
 		grid31.Add(self.valueA, 0, wx.RIGHT, 9)
 
-		# brgtodo 7/22/2014 this checkbox is always disabled and set to True - unnecessary.
-		self.onlyCheck = wx.CheckBox(panel3, -1, ' ')
-		self.onlyCheck.SetValue(True)
-		self.onlyCheck.Enable(False)
-		grid31.Add(self.onlyCheck, 0, wx.BOTTOM, 9)
+		onlyCheck = wx.CheckBox(panel3, -1, ' ')
+		onlyCheck.SetValue(True)
+		onlyCheck.Enable(False)
+		grid31.Add(onlyCheck, 0, wx.BOTTOM, 9)
 
 		grid31.Add(wx.StaticText(panel3, -1, "                     "), 0, wx.RIGHT, 3)
-		self.signcmd = wx.ComboBox(panel3, -1, "<", (0,0), (50,-1), ("<", ">"), wx.CB_DROPDOWN) 
-		self.signcmd.SetForegroundColour(wx.BLACK)
-		self.signcmd.SetEditable(False)
+		self.signcmd = wx.Choice(panel3, -1, (0,0), (50,-1), choices=[">", "<"], name="<")
 		grid31.Add(self.signcmd, 0, wx.RIGHT, 9)
 		self.valueB = wx.TextCtrl(panel3, -1, "-9999.99", size=(80, 25), style=wx.SUNKEN_BORDER )
 		grid31.Add(self.valueB, 0, wx.RIGHT, 9)
 		self.orCheck = wx.CheckBox(panel3, -1, ' ')
 		grid31.Add(self.orCheck, 0, wx.BOTTOM, 15)
 
-		wx.StaticText(panel3, -1, "data value", (20, 110))
+		wx.StaticText(panel3, -1, "cull range(s)", (10, 105))
 		if platform_name[0] == "Windows" :	
 			sizer3.Add(grid31, 0, wx.LEFT, 9)
 		else :		
@@ -2914,9 +2909,7 @@ class FilterPanel():
 			buttonsize = 140
 			
 		grid32 = wx.FlexGridSizer(1, 2)
-		self.optcmd = wx.ComboBox(panel3, -1, "Use all cores", (0,0), (buttonsize, -1), \
-				("Use all cores", "Use cores numbered <="), wx.CB_DROPDOWN)
-		self.optcmd.SetEditable(False)	
+		self.optcmd = wx.Choice(panel3, -1, (0,0), (buttonsize, -1), choices=["Use all cores", "Use cores numbered <="], name="Use all cores")
 		grid32.Add(self.optcmd, 0, wx.RIGHT, 5)
 		self.valueE = wx.TextCtrl(panel3, -1, "999", size=(80, 25), style=wx.SUNKEN_BORDER )
 		grid32.Add(self.valueE, 0, wx.BOTTOM, 9)
@@ -2957,7 +2950,6 @@ class FilterPanel():
 		self.valueD.SetValue("5.0")
 		self.cmd.SetStringSelection(">")
 		self.valueA.SetValue("9999.99")
-		self.onlyCheck.SetValue(True)
 		self.signcmd.SetStringSelection("<")
 		self.valueB.SetValue("-9999.99")
 		self.orCheck.SetValue(False)
@@ -3049,7 +3041,6 @@ class FilterPanel():
 		self.valueD.SetValue("5.0")
 		self.cmd.SetStringSelection(">")
 		self.valueA.SetValue("9999.99")
-		self.onlyCheck.SetValue(True)
 		self.signcmd.SetStringSelection("<")
 		self.valueB.SetValue("-9999.99")
 		self.orCheck.SetValue(False)
@@ -3153,7 +3144,6 @@ class FilterPanel():
 		self.valueD.SetValue("5.0")
 		self.cmd.SetStringSelection(">")
 		self.valueA.SetValue("9999.99")
-		self.onlyCheck.SetValue(True)
 		self.signcmd.SetStringSelection("<")
 		self.valueB.SetValue("-9999.99")
 		self.orCheck.SetValue(False)
@@ -3395,7 +3385,11 @@ class FilterPanel():
 		coreno = self.cullUndo[10]
 
 		# [ "All Holes", "False", "5.0", ">", "999.99", True, "<", "-999.99", False, "Use all cores", "999" ]
-		self.cullUndo = [ self.all.GetValue(), self.nocull.GetValue(), self.valueD.GetValue(), self.cmd.GetValue(), self.valueA.GetValue(), self.onlyCheck.GetValue(), self.signcmd.GetValue(), self.valueB.GetValue(), self.orCheck.GetValue(), self.optcmd.GetValue(), self.valueE.GetValue()]
+		self.cullUndo = [ self.all.GetValue(), self.nocull.GetValue(), self.valueD.GetValue(),
+						self.cmd.GetStringSelection(), self.valueA.GetValue(),
+						self.signcmd.GetStringSelection(),
+						self.valueB.GetValue(), self.orCheck.GetValue(),
+						self.optcmd.GetStringSelection(), self.valueE.GetValue()]
 
 		self.all.SetStringSelection(opt)
 		self.nocull.SetValue(cull)
@@ -3406,7 +3400,6 @@ class FilterPanel():
 		self.valueD.SetValue(top)
 		self.cmd.SetStringSelection(sign1)
 		self.valueA.SetValue(value1)
-		self.onlyCheck.SetValue(flag1)
 		self.signcmd.SetStringSelection(sign2)
 		self.valueB.SetValue(value2)
 		self.orCheck.SetValue(flag2)
@@ -3454,10 +3447,10 @@ class FilterPanel():
 			self.valueB.SetValue("-999.99")
 
 		sign1 = 1
-		if self.cmd.GetValue() == "<" :
+		if self.cmd.GetStringSelection() == "<" :
 			sign1 = 2
 		sign2 = 1
-		if self.signcmd.GetValue() == "<" :
+		if self.signcmd.GetStringSelection() == "<" :
 			sign2 = 2
 
 		join = 1
@@ -3465,7 +3458,7 @@ class FilterPanel():
 			join = 2
 
 		cullNumber = -1
-		if self.optcmd.GetValue() != "Use all cores" :
+		if self.optcmd.GetStringSelection() != "Use all cores" :
 			if self.valueE.GetValue() != "" :
 				cullNumber = int(self.valueE.GetValue())
 			else :
@@ -3502,9 +3495,9 @@ class FilterPanel():
 			self.parent.UpdateLogData()
 
 		self.cullBackup = [ self.all.GetStringSelection(), self.nocull.GetValue(),
-							self.valueD.GetValue(),	self.cmd.GetValue(), self.valueA.GetValue(),
-							self.onlyCheck.GetValue(), self.signcmd.GetValue(), self.valueB.GetValue(),
-							self.orCheck.GetValue(), self.optcmd.GetValue(), self.valueE.GetValue()]
+							self.valueD.GetValue(),	self.cmd.GetStringSelection(), self.valueA.GetValue(),
+							self.signcmd.GetStringSelection(), self.valueB.GetValue(),
+							self.orCheck.GetValue(), self.optcmd.GetStringSelection(), self.valueE.GetValue()]
 
 		if type  != 'All Holes' and type != 'Log' and type != 'Spliced Records' :
 			size = len(type)
