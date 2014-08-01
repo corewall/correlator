@@ -5,6 +5,28 @@ from importManager import py_correlator
 import constants as const
 import dialog
 
+from datetime import datetime
+
+# filename maker
+def MakeFileName(type, title, filetype):
+	datatype = type
+	if type == "NaturalGamma":
+		datatype = "ngfix"
+	elif type == "Susceptibility":
+		datatype = "susfix"
+	elif type == "Reflectance":
+		datatype = "reflfix"
+	elif type == "Bulk Density(GRA)":
+		datatype = "grfix" 
+	elif type == "Pwave":
+		datatype = "pwfix" 
+	elif type == "Other":
+		datatype = "otherfix" 
+
+	filename = title + '.' + datatype + '.' + filetype + '.table' 
+	return filename
+
+
 # parse routines for members maintained as numeric/boolean/etc rather than a string
 def ParseEnableToken(enableToken):
 	return enableToken == 'Enable'
@@ -87,6 +109,12 @@ class TableData:
 
 	def IsEnabled(self):
 		return self.enable
+
+	def UpdateTimestamp(self):
+		tempstamp = str(datetime.today()) # parse date and hh:mm time
+		last = tempstamp.find(":", 0)
+		last = tempstamp.find(":", last+1)
+		self.updatedTime = tempstamp[0:last]
 
 class HoleData(TableData):
 	def __init__(self, name):
@@ -280,22 +308,50 @@ class SiteData:
 				result = tab
 		return result
 
-	def SetDecimate(self, type, decimate):
+	def FindHoleSet(self, type):
 		type = FixType(type)
 		if type in self.holeSets:
-			self.holeSets[type].decimate = decimate
+			return self.holeSets[type]
 		else:
 			print "Couldn't find type " + type + " in site " + self.name + " holeSets"
+			return None
+
+	def SetDecimate(self, type, decimate):
+		hs = self.FindHoleSet(type)
+		if hs is not None:
+			self.holeSets[type].decimate = decimate
 
 	def SetSmooth(self, type, smooth):
-		type = FixType(type)
-		if type in self.holeSets:
+		hs = self.FindHoleSet(type)
+		if hs is not None:
 			self.holeSets[type].smooth = smooth
-		else:
-			print "Couldn't find type " + type + " in site " + self.name + " holeSets"
+
+	def GetCull(self, type):
+		hs = self.FindHoleSet(type)
+		if hs is not None:
+			return hs.cullTable
+
+	def SetCull(self, type, curUser):
+		print "SetCull for type {}".format(type)
+		hs = self.FindHoleSet(type)
+		if hs is not None:
+			if hs.cullTable is None:
+				hs.cullTable = CullTable()
+				hs.cullTable.file = MakeFileName(type, self.name, 'cull')
+				hs.cullTable.enable = True
+				print "no cull file exists, creating new {}".format(hs.cullTable.file)
+			else:
+				print "cull file exists, updating user and timestamp"
+
+			# always update whether or not we created a new cull table file
+			hs.cullTable.UpdateTimestamp()
+			hs.cullTable.byWhom = curUser
 
 	def GetDir(self):
 		return self.name + '/'
+
+	def GetPath(self, prefix):
+		return prefix + self.GetDir()
 
 class AffineData(TableData):
 	def __init__(self):
@@ -338,7 +394,7 @@ class UniCullTable(TableData):
 	def FromTokens(self, tokens):
 		TableData.FromTokens(self, tokens)
 	def GetName(self):
-		return "Univeral Cull Table"
+		return "Universal Cull Table"
 
 # cull table that applies to a single HoleSet
 class CullTable(TableData):
@@ -348,6 +404,7 @@ class CullTable(TableData):
 		return "CullTable " + TableData.__repr__(self)
 	def FromTokens(self, tokens):
 		TableData.FromTokens(self, tokens)
+		print self
 	def GetName(self):
 		return "Cull Table"
 
