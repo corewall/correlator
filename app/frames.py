@@ -2322,13 +2322,13 @@ class AgeDepthPanel():
 		self.firstPntDepth = 0.0, self.startY
 
 	def OnAgeData(self, evt):
-                selected_item = "" 
-                if platform_name[0] == "Windows" :
-                        age_list = self.ageList.GetSelections()
-                        for sel in age_list :
-                                selected_item = self.ageList.GetString(sel)
-                else :
-                        selected_item = self.ageList.GetStringSelection()
+		selected_item = "" 
+		if platform_name[0] == "Windows" :
+			age_list = self.ageList.GetSelections()
+			for sel in age_list :
+				selected_item = self.ageList.GetString(sel) # brgtodo 7/31/2014 missing break?
+		else :
+			selected_item = self.ageList.GetStringSelection()
 
 		self.selectedAge = False 
 		end = selected_item.find("*handpick", 0)
@@ -2424,7 +2424,7 @@ class AgeDepthPanel():
 		else :
 			pickmcd = rate * pickdepth
 			pickmcd = int(100.0 * pickmcd) / 100.0;
-                strItem = ""
+			strItem = ""
 		str_ba = str(pickdepth)
 		max_ba = len(str_ba)
 		start_ba = str_ba.find('.', 0)
@@ -2432,8 +2432,8 @@ class AgeDepthPanel():
 		max_ba = len(str_ba)
 		space_bar = ""
 		if platform_name[0] == "Windows" :
-                        space_bar = " "
-                        
+			space_bar = " "
+
 		if max_ba < 3 :
 			strItem = str(pickdepth) + "0 \t"
 		else :
@@ -2523,8 +2523,8 @@ class AgeDepthPanel():
 		max_ba = len(str_ba)
 		space_bar = ""
 		if platform_name[0] == "Windows" :
-                        space_bar = " "
-                        
+			space_bar = " "
+
 		if max_ba < 3 :
 			strItem = str(pickdepth) + "0 \t"  + str(pickdepth) + "0 \t" + str(pickdepth) + "0 \t"
 		else :
@@ -2830,7 +2830,7 @@ class FilterPanel():
 		sz.Add(wuPanel, 0)
 
 		sz.Add(wx.StaticText(smoothGrid, -1, "Display"), 0)
- 		self.plotcmd = wx.Choice(smoothGrid, -1, choices=["UnsmoothedOnly", "SmoothedOnly",
+		self.plotcmd = wx.Choice(smoothGrid, -1, choices=["UnsmoothedOnly", "SmoothedOnly",
 													  "Smoothed&Unsmoothed"], name="UnsmoothedOnly")
 		sz.Add(self.plotcmd, 0, wx.BOTTOM, 5)
 
@@ -3534,8 +3534,6 @@ class PreferencesPanel():
 	def OnRegisterHole(self, holename):
 		self.all.Append(holename)
 		self.all.SetSelection(self.prevSelected)
-		if platform_name[0] == "Windows"  :
-			self.all.SetValue(self.all.GetString(self.prevSelected)) #brgtodo 7/23/2014
 
 	def OnToolbarWindow(self, event):
 		if self.tool.IsChecked() == True : 
