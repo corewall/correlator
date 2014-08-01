@@ -2926,8 +2926,8 @@ class FilterPanel():
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCull, cullBtn)
 		gridApply3.Add(cullBtn)
 
-		self.cullBackup = [ "All Holes", False, "5.0", ">", "9999.99", True, "<", "-9999.99", False, "Use all cores", "999" ]
-		self.cullUndo = [ "All Holes", False, "5.0", ">", "9999.99", True, "<", "-9999.99", False, "Use all cores", "999" ]
+		self.cullBackup = [ "All Holes", False, "5.0", ">", "9999.99", "<", "-9999.99", False, "Use all cores", "999" ]
+		self.cullUndo = [ "All Holes", False, "5.0", ">", "9999.99", "<", "-9999.99", False, "Use all cores", "999" ]
 		self.cullundoBtn = wx.Button(self.mainPanel, -1, "Undo", size=(120, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUNDOCull, self.cullundoBtn)
 		self.cullundoBtn.Enable(False)
@@ -2957,10 +2957,10 @@ class FilterPanel():
 		self.valueE.SetValue("999")
 		self.deciBackup = [ "All Holes", "1"]
 		self.smBackup = []
-		self.cullBackup = [ "All Holes", False, "5.0", ">", "9999.99", True, "<", "-9999.99", False, "Use all cores", "999" ]
+		self.cullBackup = [ "All Holes", False, "5.0", ">", "9999.99", "<", "-9999.99", False, "Use all cores", "999" ]
 		self.deciUndo = [ "All Holes", "1"]
 		self.smUndo = []
-		self.cullUndo = [ "All Holes", False, "5.0", ">", "9999.99", True, "<", "-9999.99", False, "Use all cores", "999" ]
+		self.cullUndo = [ "All Holes", False, "5.0", ">", "9999.99", "<", "-9999.99", False, "Use all cores", "999" ]
 		self.smundoBtn.Enable(False)
 		self.cullundoBtn.Enable(False)
 		self.deciundoBtn.Enable(False)
@@ -3048,7 +3048,6 @@ class FilterPanel():
 		self.valueE.SetValue("999")
 
 		if holeSet.HasCull() and holeSet.IsCullEnabled():
-			# create Cull tuple: (type, enabled, distFromTop, range1val, range1sign, range2val, range2sign, coreValue)
 			cullFilePath = holeSet.site.GetPath(self.parent.DBPath + "db/") + holeSet.cullTable.file
 
 			self.cull.SetValue(True)
@@ -3082,15 +3081,15 @@ class FilterPanel():
 		if typeStr == 'All Holes' or typeStr == 'Log' or typeStr == 'Spliced Records':
 			return
 
- 		site = self.parent.GetLoadedSite()
- 		strippedType = typeStr[4:] # strip off 'All '
+		site = self.parent.GetLoadedSite()
+		strippedType = typeStr[4:] # strip off 'All '
 		if strippedType == "Natural Gamma":
 			strippedType = "NaturalGamma"
- 		if strippedType in site.holeSets:
- 			holeSet = site.holeSets[strippedType]
- 		else:
- 			print "Couldn't find type " + strippedType + " in site.holeSets, bailing"
- 			return
+		if strippedType in site.holeSets:
+			holeSet = site.holeSets[strippedType]
+		else:
+			print "Couldn't find type " + strippedType + " in site.holeSets, bailing"
+			return
 
 		self.decimate.SetValue(str(holeSet.decimate))
 		self.UpdateSmoothGui(holeSet.smooth)
@@ -3326,19 +3325,8 @@ class FilterPanel():
 		self.smundoBtn.Enable(True)
 		self.smUndo = self.smBackup
 
-		smoothEnable = self.GetSmoothEnable()
-		smoothWidth = self.GetSmoothWidth()
-		smoothUnit = self.GetSmoothUnit()
-		smoothUnitStr = self.unitscmd.GetStringSelection()
-		smoothStyle = self.GetSmoothStyle()
-		#smoothStyleStr = self.plotcmd.GetStringSelection()
-
 		site = self.parent.GetLoadedSite()
 		type = self.all.GetStringSelection()
-
-		if not smoothEnable:
-			smoothStyle = -1
-			smoothUnit = -1
 
 		if type == 'All Holes' or type == 'Spliced Records':
 			for i in range(1, self.all.GetCount()):
@@ -3355,6 +3343,7 @@ class FilterPanel():
 				self.UpdateSmoothSplice()
 			if type == 'All Holes' :
 				self.parent.UpdateSMOOTH_SPLICE(False)
+				smoothStyle = self.GetSmoothStyle() if self.GetSmoothEnable else -1
 				self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
 		elif type == 'Log':
 			self.UpdateSmoothLog()
@@ -3377,14 +3366,13 @@ class FilterPanel():
 		top = self.cullUndo[2]
 		sign1 = self.cullUndo[3]
 		value1 = self.cullUndo[4]
-		flag1 = self.cullUndo[5]
-		sign2 = self.cullUndo[6]
-		value2 = self.cullUndo[7]
-		flag2 = self.cullUndo[8]
-		type = self.cullUndo[9]
-		coreno = self.cullUndo[10]
+		sign2 = self.cullUndo[5]
+		value2 = self.cullUndo[6]
+		flag2 = self.cullUndo[7]
+		type = self.cullUndo[8]
+		coreno = self.cullUndo[9]
 
-		# [ "All Holes", "False", "5.0", ">", "999.99", True, "<", "-999.99", False, "Use all cores", "999" ]
+		# [ "All Holes", "False", "5.0", ">", "999.99", "<", "-999.99", False, "Use all cores", "999" ]
 		self.cullUndo = [ self.all.GetValue(), self.nocull.GetValue(), self.valueD.GetValue(),
 						self.cmd.GetStringSelection(), self.valueA.GetValue(),
 						self.signcmd.GetStringSelection(),
