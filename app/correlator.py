@@ -23,9 +23,10 @@ from datetime import datetime
 from importManager import py_correlator
 
 import canvas
+import dbmanager
 import dialog
 import frames
-import dbmanager
+import globals as glb
 import version as vers
 import model
 
@@ -125,8 +126,8 @@ class MainFrame(wx.Frame):
 		self.LOCK = 0
 		self.IDLE = 0
 		self.FOCUS = 1
-		self.Directory = ""
-		self.DBPath = "-"
+		self.Directory = "" # last-opened directory for import (etc?)
+		glb.DBPath = "-"
 		self.client = None
 		self.loadedSite = None
 
@@ -343,7 +344,7 @@ class MainFrame(wx.Frame):
 				self.OnShowMessage("Error", "It doesn't have datalist.db", 1)
 				return
 			datalist = []
-			dblist_f = open(self.DBPath + 'db/datalist.db', 'r+')
+			dblist_f = open(glb.DBPath + 'db/datalist.db', 'r+')
 			for line in dblist_f :
 				if len(line) > 0 :
 					token = line.split()
@@ -353,7 +354,7 @@ class MainFrame(wx.Frame):
 					datalist.append(first_token)
 			dblist_f.close()
 
-			dblist_f = open(self.DBPath + 'db/datalist.db', 'a+')
+			dblist_f = open(glb.DBPath + 'db/datalist.db', 'a+')
 			importdb_f = open(path + '/datalist.db', 'r+')
 			workingdir = os.getcwd()
 			os.chdir(path)
@@ -377,13 +378,13 @@ class MainFrame(wx.Frame):
 							os.chdir(path)
 						else :
 							dblist_f.write("\n"+ first_token+"\n")
-							cmd = "cp -rf " +  first_token + " " + self.DBPath + "db/"
+							cmd = "cp -rf " +  first_token + " " + glb.DBPath + "db/"
 							if sys.platform == 'win32' :
-								os.chdir(self.DBPath+ "db")
+								os.chdir(glb.DBPath+ "db")
 								if os.access(first_token, os.F_OK) == False :
 									os.mkdir(first_token)
 								os.chdir(path + "\\" + first_token)
-								cmd = "copy * \"" + self.DBPath + "db\\" + first_token + "\""
+								cmd = "copy * \"" + glb.DBPath + "db\\" + first_token + "\""
 								#print "[DEBUG] " + cmd
 								os.system(cmd)								
 								os.chdir(path)
@@ -422,13 +423,13 @@ class MainFrame(wx.Frame):
 					os.chdir(path)
 				else :
 					dblist_f.write("\n"+ first_token+"\n")
-					os.chdir(self.DBPath+ "db")
+					os.chdir(glb.DBPath+ "db")
 					if os.access(first_token, os.F_OK) == False :
                                                 os.mkdir(first_token)
 					os.chdir(path)
-					cmd = "cp -rf * " + self.DBPath + "db/" + first_token
+					cmd = "cp -rf * " + glb.DBPath + "db/" + first_token
 					if sys.platform == 'win32' :
-						cmd = "copy * \"" + self.DBPath + "db\\" + first_token + "\""
+						cmd = "copy * \"" + glb.DBPath + "db\\" + first_token + "\""
 						#print "[DEBUG] " + cmd
 						os.system(cmd)
 					else :
@@ -523,11 +524,11 @@ class MainFrame(wx.Frame):
 	def OnUpdateReport(self):
 		self.logFileptr.close()
 		#self.Window.reportText.Clear()
-		#self.Window.reportText.LoadFile(self.DBPath + global_logName)
+		#self.Window.reportText.LoadFile(glb.DBPath + global_logName)
 		self.OnReOpenLog()
 
 	def OnReOpenLog(self):
-		global_logFile = open(self.DBPath + global_logName, "a+")
+		global_logFile = open(glb.DBPath + global_logName, "a+")
 		self.logFileptr = global_logFile
 
 	def SetPT_SIZEUP(self, evt):
@@ -1156,7 +1157,7 @@ class MainFrame(wx.Frame):
 			
 
 	def OnPATH(self, event):
-		opendlg = wx.DirDialog(self, "Select Directory", self.DBPath)
+		opendlg = wx.DirDialog(self, "Select Directory", glb.DBPath)
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		opendlg.Destroy()
@@ -1170,14 +1171,14 @@ class MainFrame(wx.Frame):
 				if dir_name == "/db" :
 					path = path[0:path_len] 
 			#print "[DEBUG]", path
-			oldDBPath = self.DBPath 
+			oldDBPath = glb.DBPath 
 			if platform_name[0] == "Windows" :
-				self.DBPath = path  + "\\"
+				glb.DBPath = path  + "\\"
 			else :
-				self.DBPath = path  + "/"
+				glb.DBPath = path  + "/"
 
-			self.dataFrame.PathTxt.SetValue("Path : " + self.DBPath)
-			prefile = self.DBPath + "db"
+			self.dataFrame.PathTxt.SetValue("Path : " + glb.DBPath)
+			prefile = glb.DBPath + "db"
 			if os.access(prefile, os.F_OK) == False :
 				os.mkdir(prefile)
 			self.dataFrame.dataPanel.ClearGrid()
@@ -1191,7 +1192,7 @@ class MainFrame(wx.Frame):
 			self.Window.selectedType = ""
 
 			# CHECK PATH is CORRELATOR DIRECTORY...... or NOT
-			#print "[DEBUG] Data Repository path is changed : " + self.DBPath
+			#print "[DEBUG] Data Repository path is changed : " + glb.DBPath
 
 			if os.access(path+"/tmp", os.F_OK) == False :
 				os.mkdir(path + "/tmp")
@@ -1561,7 +1562,7 @@ class MainFrame(wx.Frame):
 		
 		self.WritePreferenceItem("tab", self.Window.sideNote.GetSelection(), f)
 		self.WritePreferenceItem("path", self.Directory, f)
-		self.WritePreferenceItem("dbpath", self.DBPath, f)
+		self.WritePreferenceItem("dbpath", glb.DBPath, f)
 
 		winPT = self.topMenu.GetPosition()
 		self.WritePreferenceItem("toolbar", str(winPT[0]) + " " + str(winPT[1]), f)
@@ -2608,7 +2609,7 @@ class MainFrame(wx.Frame):
 			win_width = win_width + 8
 			win_height = self.Height + 76
 		
-		# 4/10/2014 brg: init depends on self.DBPath among others...
+		# 4/10/2014 brg: init depends on glb.DBPath among others...
 		self.dataFrame = dbmanager.DataFrame(self)
 		
 		conf_str = ""
@@ -2840,39 +2841,39 @@ class MainFrame(wx.Frame):
 				str_temp = self.config.get("applications", "dbpath")
 				if len(str_temp) > 0 :
 					if os.access(str_temp, os.F_OK) == True :
-						str_len =  len(str_temp) -1
-						self.DBPath = str_temp
+						str_len = len(str_temp) - 1
+						glb.DBPath = str_temp
 						if platform_name[0] == "Windows" :
 							if str_temp[str_len] != "\\" :
-								self.DBPath = str_temp + "\\"
+								glb.DBPath = str_temp + "\\"
 						else :
 							if str_temp[str_len] != "/" :
-								self.DBPath = str_temp + "/"
-						self.dataFrame.PathTxt.SetValue("Path : " + self.DBPath)
+								glb.DBPath = str_temp + "/"
+						self.dataFrame.PathTxt.SetValue("Path : " + glb.DBPath)
 					else :
-						self.DBPath = myPath
-						self.dataFrame.PathTxt.SetValue("Path : " + self.DBPath)
+						glb.DBPath = myPath
+						self.dataFrame.PathTxt.SetValue("Path : " + glb.DBPath)
 		else :
-			self.DBPath = myPath
-			self.dataFrame.PathTxt.SetValue("Path : " + self.DBPath)
+			glb.DBPath = myPath
+			self.dataFrame.PathTxt.SetValue("Path : " + glb.DBPath)
 
 
-		if self.DBPath == "-" :
-			self.DBPath = User_Dir  + "/Documents/Correlator/" + vers.BaseVersion  + "/"
+		if glb.DBPath == "-" :
+			glb.DBPath = User_Dir  + "/Documents/Correlator/" + vers.BaseVersion  + "/"
 			if platform_name[0] == "Windows" :
-				self.DBPath =  User_Dir  + "\\Correlator\\" + vers.BaseVersion + "\\"
-			self.dataFrame.PathTxt.SetValue("Path : " + self.DBPath)
+				glb.DBPath =  User_Dir  + "\\Correlator\\" + vers.BaseVersion + "\\"
+			self.dataFrame.PathTxt.SetValue("Path : " + glb.DBPath)
 			
-			if os.access(self.DBPath, os.F_OK) == False :
-				os.mkdir(self.DBPath)
-			prefile = self.DBPath + "db"
+			if os.access(glb.DBPath, os.F_OK) == False :
+				os.mkdir(glb.DBPath)
+			prefile = glb.DBPath + "db"
 			if os.access(prefile, os.F_OK) == False :
 				os.mkdir(prefile)
 			#print "[DEBUG] " + prefile + " is created"
 
-		#print "[DEBUG] Data Repository path  is " + self.DBPath
+		#print "[DEBUG] Data Repository path  is " + glb.DBPath
 
-		global_logFile = open(self.DBPath + global_logName, "a+")
+		global_logFile = open(glb.DBPath + global_logName, "a+")
 		global_logFile.write("Start of Session:\n")
 		s = "BY " + getpass.getuser()  + "\n"
 		global_logFile.write(s)

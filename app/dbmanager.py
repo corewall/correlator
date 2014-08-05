@@ -16,6 +16,7 @@ import xml.sax
 from importManager import py_correlator
 
 import dialog
+import globals as g
 import xml_handler
 from model import * # brgtodo 4/24/2014: Remove import *
 
@@ -53,7 +54,7 @@ class DataFrame(wx.Panel):
 		self.sideNote.SetBackgroundColour(wx.Colour(255, 255, 255))
 		
 		self.pathPanel = wx.Panel(self, -1)
-		self.PathTxt = wx.TextCtrl(self.pathPanel, -1, "Path : " + self.parent.DBPath)
+		self.PathTxt = wx.TextCtrl(self.pathPanel, -1, "Path : " + g.DBPath)
 		self.PathTxt.SetEditable(False)
 
 		self.importbtn = wx.Button(self.pathPanel, -1, "Import")
@@ -161,7 +162,7 @@ class DataFrame(wx.Panel):
 		elif opId == 2 : # VIEW FILE
 			filename = self.tree.GetItemText(self.selectedIdx, 8)
 			if filename != "" :
-				filename = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + filename
+				filename = g.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + filename
 				self.fileText.Clear()
 				self.fileText.LoadFile(filename)
 				self.sideNote.SetSelection(2)
@@ -243,10 +244,10 @@ class DataFrame(wx.Panel):
 				oldfilename = self.tree.GetItemText(self.selectedIdx, 8)
 				self.tree.SetItemText(self.selectedIdx,  filename, 8)
 
-				fullname = self.parent.DBPath +'db/' + title + '/' + filename
+				fullname = g.DBPath +'db/' + title + '/' + filename
 				if sys.platform == 'win32' :
 					workingdir = os.getcwd()
-					os.chdir(self.parent.DBPath + 'db\\' + title)
+					os.chdir(g.DBPath + 'db\\' + title)
 					
 					cmd = 'copy ' + oldfilename + ' ' + filename
 					os.system(cmd)
@@ -254,10 +255,10 @@ class DataFrame(wx.Panel):
 					os.system(cmd)
 					os.chdir(workingdir)
 				else :
-					cmd = 'cp \"' + self.parent.DBPath +'db/' + title + '/' + oldfilename + '\" \"' + self.parent.DBPath +'db/' + title + '/' + filename + '\"' 
+					cmd = 'cp \"' + g.DBPath +'db/' + title + '/' + oldfilename + '\" \"' + g.DBPath +'db/' + title + '/' + filename + '\"' 
 					#print "[DEBUG] " + cmd
 					os.system(cmd)
-					cmd = 'rm \"' + self.parent.DBPath +'db/' + title + '/' + oldfilename + '\"'
+					cmd = 'rm \"' + g.DBPath +'db/' + title + '/' + oldfilename + '\"'
 					# not do delete...
 					os.system(cmd)
 
@@ -267,7 +268,7 @@ class DataFrame(wx.Panel):
 				stamp = tempstamp[0:last]
 				self.tree.SetItemText(self.selectedIdx, stamp, 6)
 				self.OnUPDATE_DB_FILE(title, parentItem)
-		elif opId == 19 :
+		elif opId == 19 : # appears to be Enable
 			totalcount = self.tree.GetChildrenCount(self.selectedIdx, False)
 			item = self.tree.GetItemParent(self.selectedIdx)
 			if totalcount > 0 :
@@ -281,7 +282,7 @@ class DataFrame(wx.Panel):
 				self.tree.SetItemText(self.selectedIdx, 'Enable', 2)
 				item = self.tree.GetItemParent(item)
 			self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
-		elif opId == 20 :
+		elif opId == 20 : # appears to be Disable
 			totalcount = self.tree.GetChildrenCount(self.selectedIdx, False)
 			item = self.tree.GetItemParent(self.selectedIdx)
 			if totalcount > 0 :
@@ -301,7 +302,7 @@ class DataFrame(wx.Panel):
 			print "Export XML Data!"
 			# EXPORT XML TABLES
 			type = self.tree.GetItemText(self.selectedIdx, 1)
-			path = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10)
+			path = g.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10)
 			filename = self.tree.GetItemText(self.selectedIdx, 8) 
 			if type == "AFFINE" :
 				self.SAVE_AFFINE_TO_XML(path, filename)
@@ -355,7 +356,7 @@ class DataFrame(wx.Panel):
 				if filename == self.parent.logName :
 					self.parent.logFileptr.close()
 					log = True 
-				filename = self.parent.DBPath + filename
+				filename = g.DBPath + filename
 				self.fileText.Clear()
 				self.fileText.LoadFile(filename)
 				self.sideNote.SetSelection(2)
@@ -375,11 +376,11 @@ class DataFrame(wx.Panel):
 						if sys.platform == 'win32' :
 							filename = self.tree.GetItemText(select, 1)
 							workingdir = os.getcwd()
-							os.chdir(self.parent.DBPath + 'log/')
+							os.chdir(g.DBPath + 'log/')
 							os.system('del \"' + filename + '\"')
 							os.chdir(workingdir)
 						else :
-							filename = self.parent.DBPath + 'log/' + self.tree.GetItemText(select, 1)
+							filename = g.DBPath + 'log/' + self.tree.GetItemText(select, 1)
 							os.system('rm \"'+ filename + '\"')
 						self.tree.Delete(select)
 			if deleted_flag == True :
@@ -390,7 +391,7 @@ class DataFrame(wx.Panel):
 			if ret == wx.ID_OK : 
 				if sys.platform == 'win32' :
 					workingdir = os.getcwd()
-					os.chdir(self.parent.DBPath + 'log/')
+					os.chdir(g.DBPath + 'log/')
 					totalcount = self.tree.GetChildrenCount(self.selectedIdx, False)
 					if totalcount > 0 :
 						child = self.tree.GetFirstChild(self.selectedIdx)
@@ -411,12 +412,12 @@ class DataFrame(wx.Panel):
 						child_item = child[0]
 						filename = 'log/' + self.tree.GetItemText(child_item, 1)
 						if filename != self.parent.logName :
-							os.system('rm \"'+ self.parent.DBPath + filename + '\"')
+							os.system('rm \"'+ g.DBPath + filename + '\"')
 						for k in range(1, totalcount) :
 							child_item = self.tree.GetNextSibling(child_item)
 							filename = 'log/' + self.tree.GetItemText(child_item, 1)
 							if filename != self.parent.logName :
-								os.system('rm \"'+ self.parent.DBPath +filename + '\"')
+								os.system('rm \"'+ g.DBPath +filename + '\"')
 
 				self.tree.Delete(self.selectedIdx)
 				self.LoadSessionReports()
@@ -772,7 +773,7 @@ class DataFrame(wx.Panel):
 
 			# LOADING DATA
 			self.parent.OnNewData(None)
-			path = self.parent.DBPath + 'db/' + title + "/"
+			path = g.DBPath + 'db/' + title + "/"
 
 			holes = []
 			if dlg.splice.GetValue() == True or isType == True :
@@ -1508,7 +1509,7 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(newline, path, 9)
 			self.tree.SetItemText(newline, title + '/', 10)
 
-			fullname = self.parent.DBPath +'db/' + title + '/' + filename 
+			fullname = g.DBPath +'db/' + title + '/' + filename 
 			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
 				os.chdir(self.parent.Directory)
@@ -1541,7 +1542,7 @@ class DataFrame(wx.Panel):
 			site = title[last+1:max]
 
 			filename = str(title) + '.' + str(idx) + '.age.model'
-			fullname = self.parent.DBPath +'db/' + title + '/' + filename 
+			fullname = g.DBPath +'db/' + title + '/' + filename 
 			last = path.find(".xml", 0)
 			if last >= 0 :
 				self.handler.init()
@@ -1604,7 +1605,7 @@ class DataFrame(wx.Panel):
 			site = title[last+1:max]
 
 			filename = str(title) + '.' + str(idx) + '.age-depth.dat'
-			fullname = self.parent.DBPath +'db/' + title + '/' + filename 
+			fullname = g.DBPath +'db/' + title + '/' + filename 
 			last = path.find(".xml", 0)
 			if last >= 0 :
 				self.handler.init()
@@ -1742,7 +1743,7 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(newline, path, 9)
 			self.tree.SetItemText(newline, title + '/', 10)
 
-			fullname = self.parent.DBPath +'db/' + title + '/' + filename 
+			fullname = g.DBPath +'db/' + title + '/' + filename 
 			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
 				os.chdir(self.parent.Directory)
@@ -1773,7 +1774,7 @@ class DataFrame(wx.Panel):
 				parentItem = self.tree.GetItemParent(parentItem)
 				title = self.tree.GetItemText(parentItem, 0)
 
-				source = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + self.tree.GetItemText(self.selectedIdx, 8)
+				source = g.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + self.tree.GetItemText(self.selectedIdx, 8)
 				#outfile = self.tree.GetItemText(self.selectedIdx, 8)
 				outfile = filename + ".dat"
 
@@ -1803,7 +1804,7 @@ class DataFrame(wx.Panel):
 				if sys.platform == 'win32' :
 					workingdir = os.getcwd()
 					# ------------------------
-					os.chdir(self.parent.DBPath + 'db\\' + title)
+					os.chdir(g.DBPath + 'db\\' + title)
 					cmd = 'copy ' + self.tree.GetItemText(self.selectedIdx, 8)  + ' \"' + path + '\\' + str(outfile) + '\"'
 					os.system(cmd)
 					os.chdir(workingdir)
@@ -1826,12 +1827,12 @@ class DataFrame(wx.Panel):
 
 				if sys.platform == 'win32' :
 					workingdir = os.getcwd()
-					os.chdir(self.parent.DBPath + 'log\\')					
+					os.chdir(g.DBPath + 'log\\')					
 					cmd = 'copy ' +  outfile  + ' \"' + path + '/' + outfile + '\"'
 					os.system(cmd)
 					os.chdir(workingdir)
 				else :	
-					source = self.parent.DBPath + 'log/' + self.tree.GetItemText(self.selectedIdx, 1)
+					source = g.DBPath + 'log/' + self.tree.GetItemText(self.selectedIdx, 1)
 					cmd = 'cp \"' +  source  + '\" \"' + path + '/' + outfile + '\"'
 					os.system(cmd)
 				self.parent.OnShowMessage("Information", "Successfully exported", 1)
@@ -1851,27 +1852,27 @@ class DataFrame(wx.Panel):
 		if sys.platform == 'win32' :
 			# ------- [NEED TO DO] not delete file, move the directory to backup
 			workingdir = os.getcwd()
-			os.chdir(self.parent.DBPath)
+			os.chdir(g.DBPath)
 			os.system('rd /s /q db')
 			os.system('mkdir db')			
 			os.chdir(workingdir)
 		else :
 			# ------- not delete file, move the directory to backup
-			#if os.access(self.parent.DBPath + 'backup/' , os.F_OK) == False :
-			#	os.mkdir(self.parent.DBPath + 'backup/')
-			#newdirname = '\'' +self.parent.DBPath + 'backup/' + str(datetime.today()) + '/\''
-			#os.system('mv ' + self.parent.DBPath + 'db/ ' + newdirname)
+			#if os.access(g.DBPath + 'backup/' , os.F_OK) == False :
+			#	os.mkdir(g.DBPath + 'backup/')
+			#newdirname = '\'' +g.DBPath + 'backup/' + str(datetime.today()) + '/\''
+			#os.system('mv ' + g.DBPath + 'db/ ' + newdirname)
 
 			# brg 9/17/2013 above backup directory appears to be a half-implemented feature:
 			# reverting to normal file deletion for now.
-			os.system('rm -rf ' + self.parent.DBPath + 'db/')
-			os.system('mkdir '+ self.parent.DBPath + 'db/')
+			os.system('rm -rf ' + g.DBPath + 'db/')
+			os.system('mkdir '+ g.DBPath + 'db/')
 	
 		self.parent.logFileptr.write("Delete All Dataset \n\n")
 
 
 		log_report = self.tree.AppendItem(self.root, 'Session Reports')
-		list = os.listdir(self.parent.DBPath + 'log/')
+		list = os.listdir(g.DBPath + 'log/')
 		for dir in list :
 			if dir != ".DS_Store" :
 				report_item = self.tree.AppendItem(log_report, 'Report')
@@ -2034,12 +2035,12 @@ class DataFrame(wx.Panel):
 				if sys.platform == 'win32' :
 					filename = self.tree.GetItemText(selectItem, 8)
 					workingdir = os.getcwd()
-					os.chdir(self.parent.DBPath + 'db/' + title + '/')
+					os.chdir(g.DBPath + 'db/' + title + '/')
 					os.system('del \"' + filename + '\"')
 					os.chdir(workingdir)
 					self.parent.logFileptr.write("Delete " + filename + "\n\n")
 				else :
-					filename = self.parent.DBPath + 'db/' + title + '/' + self.tree.GetItemText(selectItem, 8)
+					filename = g.DBPath + 'db/' + title + '/' + self.tree.GetItemText(selectItem, 8)
 					#  --- not to delete
 					os.system('rm \"'+ filename + '\"')
 					self.parent.logFileptr.write("Delete " + filename + "\n\n")
@@ -2058,12 +2059,12 @@ class DataFrame(wx.Panel):
 						if sys.platform == 'win32' :
 							filename = self.tree.GetItemText(child_item, 8)
 							workingdir = os.getcwd()
-							os.chdir(self.parent.DBPath + 'db/' + title + '/')
+							os.chdir(g.DBPath + 'db/' + title + '/')
 							os.system('del \"' + filename + '\"')
 							os.chdir(workingdir)
 							self.parent.logFileptr.write("Delete " + filename + "\n\n")
 						else :
-							filename = self.parent.DBPath + 'db/' + title + '/' + self.tree.GetItemText(child_item, 8)
+							filename = g.DBPath + 'db/' + title + '/' + self.tree.GetItemText(child_item, 8)
 							# ----- not to delete
 							os.system('rm \"'+ filename + '\"')
 							self.parent.logFileptr.write("Delete " + filename + "\n\n")
@@ -2072,12 +2073,12 @@ class DataFrame(wx.Panel):
 							if sys.platform == 'win32' :
 								filename = self.tree.GetItemText(child_item, 8)
 								workingdir = os.getcwd()
-								os.chdir(self.parent.DBPath + 'db/' + title + '/')
+								os.chdir(g.DBPath + 'db/' + title + '/')
 								os.system('del \"' + filename + '\"')
 								os.chdir(workingdir)
 								self.parent.logFileptr.write("Delete " + filename + "\n\n")
 							else :
-								filename = self.parent.DBPath + 'db/' + title + '/' + self.tree.GetItemText(child_item, 8)
+								filename = g.DBPath + 'db/' + title + '/' + self.tree.GetItemText(child_item, 8)
 								# ----- not to delete
 								os.system('rm \"'+ filename + '\"')
 								self.parent.logFileptr.write("Delete " + filename + "\n\n")
@@ -2091,20 +2092,20 @@ class DataFrame(wx.Panel):
 					# whole leg-site Directory
 					if sys.platform == 'win32' :
 						workingdir = os.getcwd()
-						os.chdir(self.parent.DBPath + 'db/')
+						os.chdir(g.DBPath + 'db/')
 						os.system('rd /s /q ' + title)
 						os.chdir(workingdir)
-						self.parent.logFileptr.write("Delete " + self.parent.DBPath + 'db/' + title + "\n\n")
+						self.parent.logFileptr.write("Delete " + g.DBPath + 'db/' + title + "\n\n")
 					else :
 						# ----- not to delete
-						os.system('rm -rf ' + self.parent.DBPath + 'db/' + title)
-						self.parent.logFileptr.write("Delete " + self.parent.DBPath + 'db/' + title + "\n\n")
+						os.system('rm -rf ' + g.DBPath + 'db/' + title)
+						self.parent.logFileptr.write("Delete " + g.DBPath + 'db/' + title + "\n\n")
 
 
 			#self.OnSAVE_DB_FILE(title, type, hole)
 			self.tree.Delete(selectItem)
 
-			filename = self.parent.DBPath + 'db/' + title + '/datalist.db'
+			filename = g.DBPath + 'db/' + title + '/datalist.db'
 			if os.access(filename, os.F_OK) == True :
 				self.OnUPDATE_DB_FILE(title, titleItem)
 
@@ -2156,12 +2157,12 @@ class DataFrame(wx.Panel):
 
 	def OnSAVE_DB_FILE(self, title, type, hole):
 
-		filename = self.parent.DBPath + 'db/' + title + '/datalist.db'
+		filename = g.DBPath + 'db/' + title + '/datalist.db'
 
 		if type == '*' :
  			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
-				os.chdir(self.parent.DBPath + 'db\\' + title)
+				os.chdir(g.DBPath + 'db\\' + title)
 				cmd = 'del datalist.db'
 				os.chdir(workingdir)				
 			else :	
@@ -2169,7 +2170,7 @@ class DataFrame(wx.Panel):
 				cmd = 'rm \"' + filename + '\"'
 				os.system(cmd)
 
-			filename = self.parent.DBPath +'db/datalist.db'
+			filename = g.DBPath +'db/datalist.db'
 			fin = open(filename, 'r+')
 			fout = open(filename + '.temp', 'w+')
 			for sub_line in fin :
@@ -2182,7 +2183,7 @@ class DataFrame(wx.Panel):
 
  			if sys.platform == 'win32' :
  				workingdir = os.getcwd()
- 				os.chdir(self.parent.DBPath + 'db')
+ 				os.chdir(g.DBPath + 'db')
  		 		os.system('del datalist.db')	
 				cmd = 'copy datalist.db.temp datalist.db'
 				os.system(cmd)
@@ -2268,7 +2269,7 @@ class DataFrame(wx.Panel):
 		
  		if sys.platform == 'win32' :
  			workingdir = os.getcwd()
- 			os.chdir(self.parent.DBPath + 'db\\' + title)
+ 			os.chdir(g.DBPath + 'db\\' + title)
  		 	os.system('del datalist.db')	
 			cmd = 'rename datalist.db.temp datalist.db'
 			os.system(cmd)
@@ -2283,7 +2284,7 @@ class DataFrame(wx.Panel):
 		title = self.tree.GetItemText(parentItem, 0) 
 		child = self.FindItem(parentItem, 'Image Data')
 		filename = []
-		path = self.parent.DBPath
+		path = g.DBPath
  		if sys.platform == 'win32' :
 			path += '\\db\\' 
 		else :
@@ -2313,7 +2314,7 @@ class DataFrame(wx.Panel):
 		title = self.tree.GetItemText(parentItem, 0) 
 		child = self.FindItem(parentItem, 'Age Models')
 		filename = ""
-		path = self.parent.DBPath + 'db/' + title + '/'
+		path = g.DBPath + 'db/' + title + '/'
 		if child[0] == True :
 			selectItem = child[1]
 
@@ -2430,7 +2431,7 @@ class DataFrame(wx.Panel):
 		title = self.tree.GetItemText(parentItem, 0) 
 		child = self.FindItem(parentItem, 'Age Models')
 		filename = ""
-		path = self.parent.DBPath + 'db/' + title + '/'
+		path = g.DBPath + 'db/' + title + '/'
 		if child[0] == True :
 			selectItem = child[1]
 
@@ -2531,7 +2532,7 @@ class DataFrame(wx.Panel):
 
 		child = self.FindItem(parentItem, 'Age Models')
 		filename = ""
-		path = self.parent.DBPath + 'db/' + title + '/'
+		path = g.DBPath + 'db/' + title + '/'
 		if child[0] == True :
 			selectItem = child[1]
 
@@ -2691,7 +2692,7 @@ class DataFrame(wx.Panel):
 
 
 	def OnUPDATE_DB_FILE(self, title, parentItem):
-		filename = self.parent.DBPath + 'db/' + title + '/datalist.db'
+		filename = g.DBPath + 'db/' + title + '/datalist.db'
 
 		fout = open(filename, 'w+')
 		type = ""
@@ -3009,7 +3010,7 @@ class DataFrame(wx.Panel):
 		if self.firstIdx == None :
 			self.firstIdx = parentItem 
 
-		self.parent.CurrentDir = self.parent.DBPath + "db/" + self.tree.GetItemText(selectItem, 10)
+		self.parent.CurrentDir = g.DBPath + "db/" + self.tree.GetItemText(selectItem, 10)
 
 		decivalue = self.tree.GetItemText(parentItem, 3)
 		self.parent.filterPanel.decimate.SetValue(str(decivalue))
@@ -3028,7 +3029,7 @@ class DataFrame(wx.Panel):
 				self.parent.Window.timeseries_flag = True
 
 		self.parent.LOCK = 0
-		filename = self.parent.DBPath + "db/" + self.tree.GetItemText(selectItem, 10) + self.tree.GetItemText(selectItem, 8) 
+		filename = g.DBPath + "db/" + self.tree.GetItemText(selectItem, 10) + self.tree.GetItemText(selectItem, 8) 
 
 		ret = py_correlator.openHoleFile(filename, -1, type, ndecivalue, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
 		if ret == 1 :
@@ -3092,7 +3093,7 @@ class DataFrame(wx.Panel):
 					elif eld_item == None and type == "ELD" and flag == "Enable" :
 						eld_item = child_item 
 
-			path = self.parent.DBPath + 'db/' + self.tree.GetItemText(parentItem, 0)  + '/'
+			path = g.DBPath + 'db/' + self.tree.GetItemText(parentItem, 0)  + '/'
 			if affine_item != None :
 				py_correlator.openAttributeFile(path +self.tree.GetItemText(affine_item, 8), 0)
 				s = "Affine Table: " + path + self.tree.GetItemText(affine_item, 8) + "\n"
@@ -3501,7 +3502,7 @@ class DataFrame(wx.Panel):
 		if selectItem ==  None :
 			return
 
-		filename = self.parent.DBPath + 'db/' + self.tree.GetItemText(selectItem, 10)
+		filename = g.DBPath + 'db/' + self.tree.GetItemText(selectItem, 10)
 		filename += self.tree.GetItemText(selectItem, 8)
 
 		if filename != "" :
@@ -4155,7 +4156,7 @@ class DataFrame(wx.Panel):
 		#	property = self.tree.GetSelection()
 		#	parentItem = self.tree.GetItemParent(property)
 		#	self.title = self.tree.GetItemText(parentItem, 0)
-		#	self.parent.CurrentDir = self.parent.DBPath + 'db/' + self.title + '/'
+		#	self.parent.CurrentDir = g.DBPath + 'db/' + self.title + '/'
 
 		title_flag = False
 		totalcount = self.tree.GetChildrenCount(property, False)
@@ -4231,7 +4232,7 @@ class DataFrame(wx.Panel):
 
 			self.tree.SetItemText(subroot, self.title + '/', 10)
 
-			dblist_f = open(self.parent.DBPath + 'db/' + self.title + '/datalist.db', 'a+')
+			dblist_f = open(g.DBPath + 'db/' + self.title + '/datalist.db', 'a+')
 			s = '\n' + sub_title + 'table: ' + filename + ': ' + stamp + ': ' + self.parent.user + ': Enable' + ': ' + source_filename +'\n'
                         dblist_f.write(s)
 			dblist_f.close()
@@ -4253,9 +4254,9 @@ class DataFrame(wx.Panel):
 
                 fullname = ''
                 if sys.platform == 'win32' :
-                        fullname = self.parent.DBPath + 'db\\' + self.title + '\\' + filename
+                        fullname = g.DBPath + 'db\\' + self.title + '\\' + filename
                 else :
-                        fullname = self.parent.DBPath + 'db/' + self.title + '/' + filename
+                        fullname = g.DBPath + 'db/' + self.title + '/' + filename
 		return fullname
 
 
@@ -4513,13 +4514,13 @@ class DataFrame(wx.Panel):
 
 			self.tree.SetItemText(subroot, title + '/', 10)
 
-			#dblist_f = open(self.parent.DBPath +'db/' + title + '/datalist.db', 'a+')
+			#dblist_f = open(g.DBPath +'db/' + title + '/datalist.db', 'a+')
 			#s = '\nculltable: ' + filename + ': ' + stamp + ': ' + self.parent.user + ': ' + self.tree.GetItemText(subroot, 2) + '\n'
 			#dblist_f.write(s)
 			#dblist_f.close()
 
 			if isUniversal == True :
-				dblist_f = open(self.parent.DBPath +'db/' + title + '/datalist.db', 'a+')
+				dblist_f = open(g.DBPath +'db/' + title + '/datalist.db', 'a+')
 				s = '\nuni_culltable: ' + filename + ': ' + stamp + ': ' + self.parent.user + ': ' + self.tree.GetItemText(subroot, 2) + ': ' + source_path + '\n'
 				dblist_f.write(s)
 				dblist_f.close()
@@ -4540,7 +4541,7 @@ class DataFrame(wx.Panel):
 			filename = self.tree.GetItemText(selectItem, 8)
 			# why does not update db file here ????
 
-		fullname = self.parent.DBPath + 'db/' + title + '/' + filename
+		fullname = g.DBPath + 'db/' + title + '/' + filename
 		return fullname
 
 
@@ -4551,6 +4552,7 @@ class DataFrame(wx.Panel):
 		return None
 
 
+	""" update dbmanager-side cull tuple """
 	def UpdateCULL(self, type, bcull, cullValue, cullNumber, value1, value2, sign1, sign2, join):
 		if type == 'Log' :
 			print "[DEBUG] Log cull"
@@ -4755,39 +4757,39 @@ class DataFrame(wx.Panel):
 	""" Confirm existence of dirs and files corresponding to sites listed in root-level
 	datalist.db. If not, regenerate root datalist.db to reflect filesystem state. """
 	def ValidateDatabase(self):
-		if os.access(self.parent.DBPath + 'db/', os.F_OK) == False :
-			os.mkdir(self.parent.DBPath + 'db/')
+		if os.access(g.DBPath + 'db/', os.F_OK) == False :
+			os.mkdir(g.DBPath + 'db/')
 
-		if os.access(self.parent.DBPath + 'db/datalist.db', os.F_OK) == False :
-			root_f = open(self.parent.DBPath + 'db/datalist.db', 'w+')
+		if os.access(g.DBPath + 'db/datalist.db', os.F_OK) == False :
+			root_f = open(g.DBPath + 'db/datalist.db', 'w+')
 			root_f.close()
 
 		validate = True 
-		root_f = open(self.parent.DBPath + 'db/datalist.db', 'r+')
+		root_f = open(g.DBPath + 'db/datalist.db', 'r+')
 		for root_line in root_f :
 			list = root_line.splitlines()
 			if list[0] == '' :
 				continue
 			for data_item in list :
-				if os.access(self.parent.DBPath + 'db/' + data_item + '/datalist.db', os.F_OK) == False :
+				if os.access(g.DBPath + 'db/' + data_item + '/datalist.db', os.F_OK) == False :
 					validate = False 
 					break
 
 		root_f.close()
 		if validate == False :
 			print "[ERROR] Data list is not valide, DATALIST WILL BE RE-GENERATED"
-			root_f = open(self.parent.DBPath + 'db/datalist.db', 'w+')
-			list = os.listdir(self.parent.DBPath + 'db/')
+			root_f = open(g.DBPath + 'db/datalist.db', 'w+')
+			list = os.listdir(g.DBPath + 'db/')
 			for dir in list :
 				if dir != "datalist.db" :
 					if dir.find("-", 0) > 0 :
-						if os.access(self.parent.DBPath + 'db/' + dir + '/datalist.db', os.F_OK) == True :
+						if os.access(g.DBPath + 'db/' + dir + '/datalist.db', os.F_OK) == True :
 							root_f.write(dir + "\n")
 			root_f.close()
 
 	def LoadSessionReports(self):
 		log_report = self.tree.AppendItem(self.root, 'Session Reports')
-		list = os.listdir(self.parent.DBPath + 'log/')
+		list = os.listdir(g.DBPath + 'log/')
 		for dir in list :
 			if dir != ".DS_Store" :
 				report_item = self.tree.AppendItem(log_report, 'Report')
@@ -4817,7 +4819,7 @@ class DataFrame(wx.Panel):
 		self.loadedSites = self.LoadSites(siteNames)
 
 	def LoadSiteNames(self):
-		dbRootFile = open(self.parent.DBPath + 'db/datalist.db', 'r+')
+		dbRootFile = open(g.DBPath + 'db/datalist.db', 'r+')
 		loadedSites = []
 		for site in dbRootFile:
 			site = site.strip()
@@ -4930,7 +4932,7 @@ class DataFrame(wx.Panel):
 		for siteName in siteNames:
 			site = SiteData(siteName)
 
-			siteFile = open(self.parent.DBPath + 'db/' + siteName + '/datalist.db', 'r+')
+			siteFile = open(g.DBPath + 'db/' + siteName + '/datalist.db', 'r+')
 			siteLines = siteFile.readlines()
 			for idx, line in enumerate(siteLines):
 				siteLines[idx] = siteLines[idx].strip('\r\n')
@@ -4953,7 +4955,7 @@ class DataFrame(wx.Panel):
 		# self.loadedSites - list of sites loaded from root datalist.db
 		self.dbview = DBView(self.parent, self, self.dbPanel, self.loadedSites)
 
-		root_f = open(self.parent.DBPath + 'db/datalist.db', 'r+')
+		root_f = open(g.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
 		loaded_item_list = []
 		for root_line in root_f :
@@ -4971,7 +4973,7 @@ class DataFrame(wx.Panel):
 					break
 				loaded_item_list.append(data_item)
 
-				sub_f = open(self.parent.DBPath + 'db/' + data_item + '/datalist.db', 'r+')
+				sub_f = open(g.DBPath + 'db/' + data_item + '/datalist.db', 'r+')
 
 				curSite = SiteData(data_item)
 
@@ -5248,7 +5250,7 @@ class DataFrame(wx.Panel):
 
 	def changeFORMAT(self, filename, ith):
 		# change format
-		tempfile = self.parent.DBPath+"tmp/"
+		tempfile = g.DBPath+"tmp/"
 		py_correlator.formatChange(filename, tempfile)
 
 		f = open(tempfile+"tmp.core", 'r+')
@@ -5318,10 +5320,10 @@ class DataFrame(wx.Panel):
 					xml_flag = path.find(".xml", 0)
 					if xml_flag >= 0 :
 						self.handler.init()
-						self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+						self.handler.openFile(g.DBPath+"tmp/.tmp")
 						self.parser.parse(path)
 						self.handler.closeFile()
-						path = self.parent.DBPath+"tmp/.tmp"
+						path = g.DBPath+"tmp/.tmp"
 
 					ith = self.changeFORMAT(path, ith)
 
@@ -5345,10 +5347,10 @@ class DataFrame(wx.Panel):
 								xml_flag = path.find(".xml", 0)
 								if xml_flag >= 0 :
 									self.handler.init()
-									self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+									self.handler.openFile(g.DBPath+"tmp/.tmp")
 									self.parser.parse(path)
 									self.handler.closeFile()
-									path = self.parent.DBPath+"tmp/.tmp"
+									path = g.DBPath+"tmp/.tmp"
 
 								ith = self.changeFORMAT(path, ith)
 								self.selectedDataType = self.tree.GetItemText(child_item, 1)
@@ -5367,10 +5369,10 @@ class DataFrame(wx.Panel):
 									xml_flag = path.find(".xml", 0)
 									if xml_flag >= 0 :
 										self.handler.init()
-										self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+										self.handler.openFile(g.DBPath+"tmp/.tmp")
 										self.parser.parse(path)
 										self.handler.closeFile()
-										path = self.parent.DBPath+"tmp/.tmp"
+										path = g.DBPath+"tmp/.tmp"
 
 									ith = self.changeFORMAT(path, ith)
 					else :
@@ -5555,7 +5557,7 @@ class DataFrame(wx.Panel):
 		self.propertyIdx = self.tree.GetSelection()
 		parentItem = self.tree.GetItemParent(self.propertyIdx)
 		self.title = self.tree.GetItemText(parentItem, 0)
-		self.parent.CurrentDir = self.parent.DBPath + 'db/' + self.title + '/'
+		self.parent.CurrentDir = g.DBPath + 'db/' + self.title + '/'
 
 		last = self.title.find('-', 0)
 		max =  len(self.title)
@@ -5896,7 +5898,7 @@ class DataFrame(wx.Panel):
 		site = title[last+1:max] 
 		row = 0 
 		self.importLabel = []
-		fout = open(self.parent.DBPath+"tmp/tmp.core", 'w+')
+		fout = open(g.DBPath+"tmp/tmp.core", 'w+')
 		self.paths = path 
 		header_flag = False
 		total_count = 0
@@ -6290,7 +6292,7 @@ class DataFrame(wx.Panel):
 					f.close()
 
 				# change format
-				tempfile = self.parent.DBPath+"tmp/"
+				tempfile = g.DBPath+"tmp/"
 
 				py_correlator.formatChange(path, tempfile)
 
@@ -6355,7 +6357,7 @@ class DataFrame(wx.Panel):
 		#prefilename = prefilename[0:size]
 
 		#coretype = self.listPanel.GetCellValue(selectrows[0], 10)
-		#affinetable = self.parent.DBPath + "db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".affine.table"
+		#affinetable = g.DBPath + "db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".affine.table"
 		#f = open(affinetable, 'r+')
 		#s = f.read()
 		#f.close()
@@ -6364,7 +6366,7 @@ class DataFrame(wx.Panel):
 		#fout.write(s)
 		#fout.close()
 
-		#splicetable = self.parent.DBPath +"db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".splice.table"
+		#splicetable = g.DBPath +"db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".splice.table"
 		#f = open(splicetable, 'r+')
 		#s = f.read()
 		#f.close()
@@ -6373,7 +6375,7 @@ class DataFrame(wx.Panel):
 		#fout.write(s)
 		#fout.close()
 
-		#eldtable = self.parent.DBPath + "db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".eld.table"
+		#eldtable = g.DBPath + "db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".eld.table"
 		#f = open(eldtable, 'r+')
 		#s = f.read()
 		#f.close()
@@ -6382,7 +6384,7 @@ class DataFrame(wx.Panel):
 		#fout.write(s)
 		#fout.close()
 
-		#culltable = self.parent.DBPath + "db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".cull.table"
+		#culltable = g.DBPath + "db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".cull.table"
 		#f = open(culltable, 'r+')
 		#s = f.read()
 		#f.close()
@@ -6399,12 +6401,12 @@ class DataFrame(wx.Panel):
 		xml_flag = source.find(".xml", 0)
 		if xml_flag >= 0 :
 			self.handler.init()
-			self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+			self.handler.openFile(g.DBPath+"tmp/.tmp")
 			self.parser.parse(source)
 			self.handler.closeFile()
-			source = self.parent.DBPath+"tmp/.tmp"
+			source = g.DBPath+"tmp/.tmp"
 
-		tempfile = self.parent.DBPath+"tmp/"
+		tempfile = g.DBPath+"tmp/"
 		py_correlator.formatChange(source, tempfile)
 
 		data_line = self.tree.GetItemText(selectItem, 11)
@@ -6422,7 +6424,7 @@ class DataFrame(wx.Panel):
 		#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
 		stamp = tempstamp[0:last]
 
-		filename = self.parent.DBPath + 'db/' + self.tree.GetItemText(selectItem, 10) + self.tree.GetItemText(selectItem, 8) 
+		filename = g.DBPath + 'db/' + self.tree.GetItemText(selectItem, 10) + self.tree.GetItemText(selectItem, 8) 
 		s = "Update Core Data: " + filename + "\n"
 		self.parent.logFileptr.write(s)
 
@@ -6509,8 +6511,8 @@ class DataFrame(wx.Panel):
 
 
 	def OnUPDATE_AFFINE(self, item, last_hole, last_core):
-		source = self.parent.DBPath + 'db/' + self.tree.GetItemText(item, 10) + self.tree.GetItemText(item, 8)
-		temp_path = self.parent.DBPath + 'tmp/' 
+		source = g.DBPath + 'db/' + self.tree.GetItemText(item, 10) + self.tree.GetItemText(item, 8)
+		temp_path = g.DBPath + 'tmp/' 
 
 		found = False
 		fin = open(source, 'r+')
@@ -6672,7 +6674,7 @@ class DataFrame(wx.Panel):
 
 
 	def ImportFORMAT(self, source, dest, type, ntype, annot, stamp, datasort, selectItem):
-		fout = open(self.parent.DBPath + "db/" + dest, 'w+')
+		fout = open(g.DBPath + "db/" + dest, 'w+')
 		s = "# " + "Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo " + "\n"
 
 		fout.write(s)
@@ -6683,7 +6685,7 @@ class DataFrame(wx.Panel):
 		s = "# Generated By Correlator\n"
 		fout.write(s)
 
-		temp_path = self.parent.DBPath+"tmp/"
+		temp_path = g.DBPath+"tmp/"
 		py_correlator.formatChange(source, temp_path)
 		f = open(temp_path+"tmp.core", 'r+')
 		for line in f :
@@ -6704,7 +6706,7 @@ class DataFrame(wx.Panel):
 		fout.close()
 
 		self.parent.LOCK = 0
-		py_correlator.openHoleFile(self.parent.DBPath + "db/" + dest, -1, ntype, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
+		py_correlator.openHoleFile(g.DBPath + "db/" + dest, -1, ntype, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
 		#HYEJUNG CHANGING NOW
 		self.parent.OnInitDataUpdate()
 		###
@@ -6806,10 +6808,10 @@ class DataFrame(wx.Panel):
 				xml_flag = source.find(".xml", 0)
 				if xml_flag > 0 :
 					self.handler.init()
-					self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+					self.handler.openFile(g.DBPath+"tmp/.tmp")
 					self.parser.parse(source)
 					self.handler.closeFile()
-					source = self.parent.DBPath+"tmp/.tmp"
+					source = g.DBPath+"tmp/.tmp"
 
 				filename = self.tree.GetItemText(selectItem, 8)
 				s = "Update Core Data: " + filename + "\n"
@@ -6838,10 +6840,10 @@ class DataFrame(wx.Panel):
 						xml_flag = source.find(".xml", 0)
 						if xml_flag > 0 :
 							self.handler.init()
-							self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+							self.handler.openFile(g.DBPath+"tmp/.tmp")
 							self.parser.parse(source)
 							self.handler.closeFile()
-							source = self.parent.DBPath+"tmp/.tmp"
+							source = g.DBPath+"tmp/.tmp"
 
 						filename = self.tree.GetItemText(child_item, 8)
 						s = "Update Core Data: " + filename + "\n"
@@ -6858,10 +6860,10 @@ class DataFrame(wx.Panel):
 					else :
 						filename = self.tree.GetItemText(child_item, 8)
 						path = self.tree.GetItemText(child_item, 10)
-						fin = open(self.parent.DBPath+ 'db/' + path + filename, 'r+')
+						fin = open(g.DBPath+ 'db/' + path + filename, 'r+')
 						new_filename = str(title) + "." + str(datatype) + ".cull.table"
 						if filename != new_filename :
-							fout = open(self.parent.DBPath+ 'db/' + path + new_filename, 'w+')
+							fout = open(g.DBPath+ 'db/' + path + new_filename, 'w+')
 							self.tree.SetItemText(child_item, new_filename, 8)
 							for line in fin:
 								max  = len(line) -1
@@ -6884,10 +6886,10 @@ class DataFrame(wx.Panel):
 							xml_flag = source.find(".xml", 0)
 							if xml_flag > 0 :
 								self.handler.init()
-								self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+								self.handler.openFile(g.DBPath+"tmp/.tmp")
 								self.parser.parse(source)
 								self.handler.closeFile()
-								source = self.parent.DBPath+"tmp/.tmp"
+								source = g.DBPath+"tmp/.tmp"
 
 							filename = self.tree.GetItemText(child_item, 8)
 							s = "Update Core Data: " + filename + "\n"
@@ -6904,10 +6906,10 @@ class DataFrame(wx.Panel):
 						else :
 							filename = self.tree.GetItemText(child_item, 8)
 							path = self.tree.GetItemText(child_item, 10)
-							fin = open(self.parent.DBPath+ 'db/' + path + filename, 'r+')
+							fin = open(g.DBPath+ 'db/' + path + filename, 'r+')
 							new_filename = str(title) + "." + str(datatype) + ".cull.table"
 							if filename != new_filename :
-								fout = open(self.parent.DBPath+ 'db/' + path + new_filename, 'w+')
+								fout = open(g.DBPath+ 'db/' + path + new_filename, 'w+')
 								self.tree.SetItemText(child_item, new_filename, 8)
 								for line in fin:
 									max  = len(line) -1
@@ -6985,7 +6987,7 @@ class DataFrame(wx.Panel):
 		log_parentItem = self.tree.GetItemParent(item)
 		parentItem = self.tree.GetItemParent(log_parentItem)
 		title = self.tree.GetItemText(parentItem, 0)
-		path = self.parent.DBPath +'db/' + title + '/'
+		path = g.DBPath +'db/' + title + '/'
 
 		max = len(title)
 		last = title.find("-", 0)
@@ -7012,7 +7014,7 @@ class DataFrame(wx.Panel):
 		self.tree.SetItemText(item, filename, 8)
 
 		fout = open(path + filename, 'w+')
-		f = open(self.parent.DBPath+'tmp/tmp.core', 'r+')
+		f = open(g.DBPath+'tmp/tmp.core', 'r+')
 
 		s = "Update Downhole Log Data: " + filename + "\n\n"
 		self.parent.logFileptr.write(s)
@@ -7108,7 +7110,7 @@ class DataFrame(wx.Panel):
 		item = self.tree.GetSelection()
 		parentItem = self.tree.GetItemParent(item)
 		title = self.tree.GetItemText(parentItem, 0)
-		path = self.parent.DBPath +'db/' + title + '/'
+		path = g.DBPath +'db/' + title + '/'
 		max = len(title)
 		last = title.find("-", 0)
 		leg = title[0:last]
@@ -7153,7 +7155,7 @@ class DataFrame(wx.Panel):
 				filename = title + '.undefined' + '.log.dat' 
 
 			fout = open(path + filename, 'w+')
-			#f = open(self.parent.DBPath+'tmp/tmp.core', 'r+')
+			#f = open(g.DBPath+'tmp/tmp.core', 'r+')
 
 			s = "Import Downhole Log Data: " + filename + "\n\n"
 			self.parent.logFileptr.write(s)
@@ -7177,7 +7179,7 @@ class DataFrame(wx.Panel):
 			fout.close()
 
 			# HYEJUNG ---
-			py_correlator.writeLogFile(self.parent.DBPath+'tmp/tmp.core', path + filename, depth_no, selected)
+			py_correlator.writeLogFile(g.DBPath+'tmp/tmp.core', path + filename, depth_no, selected)
 
 			#for line in f:
 			#	max  = len(line) -1
@@ -7335,7 +7337,7 @@ class DataFrame(wx.Panel):
 			leg = leg[1:]
 		if site[0] == '\t' :
 			site = site[1:]
-		prefilename = self.parent.DBPath + "db/" + leg + "-" + site
+		prefilename = g.DBPath + "db/" + leg + "-" + site
 		if os.access(prefilename, os.F_OK) == False :
 			os.mkdir(prefilename)
 
@@ -7366,7 +7368,7 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(child, "Continuous", 1)
 			self.tree.SortChildren(subroot)
 
-			dblist_f = open(self.parent.DBPath +'db/datalist.db', 'a+')
+			dblist_f = open(g.DBPath +'db/datalist.db', 'a+')
 			dblist_f.write('\n' + leg + "-" + site)
 			dblist_f.close()
 
@@ -7407,7 +7409,7 @@ class DataFrame(wx.Panel):
 			s = "# Generated By Correlator\n"
 			fout.write(s)
 
-			tempfile = self.parent.DBPath+"tmp/"
+			tempfile = g.DBPath+"tmp/"
 			temp_path = self.paths[i] 
 			xml_flag = temp_path.find(".xml", 0)
 			if xml_flag >= 0 :
@@ -7600,7 +7602,7 @@ class DataFrame(wx.Panel):
 			#wx.EVT_MENU(popupMenu, 6, self.OnCHANGETYPE)
 
 			#----- HYEJUNG
-			filename =  self.parent.DBPath + 'tmp/datatypelist.cfg' 
+			filename =  g.DBPath + 'tmp/datatypelist.cfg' 
 			if os.access(filename, os.F_OK) == True :
 				f = open(filename, 'r+')
 				idx = 8
@@ -7650,12 +7652,12 @@ class DataFrame(wx.Panel):
 						self.parent.OnShowMessage("Error", "Hyphen(-) is not allowed", 1)
 					else :
 						if dlg.register.GetValue() == True : 
-                                                        type_last = len(datatype) -1
-                                                        if datatype[type_last] == '\n' :
-                                                                datatype = datatype[0:type_last]
+							type_last = len(datatype) -1
+							if datatype[type_last] == '\n' :
+								datatype = datatype[0:type_last]
                                                                         
 							# check whether there is same datatype 
-							filename =  self.parent.DBPath + 'tmp/datatypelist.cfg'
+							filename = g.DBPath + 'tmp/datatypelist.cfg'
 							if os.access(filename, os.F_OK) == False :
 								fout = open(filename, 'w+')
 								fout.write('\n' + datatype)
