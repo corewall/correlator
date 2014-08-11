@@ -659,13 +659,13 @@ class DataFrame(wx.Panel):
 		dlg.Centre()
 		ret = dlg.ShowModal()
 		if ret == wx.ID_OK :
-			#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-			opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+			#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
+			opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
 			ret = opendlg.ShowModal()
 			#output_path = opendlg.GetPath()
 			output_path = opendlg.GetDirectory()
 			output_prefix = opendlg.GetFilename()
-			self.parent.Directory = output_path
+			g.LastDir = output_path
 			opendlg.Destroy()
 			if ret != wx.ID_OK :
 				return
@@ -900,13 +900,13 @@ class DataFrame(wx.Panel):
 
 
 	def SAVE_AFFINE_TO_XML(self, source_path, filename):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style =wx.SAVE)
+		#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
+		opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style =wx.SAVE)
 		ret = opendlg.ShowModal()
 		#path = opendlg.GetPath()
 		path = opendlg.GetDirectory()
 		outfile = opendlg.GetFilename() 
-		self.parent.Directory = path
+		g.LastDir = path
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			fin = open(source_path + filename, 'r+')
@@ -948,13 +948,13 @@ class DataFrame(wx.Panel):
 
 
 	def SAVE_SPLICE_TO_XML(self, source_path, filename, leg):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+		#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
+		opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
 		ret = opendlg.ShowModal()
 		#path = opendlg.GetPath()
 		path = opendlg.GetDirectory()
 		outfile = opendlg.GetFilename()
-		self.parent.Directory = path
+		g.LastDir = path
 		opendlg.Destroy()
 		affinetable = "None"
 		if ret == wx.ID_OK :
@@ -1036,13 +1036,13 @@ class DataFrame(wx.Panel):
 
 
 	def SAVE_ELD_TO_XML(self, source_path, filename):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+		#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
+		opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
 		ret = opendlg.ShowModal()
 		#path = opendlg.GetPath()
 		path = opendlg.GetDirectory()
 		outfile = opendlg.GetFilename()
-		self.parent.Directory = path
+		g.LastDir = path
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			fin = open(source_path + filename, 'r+')
@@ -1130,13 +1130,13 @@ class DataFrame(wx.Panel):
 
 
 	def SAVE_CULL_TO_XML(self, source_path, filename):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+		#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
+		opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
 		ret = opendlg.ShowModal()
 		#path = opendlg.GetPath()
 		path = opendlg.GetDirectory()
 		outfile = opendlg.GetFilename()
-		self.parent.Directory = path
+		g.LastDir = path
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			fin = open(source_path + filename, 'r+')
@@ -1265,13 +1265,13 @@ class DataFrame(wx.Panel):
 
 
 	def SAVE_SERIES_TO_XML(self, source_path, filename, leg, site):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+		#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
+		opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
 		ret = opendlg.ShowModal()
 		#path = opendlg.GetPath()
 		path = opendlg.GetDirectory()
 		outfile = opendlg.GetFilename()
-		self.parent.Directory = path
+		g.LastDir = path
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			fin = open(source_path + filename, 'r+')
@@ -1308,13 +1308,13 @@ class DataFrame(wx.Panel):
 
 
 	def SAVE_AGE_TO_XML(self, source_path, filename, leg, site):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+		#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
+		opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
 		ret = opendlg.ShowModal()
 		#path = opendlg.GetPath()
 		path = opendlg.GetDirectory()
 		outfile = opendlg.GetFilename()
-		self.parent.Directory = path
+		g.LastDir = path
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			fin = open(source_path + filename, 'r+')
@@ -1474,11 +1474,11 @@ class DataFrame(wx.Panel):
 
 
 	def OnIMPORT_IMAGE(self):
-		opendlg = wx.FileDialog(self, "Open Image Data file", self.parent.Directory, "", wildcard = "*.*")
+		opendlg = wx.FileDialog(self, "Open Image Data file", g.LastDir, "", wildcard = "*.*")
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		source_name = opendlg.GetFilename()
-		self.parent.Directory = opendlg.GetDirectory()
+		g.LastDir = opendlg.GetDirectory()
 		opendlg.Destroy()
 		if ret == wx.ID_OK and self.ValidateImageListingFile(path):
 			item = self.tree.GetSelection()
@@ -1512,7 +1512,7 @@ class DataFrame(wx.Panel):
 			fullname = g.DBPath +'db/' + title + '/' + filename 
 			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
-				os.chdir(self.parent.Directory)
+				os.chdir(g.LastDir)
 				cmd = 'copy \"' + source_name + '\" \"' + fullname + '\"'
 				os.system(cmd)
 				os.chdir(workingdir)
@@ -1525,11 +1525,11 @@ class DataFrame(wx.Panel):
 
 
 	def IMPORT_TIME_SERIES(self):
-		opendlg = wx.FileDialog(self, "Open Time Series file", self.parent.Directory, "", wildcard = "*.*")
+		opendlg = wx.FileDialog(self, "Open Time Series file", g.LastDir, "", wildcard = "*.*")
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		source_name = opendlg.GetFilename()
-		self.parent.Directory = opendlg.GetDirectory()
+		g.LastDir = opendlg.GetDirectory()
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			item = self.tree.GetSelection()
@@ -1546,10 +1546,10 @@ class DataFrame(wx.Panel):
 			last = path.find(".xml", 0)
 			if last >= 0 :
 				self.handler.init()
-				self.handler.openFile(self.parent.Directory + "/.tmp_table")	
+				self.handler.openFile(g.LastDir + "/.tmp_table")	
 				self.parser.parse(path)
 				self.handler.closeFile()
-				path = self.parent.Directory + "/.tmp_table"
+				path = g.LastDir + "/.tmp_table"
 				source_name = ".tmp_table"
 				if self.handler.type != "age model" :
 					self.parent.OnShowMessage("Error", "It is not age model", 1)
@@ -1557,7 +1557,7 @@ class DataFrame(wx.Panel):
 
 			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
-				os.chdir(self.parent.Directory)
+				os.chdir(g.LastDir)
 				cmd = 'copy \"' + source_name + '\" \"' + fullname + '\"'
 				os.system(cmd)
 				os.chdir(workingdir)
@@ -1588,11 +1588,11 @@ class DataFrame(wx.Panel):
 
 
 	def IMPORT_AGE_MODEL(self):
-		opendlg = wx.FileDialog(self, "Open Age Model file", self.parent.Directory, "", wildcard = "*.*")
+		opendlg = wx.FileDialog(self, "Open Age Model file", g.LastDir, "", wildcard = "*.*")
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		source_name = opendlg.GetFilename()
-		self.parent.Directory = opendlg.GetDirectory()
+		g.LastDir = opendlg.GetDirectory()
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			item = self.tree.GetSelection()
@@ -1609,10 +1609,10 @@ class DataFrame(wx.Panel):
 			last = path.find(".xml", 0)
 			if last >= 0 :
 				self.handler.init()
-				self.handler.openFile(self.parent.Directory + "/.tmp_table")	
+				self.handler.openFile(g.LastDir + "/.tmp_table")	
 				self.parser.parse(path)
 				self.handler.closeFile()
-				path = self.parent.Directory + "/.tmp_table"
+				path = g.LastDir + "/.tmp_table"
 				source_name = ".tmp_table"
 				if self.handler.type != "age depth" :
 					self.parent.OnShowMessage("Error", "It is not age depth values", 1)
@@ -1620,7 +1620,7 @@ class DataFrame(wx.Panel):
 
 			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
-				os.chdir(self.parent.Directory)
+				os.chdir(g.LastDir)
 				cmd = 'copy \"' + source_name + '\" \"' + fullname + '\"'
 				os.system(cmd)
 				os.chdir(workingdir)
@@ -1696,12 +1696,12 @@ class DataFrame(wx.Panel):
 
 	def OnIMPORT_STRAT1(self):
 		filterindex = 0
-		opendlg = wx.FileDialog(self, "Open Stratigraphy Data file", self.parent.Directory, "", wildcard = "Diatoms|*.*|Radioloria|*.*|Foraminifera|*.*|Nannofossils|*.*|Paleomag|*.*")
+		opendlg = wx.FileDialog(self, "Open Stratigraphy Data file", g.LastDir, "", wildcard = "Diatoms|*.*|Radioloria|*.*|Foraminifera|*.*|Nannofossils|*.*|Paleomag|*.*")
 		opendlg.SetFilterIndex(filterindex)
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		source_name = opendlg.GetFilename()
-		self.parent.Directory = opendlg.GetDirectory()
+		g.LastDir = opendlg.GetDirectory()
 		filterindex = opendlg.GetFilterIndex()
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
@@ -1746,7 +1746,7 @@ class DataFrame(wx.Panel):
 			fullname = g.DBPath +'db/' + title + '/' + filename 
 			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
-				os.chdir(self.parent.Directory)
+				os.chdir(g.LastDir)
 				cmd = 'copy \"' + source_name + '\" \"' + fullname + '\"'
 				os.system(cmd)
 				os.chdir(workingdir)
@@ -1761,13 +1761,13 @@ class DataFrame(wx.Panel):
 
 	def OnEXPORT(self):
 		if self.selectedIdx != None :
-			#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-			opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+			#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
+			opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
 			ret = opendlg.ShowModal()
 			#path = opendlg.GetPath()
 			path = opendlg.GetDirectory()
 			filename = opendlg.GetFilename()
-			self.parent.Directory = path
+			g.LastDir = path
 			opendlg.Destroy()
 			if ret == wx.ID_OK :
 				parentItem = self.tree.GetItemParent(self.selectedIdx)
@@ -1816,10 +1816,10 @@ class DataFrame(wx.Panel):
 
 	def EXPORT_REPORT(self):
 		if self.selectedIdx != None :
-			opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
+			opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
 			ret = opendlg.ShowModal()
 			path = opendlg.GetPath()
-			self.parent.Directory = path
+			g.LastDir = path
 			opendlg.Destroy()
 			if ret == wx.ID_OK :
 				parentItem = self.tree.GetItemParent(self.selectedIdx)
@@ -5464,12 +5464,12 @@ class DataFrame(wx.Panel):
 
 
 	def OnIMPORT_CULLTABLE(self, isUniversal):
-		opendlg = wx.FileDialog(self, "Select a property file", self.parent.Directory, "", "*.*")
+		opendlg = wx.FileDialog(self, "Select a property file", g.LastDir, "", "*.*")
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		source_path = path
 		source_name = opendlg.GetFilename()
-		self.parent.Directory = opendlg.GetDirectory()
+		g.LastDir = opendlg.GetDirectory()
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			item = self.tree.GetSelection()
@@ -5513,11 +5513,11 @@ class DataFrame(wx.Panel):
 				typeflag = True 
 			else :
 				self.handler.init()
-				self.handler.openFile(self.parent.Directory + "/.tmp_table")
+				self.handler.openFile(g.LastDir + "/.tmp_table")
 				self.parser.parse(path)
 				self.handler.closeFile()
 				source_name = ".tmp_table"
-				path = self.parent.Directory + "/.tmp_table"
+				path = g.LastDir + "/.tmp_table"
 				if self.handler.type == "cull table" :
 					valid = True
 
@@ -5534,7 +5534,7 @@ class DataFrame(wx.Panel):
 				filename = self.Add_CULLTABLE(item, type, isUniversal, source_path)
 				if sys.platform == 'win32' :
 					workingdir = os.getcwd()
-					os.chdir(self.parent.Directory)
+					os.chdir(g.LastDir)
 					cmd = 'copy \"' + source_name + '\" \"' + filename + '\"'
 					os.system(cmd)
 					#print "[DEBUG] " + cmd
@@ -5570,12 +5570,12 @@ class DataFrame(wx.Panel):
 		type = '' 
 		if tableType == 'Affine' :
 			# Affine Table
-			opendlg = wx.FileDialog(self, "Select a affine table file", self.parent.Directory, "", "*.*")
+			opendlg = wx.FileDialog(self, "Select a affine table file", g.LastDir, "", "*.*")
 			ret = opendlg.ShowModal()
 			path = opendlg.GetPath()
 			filename = opendlg.GetFilename();
 			source_filename = path
-			self.parent.Directory = opendlg.GetDirectory()
+			g.LastDir = opendlg.GetDirectory()
 			opendlg.Destroy()
 
 			if ret == wx.ID_OK :
@@ -5617,22 +5617,22 @@ class DataFrame(wx.Panel):
 					if valid == True and main_form == False :
 						filename = ".tmp_table"
 						if sys.platform == 'win32' :
-							self.OnFORMATTING(path, self.parent.Directory + "\\.tmp_table", tableType)
-							path = self.parent.Directory + "\\.tmp_table"
+							self.OnFORMATTING(path, g.LastDir + "\\.tmp_table", tableType)
+							path = g.LastDir + "\\.tmp_table"
 						else :
-							self.OnFORMATTING(path, self.parent.Directory + "/.tmp_table", tableType)
-							path = self.parent.Directory + "/.tmp_table"
+							self.OnFORMATTING(path, g.LastDir + "/.tmp_table", tableType)
+							path = g.LastDir + "/.tmp_table"
 
 				else : # last >= 0
 					self.handler.init()
 					if sys.platform == 'win32' :
-                                                self.handler.openFile(self.parent.Directory + "\\.tmp_table")
+                                                self.handler.openFile(g.LastDir + "\\.tmp_table")
                                                 self.parser.parse(path)
-                                                path = self.parent.Directory + "\\.tmp_table"
+                                                path = g.LastDir + "\\.tmp_table"
                                         else :
-                                                self.handler.openFile(self.parent.Directory + "/.tmp_table")
+                                                self.handler.openFile(g.LastDir + "/.tmp_table")
                                                 self.parser.parse(path)
-                                                path = self.parent.Directory + "/.tmp_table"
+                                                path = g.LastDir + "/.tmp_table"
 					self.handler.closeFile()
 					
 					filename = ".tmp_table"
@@ -5653,10 +5653,10 @@ class DataFrame(wx.Panel):
 
 		elif tableType == 'Splice' :
 			# Splice Table
-			opendlg = wx.FileDialog(self, "Select a splice table file", self.parent.Directory, "", "*.*")
+			opendlg = wx.FileDialog(self, "Select a splice table file", g.LastDir, "", "*.*")
 			ret = opendlg.ShowModal()
 			path = opendlg.GetPath()
-			self.parent.Directory = opendlg.GetDirectory()
+			g.LastDir = opendlg.GetDirectory()
 			filename = opendlg.GetFilename();
 			source_filename = path
 			opendlg.Destroy()
@@ -5699,21 +5699,21 @@ class DataFrame(wx.Panel):
 					if valid == True and main_form == False :
 						filename = ".tmp_table"
 						if sys.platform == 'win32' :
-							self.OnFORMATTING(path, self.parent.Directory + "\\.tmp_table", tableType)
-							path = self.parent.Directory + "\\.tmp_table"
+							self.OnFORMATTING(path, g.LastDir + "\\.tmp_table", tableType)
+							path = g.LastDir + "\\.tmp_table"
 						else :
-							self.OnFORMATTING(path, self.parent.Directory + "/.tmp_table", tableType)
-							path = self.parent.Directory + "/.tmp_table"
+							self.OnFORMATTING(path, g.LastDir + "/.tmp_table", tableType)
+							path = g.LastDir + "/.tmp_table"
 				else :
 					self.handler.init()
 					if sys.platform == 'win32' :
-						self.handler.openFile(self.parent.Directory + "\\.tmp_table")
+						self.handler.openFile(g.LastDir + "\\.tmp_table")
 						self.parser.parse(path)
-						path = self.parent.Directory + "\\.tmp_table"
+						path = g.LastDir + "\\.tmp_table"
 					else :
-						self.handler.openFile(self.parent.Directory + "/.tmp_table")
+						self.handler.openFile(g.LastDir + "/.tmp_table")
 						self.parser.parse(path)
-						path = self.parent.Directory + "/.tmp_table"
+						path = g.LastDir + "/.tmp_table"
 					self.handler.closeFile()
 					
 					filename = ".tmp_table"
@@ -5733,10 +5733,10 @@ class DataFrame(wx.Panel):
 					self.parent.OnShowMessage("Error", "It is not for " + self.title, 1)
 		else :
 			# ELD Table
-			opendlg = wx.FileDialog(self, "Select a ELD table file", self.parent.Directory, "", "*.*")
+			opendlg = wx.FileDialog(self, "Select a ELD table file", g.LastDir, "", "*.*")
 			ret = opendlg.ShowModal()
 			path = opendlg.GetPath()
-			self.parent.Directory = opendlg.GetDirectory()
+			g.LastDir = opendlg.GetDirectory()
 			filename = opendlg.GetFilename();
 			source_filename = path 
 			opendlg.Destroy()
@@ -5781,21 +5781,21 @@ class DataFrame(wx.Panel):
 					if valid == True and main_form == False :
 						filename = ".tmp_table"
 						if sys.platform == 'win32' :
-							self.OnFORMATTING(path, self.parent.Directory + "\\.tmp_table", tableType)
-							path = self.parent.Directory + "\\.tmp_table"
+							self.OnFORMATTING(path, g.LastDir + "\\.tmp_table", tableType)
+							path = g.LastDir + "\\.tmp_table"
 						else :
-							self.OnFORMATTING(path, self.parent.Directory + "/.tmp_table", tableType)
-							path = self.parent.Directory + "/.tmp_table"
+							self.OnFORMATTING(path, g.LastDir + "/.tmp_table", tableType)
+							path = g.LastDir + "/.tmp_table"
 				else :
 					self.handler.init()
 					if sys.platform == 'win32' :
-						self.handler.openFile(self.parent.Directory + "\\.tmp_table")
+						self.handler.openFile(g.LastDir + "\\.tmp_table")
 						self.parser.parse(path)
-						path = self.parent.Directory + "\\.tmp_table"
+						path = g.LastDir + "\\.tmp_table"
 					else :
-						self.handler.openFile(self.parent.Directory + "/.tmp_table")
+						self.handler.openFile(g.LastDir + "/.tmp_table")
 						self.parser.parse(path)
-						path = self.parent.Directory + "/.tmp_table"
+						path = g.LastDir + "/.tmp_table"
 
 					self.handler.closeFile()
 					
@@ -5818,7 +5818,7 @@ class DataFrame(wx.Panel):
 		if type != '' :
 			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
-				os.chdir(self.parent.Directory)
+				os.chdir(g.LastDir)
 				cmd = 'copy ' + filename + ' \"' + type+ '\"'	
 				#print "[DEBUG] " + cmd
 				os.system(cmd)
@@ -5879,10 +5879,10 @@ class DataFrame(wx.Panel):
 		self.dataPanel.ClearGrid()
 
 		self.paths = [] 
-		opendlg = wx.FileDialog(self, "Select a log file", self.parent.Directory, "", "*.*")
+		opendlg = wx.FileDialog(self, "Select a log file", g.LastDir, "", "*.*")
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
-		self.parent.Directory = opendlg.GetDirectory()
+		g.LastDir = opendlg.GetDirectory()
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			item = self.tree.GetSelection()
@@ -6221,11 +6221,11 @@ class DataFrame(wx.Panel):
 		self.dataPanel.ClearGrid()
 
 		self.importLabel = []
-		opendlg = wx.FileDialog(self, "Select core data files", self.parent.Directory, "", "*.*", style=wx.MULTIPLE)
+		opendlg = wx.FileDialog(self, "Select core data files", g.LastDir, "", "*.*", style=wx.MULTIPLE)
 		ret = opendlg.ShowModal()
 		self.paths = opendlg.GetPaths()
-		files = opendlg.GetFilenames()
-		self.parent.Directory = opendlg.GetDirectory()
+		#files = opendlg.GetFilenames() #unused brg
+		g.LastDir = opendlg.GetDirectory()
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			ith = 0
@@ -6241,10 +6241,10 @@ class DataFrame(wx.Panel):
 				xml_flag = path.find(".xml", 0)
 				if xml_flag >= 0 :
 					self.handler.init()
-					self.handler.openFile(self.parent.Directory  + "/.tmp")
+					self.handler.openFile(g.LastDir  + "/.tmp")
 					self.parser.parse(path)
 					self.handler.closeFile()
-					path = self.parent.Directory + "/.tmp" 
+					path = g.LastDir + "/.tmp" 
 
 				f = open(path, 'r+')
 				for line in f :
@@ -6262,15 +6262,18 @@ class DataFrame(wx.Panel):
 				f.close()
 
 
+			### load file data into Import spreadsheet
+
+			# this block just grabs header information
 			for i in range(len(self.paths)) :
 				path = self.paths[i]
 				xml_flag = path.find(".xml", 0)
 				if xml_flag >= 0 :
 					self.handler.init()
-					self.handler.openFile(self.parent.Directory  + "/.tmp")
+					self.handler.openFile(g.LastDir  + "/.tmp")
 					self.parser.parse(path)
 					self.handler.closeFile()
-					path = self.parent.Directory + "/.tmp" 
+					path = g.LastDir + "/.tmp" 
 
 				if ith == 0 :
 					f = open(path, 'r+')
@@ -6310,7 +6313,7 @@ class DataFrame(wx.Panel):
 					if prevMax == -1 :
 						prevMax = max
 					elif prevMax != max :
-						self.parent.OnShowMessage("Error", "Not support multiple type loading", 1)
+						self.parent.OnShowMessage("Error", "Found {} columns in row {}, expected {}, bailing.".format(max, ith, prevMax), 1)
 						self.importbtn.Enable(False)
 						self.OnINITGENERICSHEET()
 						self.dataPanel.ClearGrid()
@@ -6327,6 +6330,7 @@ class DataFrame(wx.Panel):
 						break
 				f.close()
 
+			# udpate spreadsheet header columns and await user click of Import button
 			self.UpdateDATAHEADER(header)
 	 		self.sideNote.SetSelection(1)
 
@@ -7414,10 +7418,10 @@ class DataFrame(wx.Panel):
 			xml_flag = temp_path.find(".xml", 0)
 			if xml_flag >= 0 :
 				self.handler.init()
-				self.handler.openFile(self.parent.Directory  + "/.tmp")
+				self.handler.openFile(g.LastDir  + "/.tmp")
 				self.parser.parse(temp_path)
 				self.handler.closeFile()
-				temp_path = self.parent.Directory + "/.tmp"
+				temp_path = g.LastDir + "/.tmp"
 			py_correlator.formatChange(temp_path, tempfile)
 
 			# MAX COLUMN TESTING

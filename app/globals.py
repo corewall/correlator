@@ -12,8 +12,8 @@ import os
 
 ### Variables
 
-DBPath = "" # path to db folder root (e.g. ~/Documents/Correlator/1.8.0/)
-
+DBPath = "-" # path to db folder root (e.g. ~/Documents/Correlator/1.8.0/)
+LastDir = "" # most recent directory from/to which a file was loaded/saved
 
 
 ### Functions

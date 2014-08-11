@@ -126,8 +126,6 @@ class MainFrame(wx.Frame):
 		self.LOCK = 0
 		self.IDLE = 0
 		self.FOCUS = 1
-		self.Directory = "" # last-opened directory for import (etc?)
-		glb.DBPath = "-"
 		self.client = None
 		self.loadedSite = None
 
@@ -1046,7 +1044,7 @@ class MainFrame(wx.Frame):
 		self.Window.UpdateDrawing()
 
 	def OnOpenAffineData(self, event):
-		opendlg = wx.FileDialog(self, "Open AFFINE DATA file", self.Directory, "",wildcard = "Affine Table (*.affine.table)|*.affine.table|XML files(*.xml)|*.xml" )
+		opendlg = wx.FileDialog(self, "Open AFFINE DATA file", glb.LastDir, "",wildcard = "Affine Table (*.affine.table)|*.affine.table|XML files(*.xml)|*.xml" )
 
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
@@ -1061,7 +1059,7 @@ class MainFrame(wx.Frame):
 			self.UpdateData()
 
 	def OnSaveAffineData(self, event):
-		opendlg = wx.FileDialog(self, "Save AFFINE DATA file", self.Directory, "",wildcard = "Affine Table (*.affine.table)|*.affine.table|XML files(*.xml)|*.xml" , style =wx.SAVE)
+		opendlg = wx.FileDialog(self, "Save AFFINE DATA file", glb.LastDir, "",wildcard = "Affine Table (*.affine.table)|*.affine.table|XML files(*.xml)|*.xml" , style =wx.SAVE)
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		filterindex = opendlg.GetFilterIndex()
@@ -1486,7 +1484,7 @@ class MainFrame(wx.Frame):
 
 
 	def OnSaveCoreData(self, event):
-		opendlg = wx.FileDialog(self, "Save Core Data file", self.Directory, "","*.*" , style =wx.SAVE)
+		opendlg = wx.FileDialog(self, "Save Core Data file", glb.LastDir, "","*.*" , style =wx.SAVE)
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		opendlg.Destroy()
@@ -1561,7 +1559,7 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("shiftclue", shiftclueInt, f)
 		
 		self.WritePreferenceItem("tab", self.Window.sideNote.GetSelection(), f)
-		self.WritePreferenceItem("path", self.Directory, f)
+		self.WritePreferenceItem("path", glb.LastDir, f)
 		self.WritePreferenceItem("dbpath", glb.DBPath, f)
 
 		winPT = self.topMenu.GetPosition()
@@ -2904,7 +2902,7 @@ class MainFrame(wx.Frame):
 		if self.config.has_option("applications", "path"):
 			str_temp = self.config.get("applications", "path")
 			if len(str_temp) > 0 :
-				self.Directory = str_temp
+				glb.LastDir = str_temp
 
 		if self.config.has_option("applications", "datawidth"):
 			str_temp = self.config.get("applications", "datawidth")
