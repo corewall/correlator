@@ -4,7 +4,7 @@ from importManager import py_correlator
 
 import constants as const
 import dialog
-import globals as g
+import globals as glb
 import xml_handler
 
 from datetime import datetime
@@ -808,7 +808,7 @@ class DBView:
 		self.parent.Window.timeseries_flag = False
 
 		site = holeList[0].holeSet.site # shorten some otherwise long statements
-		sitePath = g.DBPath + 'db/' + site.GetDir()
+		sitePath = glb.DBPath + 'db/' + site.GetDir()
 
 		# load holes (independent of enabled status, client can pass whatever list of holes they like)
 		for hole in holeList:
@@ -889,7 +889,7 @@ class DBView:
 			if st.enable:
 				ret = py_correlator.openSpliceFile(sitePath + st.file)
 				if ret == 'error':
-					self.parent.OnShowMessage("Error", "Couldn't create splice record(s)", 1)
+					glb.OnShowMessage("Error", "Couldn't create splice record(s)", 1)
 				else:
 					tableLoaded[1] = True
 				break
@@ -962,7 +962,7 @@ class DBView:
 
 	def GetFileHeader(self, path):
 		if path.find(".xml", 0) >= 0:
-			path = xml.ConvertFromXML(path, g.LastDir)
+			path = xml.ConvertFromXML(path, glb.LastDir)
 
 		header = ""
 		with open(path, 'r+') as f:
@@ -974,15 +974,15 @@ class DBView:
 		return header
 
 	def ImportPressed(self, evt):
-		opendlg = wx.FileDialog(self.parent, "Select core data files", g.LastDir, "", "*.*", style=wx.MULTIPLE)
+		opendlg = wx.FileDialog(self.parent, "Select core data files", glb.LastDir, "", "*.*", style=wx.MULTIPLE)
 		if opendlg.ShowModal() == wx.ID_OK:
-			g.LastDir = opendlg.GetDirectory()
+			glb.LastDir = opendlg.GetDirectory()
 			paths = opendlg.GetPaths()
 			headerSet = set([self.GetFileHeader(path) for path in paths])
 			if len(headerSet) == 1: # do all header lines match?
 				self.ImportHoleData(paths, headerSet.pop()) # pop lone header string
 			else:
-				self.parent.OnShowMessage("Error", "Unmatched headers found, only one datatype can be imported at a time", 1)
+				glb.OnShowMessage("Error", "Unmatched headers found, only one datatype can be imported at a time", 1)
 		opendlg.Destroy()
 
 	def ImportHoleData(self, paths, header):
@@ -993,7 +993,7 @@ class DBView:
 			pass
 
 	def ViewFile(self, filename):
-		holefile = g.DBPath + "db/" + self.GetCurrentSite().GetDir() + filename
+		holefile = glb.DBPath + "db/" + self.GetCurrentSite().GetDir() + filename
 		self.dataFrame.fileText.Clear()
 		self.dataFrame.fileText.LoadFile(holefile)
 		self.dataFrame.sideNote.SetSelection(3) # File View tab
@@ -1002,12 +1002,12 @@ class DBView:
 		exportDlg = dialog.ExportCoreDialog(self.dataFrame)
 		exportDlg.Centre()
 		if exportDlg.ShowModal() == wx.ID_OK:
-			fileDlg = wx.FileDialog(self.dataFrame, "Select Directory for Export", g.LastDir, style=wx.SAVE)
+			fileDlg = wx.FileDialog(self.dataFrame, "Select Directory for Export", glb.LastDir, style=wx.SAVE)
 			if fileDlg.ShowModal() == wx.ID_OK:
 				self.parent.OnNewData(None)
 
 				siteDir = holeList[0].holeSet.site.GetDir()
-				path = g.DBPath + 'db/' + siteDir
+				path = glb.DBPath + 'db/' + siteDir
 
 				# load holes (ignoring enabled state)
 				for hole in holeList:
@@ -1030,10 +1030,10 @@ class DBView:
  				if exportDlg.splice.GetValue() == True and splice_item != None :
  					ret_splice = py_correlator.openSpliceFile(path + splice_item.file)
  					if ret_splice == "error" : 
- 						self.parent.OnShowMessage("Error", "Could not Make Splice Records", 1)
+ 						glb.OnShowMessage("Error", "Could not Make Splice Records", 1)
 					applied = "splice"
 				elif exportDlg.splice.GetValue() == True and splice_item == None :
- 					self.parent.OnShowMessage("Error", "Can't export, active splice table required.", 1)
+ 					glb.OnShowMessage("Error", "Can't export, active splice table required.", 1)
  					self.parent.OnNewData(None)
  					exportDlg.Destroy()
  					return
@@ -1045,7 +1045,7 @@ class DBView:
 # 						py_correlator.openAttributeFile(path + self.tree.GetItemText(eld_item, 8), 1)
 # 						applied = "eld"
 # 					else :
-# 						self.parent.OnShowMessage("Error", "Need Log to Export ELD", 1)
+# 						glb.OnShowMessage("Error", "Need Log to Export ELD", 1)
 # 						self.parent.OnNewData(None)
 # 						dlg.Destroy()
 # 						return
@@ -1115,9 +1115,9 @@ class DBView:
 					pass
 				
 				if savedCoreCount > 0:
-					self.parent.OnShowMessage("Information", "Export successful", 1)
+					glb.OnShowMessage("Information", "Export successful", 1)
 				else:
-					self.parent.OnShowMessage("Error", "Export failed", 1)
+					glb.OnShowMessage("Error", "Export failed", 1)
 
 			fileDlg.Destroy()
 		exportDlg.Destroy()

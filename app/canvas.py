@@ -14,6 +14,7 @@ import random, sys, os, re, time, ConfigParser, string
 from importManager import py_correlator
 
 import frames
+import globals as glb
 
 # brg 4/9/2014: Why are we defining our own wxBufferedWindow when
 # wx.BufferedWindow already exists (same interface 'n all) in wx?
@@ -3360,7 +3361,7 @@ class DataCanvas(wxBufferedWindow):
 					self.LogselectedTie = -1
 					self.drag = 0
 					#print "[DEBUG] tieNo is Zero -- then error"
-					self.parent.OnShowMessage("Error", "Could not make tie", 1)
+					glb.OnShowMessage("Error", "Could not make tie", 1)
 					return
 
 				if self.PreviewNumTies == 0 :
@@ -3508,7 +3509,7 @@ class DataCanvas(wxBufferedWindow):
 			self.RealSpliceTie.append(spliceTieA)
 			self.SpliceCore.append(spliceTieA.core)
 		if splice_data[0] == -1:
-			self.parent.OnShowMessage("Error", "It can not find value point.", 1)
+			glb.OnShowMessage("Error", "It can not find value point.", 1)
 			self.parent.splicePanel.OnButtonEnable(0, True)
 			self.parent.splicePanel.OnButtonEnable(1, False)
 			return
@@ -5074,7 +5075,7 @@ class DataCanvas(wxBufferedWindow):
 		if pos[0] >= self.splicerX :
 			if self.grabCore >= 0 :
 				if self.parent.splicePanel.appendall == 1 :
-					self.parent.OnShowMessage("Error", "Appending all blocks more splicing", 1)
+					glb.OnShowMessage("Error", "Appending all blocks more splicing", 1)
 					self.grabCore = -1
 					return
 
@@ -5207,7 +5208,7 @@ class DataCanvas(wxBufferedWindow):
 							self.parent.UpdateSMOOTH_LOGSPLICE(False)
 						self.Lock = False
 					else :
-						self.parent.OnShowMessage("Error", "Please choose a core of Good quality.", 1)
+						glb.OnShowMessage("Error", "Please choose a core of Good quality.", 1)
 
 				#  >= 1 splice core
 				elif len(self.SpliceCore) >= 1 and self.isLogMode == 0:
@@ -5218,7 +5219,7 @@ class DataCanvas(wxBufferedWindow):
 								self.CurrentSpliceCore = self.grabCore
 							else:
 								errStr = "The previously spliced core is from Hole %s, please select a core from a different hole." % ret[0]
-								self.parent.OnShowMessage("Error", errStr, 1)
+								glb.OnShowMessage("Error", errStr, 1)
 
 						# UPDATE SETTYPE FOR SPLICE
 						type = ret[2]
@@ -5244,7 +5245,7 @@ class DataCanvas(wxBufferedWindow):
 							#print "[DEBUG] splice type is changed : " + str(self.selectedType)
 							self.multipleType = True
 					else :
-						self.parent.OnShowMessage("Error", "Please choose a core of Good quality.", 1)
+						glb.OnShowMessage("Error", "Please choose a core of Good quality.", 1)
 				self.grabCore = -1
 				self.UpdateDrawing()
 				return
@@ -5350,7 +5351,7 @@ class DataCanvas(wxBufferedWindow):
 					logcount = self.parent.eldPanel.fileList.GetCount()
 					logcount = len(self.LogTieData) - (logcount * 2)
 					if self.parent.CheckAutoELD() == False :
-						self.parent.OnShowMessage("Error", "Auto Correlation does not applied.", 1)
+						glb.OnShowMessage("Error", "Auto Correlation does not applied.", 1)
 						self.selectedCore = -1
 						self.spliceTie = -1
 						self.logTie = -1
@@ -5499,7 +5500,7 @@ class DataCanvas(wxBufferedWindow):
 				# create composite tie
 				elif self.spliceTie == -1:
 					if self.LogData != []:
-						self.parent.OnShowMessage("Error", "You can not do composite.", 1)
+						glb.OnShowMessage("Error", "You can not do composite.", 1)
 					else:
 						fixed = 0 
 						length = len(self.TieData) % 2

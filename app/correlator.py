@@ -116,8 +116,11 @@ class MainFrame(wx.Frame):
 		self.noOfSameTypeHoles = 0
 		self.logFileptr = global_logFile
 		self.logName = global_logName
-		self.Window = canvas.DataCanvas(self)
-		self.topMenu = frames.TopMenuFrame(self)
+
+		glb.MainFrame = self
+		self.Window = canvas.DataCanvas(self) # brgtodo global
+		self.topMenu = frames.TopMenuFrame(self) # brgtodo global
+
 		self.dataFrame = None
 		self.PrevDataType = "" 
 		self.CurrentDir = ""
@@ -339,7 +342,7 @@ class MainFrame(wx.Frame):
 		if ret == wx.ID_OK :
 			# check....
 			if os.access(path + '/datalist.db', os.F_OK) == False :
-				self.OnShowMessage("Error", "It doesn't have datalist.db", 1)
+				glb.OnShowMessage("Error", "It doesn't have datalist.db", 1)
 				return
 			datalist = []
 			dblist_f = open(glb.DBPath + 'db/datalist.db', 'r+')
@@ -372,7 +375,7 @@ class MainFrame(wx.Frame):
 								break
 						if found_flag == True :
 							os.chdir(workingdir)
-							self.OnShowMessage("Error", "There is already " + first_token, 1)
+							glb.OnShowMessage("Error", "There is already " + first_token, 1)
 							os.chdir(path)
 						else :
 							dblist_f.write("\n"+ first_token+"\n")
@@ -417,7 +420,7 @@ class MainFrame(wx.Frame):
 						break
 				if found_flag == True :
 					os.chdir(workingdir)
-					self.OnShowMessage("Error", "There is already " + first_token, 1)
+					glb.OnShowMessage("Error", "There is already " + first_token, 1)
 					os.chdir(path)
 				else :
 					dblist_f.write("\n"+ first_token+"\n")
@@ -447,7 +450,7 @@ class MainFrame(wx.Frame):
 				self.dataFrame.root = self.dataFrame.tree.AddRoot("Root")
 				self.dataFrame.repCount = 0
 				self.dataFrame.OnLOADCONFIG()
-				self.OnShowMessage("Information", "Successfully Imported", 1)
+				glb.OnShowMessage("Information", "Successfully Imported", 1)
 
 
 	def IMPORTRepository(self):
@@ -458,10 +461,10 @@ class MainFrame(wx.Frame):
 			opendlg.Destroy()
 			if ret == wx.ID_OK :
 				if os.access(path + '/default.cfg', os.F_OK) == False :
-					self.OnShowMessage("Error", "It's not Repository Root", 1)
+					glb.OnShowMessage("Error", "It's not Repository Root", 1)
 					continue
 				if os.access(path + '/db/datalist.db', os.F_OK) == False :
-					self.OnShowMessage("Error", "It's not Repository Root", 1)
+					glb.OnShowMessage("Error", "It's not Repository Root", 1)
 					continue
 
 				workingdir = os.getcwd()
@@ -614,7 +617,7 @@ class MainFrame(wx.Frame):
 
 	def OnEvalSetup(self):
 		if self.depthStep < self.origin_depthStep :
-			self.OnShowMessage("Error", str(self.origin_depthStep) + " is min depth step.", 1)
+			glb.OnShowMessage("Error", str(self.origin_depthStep) + " is min depth step.", 1)
 			self.depthStep  = self.origin_depthStep
 		py_correlator.setEvalGraph(self.depthStep, self.winLength, self.leadLag)
 
@@ -783,7 +786,7 @@ class MainFrame(wx.Frame):
 
 		if self.CurrentDir != '' :
 			if self.AffineChange == True or self.SpliceChange == True or self.EldChange == True or self.AgeChange == True or self.TimeChange == True :
-				ret = self.OnShowMessage("About", "Do you want to save changes?", 2)
+				ret = glb.OnShowMessage("About", "Do you want to save changes?", 2)
 				if ret == wx.ID_OK :
 					self.topMenu.OnSAVE(event)
 
@@ -793,7 +796,7 @@ class MainFrame(wx.Frame):
 					self.AgeChange = False 
 					self.TimeChange = False 
 
-		ret = self.OnShowMessage("About", "Do you want to Exit?", 2)
+		ret = glb.OnShowMessage("About", "Do you want to Exit?", 2)
 		if ret == wx.ID_CANCEL :
 			return
 
@@ -1020,14 +1023,6 @@ class MainFrame(wx.Frame):
 		dlg.ShowModal()
 		dlg.Destroy()
 
-	def OnShowMessage(self, type, msg, numButton): 
-		#dlg = dialog.MessageDialog(None, type, msg, numButton)
-		dlg = dialog.MessageDialog(self.topMenu, type, msg, numButton)
-		dlg.Centre(wx.CENTER_ON_SCREEN)
-		ret = dlg.ShowModal()
-		dlg.Destroy()
-		return ret
-
 	def AddTieInfo(self, info, depth):
 		self.eldPanel.AddTieInfo(info, depth)
 
@@ -1098,11 +1093,11 @@ class MainFrame(wx.Frame):
 
 			if self.client is None :
 				#print "[DEBUG] Could not open socket to Corelyzer"
-				self.OnShowMessage("Error", "Could not open socket to Corelyzer", 1)
+				glb.OnShowMessage("Error", "Could not open socket to Corelyzer", 1)
 				return False 
 			else :
 				#print "[DEBUG] Connected to Corelyzer"
-				self.OnShowMessage("Information", "Connected to Corelyzer", 1)
+				glb.OnShowMessage("Information", "Connected to Corelyzer", 1)
 				if self.Window.HoleData != [] :
 					# TEST
 					#self.client.send("load_section\t199\t1218\ta\t1\th\t1\t10\n")
@@ -1150,7 +1145,7 @@ class MainFrame(wx.Frame):
 			self.client = None
 			self.miConnection.SetText("Connect to Corelyzer");
 			print "[DEBUG] Close connection to Corelyzer"
-			self.OnShowMessage("Information", "Close connection to Corelyzer", 1)
+			glb.OnShowMessage("Information", "Close connection to Corelyzer", 1)
 			return False 
 			
 
@@ -1792,7 +1787,7 @@ class MainFrame(wx.Frame):
 		if self.client != None :
 			self.Window.selectedTie = -1
 			self.Window.UpdateDrawing()
-			tune_flag = self.OnShowMessage("About", "Do you want to process find tune?", 2)
+			tune_flag = glb.OnShowMessage("About", "Do you want to process find tune?", 2)
 			if tune_flag == wx.ID_OK :
 				ret1 = self.GetSectionNo(holeA, coreA)
 				ret2 = self.GetSectionNo(holeB, coreB)
@@ -2465,7 +2460,7 @@ class MainFrame(wx.Frame):
 
 	def ShowDataManager(self):
 		if self.CHECK_CHANGES() == True :
-			ret = self.OnShowMessage("About", "Do you want to save?", 0)
+			ret = glb.OnShowMessage("About", "Do you want to save?", 0)
 			if ret == wx.ID_YES:
 				self.topMenu.OnSAVE(None) # dummy event
 		if self.dataFrame.IsShown() == False :

@@ -16,7 +16,7 @@ import xml.sax
 from importManager import py_correlator
 
 import dialog
-import globals as g
+import globals as glb
 import xml_handler
 from model import * # brgtodo 4/24/2014: Remove import *
 
@@ -54,7 +54,7 @@ class DataFrame(wx.Panel):
 		self.sideNote.SetBackgroundColour(wx.Colour(255, 255, 255))
 		
 		self.pathPanel = wx.Panel(self, -1)
-		self.PathTxt = wx.TextCtrl(self.pathPanel, -1, "Path : " + g.DBPath)
+		self.PathTxt = wx.TextCtrl(self.pathPanel, -1, "Path : " + glb.DBPath)
 		self.PathTxt.SetEditable(False)
 
 		self.importbtn = wx.Button(self.pathPanel, -1, "Import")
@@ -162,7 +162,7 @@ class DataFrame(wx.Panel):
 		elif opId == 2 : # VIEW FILE
 			filename = self.tree.GetItemText(self.selectedIdx, 8)
 			if filename != "" :
-				filename = g.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + filename
+				filename = glb.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + filename
 				self.fileText.Clear()
 				self.fileText.LoadFile(filename)
 				self.sideNote.SetSelection(2)
@@ -244,10 +244,10 @@ class DataFrame(wx.Panel):
 				oldfilename = self.tree.GetItemText(self.selectedIdx, 8)
 				self.tree.SetItemText(self.selectedIdx,  filename, 8)
 
-				fullname = g.DBPath +'db/' + title + '/' + filename
+				fullname = glb.DBPath +'db/' + title + '/' + filename
 				if sys.platform == 'win32' :
 					workingdir = os.getcwd()
-					os.chdir(g.DBPath + 'db\\' + title)
+					os.chdir(glb.DBPath + 'db\\' + title)
 					
 					cmd = 'copy ' + oldfilename + ' ' + filename
 					os.system(cmd)
@@ -255,10 +255,10 @@ class DataFrame(wx.Panel):
 					os.system(cmd)
 					os.chdir(workingdir)
 				else :
-					cmd = 'cp \"' + g.DBPath +'db/' + title + '/' + oldfilename + '\" \"' + g.DBPath +'db/' + title + '/' + filename + '\"' 
+					cmd = 'cp \"' + glb.DBPath +'db/' + title + '/' + oldfilename + '\" \"' + glb.DBPath +'db/' + title + '/' + filename + '\"' 
 					#print "[DEBUG] " + cmd
 					os.system(cmd)
-					cmd = 'rm \"' + g.DBPath +'db/' + title + '/' + oldfilename + '\"'
+					cmd = 'rm \"' + glb.DBPath +'db/' + title + '/' + oldfilename + '\"'
 					# not do delete...
 					os.system(cmd)
 
@@ -302,7 +302,7 @@ class DataFrame(wx.Panel):
 			print "Export XML Data!"
 			# EXPORT XML TABLES
 			type = self.tree.GetItemText(self.selectedIdx, 1)
-			path = g.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10)
+			path = glb.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10)
 			filename = self.tree.GetItemText(self.selectedIdx, 8) 
 			if type == "AFFINE" :
 				self.SAVE_AFFINE_TO_XML(path, filename)
@@ -356,7 +356,7 @@ class DataFrame(wx.Panel):
 				if filename == self.parent.logName :
 					self.parent.logFileptr.close()
 					log = True 
-				filename = g.DBPath + filename
+				filename = glb.DBPath + filename
 				self.fileText.Clear()
 				self.fileText.LoadFile(filename)
 				self.sideNote.SetSelection(2)
@@ -365,33 +365,33 @@ class DataFrame(wx.Panel):
 		elif opId == 29 :
 			deleted_flag = False
 			selections = self.tree.GetSelections()
-			ret = self.parent.OnShowMessage("About", "Do you want to delete?", 2)
+			ret = glb.OnShowMessage("About", "Do you want to delete?", 2)
 			if ret == wx.ID_OK : 
 				for select in selections :
 					filename = 'log/' + self.tree.GetItemText(select, 1)
 					if filename == self.parent.logName :
-						self.parent.OnShowMessage("Error", "Can not delete current log", 1)
+						glb.OnShowMessage("Error", "Can not delete current log", 1)
 					else :
 						deleted_flag = True 
 						if sys.platform == 'win32' :
 							filename = self.tree.GetItemText(select, 1)
 							workingdir = os.getcwd()
-							os.chdir(g.DBPath + 'log/')
+							os.chdir(glb.DBPath + 'log/')
 							os.system('del \"' + filename + '\"')
 							os.chdir(workingdir)
 						else :
-							filename = g.DBPath + 'log/' + self.tree.GetItemText(select, 1)
+							filename = glb.DBPath + 'log/' + self.tree.GetItemText(select, 1)
 							os.system('rm \"'+ filename + '\"')
 						self.tree.Delete(select)
 			if deleted_flag == True :
-				self.parent.OnShowMessage("Information", "Successfully deleted", 1)
+				glb.OnShowMessage("Information", "Successfully deleted", 1)
 		elif opId == 30 :
 			# EMPTY
-			ret = self.parent.OnShowMessage("About", "Do you want to make it Empty?", 2)
+			ret = glb.OnShowMessage("About", "Do you want to make it Empty?", 2)
 			if ret == wx.ID_OK : 
 				if sys.platform == 'win32' :
 					workingdir = os.getcwd()
-					os.chdir(g.DBPath + 'log/')
+					os.chdir(glb.DBPath + 'log/')
 					totalcount = self.tree.GetChildrenCount(self.selectedIdx, False)
 					if totalcount > 0 :
 						child = self.tree.GetFirstChild(self.selectedIdx)
@@ -412,16 +412,16 @@ class DataFrame(wx.Panel):
 						child_item = child[0]
 						filename = 'log/' + self.tree.GetItemText(child_item, 1)
 						if filename != self.parent.logName :
-							os.system('rm \"'+ g.DBPath + filename + '\"')
+							os.system('rm \"'+ glb.DBPath + filename + '\"')
 						for k in range(1, totalcount) :
 							child_item = self.tree.GetNextSibling(child_item)
 							filename = 'log/' + self.tree.GetItemText(child_item, 1)
 							if filename != self.parent.logName :
-								os.system('rm \"'+ g.DBPath +filename + '\"')
+								os.system('rm \"'+ glb.DBPath +filename + '\"')
 
 				self.tree.Delete(self.selectedIdx)
 				self.LoadSessionReports()
-				self.parent.OnShowMessage("Information", "Successfully deleted", 1)
+				glb.OnShowMessage("Information", "Successfully deleted", 1)
 		elif opId == 31 :
 			# EXPORT SESSION REPORT
 			self.EXPORT_REPORT()
@@ -659,13 +659,13 @@ class DataFrame(wx.Panel):
 		dlg.Centre()
 		ret = dlg.ShowModal()
 		if ret == wx.ID_OK :
-			#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
-			opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
+			#opendlg = wx.DirDialog(self, "Select Directory For Export", glb.LastDir)
+			opendlg = wx.FileDialog(self, "Select Directory For Export", glb.LastDir, style=wx.SAVE)
 			ret = opendlg.ShowModal()
 			#output_path = opendlg.GetPath()
 			output_path = opendlg.GetDirectory()
 			output_prefix = opendlg.GetFilename()
-			g.LastDir = output_path
+			glb.LastDir = output_path
 			opendlg.Destroy()
 			if ret != wx.ID_OK :
 				return
@@ -773,7 +773,7 @@ class DataFrame(wx.Panel):
 
 			# LOADING DATA
 			self.parent.OnNewData(None)
-			path = g.DBPath + 'db/' + title + "/"
+			path = glb.DBPath + 'db/' + title + "/"
 
 			holes = []
 			if dlg.splice.GetValue() == True or isType == True :
@@ -814,10 +814,10 @@ class DataFrame(wx.Panel):
 			if dlg.splice.GetValue() == True and splice_item != None :
 				ret_splice = py_correlator.openSpliceFile(path +self.tree.GetItemText(splice_item, 8))
 				if ret_splice == "error" : 
-					self.parent.OnShowMessage("Error", "Could not Make Splice Records", 1)
+					glb.OnShowMessage("Error", "Could not Make Splice Records", 1)
 				applied = "splice"
 			elif dlg.splice.GetValue() == True and splice_item == None :
-				self.parent.OnShowMessage("Error", "Can not export -need splice table", 1)
+				glb.OnShowMessage("Error", "Can not export -need splice table", 1)
 				self.parent.OnNewData(None)
 				dlg.Destroy()
 				return
@@ -829,7 +829,7 @@ class DataFrame(wx.Panel):
 					py_correlator.openAttributeFile(path + self.tree.GetItemText(eld_item, 8), 1)
 					applied = "eld"
 				else :
-					self.parent.OnShowMessage("Error", "Need Log to Export ELD", 1)
+					glb.OnShowMessage("Error", "Need Log to Export ELD", 1)
 					self.parent.OnNewData(None)
 					dlg.Destroy()
 					return
@@ -892,21 +892,21 @@ class DataFrame(wx.Panel):
 							os.system(cmd)
 
 			if count > 0 :
-				self.parent.OnShowMessage("Information", "Successfully exported", 1)
+				glb.OnShowMessage("Information", "Successfully exported", 1)
 			else :
-				self.parent.OnShowMessage("Error", "Can not export", 1)
+				glb.OnShowMessage("Error", "Can not export", 1)
 
 		dlg.Destroy()
 
 
 	def SAVE_AFFINE_TO_XML(self, source_path, filename):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style =wx.SAVE)
+		#opendlg = wx.DirDialog(self, "Select Directory For Export", glb.LastDir)
+		opendlg = wx.FileDialog(self, "Select Directory For Export", glb.LastDir, style =wx.SAVE)
 		ret = opendlg.ShowModal()
 		#path = opendlg.GetPath()
 		path = opendlg.GetDirectory()
 		outfile = opendlg.GetFilename() 
-		g.LastDir = path
+		glb.LastDir = path
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			fin = open(source_path + filename, 'r+')
@@ -944,17 +944,17 @@ class DataFrame(wx.Panel):
 			fout.write("</Correlator>\n")
 			fout.close()
 			fin.close()
-			self.parent.OnShowMessage("Information", "Successfully exported", 1)
+			glb.OnShowMessage("Information", "Successfully exported", 1)
 
 
 	def SAVE_SPLICE_TO_XML(self, source_path, filename, leg):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
+		#opendlg = wx.DirDialog(self, "Select Directory For Export", glb.LastDir)
+		opendlg = wx.FileDialog(self, "Select Directory For Export", glb.LastDir, style=wx.SAVE)
 		ret = opendlg.ShowModal()
 		#path = opendlg.GetPath()
 		path = opendlg.GetDirectory()
 		outfile = opendlg.GetFilename()
-		g.LastDir = path
+		glb.LastDir = path
 		opendlg.Destroy()
 		affinetable = "None"
 		if ret == wx.ID_OK :
@@ -1032,17 +1032,17 @@ class DataFrame(wx.Panel):
 			fout.write("</Correlator>\n")
 			fout.close()
 			fin.close()
-			self.parent.OnShowMessage("Information", "Successfully exported", 1)
+			glb.OnShowMessage("Information", "Successfully exported", 1)
 
 
 	def SAVE_ELD_TO_XML(self, source_path, filename):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
+		#opendlg = wx.DirDialog(self, "Select Directory For Export", glb.LastDir)
+		opendlg = wx.FileDialog(self, "Select Directory For Export", glb.LastDir, style=wx.SAVE)
 		ret = opendlg.ShowModal()
 		#path = opendlg.GetPath()
 		path = opendlg.GetDirectory()
 		outfile = opendlg.GetFilename()
-		g.LastDir = path
+		glb.LastDir = path
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			fin = open(source_path + filename, 'r+')
@@ -1126,17 +1126,17 @@ class DataFrame(wx.Panel):
 			fout.write("</Correlator>\n")
 			fout.close()
 			fin.close()
-			self.parent.OnShowMessage("Information", "Successfully exported", 1)
+			glb.OnShowMessage("Information", "Successfully exported", 1)
 
 
 	def SAVE_CULL_TO_XML(self, source_path, filename):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
+		#opendlg = wx.DirDialog(self, "Select Directory For Export", glb.LastDir)
+		opendlg = wx.FileDialog(self, "Select Directory For Export", glb.LastDir, style=wx.SAVE)
 		ret = opendlg.ShowModal()
 		#path = opendlg.GetPath()
 		path = opendlg.GetDirectory()
 		outfile = opendlg.GetFilename()
-		g.LastDir = path
+		glb.LastDir = path
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			fin = open(source_path + filename, 'r+')
@@ -1261,17 +1261,17 @@ class DataFrame(wx.Panel):
 			fout.write("</Correlator>\n")
 			fout.close()
 			fin.close()
-			self.parent.OnShowMessage("Information", "Successfully exported", 1)
+			glb.OnShowMessage("Information", "Successfully exported", 1)
 
 
 	def SAVE_SERIES_TO_XML(self, source_path, filename, leg, site):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
+		#opendlg = wx.DirDialog(self, "Select Directory For Export", glb.LastDir)
+		opendlg = wx.FileDialog(self, "Select Directory For Export", glb.LastDir, style=wx.SAVE)
 		ret = opendlg.ShowModal()
 		#path = opendlg.GetPath()
 		path = opendlg.GetDirectory()
 		outfile = opendlg.GetFilename()
-		g.LastDir = path
+		glb.LastDir = path
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			fin = open(source_path + filename, 'r+')
@@ -1304,17 +1304,17 @@ class DataFrame(wx.Panel):
 			fout.write("</Correlator>\n")
 			fout.close()
 			fin.close()
-			self.parent.OnShowMessage("Information", "Successfully exported", 1)
+			glb.OnShowMessage("Information", "Successfully exported", 1)
 
 
 	def SAVE_AGE_TO_XML(self, source_path, filename, leg, site):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
+		#opendlg = wx.DirDialog(self, "Select Directory For Export", glb.LastDir)
+		opendlg = wx.FileDialog(self, "Select Directory For Export", glb.LastDir, style=wx.SAVE)
 		ret = opendlg.ShowModal()
 		#path = opendlg.GetPath()
 		path = opendlg.GetDirectory()
 		outfile = opendlg.GetFilename()
-		g.LastDir = path
+		glb.LastDir = path
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			fin = open(source_path + filename, 'r+')
@@ -1353,7 +1353,7 @@ class DataFrame(wx.Panel):
 			fout.write("</Correlator>\n")
 			fout.close()
 			fin.close()
-			self.parent.OnShowMessage("Information", "Successfully exported", 1)
+			glb.OnShowMessage("Information", "Successfully exported", 1)
 
 
 	def SAVE_CORE_TO_XML(self, source_path, src_file, dest_path, dest_file, age_flag, splice_flag):
@@ -1468,17 +1468,17 @@ class DataFrame(wx.Panel):
 				break
 
 		if not valid:
-			self.parent.OnShowMessage("Error", "Invalid image listing file, expected either LIMS or Chronos format", 1)
+			glb.OnShowMessage("Error", "Invalid image listing file, expected either LIMS or Chronos format", 1)
 
 		return valid
 
 
 	def OnIMPORT_IMAGE(self):
-		opendlg = wx.FileDialog(self, "Open Image Data file", g.LastDir, "", wildcard = "*.*")
+		opendlg = wx.FileDialog(self, "Open Image Data file", glb.LastDir, "", wildcard = "*.*")
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		source_name = opendlg.GetFilename()
-		g.LastDir = opendlg.GetDirectory()
+		glb.LastDir = opendlg.GetDirectory()
 		opendlg.Destroy()
 		if ret == wx.ID_OK and self.ValidateImageListingFile(path):
 			item = self.tree.GetSelection()
@@ -1509,10 +1509,10 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(newline, path, 9)
 			self.tree.SetItemText(newline, title + '/', 10)
 
-			fullname = g.DBPath +'db/' + title + '/' + filename 
+			fullname = glb.DBPath +'db/' + title + '/' + filename 
 			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
-				os.chdir(g.LastDir)
+				os.chdir(glb.LastDir)
 				cmd = 'copy \"' + source_name + '\" \"' + fullname + '\"'
 				os.system(cmd)
 				os.chdir(workingdir)
@@ -1521,15 +1521,15 @@ class DataFrame(wx.Panel):
 				os.system(cmd)
 
 			self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
-			self.parent.OnShowMessage("Information", "Successfully imported", 1)
+			glb.OnShowMessage("Information", "Successfully imported", 1)
 
 
 	def IMPORT_TIME_SERIES(self):
-		opendlg = wx.FileDialog(self, "Open Time Series file", g.LastDir, "", wildcard = "*.*")
+		opendlg = wx.FileDialog(self, "Open Time Series file", glb.LastDir, "", wildcard = "*.*")
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		source_name = opendlg.GetFilename()
-		g.LastDir = opendlg.GetDirectory()
+		glb.LastDir = opendlg.GetDirectory()
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			item = self.tree.GetSelection()
@@ -1542,22 +1542,22 @@ class DataFrame(wx.Panel):
 			site = title[last+1:max]
 
 			filename = str(title) + '.' + str(idx) + '.age.model'
-			fullname = g.DBPath +'db/' + title + '/' + filename 
+			fullname = glb.DBPath +'db/' + title + '/' + filename 
 			last = path.find(".xml", 0)
 			if last >= 0 :
 				self.handler.init()
-				self.handler.openFile(g.LastDir + "/.tmp_table")	
+				self.handler.openFile(glb.LastDir + "/.tmp_table")	
 				self.parser.parse(path)
 				self.handler.closeFile()
-				path = g.LastDir + "/.tmp_table"
+				path = glb.LastDir + "/.tmp_table"
 				source_name = ".tmp_table"
 				if self.handler.type != "age model" :
-					self.parent.OnShowMessage("Error", "It is not age model", 1)
+					glb.OnShowMessage("Error", "It is not age model", 1)
 					return
 
 			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
-				os.chdir(g.LastDir)
+				os.chdir(glb.LastDir)
 				cmd = 'copy \"' + source_name + '\" \"' + fullname + '\"'
 				os.system(cmd)
 				os.chdir(workingdir)
@@ -1584,15 +1584,15 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(newline, title + '/', 10)
 
 			self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
-			self.parent.OnShowMessage("Information", "Successfully imported", 1)
+			glb.OnShowMessage("Information", "Successfully imported", 1)
 
 
 	def IMPORT_AGE_MODEL(self):
-		opendlg = wx.FileDialog(self, "Open Age Model file", g.LastDir, "", wildcard = "*.*")
+		opendlg = wx.FileDialog(self, "Open Age Model file", glb.LastDir, "", wildcard = "*.*")
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		source_name = opendlg.GetFilename()
-		g.LastDir = opendlg.GetDirectory()
+		glb.LastDir = opendlg.GetDirectory()
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			item = self.tree.GetSelection()
@@ -1605,22 +1605,22 @@ class DataFrame(wx.Panel):
 			site = title[last+1:max]
 
 			filename = str(title) + '.' + str(idx) + '.age-depth.dat'
-			fullname = g.DBPath +'db/' + title + '/' + filename 
+			fullname = glb.DBPath +'db/' + title + '/' + filename 
 			last = path.find(".xml", 0)
 			if last >= 0 :
 				self.handler.init()
-				self.handler.openFile(g.LastDir + "/.tmp_table")	
+				self.handler.openFile(glb.LastDir + "/.tmp_table")	
 				self.parser.parse(path)
 				self.handler.closeFile()
-				path = g.LastDir + "/.tmp_table"
+				path = glb.LastDir + "/.tmp_table"
 				source_name = ".tmp_table"
 				if self.handler.type != "age depth" :
-					self.parent.OnShowMessage("Error", "It is not age depth values", 1)
+					glb.OnShowMessage("Error", "It is not age depth values", 1)
 					return
 
 			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
-				os.chdir(g.LastDir)
+				os.chdir(glb.LastDir)
 				cmd = 'copy \"' + source_name + '\" \"' + fullname + '\"'
 				os.system(cmd)
 				os.chdir(workingdir)
@@ -1647,14 +1647,14 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(newline, title + '/', 10)
 
 			self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
-			self.parent.OnShowMessage("Information", "Successfully imported", 1)
+			glb.OnShowMessage("Information", "Successfully imported", 1)
 
 
 	def OnIMPORT_STRAT(self):
 		while True :
 			self.OnIMPORT_STRAT1()
 			# 1/22/2014 brgtodo: Allow multiple selection to avoid nagging here?
-			ret = self.parent.OnShowMessage("About", "Any more stratigraphy files to add now?", 2)
+			ret = glb.OnShowMessage("About", "Any more stratigraphy files to add now?", 2)
 			if ret != wx.ID_OK :
 				break
 
@@ -1663,7 +1663,7 @@ class DataFrame(wx.Panel):
 
 		# account for off-chance user selects an app bundle on OSX
 		if not os.path.isfile(stratFile):
-			self.parent.OnShowMessage("Error", "Invalid file selected", 1)
+			glb.OnShowMessage("Error", "Invalid file selected", 1)
 			return False
 
 		f = open(stratFile, 'r+')
@@ -1685,10 +1685,10 @@ class DataFrame(wx.Panel):
 				if modifiedLine[4] == leg and modifiedLine[5] == site :
 					valid = True
 				else:
-					self.parent.OnShowMessage("Error", "This stratigraphy data is not for " + title , 1)
+					glb.OnShowMessage("Error", "This stratigraphy data is not for " + title , 1)
 					break
 			else :
-				self.parent.OnShowMessage("Error", "Invalid stratigraphy file", 1)
+				glb.OnShowMessage("Error", "Invalid stratigraphy file", 1)
 				break
 
 		f.close()
@@ -1696,12 +1696,12 @@ class DataFrame(wx.Panel):
 
 	def OnIMPORT_STRAT1(self):
 		filterindex = 0
-		opendlg = wx.FileDialog(self, "Open Stratigraphy Data file", g.LastDir, "", wildcard = "Diatoms|*.*|Radioloria|*.*|Foraminifera|*.*|Nannofossils|*.*|Paleomag|*.*")
+		opendlg = wx.FileDialog(self, "Open Stratigraphy Data file", glb.LastDir, "", wildcard = "Diatoms|*.*|Radioloria|*.*|Foraminifera|*.*|Nannofossils|*.*|Paleomag|*.*")
 		opendlg.SetFilterIndex(filterindex)
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		source_name = opendlg.GetFilename()
-		g.LastDir = opendlg.GetDirectory()
+		glb.LastDir = opendlg.GetDirectory()
 		filterindex = opendlg.GetFilterIndex()
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
@@ -1743,10 +1743,10 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(newline, path, 9)
 			self.tree.SetItemText(newline, title + '/', 10)
 
-			fullname = g.DBPath +'db/' + title + '/' + filename 
+			fullname = glb.DBPath +'db/' + title + '/' + filename 
 			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
-				os.chdir(g.LastDir)
+				os.chdir(glb.LastDir)
 				cmd = 'copy \"' + source_name + '\" \"' + fullname + '\"'
 				os.system(cmd)
 				os.chdir(workingdir)
@@ -1756,25 +1756,25 @@ class DataFrame(wx.Panel):
 
 			self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
 
-			self.parent.OnShowMessage("Information", "Successfully imported", 1)
+			glb.OnShowMessage("Information", "Successfully imported", 1)
 
 
 	def OnEXPORT(self):
 		if self.selectedIdx != None :
-			#opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
-			opendlg = wx.FileDialog(self, "Select Directory For Export", g.LastDir, style=wx.SAVE)
+			#opendlg = wx.DirDialog(self, "Select Directory For Export", glb.LastDir)
+			opendlg = wx.FileDialog(self, "Select Directory For Export", glb.LastDir, style=wx.SAVE)
 			ret = opendlg.ShowModal()
 			#path = opendlg.GetPath()
 			path = opendlg.GetDirectory()
 			filename = opendlg.GetFilename()
-			g.LastDir = path
+			glb.LastDir = path
 			opendlg.Destroy()
 			if ret == wx.ID_OK :
 				parentItem = self.tree.GetItemParent(self.selectedIdx)
 				parentItem = self.tree.GetItemParent(parentItem)
 				title = self.tree.GetItemText(parentItem, 0)
 
-				source = g.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + self.tree.GetItemText(self.selectedIdx, 8)
+				source = glb.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + self.tree.GetItemText(self.selectedIdx, 8)
 				#outfile = self.tree.GetItemText(self.selectedIdx, 8)
 				outfile = filename + ".dat"
 
@@ -1804,22 +1804,22 @@ class DataFrame(wx.Panel):
 				if sys.platform == 'win32' :
 					workingdir = os.getcwd()
 					# ------------------------
-					os.chdir(g.DBPath + 'db\\' + title)
+					os.chdir(glb.DBPath + 'db\\' + title)
 					cmd = 'copy ' + self.tree.GetItemText(self.selectedIdx, 8)  + ' \"' + path + '\\' + str(outfile) + '\"'
 					os.system(cmd)
 					os.chdir(workingdir)
 				else :	
 					cmd = 'cp \"' +  source  + '\" \"' + path + '/' + outfile + '\"'
 					os.system(cmd)
-				self.parent.OnShowMessage("Information", "Successfully exported", 1)
+				glb.OnShowMessage("Information", "Successfully exported", 1)
 
 
 	def EXPORT_REPORT(self):
 		if self.selectedIdx != None :
-			opendlg = wx.DirDialog(self, "Select Directory For Export", g.LastDir)
+			opendlg = wx.DirDialog(self, "Select Directory For Export", glb.LastDir)
 			ret = opendlg.ShowModal()
 			path = opendlg.GetPath()
-			g.LastDir = path
+			glb.LastDir = path
 			opendlg.Destroy()
 			if ret == wx.ID_OK :
 				parentItem = self.tree.GetItemParent(self.selectedIdx)
@@ -1827,15 +1827,15 @@ class DataFrame(wx.Panel):
 
 				if sys.platform == 'win32' :
 					workingdir = os.getcwd()
-					os.chdir(g.DBPath + 'log\\')					
+					os.chdir(glb.DBPath + 'log\\')					
 					cmd = 'copy ' +  outfile  + ' \"' + path + '/' + outfile + '\"'
 					os.system(cmd)
 					os.chdir(workingdir)
 				else :	
-					source = g.DBPath + 'log/' + self.tree.GetItemText(self.selectedIdx, 1)
+					source = glb.DBPath + 'log/' + self.tree.GetItemText(self.selectedIdx, 1)
 					cmd = 'cp \"' +  source  + '\" \"' + path + '/' + outfile + '\"'
 					os.system(cmd)
-				self.parent.OnShowMessage("Information", "Successfully exported", 1)
+				glb.OnShowMessage("Information", "Successfully exported", 1)
 
 
 	def OnINITGENERICSHEET(self):
@@ -1852,27 +1852,27 @@ class DataFrame(wx.Panel):
 		if sys.platform == 'win32' :
 			# ------- [NEED TO DO] not delete file, move the directory to backup
 			workingdir = os.getcwd()
-			os.chdir(g.DBPath)
+			os.chdir(glb.DBPath)
 			os.system('rd /s /q db')
 			os.system('mkdir db')			
 			os.chdir(workingdir)
 		else :
 			# ------- not delete file, move the directory to backup
-			#if os.access(g.DBPath + 'backup/' , os.F_OK) == False :
-			#	os.mkdir(g.DBPath + 'backup/')
-			#newdirname = '\'' +g.DBPath + 'backup/' + str(datetime.today()) + '/\''
-			#os.system('mv ' + g.DBPath + 'db/ ' + newdirname)
+			#if os.access(glb.DBPath + 'backup/' , os.F_OK) == False :
+			#	os.mkdir(glb.DBPath + 'backup/')
+			#newdirname = '\'' +glb.DBPath + 'backup/' + str(datetime.today()) + '/\''
+			#os.system('mv ' + glb.DBPath + 'db/ ' + newdirname)
 
 			# brg 9/17/2013 above backup directory appears to be a half-implemented feature:
 			# reverting to normal file deletion for now.
-			os.system('rm -rf ' + g.DBPath + 'db/')
-			os.system('mkdir '+ g.DBPath + 'db/')
+			os.system('rm -rf ' + glb.DBPath + 'db/')
+			os.system('mkdir '+ glb.DBPath + 'db/')
 	
 		self.parent.logFileptr.write("Delete All Dataset \n\n")
 
 
 		log_report = self.tree.AppendItem(self.root, 'Session Reports')
-		list = os.listdir(g.DBPath + 'log/')
+		list = os.listdir(glb.DBPath + 'log/')
 		for dir in list :
 			if dir != ".DS_Store" :
 				report_item = self.tree.AppendItem(log_report, 'Report')
@@ -1938,7 +1938,7 @@ class DataFrame(wx.Panel):
 
 			if title == back_title :
 				if type == "*" or back_type == "*" or type == back_type :
-					ret = self.parent.OnShowMessage("Information", "Loaded Data will be clear.", 2)
+					ret = glb.OnShowMessage("Information", "Loaded Data will be clear.", 2)
 					if ret == wx.ID_OK :
 						self.parent.OnNewData(None)
 						self.selectBackup = []
@@ -1955,29 +1955,29 @@ class DataFrame(wx.Panel):
 			
 			if label == "Root" :
 				if self.tree.GetChildrenCount(selectItem, False) == 0 :
-					self.parent.OnShowMessage("Error", "There is no data to delete", 1)
+					glb.OnShowMessage("Error", "There is no data to delete", 1)
 					return
 
-				ret = self.parent.OnShowMessage("About", "Do you want to delete all?", 2)
+				ret = glb.OnShowMessage("About", "Do you want to delete all?", 2)
 				if ret == wx.ID_OK :
 					self.OnDELETEALL()
 					return
 				break
 
 			if label == "Saved Tables" :
-				self.parent.OnShowMessage("Error", "You can not delete Table", 1)
+				glb.OnShowMessage("Error", "You can not delete Table", 1)
 				break
 			if label == "Downhole Log Data" :
-				self.parent.OnShowMessage("Error", "You can not delete Log", 1)
+				glb.OnShowMessage("Error", "You can not delete Log", 1)
 				break
 			if label == "Stratigraphy" :
-				self.parent.OnShowMessage("Error", "You can not delete Stratigraphy", 1)
+				glb.OnShowMessage("Error", "You can not delete Stratigraphy", 1)
 				break
 			if label == "Age Models" :
-				self.parent.OnShowMessage("Error", "You can not delete Age Models", 1)
+				glb.OnShowMessage("Error", "You can not delete Age Models", 1)
 				break
 			if label == "Image Data" :
-				self.parent.OnShowMessage("Error", "You can not delete Image Data", 1)
+				glb.OnShowMessage("Error", "You can not delete Image Data", 1)
 				break
 
 			if idx == 0 :
@@ -1988,7 +1988,7 @@ class DataFrame(wx.Panel):
 				else :
 					label = self.tree.GetItemText(selectItem, 1)
 
-				ret = self.parent.OnShowMessage("About", "Do you want to delete " + label + "?", 2)
+				ret = glb.OnShowMessage("About", "Do you want to delete " + label + "?", 2)
 				if ret == wx.ID_OK :
 					idx = 1
 				else :
@@ -2035,12 +2035,12 @@ class DataFrame(wx.Panel):
 				if sys.platform == 'win32' :
 					filename = self.tree.GetItemText(selectItem, 8)
 					workingdir = os.getcwd()
-					os.chdir(g.DBPath + 'db/' + title + '/')
+					os.chdir(glb.DBPath + 'db/' + title + '/')
 					os.system('del \"' + filename + '\"')
 					os.chdir(workingdir)
 					self.parent.logFileptr.write("Delete " + filename + "\n\n")
 				else :
-					filename = g.DBPath + 'db/' + title + '/' + self.tree.GetItemText(selectItem, 8)
+					filename = glb.DBPath + 'db/' + title + '/' + self.tree.GetItemText(selectItem, 8)
 					#  --- not to delete
 					os.system('rm \"'+ filename + '\"')
 					self.parent.logFileptr.write("Delete " + filename + "\n\n")
@@ -2059,12 +2059,12 @@ class DataFrame(wx.Panel):
 						if sys.platform == 'win32' :
 							filename = self.tree.GetItemText(child_item, 8)
 							workingdir = os.getcwd()
-							os.chdir(g.DBPath + 'db/' + title + '/')
+							os.chdir(glb.DBPath + 'db/' + title + '/')
 							os.system('del \"' + filename + '\"')
 							os.chdir(workingdir)
 							self.parent.logFileptr.write("Delete " + filename + "\n\n")
 						else :
-							filename = g.DBPath + 'db/' + title + '/' + self.tree.GetItemText(child_item, 8)
+							filename = glb.DBPath + 'db/' + title + '/' + self.tree.GetItemText(child_item, 8)
 							# ----- not to delete
 							os.system('rm \"'+ filename + '\"')
 							self.parent.logFileptr.write("Delete " + filename + "\n\n")
@@ -2073,12 +2073,12 @@ class DataFrame(wx.Panel):
 							if sys.platform == 'win32' :
 								filename = self.tree.GetItemText(child_item, 8)
 								workingdir = os.getcwd()
-								os.chdir(g.DBPath + 'db/' + title + '/')
+								os.chdir(glb.DBPath + 'db/' + title + '/')
 								os.system('del \"' + filename + '\"')
 								os.chdir(workingdir)
 								self.parent.logFileptr.write("Delete " + filename + "\n\n")
 							else :
-								filename = g.DBPath + 'db/' + title + '/' + self.tree.GetItemText(child_item, 8)
+								filename = glb.DBPath + 'db/' + title + '/' + self.tree.GetItemText(child_item, 8)
 								# ----- not to delete
 								os.system('rm \"'+ filename + '\"')
 								self.parent.logFileptr.write("Delete " + filename + "\n\n")
@@ -2092,20 +2092,20 @@ class DataFrame(wx.Panel):
 					# whole leg-site Directory
 					if sys.platform == 'win32' :
 						workingdir = os.getcwd()
-						os.chdir(g.DBPath + 'db/')
+						os.chdir(glb.DBPath + 'db/')
 						os.system('rd /s /q ' + title)
 						os.chdir(workingdir)
-						self.parent.logFileptr.write("Delete " + g.DBPath + 'db/' + title + "\n\n")
+						self.parent.logFileptr.write("Delete " + glb.DBPath + 'db/' + title + "\n\n")
 					else :
 						# ----- not to delete
-						os.system('rm -rf ' + g.DBPath + 'db/' + title)
-						self.parent.logFileptr.write("Delete " + g.DBPath + 'db/' + title + "\n\n")
+						os.system('rm -rf ' + glb.DBPath + 'db/' + title)
+						self.parent.logFileptr.write("Delete " + glb.DBPath + 'db/' + title + "\n\n")
 
 
 			#self.OnSAVE_DB_FILE(title, type, hole)
 			self.tree.Delete(selectItem)
 
-			filename = g.DBPath + 'db/' + title + '/datalist.db'
+			filename = glb.DBPath + 'db/' + title + '/datalist.db'
 			if os.access(filename, os.F_OK) == True :
 				self.OnUPDATE_DB_FILE(title, titleItem)
 
@@ -2157,12 +2157,12 @@ class DataFrame(wx.Panel):
 
 	def OnSAVE_DB_FILE(self, title, type, hole):
 
-		filename = g.DBPath + 'db/' + title + '/datalist.db'
+		filename = glb.DBPath + 'db/' + title + '/datalist.db'
 
 		if type == '*' :
  			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
-				os.chdir(g.DBPath + 'db\\' + title)
+				os.chdir(glb.DBPath + 'db\\' + title)
 				cmd = 'del datalist.db'
 				os.chdir(workingdir)				
 			else :	
@@ -2170,7 +2170,7 @@ class DataFrame(wx.Panel):
 				cmd = 'rm \"' + filename + '\"'
 				os.system(cmd)
 
-			filename = g.DBPath +'db/datalist.db'
+			filename = glb.DBPath +'db/datalist.db'
 			fin = open(filename, 'r+')
 			fout = open(filename + '.temp', 'w+')
 			for sub_line in fin :
@@ -2183,7 +2183,7 @@ class DataFrame(wx.Panel):
 
  			if sys.platform == 'win32' :
  				workingdir = os.getcwd()
- 				os.chdir(g.DBPath + 'db')
+ 				os.chdir(glb.DBPath + 'db')
  		 		os.system('del datalist.db')	
 				cmd = 'copy datalist.db.temp datalist.db'
 				os.system(cmd)
@@ -2269,7 +2269,7 @@ class DataFrame(wx.Panel):
 		
  		if sys.platform == 'win32' :
  			workingdir = os.getcwd()
- 			os.chdir(g.DBPath + 'db\\' + title)
+ 			os.chdir(glb.DBPath + 'db\\' + title)
  		 	os.system('del datalist.db')	
 			cmd = 'rename datalist.db.temp datalist.db'
 			os.system(cmd)
@@ -2284,7 +2284,7 @@ class DataFrame(wx.Panel):
 		title = self.tree.GetItemText(parentItem, 0) 
 		child = self.FindItem(parentItem, 'Image Data')
 		filename = []
-		path = g.DBPath
+		path = glb.DBPath
  		if sys.platform == 'win32' :
 			path += '\\db\\' 
 		else :
@@ -2314,7 +2314,7 @@ class DataFrame(wx.Panel):
 		title = self.tree.GetItemText(parentItem, 0) 
 		child = self.FindItem(parentItem, 'Age Models')
 		filename = ""
-		path = g.DBPath + 'db/' + title + '/'
+		path = glb.DBPath + 'db/' + title + '/'
 		if child[0] == True :
 			selectItem = child[1]
 
@@ -2417,7 +2417,7 @@ class DataFrame(wx.Panel):
 
 	def OnSAVE_AGES(self, updatefile, importflag):
 		if len(self.parent.Window.UserdefStratData) == 0:
-			self.parent.OnShowMessage("Error", "There is no userdefined age datum", 1)
+			glb.OnShowMessage("Error", "There is no userdefined age datum", 1)
 			return
 			
 		items = []
@@ -2431,7 +2431,7 @@ class DataFrame(wx.Panel):
 		title = self.tree.GetItemText(parentItem, 0) 
 		child = self.FindItem(parentItem, 'Age Models')
 		filename = ""
-		path = g.DBPath + 'db/' + title + '/'
+		path = glb.DBPath + 'db/' + title + '/'
 		if child[0] == True :
 			selectItem = child[1]
 
@@ -2532,7 +2532,7 @@ class DataFrame(wx.Panel):
 
 		child = self.FindItem(parentItem, 'Age Models')
 		filename = ""
-		path = g.DBPath + 'db/' + title + '/'
+		path = glb.DBPath + 'db/' + title + '/'
 		if child[0] == True :
 			selectItem = child[1]
 
@@ -2692,7 +2692,7 @@ class DataFrame(wx.Panel):
 
 
 	def OnUPDATE_DB_FILE(self, title, parentItem):
-		filename = g.DBPath + 'db/' + title + '/datalist.db'
+		filename = glb.DBPath + 'db/' + title + '/datalist.db'
 
 		fout = open(filename, 'w+')
 		type = ""
@@ -3010,7 +3010,7 @@ class DataFrame(wx.Panel):
 		if self.firstIdx == None :
 			self.firstIdx = parentItem 
 
-		self.parent.CurrentDir = g.DBPath + "db/" + self.tree.GetItemText(selectItem, 10)
+		self.parent.CurrentDir = glb.DBPath + "db/" + self.tree.GetItemText(selectItem, 10)
 
 		decivalue = self.tree.GetItemText(parentItem, 3)
 		self.parent.filterPanel.decimate.SetValue(str(decivalue))
@@ -3029,7 +3029,7 @@ class DataFrame(wx.Panel):
 				self.parent.Window.timeseries_flag = True
 
 		self.parent.LOCK = 0
-		filename = g.DBPath + "db/" + self.tree.GetItemText(selectItem, 10) + self.tree.GetItemText(selectItem, 8) 
+		filename = glb.DBPath + "db/" + self.tree.GetItemText(selectItem, 10) + self.tree.GetItemText(selectItem, 8) 
 
 		ret = py_correlator.openHoleFile(filename, -1, type, ndecivalue, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
 		if ret == 1 :
@@ -3093,7 +3093,7 @@ class DataFrame(wx.Panel):
 					elif eld_item == None and type == "ELD" and flag == "Enable" :
 						eld_item = child_item 
 
-			path = g.DBPath + 'db/' + self.tree.GetItemText(parentItem, 0)  + '/'
+			path = glb.DBPath + 'db/' + self.tree.GetItemText(parentItem, 0)  + '/'
 			if affine_item != None :
 				py_correlator.openAttributeFile(path +self.tree.GetItemText(affine_item, 8), 0)
 				s = "Affine Table: " + path + self.tree.GetItemText(affine_item, 8) + "\n"
@@ -3104,11 +3104,11 @@ class DataFrame(wx.Panel):
 
 			if splice_item != None :
 				#if affine_item == None :
-				#	self.parent.OnShowMessage("Error", "Splice table needs affine table enable", 1)
+				#	glb.OnShowMessage("Error", "Splice table needs affine table enable", 1)
 				#	return False
 				ret_splice = py_correlator.openSpliceFile(path +self.tree.GetItemText(splice_item, 8))
 				if ret_splice == "error" : 
-					self.parent.OnShowMessage("Error", "Could not Make Splice Records", 1)
+					glb.OnShowMessage("Error", "Could not Make Splice Records", 1)
 
 				s = "Splice Table: " + path + self.tree.GetItemText(splice_item, 8) + "\n"
 				self.parent.logFileptr.write(s)
@@ -3502,7 +3502,7 @@ class DataFrame(wx.Panel):
 		if selectItem ==  None :
 			return
 
-		filename = g.DBPath + 'db/' + self.tree.GetItemText(selectItem, 10)
+		filename = glb.DBPath + 'db/' + self.tree.GetItemText(selectItem, 10)
 		filename += self.tree.GetItemText(selectItem, 8)
 
 		if filename != "" :
@@ -3584,6 +3584,7 @@ class DataFrame(wx.Panel):
 				if coretype == 4 :
 					type = "Natural Gamma"
 
+				# create Cull tuple: (type, enabled, distFromTop, range1val, range1sign, range2val, range2sign, coreValue)
 				f = open(filename, 'r+')
 				l = []
 				l.append(type)
@@ -3614,8 +3615,8 @@ class DataFrame(wx.Panel):
 					elif modifiedLine[1] == 'Type' :
 						break
 				f.close()
-				#print "[DEBUG] UPDATE CULL INFO : " + str(l)
-				self.cullData.append(l) 
+				print "[DEBUG] UPDATE CULL INFO : " + str(l)
+				self.cullData.append(l)
 			else :
 				l = []
 				l.append(type)
@@ -3684,7 +3685,7 @@ class DataFrame(wx.Panel):
 				self.propertyIdx = child[1]
 
 		if self.propertyIdx == None :
-			self.parent.OnShowMessage("Error", "Could not find Property", 1)
+			glb.OnShowMessage("Error", "Could not find Property", 1)
 
 
 	def UpdateMINMAX(self, type, min, max):
@@ -3742,7 +3743,7 @@ class DataFrame(wx.Panel):
 		if len(items) > 0 :
 			self.parent.OnNewData(None)
 		else :
-			self.parent.OnShowMessage("Error", "Please, select data", 1)
+			glb.OnShowMessage("Error", "Please, select data", 1)
 			return False
 
 		if self.parent.Window.HoleData != [] :
@@ -3763,10 +3764,10 @@ class DataFrame(wx.Panel):
 		count_load = 0
 		for selectItem in items :
 			if self.tree.GetItemText(selectItem, 0) == "Root" :
-				self.parent.OnShowMessage("Error", "Root is not allowed to select", 1)
+				glb.OnShowMessage("Error", "Root is not allowed to select", 1)
 				return False
 			elif self.tree.GetItemText(selectItem, 0) == "Saved Tables" :
-				self.parent.OnShowMessage("Error", "Table is not allowed to select", 1)
+				glb.OnShowMessage("Error", "Table is not allowed to select", 1)
 				return False
 			else :
 				# if there is no subItem, then this function returns "" back
@@ -3819,7 +3820,7 @@ class DataFrame(wx.Panel):
 					if self.tree.GetItemText(selectItem, 2) == "Enable" and self.tree.GetItemText(selectItem, 0) != "-Cull Table" :
 						if self.OnLOAD_ITEM(selectItem) == 0 :
 							self.parent.OnNewData(None)
-							self.parent.OnShowMessage("Error", "Can not Load File", 1)
+							glb.OnShowMessage("Error", "Can not Load File", 1)
 							return
 						else :
 							count_load += 1 
@@ -3840,7 +3841,7 @@ class DataFrame(wx.Panel):
 							if self.tree.GetItemText(child_item, 2) == "Enable" and self.tree.GetItemText(child_item, 0) != "-Cull Table" :
 								if self.OnLOAD_ITEM(child_item) == 0 :
 									self.parent.OnNewData(None)
-									self.parent.OnShowMessage("Error", "Can not Load File", 1)
+									glb.OnShowMessage("Error", "Can not Load File", 1)
 									return
 								else :
 									count_load += 1 
@@ -3849,7 +3850,7 @@ class DataFrame(wx.Panel):
 								if self.tree.GetItemText(child_item, 2) == "Enable" and self.tree.GetItemText(child_item, 0) != "-Cull Table" :
 									if self.OnLOAD_ITEM(child_item) == 0 :
 										self.parent.OnNewData(None)
-										self.parent.OnShowMessage("Error", "Can not Load File", 1)
+										glb.OnShowMessage("Error", "Can not Load File", 1)
 										return
 									else :
 										count_load += 1 
@@ -3903,7 +3904,7 @@ class DataFrame(wx.Panel):
 									if self.tree.GetItemText(child_item, 2) == "Enable" and self.tree.GetItemText(child_item, 0) != "-Cull Table":
 										if self.OnLOAD_ITEM(child_item) == 0 :
 											self.parent.OnNewData(None)
-											self.parent.OnShowMessage("Error", "Can not Load File", 1)
+											glb.OnShowMessage("Error", "Can not Load File", 1)
 											return
 										else :
 											count_load += 1
@@ -3912,7 +3913,7 @@ class DataFrame(wx.Panel):
 										if self.tree.GetItemText(child_item, 2) == "Enable"  and self.tree.GetItemText(child_item, 0) != "-Cull Table":
 											if self.OnLOAD_ITEM(child_item) == 0  :
 												self.parent.OnNewData(None)
-												self.parent.OnShowMessage("Error", "Can not Load File", 1)
+												glb.OnShowMessage("Error", "Can not Load File", 1)
 												return
 											else :
 												count_load += 1
@@ -3958,7 +3959,7 @@ class DataFrame(wx.Panel):
 										if self.tree.GetItemText(child_item, 2) == "Enable"  and self.tree.GetItemText(child_item, 0) != "-Cull Table":
 											if self.OnLOAD_ITEM(child_item) == 0 :
 												self.parent.OnNewData(None)
-												self.parent.OnShowMessage("Error", "Can not Load File", 1)
+												glb.OnShowMessage("Error", "Can not Load File", 1)
 												return
 											else :
 												count_load += 1
@@ -3967,7 +3968,7 @@ class DataFrame(wx.Panel):
 											if self.tree.GetItemText(child_item, 2) == "Enable"  and self.tree.GetItemText(child_item, 0) != "-Cull Table" :
 												if self.OnLOAD_ITEM(child_item) == 0 :
 													self.parent.OnNewData(None)
-													self.parent.OnShowMessage("Error", "Can not Load File", 1)
+													glb.OnShowMessage("Error", "Can not Load File", 1)
 													return
 												else :
 													count_load += 1
@@ -4003,7 +4004,7 @@ class DataFrame(wx.Panel):
 
 
 		if count_load == 0 :
-			self.parent.OnShowMessage("Error", "There is no data loaded", 1)
+			glb.OnShowMessage("Error", "There is no data loaded", 1)
 			self.parent.OnNewData(None)
 			return
 			
@@ -4139,7 +4140,7 @@ class DataFrame(wx.Panel):
 
 	def Add_TABLE(self, title, sub_title, updateflag, importflag, source_filename):
 		if importflag == False and len(self.selectBackup) == 0 :
-			self.parent.OnShowMessage("Error", "Could not find selected items", 1)
+			glb.OnShowMessage("Error", "Could not find selected items", 1)
 			return
 
 		items = [] 
@@ -4156,7 +4157,7 @@ class DataFrame(wx.Panel):
 		#	property = self.tree.GetSelection()
 		#	parentItem = self.tree.GetItemParent(property)
 		#	self.title = self.tree.GetItemText(parentItem, 0)
-		#	self.parent.CurrentDir = g.DBPath + 'db/' + self.title + '/'
+		#	self.parent.CurrentDir = glb.DBPath + 'db/' + self.title + '/'
 
 		title_flag = False
 		totalcount = self.tree.GetChildrenCount(property, False)
@@ -4232,7 +4233,7 @@ class DataFrame(wx.Panel):
 
 			self.tree.SetItemText(subroot, self.title + '/', 10)
 
-			dblist_f = open(g.DBPath + 'db/' + self.title + '/datalist.db', 'a+')
+			dblist_f = open(glb.DBPath + 'db/' + self.title + '/datalist.db', 'a+')
 			s = '\n' + sub_title + 'table: ' + filename + ': ' + stamp + ': ' + self.parent.user + ': Enable' + ': ' + source_filename +'\n'
                         dblist_f.write(s)
 			dblist_f.close()
@@ -4254,9 +4255,9 @@ class DataFrame(wx.Panel):
 
                 fullname = ''
                 if sys.platform == 'win32' :
-                        fullname = g.DBPath + 'db\\' + self.title + '\\' + filename
+                        fullname = glb.DBPath + 'db\\' + self.title + '\\' + filename
                 else :
-                        fullname = g.DBPath + 'db/' + self.title + '/' + filename
+                        fullname = glb.DBPath + 'db/' + self.title + '/' + filename
 		return fullname
 
 
@@ -4376,6 +4377,7 @@ class DataFrame(wx.Panel):
 	def OnUPDATE_CULLTABLE(self, cullType):
 		#if self.currentIdx == [] :
 		if self.selectBackup == [] :
+			print "no select backup, bailing"
 			return
 
 		min = 999.99
@@ -4514,13 +4516,13 @@ class DataFrame(wx.Panel):
 
 			self.tree.SetItemText(subroot, title + '/', 10)
 
-			#dblist_f = open(g.DBPath +'db/' + title + '/datalist.db', 'a+')
+			#dblist_f = open(glb.DBPath +'db/' + title + '/datalist.db', 'a+')
 			#s = '\nculltable: ' + filename + ': ' + stamp + ': ' + self.parent.user + ': ' + self.tree.GetItemText(subroot, 2) + '\n'
 			#dblist_f.write(s)
 			#dblist_f.close()
 
 			if isUniversal == True :
-				dblist_f = open(g.DBPath +'db/' + title + '/datalist.db', 'a+')
+				dblist_f = open(glb.DBPath +'db/' + title + '/datalist.db', 'a+')
 				s = '\nuni_culltable: ' + filename + ': ' + stamp + ': ' + self.parent.user + ': ' + self.tree.GetItemText(subroot, 2) + ': ' + source_path + '\n'
 				dblist_f.write(s)
 				dblist_f.close()
@@ -4541,7 +4543,7 @@ class DataFrame(wx.Panel):
 			filename = self.tree.GetItemText(selectItem, 8)
 			# why does not update db file here ????
 
-		fullname = g.DBPath + 'db/' + title + '/' + filename
+		fullname = glb.DBPath + 'db/' + title + '/' + filename
 		return fullname
 
 
@@ -4757,39 +4759,39 @@ class DataFrame(wx.Panel):
 	""" Confirm existence of dirs and files corresponding to sites listed in root-level
 	datalist.db. If not, regenerate root datalist.db to reflect filesystem state. """
 	def ValidateDatabase(self):
-		if os.access(g.DBPath + 'db/', os.F_OK) == False :
-			os.mkdir(g.DBPath + 'db/')
+		if os.access(glb.DBPath + 'db/', os.F_OK) == False :
+			os.mkdir(glb.DBPath + 'db/')
 
-		if os.access(g.DBPath + 'db/datalist.db', os.F_OK) == False :
-			root_f = open(g.DBPath + 'db/datalist.db', 'w+')
+		if os.access(glb.DBPath + 'db/datalist.db', os.F_OK) == False :
+			root_f = open(glb.DBPath + 'db/datalist.db', 'w+')
 			root_f.close()
 
 		validate = True 
-		root_f = open(g.DBPath + 'db/datalist.db', 'r+')
+		root_f = open(glb.DBPath + 'db/datalist.db', 'r+')
 		for root_line in root_f :
 			list = root_line.splitlines()
 			if list[0] == '' :
 				continue
 			for data_item in list :
-				if os.access(g.DBPath + 'db/' + data_item + '/datalist.db', os.F_OK) == False :
+				if os.access(glb.DBPath + 'db/' + data_item + '/datalist.db', os.F_OK) == False :
 					validate = False 
 					break
 
 		root_f.close()
 		if validate == False :
 			print "[ERROR] Data list is not valide, DATALIST WILL BE RE-GENERATED"
-			root_f = open(g.DBPath + 'db/datalist.db', 'w+')
-			list = os.listdir(g.DBPath + 'db/')
+			root_f = open(glb.DBPath + 'db/datalist.db', 'w+')
+			list = os.listdir(glb.DBPath + 'db/')
 			for dir in list :
 				if dir != "datalist.db" :
 					if dir.find("-", 0) > 0 :
-						if os.access(g.DBPath + 'db/' + dir + '/datalist.db', os.F_OK) == True :
+						if os.access(glb.DBPath + 'db/' + dir + '/datalist.db', os.F_OK) == True :
 							root_f.write(dir + "\n")
 			root_f.close()
 
 	def LoadSessionReports(self):
 		log_report = self.tree.AppendItem(self.root, 'Session Reports')
-		list = os.listdir(g.DBPath + 'log/')
+		list = os.listdir(glb.DBPath + 'log/')
 		for dir in list :
 			if dir != ".DS_Store" :
 				report_item = self.tree.AppendItem(log_report, 'Report')
@@ -4810,7 +4812,7 @@ class DataFrame(wx.Panel):
 				time += dir[start:last]
 				self.tree.SetItemText(report_item, time, 6)
 		if len(list) >= 50 :
-			self.parent.OnShowMessage("Information", "Please, Clean Session Reports", 1)
+			glb.OnShowMessage("Information", "Please, Clean Session Reports", 1)
 
 	def LoadDatabase(self):
 		self.ValidateDatabase()
@@ -4819,7 +4821,7 @@ class DataFrame(wx.Panel):
 		self.loadedSites = self.LoadSites(siteNames)
 
 	def LoadSiteNames(self):
-		dbRootFile = open(g.DBPath + 'db/datalist.db', 'r+')
+		dbRootFile = open(glb.DBPath + 'db/datalist.db', 'r+')
 		loadedSites = []
 		for site in dbRootFile:
 			site = site.strip()
@@ -4932,7 +4934,7 @@ class DataFrame(wx.Panel):
 		for siteName in siteNames:
 			site = SiteData(siteName)
 
-			siteFile = open(g.DBPath + 'db/' + siteName + '/datalist.db', 'r+')
+			siteFile = open(glb.DBPath + 'db/' + siteName + '/datalist.db', 'r+')
 			siteLines = siteFile.readlines()
 			for idx, line in enumerate(siteLines):
 				siteLines[idx] = siteLines[idx].strip('\r\n')
@@ -4955,7 +4957,7 @@ class DataFrame(wx.Panel):
 		# self.loadedSites - list of sites loaded from root datalist.db
 		self.dbview = DBView(self.parent, self, self.dbPanel, self.loadedSites)
 
-		root_f = open(g.DBPath + 'db/datalist.db', 'r+')
+		root_f = open(glb.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
 		loaded_item_list = []
 		for root_line in root_f :
@@ -4973,7 +4975,7 @@ class DataFrame(wx.Panel):
 					break
 				loaded_item_list.append(data_item)
 
-				sub_f = open(g.DBPath + 'db/' + data_item + '/datalist.db', 'r+')
+				sub_f = open(glb.DBPath + 'db/' + data_item + '/datalist.db', 'r+')
 
 				curSite = SiteData(data_item)
 
@@ -5250,7 +5252,7 @@ class DataFrame(wx.Panel):
 
 	def changeFORMAT(self, filename, ith):
 		# change format
-		tempfile = g.DBPath+"tmp/"
+		tempfile = glb.DBPath+"tmp/"
 		py_correlator.formatChange(filename, tempfile)
 
 		f = open(tempfile+"tmp.core", 'r+')
@@ -5306,10 +5308,10 @@ class DataFrame(wx.Panel):
 		selectItem = None
 		for selectItem in items :
 			if self.tree.GetItemText(selectItem, 0) == "Root" :
-				self.parent.OnShowMessage("Error", "Root is not allowed to select", 1)
+				glb.OnShowMessage("Error", "Root is not allowed to select", 1)
 				return False
 			elif self.tree.GetItemText(selectItem, 0) == "Saved Tables" :
-				self.parent.OnShowMessage("Error", "Table is not allowed to select", 1)
+				glb.OnShowMessage("Error", "Table is not allowed to select", 1)
 				return False
 			else :
 				if len(self.tree.GetItemText(selectItem, 8)) > 0 :
@@ -5320,10 +5322,10 @@ class DataFrame(wx.Panel):
 					xml_flag = path.find(".xml", 0)
 					if xml_flag >= 0 :
 						self.handler.init()
-						self.handler.openFile(g.DBPath+"tmp/.tmp")
+						self.handler.openFile(glb.DBPath+"tmp/.tmp")
 						self.parser.parse(path)
 						self.handler.closeFile()
-						path = g.DBPath+"tmp/.tmp"
+						path = glb.DBPath+"tmp/.tmp"
 
 					ith = self.changeFORMAT(path, ith)
 
@@ -5347,10 +5349,10 @@ class DataFrame(wx.Panel):
 								xml_flag = path.find(".xml", 0)
 								if xml_flag >= 0 :
 									self.handler.init()
-									self.handler.openFile(g.DBPath+"tmp/.tmp")
+									self.handler.openFile(glb.DBPath+"tmp/.tmp")
 									self.parser.parse(path)
 									self.handler.closeFile()
-									path = g.DBPath+"tmp/.tmp"
+									path = glb.DBPath+"tmp/.tmp"
 
 								ith = self.changeFORMAT(path, ith)
 								self.selectedDataType = self.tree.GetItemText(child_item, 1)
@@ -5369,14 +5371,14 @@ class DataFrame(wx.Panel):
 									xml_flag = path.find(".xml", 0)
 									if xml_flag >= 0 :
 										self.handler.init()
-										self.handler.openFile(g.DBPath+"tmp/.tmp")
+										self.handler.openFile(glb.DBPath+"tmp/.tmp")
 										self.parser.parse(path)
 										self.handler.closeFile()
-										path = g.DBPath+"tmp/.tmp"
+										path = glb.DBPath+"tmp/.tmp"
 
 									ith = self.changeFORMAT(path, ith)
 					else :
-						self.parent.OnShowMessage("Error", type + " is not allowed to select", 1)
+						glb.OnShowMessage("Error", type + " is not allowed to select", 1)
 						return False
 
 
@@ -5464,12 +5466,12 @@ class DataFrame(wx.Panel):
 
 
 	def OnIMPORT_CULLTABLE(self, isUniversal):
-		opendlg = wx.FileDialog(self, "Select a property file", g.LastDir, "", "*.*")
+		opendlg = wx.FileDialog(self, "Select a property file", glb.LastDir, "", "*.*")
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
 		source_path = path
 		source_name = opendlg.GetFilename()
-		g.LastDir = opendlg.GetDirectory()
+		glb.LastDir = opendlg.GetDirectory()
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			item = self.tree.GetSelection()
@@ -5513,11 +5515,11 @@ class DataFrame(wx.Panel):
 				typeflag = True 
 			else :
 				self.handler.init()
-				self.handler.openFile(g.LastDir + "/.tmp_table")
+				self.handler.openFile(glb.LastDir + "/.tmp_table")
 				self.parser.parse(path)
 				self.handler.closeFile()
 				source_name = ".tmp_table"
-				path = g.LastDir + "/.tmp_table"
+				path = glb.LastDir + "/.tmp_table"
 				if self.handler.type == "cull table" :
 					valid = True
 
@@ -5534,7 +5536,7 @@ class DataFrame(wx.Panel):
 				filename = self.Add_CULLTABLE(item, type, isUniversal, source_path)
 				if sys.platform == 'win32' :
 					workingdir = os.getcwd()
-					os.chdir(g.LastDir)
+					os.chdir(glb.LastDir)
 					cmd = 'copy \"' + source_name + '\" \"' + filename + '\"'
 					os.system(cmd)
 					#print "[DEBUG] " + cmd
@@ -5546,18 +5548,18 @@ class DataFrame(wx.Panel):
 				s = "Import Cull Table: " + filename + "\n\n"
 				self.parent.logFileptr.write(s)
 
-				self.parent.OnShowMessage("Information", "Successfully imported", 1)
+				glb.OnShowMessage("Information", "Successfully imported", 1)
 			elif site == True:
-				self.parent.OnShowMessage("Error", "It is not cull table", 1)
+				glb.OnShowMessage("Error", "It is not cull table", 1)
 			else :
-				self.parent.OnShowMessage("Error", "It is not for " + title, 1)
+				glb.OnShowMessage("Error", "It is not for " + title, 1)
 
 
 	def OnIMPORT_TABLE(self, tableType):
 		self.propertyIdx = self.tree.GetSelection()
 		parentItem = self.tree.GetItemParent(self.propertyIdx)
 		self.title = self.tree.GetItemText(parentItem, 0)
-		self.parent.CurrentDir = g.DBPath + 'db/' + self.title + '/'
+		self.parent.CurrentDir = glb.DBPath + 'db/' + self.title + '/'
 
 		last = self.title.find('-', 0)
 		max =  len(self.title)
@@ -5570,12 +5572,12 @@ class DataFrame(wx.Panel):
 		type = '' 
 		if tableType == 'Affine' :
 			# Affine Table
-			opendlg = wx.FileDialog(self, "Select a affine table file", g.LastDir, "", "*.*")
+			opendlg = wx.FileDialog(self, "Select a affine table file", glb.LastDir, "", "*.*")
 			ret = opendlg.ShowModal()
 			path = opendlg.GetPath()
 			filename = opendlg.GetFilename();
 			source_filename = path
-			g.LastDir = opendlg.GetDirectory()
+			glb.LastDir = opendlg.GetDirectory()
 			opendlg.Destroy()
 
 			if ret == wx.ID_OK :
@@ -5617,22 +5619,22 @@ class DataFrame(wx.Panel):
 					if valid == True and main_form == False :
 						filename = ".tmp_table"
 						if sys.platform == 'win32' :
-							self.OnFORMATTING(path, g.LastDir + "\\.tmp_table", tableType)
-							path = g.LastDir + "\\.tmp_table"
+							self.OnFORMATTING(path, glb.LastDir + "\\.tmp_table", tableType)
+							path = glb.LastDir + "\\.tmp_table"
 						else :
-							self.OnFORMATTING(path, g.LastDir + "/.tmp_table", tableType)
-							path = g.LastDir + "/.tmp_table"
+							self.OnFORMATTING(path, glb.LastDir + "/.tmp_table", tableType)
+							path = glb.LastDir + "/.tmp_table"
 
 				else : # last >= 0
 					self.handler.init()
 					if sys.platform == 'win32' :
-                                                self.handler.openFile(g.LastDir + "\\.tmp_table")
+                                                self.handler.openFile(glb.LastDir + "\\.tmp_table")
                                                 self.parser.parse(path)
-                                                path = g.LastDir + "\\.tmp_table"
+                                                path = glb.LastDir + "\\.tmp_table"
                                         else :
-                                                self.handler.openFile(g.LastDir + "/.tmp_table")
+                                                self.handler.openFile(glb.LastDir + "/.tmp_table")
                                                 self.parser.parse(path)
-                                                path = g.LastDir + "/.tmp_table"
+                                                path = glb.LastDir + "/.tmp_table"
 					self.handler.closeFile()
 					
 					filename = ".tmp_table"
@@ -5645,18 +5647,18 @@ class DataFrame(wx.Panel):
 
 				if valid == True :
 					type = self.Add_TABLE('AFFINE' , 'affine', False, True, source_filename)
-					self.parent.OnShowMessage("Information", "Successfully imported", 1)
+					glb.OnShowMessage("Information", "Successfully imported", 1)
 				elif siteflag == True :
-					self.parent.OnShowMessage("Error", "It is not affine table", 1)
+					glb.OnShowMessage("Error", "It is not affine table", 1)
 				else :
-					self.parent.OnShowMessage("Error", "It is not for " + self.title, 1)
+					glb.OnShowMessage("Error", "It is not for " + self.title, 1)
 
 		elif tableType == 'Splice' :
 			# Splice Table
-			opendlg = wx.FileDialog(self, "Select a splice table file", g.LastDir, "", "*.*")
+			opendlg = wx.FileDialog(self, "Select a splice table file", glb.LastDir, "", "*.*")
 			ret = opendlg.ShowModal()
 			path = opendlg.GetPath()
-			g.LastDir = opendlg.GetDirectory()
+			glb.LastDir = opendlg.GetDirectory()
 			filename = opendlg.GetFilename();
 			source_filename = path
 			opendlg.Destroy()
@@ -5699,21 +5701,21 @@ class DataFrame(wx.Panel):
 					if valid == True and main_form == False :
 						filename = ".tmp_table"
 						if sys.platform == 'win32' :
-							self.OnFORMATTING(path, g.LastDir + "\\.tmp_table", tableType)
-							path = g.LastDir + "\\.tmp_table"
+							self.OnFORMATTING(path, glb.LastDir + "\\.tmp_table", tableType)
+							path = glb.LastDir + "\\.tmp_table"
 						else :
-							self.OnFORMATTING(path, g.LastDir + "/.tmp_table", tableType)
-							path = g.LastDir + "/.tmp_table"
+							self.OnFORMATTING(path, glb.LastDir + "/.tmp_table", tableType)
+							path = glb.LastDir + "/.tmp_table"
 				else :
 					self.handler.init()
 					if sys.platform == 'win32' :
-						self.handler.openFile(g.LastDir + "\\.tmp_table")
+						self.handler.openFile(glb.LastDir + "\\.tmp_table")
 						self.parser.parse(path)
-						path = g.LastDir + "\\.tmp_table"
+						path = glb.LastDir + "\\.tmp_table"
 					else :
-						self.handler.openFile(g.LastDir + "/.tmp_table")
+						self.handler.openFile(glb.LastDir + "/.tmp_table")
 						self.parser.parse(path)
-						path = g.LastDir + "/.tmp_table"
+						path = glb.LastDir + "/.tmp_table"
 					self.handler.closeFile()
 					
 					filename = ".tmp_table"
@@ -5726,17 +5728,17 @@ class DataFrame(wx.Panel):
 
 				if valid == True :
 					type = self.Add_TABLE('SPLICE' , 'splice', False, True, source_filename)
-					self.parent.OnShowMessage("Information", "Successfully imported", 1)
+					glb.OnShowMessage("Information", "Successfully imported", 1)
 				elif siteflag == True :
-					self.parent.OnShowMessage("Error", "It is not splice table", 1)
+					glb.OnShowMessage("Error", "It is not splice table", 1)
 				else :
-					self.parent.OnShowMessage("Error", "It is not for " + self.title, 1)
+					glb.OnShowMessage("Error", "It is not for " + self.title, 1)
 		else :
 			# ELD Table
-			opendlg = wx.FileDialog(self, "Select a ELD table file", g.LastDir, "", "*.*")
+			opendlg = wx.FileDialog(self, "Select a ELD table file", glb.LastDir, "", "*.*")
 			ret = opendlg.ShowModal()
 			path = opendlg.GetPath()
-			g.LastDir = opendlg.GetDirectory()
+			glb.LastDir = opendlg.GetDirectory()
 			filename = opendlg.GetFilename();
 			source_filename = path 
 			opendlg.Destroy()
@@ -5781,21 +5783,21 @@ class DataFrame(wx.Panel):
 					if valid == True and main_form == False :
 						filename = ".tmp_table"
 						if sys.platform == 'win32' :
-							self.OnFORMATTING(path, g.LastDir + "\\.tmp_table", tableType)
-							path = g.LastDir + "\\.tmp_table"
+							self.OnFORMATTING(path, glb.LastDir + "\\.tmp_table", tableType)
+							path = glb.LastDir + "\\.tmp_table"
 						else :
-							self.OnFORMATTING(path, g.LastDir + "/.tmp_table", tableType)
-							path = g.LastDir + "/.tmp_table"
+							self.OnFORMATTING(path, glb.LastDir + "/.tmp_table", tableType)
+							path = glb.LastDir + "/.tmp_table"
 				else :
 					self.handler.init()
 					if sys.platform == 'win32' :
-						self.handler.openFile(g.LastDir + "\\.tmp_table")
+						self.handler.openFile(glb.LastDir + "\\.tmp_table")
 						self.parser.parse(path)
-						path = g.LastDir + "\\.tmp_table"
+						path = glb.LastDir + "\\.tmp_table"
 					else :
-						self.handler.openFile(g.LastDir + "/.tmp_table")
+						self.handler.openFile(glb.LastDir + "/.tmp_table")
 						self.parser.parse(path)
-						path = g.LastDir + "/.tmp_table"
+						path = glb.LastDir + "/.tmp_table"
 
 					self.handler.closeFile()
 					
@@ -5809,16 +5811,16 @@ class DataFrame(wx.Panel):
 
 				if valid == True :
 					type = self.Add_TABLE('ELD' , 'eld', False, True, source_filename)
-					self.parent.OnShowMessage("Information", "Successfully imported", 1)
+					glb.OnShowMessage("Information", "Successfully imported", 1)
 				elif siteflag == True :
-					self.parent.OnShowMessage("Error", "It is not ELD table", 1)
+					glb.OnShowMessage("Error", "It is not ELD table", 1)
 				else :
-					self.parent.OnShowMessage("Error", "It is not for " + self.title, 1)
+					glb.OnShowMessage("Error", "It is not for " + self.title, 1)
 
 		if type != '' :
 			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
-				os.chdir(g.LastDir)
+				os.chdir(glb.LastDir)
 				cmd = 'copy ' + filename + ' \"' + type+ '\"'	
 				#print "[DEBUG] " + cmd
 				os.system(cmd)
@@ -5879,10 +5881,10 @@ class DataFrame(wx.Panel):
 		self.dataPanel.ClearGrid()
 
 		self.paths = [] 
-		opendlg = wx.FileDialog(self, "Select a log file", g.LastDir, "", "*.*")
+		opendlg = wx.FileDialog(self, "Select a log file", glb.LastDir, "", "*.*")
 		ret = opendlg.ShowModal()
 		path = opendlg.GetPath()
-		g.LastDir = opendlg.GetDirectory()
+		glb.LastDir = opendlg.GetDirectory()
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			item = self.tree.GetSelection()
@@ -5898,7 +5900,7 @@ class DataFrame(wx.Panel):
 		site = title[last+1:max] 
 		row = 0 
 		self.importLabel = []
-		fout = open(g.DBPath+"tmp/tmp.core", 'w+')
+		fout = open(glb.DBPath+"tmp/tmp.core", 'w+')
 		self.paths = path 
 		header_flag = False
 		total_count = 0
@@ -5951,7 +5953,7 @@ class DataFrame(wx.Panel):
 						if site != value :
 							error_flag = True 
 					if error_flag == True :
-						self.parent.OnShowMessage("Error", "This log is not for " + title, 1)
+						glb.OnShowMessage("Error", "This log is not for " + title, 1)
 						f.close()
 						fout.close()
 						return
@@ -5973,7 +5975,7 @@ class DataFrame(wx.Panel):
 						if leg != value :
 							error_flag = True 
 					if error_flag == True :
-						self.parent.OnShowMessage("Error", "This log is not for " + title, 1)
+						glb.OnShowMessage("Error", "This log is not for " + title, 1)
 						f.close()
 						fout.close()
 						return
@@ -5997,7 +5999,7 @@ class DataFrame(wx.Panel):
 							if leg != value :
 								error_flag = True 
 						if error_flag == True :
-							self.parent.OnShowMessage("Error", "This log is not for " + title, 1)
+							glb.OnShowMessage("Error", "This log is not for " + title, 1)
 							f.close()
 							fout.close()
 							return
@@ -6022,7 +6024,7 @@ class DataFrame(wx.Panel):
 						if site != value :
 							error_flag = True 
 					if error_flag == True :
-						self.parent.OnShowMessage("Error", "This log is not for " + title, 1)
+						glb.OnShowMessage("Error", "This log is not for " + title, 1)
 						f.close()
 						fout.close()
 						return
@@ -6063,7 +6065,7 @@ class DataFrame(wx.Panel):
 						if leg != value :
 							error_flag = True 
 					if error_flag == True :
-						self.parent.OnShowMessage("Error", "This log is not for " + title, 1)
+						glb.OnShowMessage("Error", "This log is not for " + title, 1)
 						f.close()
 						fout.close()
 						return
@@ -6083,7 +6085,7 @@ class DataFrame(wx.Panel):
 						if site != value :
 							error_flag = True 
 					if error_flag == True :
-						self.parent.OnShowMessage("Error", "This log is not for " + title, 1)
+						glb.OnShowMessage("Error", "This log is not for " + title, 1)
 						f.close()
 						fout.close()
 						return
@@ -6214,6 +6216,7 @@ class DataFrame(wx.Panel):
 		return line 
 
 
+	# import core data files - this routine loads data into Import spreadsheet
 	def OnOPEN(self):
 		self.importbtn.Enable(True)
 		self.importbtn.SetLabel("Import")
@@ -6221,11 +6224,11 @@ class DataFrame(wx.Panel):
 		self.dataPanel.ClearGrid()
 
 		self.importLabel = []
-		opendlg = wx.FileDialog(self, "Select core data files", g.LastDir, "", "*.*", style=wx.MULTIPLE)
+		opendlg = wx.FileDialog(self, "Select core data files", glb.LastDir, "", "*.*", style=wx.MULTIPLE)
 		ret = opendlg.ShowModal()
 		self.paths = opendlg.GetPaths()
 		#files = opendlg.GetFilenames() #unused brg
-		g.LastDir = opendlg.GetDirectory()
+		glb.LastDir = opendlg.GetDirectory()
 		opendlg.Destroy()
 		if ret == wx.ID_OK :
 			ith = 0
@@ -6234,6 +6237,7 @@ class DataFrame(wx.Panel):
 			prevHeader = ""
 
 			# CHECK TYPE
+			# brg looks like this ensures there aren't multiple types being loaded
 			for i in range(len(self.paths)) :
 				if i == 4 : # brgtodo 6/17/2014 why bail on 5th file? Can we only load four at a time?
 					break
@@ -6241,10 +6245,10 @@ class DataFrame(wx.Panel):
 				xml_flag = path.find(".xml", 0)
 				if xml_flag >= 0 :
 					self.handler.init()
-					self.handler.openFile(g.LastDir  + "/.tmp")
+					self.handler.openFile(glb.LastDir  + "/.tmp")
 					self.parser.parse(path)
 					self.handler.closeFile()
-					path = g.LastDir + "/.tmp" 
+					path = glb.LastDir + "/.tmp" 
 
 				f = open(path, 'r+')
 				for line in f :
@@ -6253,7 +6257,7 @@ class DataFrame(wx.Panel):
 					break
 				if prevHeader != "" and header != prevHeader :
 					f.close()
-					self.parent.OnShowMessage("Error", "Not support multiple type loading", 1)
+					glb.OnShowMessage("Error", "Not support multiple type loading", 1)
 					self.importbtn.Enable(False)
 					self.OnINITGENERICSHEET()
 					self.dataPanel.ClearGrid()
@@ -6270,10 +6274,10 @@ class DataFrame(wx.Panel):
 				xml_flag = path.find(".xml", 0)
 				if xml_flag >= 0 :
 					self.handler.init()
-					self.handler.openFile(g.LastDir  + "/.tmp")
+					self.handler.openFile(glb.LastDir  + "/.tmp")
 					self.parser.parse(path)
 					self.handler.closeFile()
-					path = g.LastDir + "/.tmp" 
+					path = glb.LastDir + "/.tmp" 
 
 				if ith == 0 :
 					f = open(path, 'r+')
@@ -6295,7 +6299,7 @@ class DataFrame(wx.Panel):
 					f.close()
 
 				# change format
-				tempfile = g.DBPath+"tmp/"
+				tempfile = glb.DBPath+"tmp/"
 
 				py_correlator.formatChange(path, tempfile)
 
@@ -6313,7 +6317,7 @@ class DataFrame(wx.Panel):
 					if prevMax == -1 :
 						prevMax = max
 					elif prevMax != max :
-						self.parent.OnShowMessage("Error", "Found {} columns in row {}, expected {}, bailing.".format(max, ith, prevMax), 1)
+						glb.OnShowMessage("Error", "Found {} columns in row {}, expected {}, bailing.".format(max, ith, prevMax), 1)
 						self.importbtn.Enable(False)
 						self.OnINITGENERICSHEET()
 						self.dataPanel.ClearGrid()
@@ -6338,11 +6342,11 @@ class DataFrame(wx.Panel):
 	def OnPUBLISH(self, event):
 		#selectrows = self.listPanel.GetSelectedRows()
 		#if len(selectrows) == 0 :
-		#	self.parent.OnShowMessage("Error", "You need to select Data", 1)
+		#	glb.OnShowMessage("Error", "You need to select Data", 1)
 		#	return
 
 		#if self.listPanel.GetCellValue(selectrows[0], 0) == "" :
-		#	self.parent.OnShowMessage("Error", "It is not data on the Data List", 1)
+		#	glb.OnShowMessage("Error", "It is not data on the Data List", 1)
 		#	return
 
 		#files = self.listPanel.GetCellValue(selectrows[0], 20)
@@ -6361,7 +6365,7 @@ class DataFrame(wx.Panel):
 		#prefilename = prefilename[0:size]
 
 		#coretype = self.listPanel.GetCellValue(selectrows[0], 10)
-		#affinetable = g.DBPath + "db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".affine.table"
+		#affinetable = glb.DBPath + "db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".affine.table"
 		#f = open(affinetable, 'r+')
 		#s = f.read()
 		#f.close()
@@ -6370,7 +6374,7 @@ class DataFrame(wx.Panel):
 		#fout.write(s)
 		#fout.close()
 
-		#splicetable = g.DBPath +"db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".splice.table"
+		#splicetable = glb.DBPath +"db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".splice.table"
 		#f = open(splicetable, 'r+')
 		#s = f.read()
 		#f.close()
@@ -6379,7 +6383,7 @@ class DataFrame(wx.Panel):
 		#fout.write(s)
 		#fout.close()
 
-		#eldtable = g.DBPath + "db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".eld.table"
+		#eldtable = glb.DBPath + "db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".eld.table"
 		#f = open(eldtable, 'r+')
 		#s = f.read()
 		#f.close()
@@ -6388,7 +6392,7 @@ class DataFrame(wx.Panel):
 		#fout.write(s)
 		#fout.close()
 
-		#culltable = g.DBPath + "db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".cull.table"
+		#culltable = glb.DBPath + "db/" + self.listPanel.GetCellValue(selectrows[0], 15) + "/" + coretype + ".cull.table"
 		#f = open(culltable, 'r+')
 		#s = f.read()
 		#f.close()
@@ -6397,7 +6401,7 @@ class DataFrame(wx.Panel):
 		#fout.write(s)
 		#fout.close()
 
-		self.parent.OnShowMessage("Information", "All files are published", 1)
+		glb.OnShowMessage("Information", "All files are published", 1)
 
 
 	def OnUPDATEDATA(self, selectItem, datatype):
@@ -6405,12 +6409,12 @@ class DataFrame(wx.Panel):
 		xml_flag = source.find(".xml", 0)
 		if xml_flag >= 0 :
 			self.handler.init()
-			self.handler.openFile(g.DBPath+"tmp/.tmp")
+			self.handler.openFile(glb.DBPath+"tmp/.tmp")
 			self.parser.parse(source)
 			self.handler.closeFile()
-			source = g.DBPath+"tmp/.tmp"
+			source = glb.DBPath+"tmp/.tmp"
 
-		tempfile = g.DBPath+"tmp/"
+		tempfile = glb.DBPath+"tmp/"
 		py_correlator.formatChange(source, tempfile)
 
 		data_line = self.tree.GetItemText(selectItem, 11)
@@ -6428,7 +6432,7 @@ class DataFrame(wx.Panel):
 		#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
 		stamp = tempstamp[0:last]
 
-		filename = g.DBPath + 'db/' + self.tree.GetItemText(selectItem, 10) + self.tree.GetItemText(selectItem, 8) 
+		filename = glb.DBPath + 'db/' + self.tree.GetItemText(selectItem, 10) + self.tree.GetItemText(selectItem, 8) 
 		s = "Update Core Data: " + filename + "\n"
 		self.parent.logFileptr.write(s)
 
@@ -6515,8 +6519,8 @@ class DataFrame(wx.Panel):
 
 
 	def OnUPDATE_AFFINE(self, item, last_hole, last_core):
-		source = g.DBPath + 'db/' + self.tree.GetItemText(item, 10) + self.tree.GetItemText(item, 8)
-		temp_path = g.DBPath + 'tmp/' 
+		source = glb.DBPath + 'db/' + self.tree.GetItemText(item, 10) + self.tree.GetItemText(item, 8)
+		temp_path = glb.DBPath + 'tmp/' 
 
 		found = False
 		fin = open(source, 'r+')
@@ -6642,7 +6646,7 @@ class DataFrame(wx.Panel):
 										self.OnUPDATEDATA(sub_child_item, type)
 						self.OnUPDATE_DB_FILE(self.tree.GetItemText(selectItem, 0), selectItem)
 
-		self.parent.OnShowMessage("Information", "Successfully updated", 1)
+		glb.OnShowMessage("Information", "Successfully updated", 1)
 			
 
 	def FindItemProperty(self, item, hole):
@@ -6678,7 +6682,7 @@ class DataFrame(wx.Panel):
 
 
 	def ImportFORMAT(self, source, dest, type, ntype, annot, stamp, datasort, selectItem):
-		fout = open(g.DBPath + "db/" + dest, 'w+')
+		fout = open(glb.DBPath + "db/" + dest, 'w+')
 		s = "# " + "Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo " + "\n"
 
 		fout.write(s)
@@ -6689,7 +6693,7 @@ class DataFrame(wx.Panel):
 		s = "# Generated By Correlator\n"
 		fout.write(s)
 
-		temp_path = g.DBPath+"tmp/"
+		temp_path = glb.DBPath+"tmp/"
 		py_correlator.formatChange(source, temp_path)
 		f = open(temp_path+"tmp.core", 'r+')
 		for line in f :
@@ -6710,7 +6714,7 @@ class DataFrame(wx.Panel):
 		fout.close()
 
 		self.parent.LOCK = 0
-		py_correlator.openHoleFile(g.DBPath + "db/" + dest, -1, ntype, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
+		py_correlator.openHoleFile(glb.DBPath + "db/" + dest, -1, ntype, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
 		#HYEJUNG CHANGING NOW
 		self.parent.OnInitDataUpdate()
 		###
@@ -6733,7 +6737,7 @@ class DataFrame(wx.Panel):
 		type = 7
 		annot =""
 		if len(datatype) == 0 :
-			self.parent.OnShowMessage("Error", "You need to select data type", 1)
+			glb.OnShowMessage("Error", "You need to select data type", 1)
 			return
 		if datatype == "NaturalGamma" :
 			datatype = "ngfix"
@@ -6792,7 +6796,7 @@ class DataFrame(wx.Panel):
 			if ith == 4 :
 				continue
 			if datasort[ith] == -1 :
-				self.parent.OnShowMessage("Error", "Please define data column", 1)
+				glb.OnShowMessage("Error", "Please define data column", 1)
 				return
 
 		tempstamp = str(datetime.today())
@@ -6812,10 +6816,10 @@ class DataFrame(wx.Panel):
 				xml_flag = source.find(".xml", 0)
 				if xml_flag > 0 :
 					self.handler.init()
-					self.handler.openFile(g.DBPath+"tmp/.tmp")
+					self.handler.openFile(glb.DBPath+"tmp/.tmp")
 					self.parser.parse(source)
 					self.handler.closeFile()
-					source = g.DBPath+"tmp/.tmp"
+					source = glb.DBPath+"tmp/.tmp"
 
 				filename = self.tree.GetItemText(selectItem, 8)
 				s = "Update Core Data: " + filename + "\n"
@@ -6844,10 +6848,10 @@ class DataFrame(wx.Panel):
 						xml_flag = source.find(".xml", 0)
 						if xml_flag > 0 :
 							self.handler.init()
-							self.handler.openFile(g.DBPath+"tmp/.tmp")
+							self.handler.openFile(glb.DBPath+"tmp/.tmp")
 							self.parser.parse(source)
 							self.handler.closeFile()
-							source = g.DBPath+"tmp/.tmp"
+							source = glb.DBPath+"tmp/.tmp"
 
 						filename = self.tree.GetItemText(child_item, 8)
 						s = "Update Core Data: " + filename + "\n"
@@ -6864,10 +6868,10 @@ class DataFrame(wx.Panel):
 					else :
 						filename = self.tree.GetItemText(child_item, 8)
 						path = self.tree.GetItemText(child_item, 10)
-						fin = open(g.DBPath+ 'db/' + path + filename, 'r+')
+						fin = open(glb.DBPath+ 'db/' + path + filename, 'r+')
 						new_filename = str(title) + "." + str(datatype) + ".cull.table"
 						if filename != new_filename :
-							fout = open(g.DBPath+ 'db/' + path + new_filename, 'w+')
+							fout = open(glb.DBPath+ 'db/' + path + new_filename, 'w+')
 							self.tree.SetItemText(child_item, new_filename, 8)
 							for line in fin:
 								max  = len(line) -1
@@ -6890,10 +6894,10 @@ class DataFrame(wx.Panel):
 							xml_flag = source.find(".xml", 0)
 							if xml_flag > 0 :
 								self.handler.init()
-								self.handler.openFile(g.DBPath+"tmp/.tmp")
+								self.handler.openFile(glb.DBPath+"tmp/.tmp")
 								self.parser.parse(source)
 								self.handler.closeFile()
-								source = g.DBPath+"tmp/.tmp"
+								source = glb.DBPath+"tmp/.tmp"
 
 							filename = self.tree.GetItemText(child_item, 8)
 							s = "Update Core Data: " + filename + "\n"
@@ -6910,10 +6914,10 @@ class DataFrame(wx.Panel):
 						else :
 							filename = self.tree.GetItemText(child_item, 8)
 							path = self.tree.GetItemText(child_item, 10)
-							fin = open(g.DBPath+ 'db/' + path + filename, 'r+')
+							fin = open(glb.DBPath+ 'db/' + path + filename, 'r+')
 							new_filename = str(title) + "." + str(datatype) + ".cull.table"
 							if filename != new_filename :
-								fout = open(g.DBPath+ 'db/' + path + new_filename, 'w+')
+								fout = open(glb.DBPath+ 'db/' + path + new_filename, 'w+')
 								self.tree.SetItemText(child_item, new_filename, 8)
 								for line in fin:
 									max  = len(line) -1
@@ -6984,14 +6988,14 @@ class DataFrame(wx.Panel):
 				selected = i 
 
 		if selected == -1 :
-			self.parent.OnShowMessage("Error", "You need to define Data column", 1)
+			glb.OnShowMessage("Error", "You need to define Data column", 1)
 			return
 
 		item = self.tree.GetSelection()
 		log_parentItem = self.tree.GetItemParent(item)
 		parentItem = self.tree.GetItemParent(log_parentItem)
 		title = self.tree.GetItemText(parentItem, 0)
-		path = g.DBPath +'db/' + title + '/'
+		path = glb.DBPath +'db/' + title + '/'
 
 		max = len(title)
 		last = title.find("-", 0)
@@ -7018,7 +7022,7 @@ class DataFrame(wx.Panel):
 		self.tree.SetItemText(item, filename, 8)
 
 		fout = open(path + filename, 'w+')
-		f = open(g.DBPath+'tmp/tmp.core', 'r+')
+		f = open(glb.DBPath+'tmp/tmp.core', 'r+')
 
 		s = "Update Downhole Log Data: " + filename + "\n\n"
 		self.parent.logFileptr.write(s)
@@ -7108,13 +7112,13 @@ class DataFrame(wx.Panel):
 
 		#print "[DEBUG] Depth number is " + str(depth_no)
 		if len(selected_list) == 0 :
-			self.parent.OnShowMessage("Error", "You need to define Data column", 1)
+			glb.OnShowMessage("Error", "You need to define Data column", 1)
 			return
 
 		item = self.tree.GetSelection()
 		parentItem = self.tree.GetItemParent(item)
 		title = self.tree.GetItemText(parentItem, 0)
-		path = g.DBPath +'db/' + title + '/'
+		path = glb.DBPath +'db/' + title + '/'
 		max = len(title)
 		last = title.find("-", 0)
 		leg = title[0:last]
@@ -7159,7 +7163,7 @@ class DataFrame(wx.Panel):
 				filename = title + '.undefined' + '.log.dat' 
 
 			fout = open(path + filename, 'w+')
-			#f = open(g.DBPath+'tmp/tmp.core', 'r+')
+			#f = open(glb.DBPath+'tmp/tmp.core', 'r+')
 
 			s = "Import Downhole Log Data: " + filename + "\n\n"
 			self.parent.logFileptr.write(s)
@@ -7183,7 +7187,7 @@ class DataFrame(wx.Panel):
 			fout.close()
 
 			# HYEJUNG ---
-			py_correlator.writeLogFile(g.DBPath+'tmp/tmp.core', path + filename, depth_no, selected)
+			py_correlator.writeLogFile(glb.DBPath+'tmp/tmp.core', path + filename, depth_no, selected)
 
 			#for line in f:
 			#	max  = len(line) -1
@@ -7268,7 +7272,7 @@ class DataFrame(wx.Panel):
 		type = 7
 		annot =""
 		if len(datatype) == 0 :
-			self.parent.OnShowMessage("Error", "You need to select data type", 1)
+			glb.OnShowMessage("Error", "You need to select data type", 1)
 			return
 		if datatype == "NaturalGamma" :
 			datatype = "ngfix"
@@ -7330,7 +7334,7 @@ class DataFrame(wx.Panel):
 			if ith == 4 :
 				continue
 			if datasort[ith] == -1 :
-				self.parent.OnShowMessage("Error", "Please define data column", 1)
+				glb.OnShowMessage("Error", "Please define data column", 1)
 				return
 
 		idx = datasort[0] +1
@@ -7341,7 +7345,7 @@ class DataFrame(wx.Panel):
 			leg = leg[1:]
 		if site[0] == '\t' :
 			site = site[1:]
-		prefilename = g.DBPath + "db/" + leg + "-" + site
+		prefilename = glb.DBPath + "db/" + leg + "-" + site
 		if os.access(prefilename, os.F_OK) == False :
 			os.mkdir(prefilename)
 
@@ -7372,7 +7376,7 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(child, "Continuous", 1)
 			self.tree.SortChildren(subroot)
 
-			dblist_f = open(g.DBPath +'db/datalist.db', 'a+')
+			dblist_f = open(glb.DBPath +'db/datalist.db', 'a+')
 			dblist_f.write('\n' + leg + "-" + site)
 			dblist_f.close()
 
@@ -7413,15 +7417,15 @@ class DataFrame(wx.Panel):
 			s = "# Generated By Correlator\n"
 			fout.write(s)
 
-			tempfile = g.DBPath+"tmp/"
+			tempfile = glb.DBPath+"tmp/"
 			temp_path = self.paths[i] 
 			xml_flag = temp_path.find(".xml", 0)
 			if xml_flag >= 0 :
 				self.handler.init()
-				self.handler.openFile(g.LastDir  + "/.tmp")
+				self.handler.openFile(glb.LastDir  + "/.tmp")
 				self.parser.parse(temp_path)
 				self.handler.closeFile()
-				temp_path = g.LastDir + "/.tmp"
+				temp_path = glb.LastDir + "/.tmp"
 			py_correlator.formatChange(temp_path, tempfile)
 
 			# MAX COLUMN TESTING
@@ -7467,7 +7471,7 @@ class DataFrame(wx.Panel):
 			ret = self.FindItem(child, hole)
 			if ret[0] == True :
 				# if there is same hole, then it's error
-				self.parent.OnShowMessage("Error", "It is already on the list", 1)
+				glb.OnShowMessage("Error", "It is already on the list", 1)
 				break
 			else :
 				self.parent.LOCK = 0	
@@ -7606,7 +7610,7 @@ class DataFrame(wx.Panel):
 			#wx.EVT_MENU(popupMenu, 6, self.OnCHANGETYPE)
 
 			#----- HYEJUNG
-			filename =  g.DBPath + 'tmp/datatypelist.cfg' 
+			filename =  glb.DBPath + 'tmp/datatypelist.cfg' 
 			if os.access(filename, os.F_OK) == True :
 				f = open(filename, 'r+')
 				idx = 8
@@ -7653,7 +7657,7 @@ class DataFrame(wx.Panel):
 				if ret == wx.ID_OK :
 					datatype = dlg.txt.GetValue() 
 					if datatype.find("-", 0) >= 0 :
-						self.parent.OnShowMessage("Error", "Hyphen(-) is not allowed", 1)
+						glb.OnShowMessage("Error", "Hyphen(-) is not allowed", 1)
 					else :
 						if dlg.register.GetValue() == True : 
 							type_last = len(datatype) -1
@@ -7661,7 +7665,7 @@ class DataFrame(wx.Panel):
 								datatype = datatype[0:type_last]
                                                                         
 							# check whether there is same datatype 
-							filename = g.DBPath + 'tmp/datatypelist.cfg'
+							filename = glb.DBPath + 'tmp/datatypelist.cfg'
 							if os.access(filename, os.F_OK) == False :
 								fout = open(filename, 'w+')
 								fout.write('\n' + datatype)
@@ -7718,12 +7722,12 @@ class DataFrame(wx.Panel):
 					child = self.tree.GetFirstChild(parentItem)
 					child_item = child[0]
 					if currentItem != child_item and datatype  == self.tree.GetItemText(child_item, 0) :
-						self.parent.OnShowMessage("Error", "Same data type is already imported", 1)
+						glb.OnShowMessage("Error", "Same data type is already imported", 1)
 						return
 					for k in range(1, totalcount) :
 						child_item = self.tree.GetNextSibling(child_item)
 						if currentItem != child_item and datatype  == self.tree.GetItemText(child_item, 0) :
-							self.parent.OnShowMessage("Error", "Same data type is already imported", 1)
+							glb.OnShowMessage("Error", "Same data type is already imported", 1)
 							return
 
 		rows = self.dataPanel.GetNumberRows()
@@ -7802,7 +7806,7 @@ class DataFrame(wx.Panel):
 			self.dataPanel.SetColLabelValue(self.selectedCol, "BottomOffset")
 		elif opId == 12 :
 			self.dataPanel.SetColLabelValue(self.selectedCol, "RunNo")
-		elif opId == 13 :
+		elif opId == 13 : # "Unselect"
 			origin_label = ""
 			ith = 0 
 			for label in self.importLabel :

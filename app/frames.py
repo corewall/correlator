@@ -20,6 +20,7 @@ from importManager import py_correlator
 import canvas
 import constants as const
 import dialog
+import globals as glb
 import model
 
 def opj(path):
@@ -132,7 +133,7 @@ class TopMenuFrame(wx.Frame):
 	def OnNEW(self, event):
 		if self.parent.CurrentDir != '' :
 			if self.parent.CHECK_CHANGES() == True :
-				ret = self.parent.OnShowMessage("About", "Do you want to save changes?", 2)		
+				ret = glb.OnShowMessage("About", "Do you want to save changes?", 2)		
 				if ret == wx.ID_OK :
 					self.OnSAVE(event)
 		if self.parent.client != None and self.parent.Window.HoleData != [] :
@@ -177,13 +178,13 @@ class TopMenuFrame(wx.Frame):
 
 	def OnSAVE(self, event):
 		if self.parent.CurrentDir == '' : 
-			self.parent.OnShowMessage("Error", "There is no data loaded", 1)
+			glb.OnShowMessage("Error", "There is no data loaded", 1)
 			return
 
 		splice_flag = self.parent.SpliceChange
 		if self.parent.DoesFineTune() == True :
 			splice_flag = True
-			self.parent.OnShowMessage("Information", "You need to save splice table too.", 1)
+			glb.OnShowMessage("Information", "You need to save splice table too.", 1)
 
 		savedialog = dialog.SaveTableDialog(None, -1, self.parent.AffineChange, splice_flag)
 		savedialog.Centre()
@@ -242,7 +243,7 @@ class TopMenuFrame(wx.Frame):
 				self.parent.TimeChange = False  
 
 		savedialog.Destroy()
-		self.parent.OnShowMessage("Information", "Successfully Saved", 1)
+		glb.OnShowMessage("Information", "Successfully Saved", 1)
 
 		#self.parent.Window.SetFocusFromKbd()
 
@@ -292,7 +293,7 @@ class TopMenuFrame(wx.Frame):
 		#	self.parent.midata.Check(False)
 		#else :
 		#if self.parent.CurrentDir != '' and self.parent.changeFlag == True :
-		#	ret = self.parent.OnShowMessage("About", "Do you want to save changes?", 2)		
+		#	ret = glb.OnShowMessage("About", "Do you want to save changes?", 2)		
 		#	if ret == wx.ID_OK :
 		#		self.OnSAVE(event)
 		#self.Close(True)
@@ -594,7 +595,7 @@ class CompositePanel():
 
 			s = "Save Affine Table: " + filename + "\n"
 			self.parent.logFileptr.write(s)
-			self.parent.OnShowMessage("Information", "Successfully Saved", 1)
+			glb.OnShowMessage("Information", "Successfully Saved", 1)
 			self.parent.AffineChange = False 
 
 	def OnButtonEnable(self, opt, enable):
@@ -1019,22 +1020,22 @@ class SplicePanel():
 			s = "Save Splice Table: " + filename + "\n"
 			self.parent.logFileptr.write(s)
 			self.parent.autoPanel.SetCoreList(1, [])
-			self.parent.OnShowMessage("Information", "Successfully Saved", 1)
+			glb.OnShowMessage("Information", "Successfully Saved", 1)
 			self.parent.SpliceChange = False 
 		#else :
-		#	self.parent.OnShowMessage("Error", "No data to save", 1)
+		#	glb.OnShowMessage("Error", "No data to save", 1)
 
 
 	def OnNEWSPLICE(self, event):
 		if self.parent.Window.SpliceData != [] :
 			if self.parent.CHECK_CHANGES() == True :
-				ret = self.parent.OnShowMessage("About", "Do you want to save?", 2)
+				ret = glb.OnShowMessage("About", "Do you want to save?", 2)
 				if ret == wx.ID_OK :
 					self.OnSAVE(event)
 
 			py_correlator.init_splice()
 
-			ret = self.parent.OnShowMessage("About", "Do you want to keep the current splice?", 2)
+			ret = glb.OnShowMessage("About", "Do you want to keep the current splice?", 2)
 			if ret == wx.ID_OK :
 				type_range = None 
 				alt_splice = None
@@ -1081,7 +1082,7 @@ class SplicePanel():
 			path = self.parent.DBPath + 'db/' + self.parent.dataFrame.title  + '/'
 			ret = py_correlator.loadAltSpliceFile(path + selectedSplice, selectedType)
 			if ret == "" :
-				self.parent.OnShowMessage("Error", "Could not create Splice Records", 1)
+				glb.OnShowMessage("Error", "Could not create Splice Records", 1)
 			else :
 				newrange = "altsplice", type_range[1], type_range[2], type_range[3], 0, type_range[5]				
 				self.parent.Window.altType = selectedType 
@@ -1129,7 +1130,7 @@ class SplicePanel():
 
 	def OnAppend(self, evt):
 		if self.appendall == 1 and self.all.GetValue() == True:
-			self.parent.OnShowMessage("Error", "Already appended all below", 1)
+			glb.OnShowMessage("Error", "Already appended all below", 1)
 			return
 
 		type = 0 
@@ -1465,10 +1466,10 @@ class AutoPanel():
 
 				s = "Save ELD Table: " + filename + "\n"
 				self.parent.logFileptr.write(s)
-				self.parent.OnShowMessage("Information", "Successfully Saved", 1)
+				glb.OnShowMessage("Information", "Successfully Saved", 1)
 				self.parent.EldChange = False 
 		else :
-			self.parent.OnShowMessage("Error", "No data to save", 1)
+			glb.OnShowMessage("Error", "No data to save", 1)
 
 	
 	def SetCoreList(self, splice_flag, hole_data):
@@ -1619,7 +1620,7 @@ class AutoPanel():
 
 	def OnSelectRate(self, event):
 		if self.applyBtn.IsEnabled() == False :
-			self.parent.OnShowMessage("Information", "You can not change rate now", 1)
+			glb.OnShowMessage("Information", "You can not change rate now", 1)
 			if self.selectedNo != -1 :
 				self.resultList.Select(self.selectedNo)
 			return
@@ -1911,15 +1912,15 @@ class ELDPanel():
 				py_correlator.saveAttributeFile(filename, 4)
 				s = "Save ELD Table: " + filename + "\n"
 				self.parent.logFileptr.write(s)
-				self.parent.OnShowMessage("Information", "Successfully Saved", 1)
+				glb.OnShowMessage("Information", "Successfully Saved", 1)
 				self.parent.EldChange = False 
 		else :
-			self.parent.OnShowMessage("Error", "No data to save", 1)
+			glb.OnShowMessage("Error", "No data to save", 1)
 
 	def SetFloating(self, event):
 		flag = self.floating.IsChecked()
 		if self.parent.Window.LogTieData != [] : 
-			self.parent.OnShowMessage("Error", "Please clean all core-log tie", 1)
+			glb.OnShowMessage("Error", "Please clean all core-log tie", 1)
 			self.floating.SetValue(not flag)
 
 		else :	
@@ -2371,7 +2372,7 @@ class AgeDepthPanel():
 
 	def OnSAVE(self, evt):
 		if len(self.parent.Window.UserdefStratData) == 0:
-			self.parent.OnShowMessage("Error", "There is no userdefined age datum", 1)
+			glb.OnShowMessage("Error", "There is no userdefined age datum", 1)
 			return
 
 		dlg = dialog.Message3Button(self.parent, "Do you want to create new age/depth?")
@@ -2384,7 +2385,7 @@ class AgeDepthPanel():
 			filename = self.parent.dataFrame.OnSAVE_AGES(flag, False)
 			s = "Save Age Model: " + filename + "\n"
 			self.parent.logFileptr.write(s)
-			self.parent.OnShowMessage("Information", "Successfully Saved", 1)
+			glb.OnShowMessage("Information", "Successfully Saved", 1)
 			self.parent.AgeChange = False 
 
 
@@ -2399,7 +2400,7 @@ class AgeDepthPanel():
 			filename = self.parent.dataFrame.OnSAVE_SERIES(flag, False)
 			s = "Save Time Series: " + filename + "\n"
 			self.parent.logFileptr.write(s)
-			self.parent.OnShowMessage("Information", "Successfully Saved", 1)
+			glb.OnShowMessage("Information", "Successfully Saved", 1)
 			self.parent.TimeChange = False 
 
 
@@ -2455,7 +2456,7 @@ class AgeDepthPanel():
 			ageItem = ageStrItem.split()
 			depth = float(ageItem[0])
 			if depth == pickdepth :
-				self.parent.OnShowMessage("Error", "Same mbsf is already registered", 1)
+				glb.OnShowMessage("Error", "Same mbsf is already registered", 1)
 				return
 
 		pickage = float(self.age.GetValue())
@@ -2510,7 +2511,7 @@ class AgeDepthPanel():
 			self.parent.TimeChange = True
 			self.parent.Window.UpdateDrawing()
 		else :
-			self.parent.OnShowMessage("Error", "User defined datum can be modified", 1)
+			glb.OnShowMessage("Error", "User defined datum can be modified", 1)
 
 
 	def SetORIGIN(self, evt):
@@ -3097,7 +3098,7 @@ class FilterPanel():
 
 
 	def SetTYPE(self, event):
-		if self.parent.GetLoadedSite() != None:
+		if self.parent.GetLoadedSite() is not None:
 			self.TypeChoiceChanged(event)
 			return
 
@@ -3207,7 +3208,7 @@ class FilterPanel():
 	def OnDecimate(self, event):
 		type = self.all.GetStringSelection()
 		if type == 'Spliced Records' :
-			self.parent.OnShowMessage("Error", "Splice Records can not be decimated", 1)
+			glb.OnShowMessage("Error", "Splice Records can not be decimated", 1)
 			return
 
 		self.deciUndo = self.deciBackup
@@ -3402,7 +3403,7 @@ class FilterPanel():
 		type = self.all.GetStringSelection()
 
 		if type == 'Spliced Records' :
-			self.parent.OnShowMessage("Error", "Splice Records can not be culled", 1)
+			glb.OnShowMessage("Error", "Splice Records can not be culled", 1)
 			return
 
 		self.cullundoBtn.Enable(True)

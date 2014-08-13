@@ -12,7 +12,7 @@ import random, sys, os, re, time, ConfigParser, string
 import numpy
 
 import dialog
-import globals as g
+import globals as glb
 from importManager import py_correlator
 
 class CoreSheet(sheet.CSheet):
@@ -161,16 +161,14 @@ class AddTypeDialog(wx.Dialog):
 	def OnOK(self, event):
 		newType = self.txt.GetValue()
 		if newType.find("-", 0) >= 0:
-			# brgtodo global message box stuff
-			#self.parent.OnShowMessage("Error", "Types cannot contain hyphens (-)", 1)
+			glb.OnShowMessage("Error", "Types cannot contain hyphens (-)", 1)
 			return
-		elif g.UserTypeExists(newType):
-			# brgtodo
-			# self.parent.OnShowMessage("Error", "The type '{}' already exists".format(newType), 1)
+		elif glb.UserTypeExists(newType):
+			glb.OnShowMessage("Error", "The type '{}' already exists".format(newType), 1)
 			return
 		else:
 			if self.register.GetValue() == True:
-				g.AddUserType(newType)
+				glb.AddUserType(newType)
 			self.EndModal(wx.ID_OK)
 
 	# brgtodo 8/12/2014: this isn't getting hit on Mac, but setting OK button
@@ -1169,20 +1167,20 @@ class ImportDialog(wx.Dialog):
 		addedRows = 0
 		for path in paths:
 			if path.find(".xml", 0) >= 0:
-				path = xml.ConvertFromXML(path, g.LastDir)
+				path = xml.ConvertFromXML(path, glb.LastDir)
 
 			# convert to standard Correlator format
-			py_correlator.formatChange(path, g.DBPath + "tmp/")
+			py_correlator.formatChange(path, glb.DBPath + "tmp/")
 
 			curLine = 1
-			f = open(g.DBPath + "tmp/tmp.core", "r+")
+			f = open(glb.DBPath + "tmp/tmp.core", "r+")
 			for line in f:
 				tokens = line.split()
 				tokenCount = len(tokens)
 				if expectedTokenCount == -1:
 					expectedTokenCount = tokenCount
 				elif tokenCount != expectedTokenCount:
-					self.parent.OnShowMessage("Error", "Found {} columns on line {}, expected {}".format(tokenCount, curLine, expectedTokenCount))
+					glb.OnShowMessage("Error", "Found {} columns on line {}, expected {}".format(tokenCount, curLine, expectedTokenCount))
 					return False
 
 				if tokens[0] == "-" or tokens[0] == "null":
@@ -1203,7 +1201,7 @@ class ImportDialog(wx.Dialog):
 
 	def AddUserTypeMenuItems(self, popupMenu):
 		menuId = 8
-		for type in g.GetUserTypes():
+		for type in glb.GetUserTypes():
 			popupMenu.Append(menuId, "&" + type)
 			wx.EVT_MENU(popupMenu, menuId, self.OnTypeChanged)
 			menuId += 1

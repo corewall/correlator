@@ -9,14 +9,27 @@
 # brgtodo 8/4/2014: Better name? application.py? shared.py? allthestuffs.py?
 
 import os
+import wx
+
+import dialog
 
 ### Variables
 
+MainFrame = None # ref to root window
+
+# I/O vars
 DBPath = "-" # path to db folder root (e.g. ~/Documents/Correlator/1.8.0/)
 LastDir = "" # most recent directory from/to which a file was loaded/saved
 
 
 ### Functions
+
+def OnShowMessage(type, msg, numButton): 
+	dlg = dialog.MessageDialog(MainFrame, type, msg, numButton)
+	dlg.Centre(wx.CENTER_ON_SCREEN)
+	ret = dlg.ShowModal()
+	dlg.Destroy()
+	return ret
 
 
 # User (Custom) Type f'ns
