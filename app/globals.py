@@ -18,10 +18,13 @@ LastDir = "" # most recent directory from/to which a file was loaded/saved
 
 ### Functions
 
+
+# User (Custom) Type f'ns
+# brgtodo own module?
 """ Return list of user-defined data types """
 def GetUserTypes():
 	types = []
-	filename = DBPath + 'tmp/datatypelist.cfg'
+	filename = DBPath + 'tmp/datatypelist.cfg' # brgtodo GetConfigFile()?
 	if os.access(filename, os.F_OK) == True:
 		f = open(filename, 'r+')
 		for line in f:
@@ -30,3 +33,12 @@ def GetUserTypes():
 				types.append(typeStr)
 		f.close()
 	return types
+
+def UserTypeExists(type):
+	return type in GetUserTypes()
+
+def AddUserType(type):
+	filename = DBPath + 'tmp/datatypelist.cfg'
+	f = open(filename, 'a+')
+	f.write('\n' + type)
+	f.close()

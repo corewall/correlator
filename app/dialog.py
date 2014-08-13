@@ -11,6 +11,8 @@ from wx.lib import plot
 import random, sys, os, re, time, ConfigParser, string
 import numpy
 
+import dialog
+import globals as g
 from importManager import py_correlator
 
 class CoreSheet(sheet.CSheet):
@@ -130,37 +132,56 @@ class Message3Button(wx.Dialog):
 			self.EndModal(wx.ID_CANCEL) 
 
 
-class BoxDialog(wx.Dialog):
-	def __init__(self, parent, title):
-		wx.Dialog.__init__(self, parent, -1, title, size=(300, 130), style= wx.STAY_ON_TOP)
+class AddTypeDialog(wx.Dialog):
+	def __init__(self, parent):
+		wx.Dialog.__init__(self, parent, -1, title="Add Custom Data Type", size=(300, 130),
+						   style=wx.STAY_ON_TOP | wx.DEFAULT_DIALOG_STYLE)
 
 		self.Center()
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
-		self.txt = wx.TextCtrl(self, -1, "", size = (270, 25), style=wx.SUNKEN_BORDER )
+		self.txt = wx.TextCtrl(self, -1, "[new type]", size = (270, 25), style=wx.SUNKEN_BORDER )
 
-		vbox_top.Add(self.txt, 0, wx.LEFT | wx.TOP | wx.BOTTOM, 15)
+		vbox_top.Add(self.txt, 0, wx.LEFT | wx.TOP | wx.BOTTOM, 10)
 
-		#self.register = wx.CheckBox(self, -1, 'Register')
-		#vbox_top.Add(self.register, 0, wx.LEFT, 70)
-
-		grid = wx.GridSizer(1,3)
+		grid = wx.FlexGridSizer(1, 3, vgap=0, hgap=10)
 		self.register = wx.CheckBox(self, -1, 'Register')
-		grid.Add(self.register)
+		grid.Add(self.register, 1)
 		okBtn = wx.Button(self, wx.ID_OK, "OK")
-		grid.Add(okBtn)
+		okBtn.SetDefault()
+		grid.Add(okBtn, 1)
 		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Cancel")
-		grid.Add(cancelBtn, 0, wx.LEFT, 10)
+		grid.Add(cancelBtn, 1)
 		vbox_top.Add(grid, 0, wx.LEFT, 20)
 
 		self.SetSizer(vbox_top)
+
+		self.Bind(wx.EVT_BUTTON, self.OnOK, okBtn)
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
+	def OnOK(self, event):
+		newType = self.txt.GetValue()
+		if newType.find("-", 0) >= 0:
+			# brgtodo global message box stuff
+			#self.parent.OnShowMessage("Error", "Types cannot contain hyphens (-)", 1)
+			return
+		elif g.UserTypeExists(newType):
+			# brgtodo
+			# self.parent.OnShowMessage("Error", "The type '{}' already exists".format(newType), 1)
+			return
+		else:
+			if self.register.GetValue() == True:
+				g.AddUserType(newType)
+			self.EndModal(wx.ID_OK)
+
+	# brgtodo 8/12/2014: this isn't getting hit on Mac, but setting OK button
+	# as default accomplishes the same result as this code, and Escape already
+	# worked correctly - check on Windows, may be unnecessary
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_RETURN :
-			self.EndModal(wx.ID_OK) 
-		elif keyid == wx.WXK_ESCAPE :
-			self.EndModal(wx.ID_CANCEL) 
+		if keyid == wx.WXK_RETURN:
+			self.OnOK()
+		elif keyid == wx.WXK_ESCAPE:
+			self.EndModal(wx.ID_CANCEL)
 
 class EditBoxDialog(wx.Dialog):
 	def __init__(self, parent, title):
@@ -1108,3 +1129,183 @@ class OpenFrame(wx.Dialog):
 			self.EndModal(wx.ID_CANCEL)
 		else:
 			event.Skip() # allow unhandled key events to propagate up the chain
+
+
+class ImportDialog(wx.Dialog):
+	def __init__(self, parent, id, paths, header):
+		wx.Dialog.__init__(self, parent, id, "Import", size=(800, 600), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+
+		sz = wx.BoxSizer(wx.VERTICAL)
+		self.SetSizer(sz)
+		self.sheet = CoreSheet(self, 120, 100)
+		self.sheet.SetColLabelValue(0, "Data Type")
+		for i in range(1, 39):
+			self.sheet.SetColLabelValue(i, "?")
+		self.UpdateColHeaders(header)
+		self.PopulateCells(paths)
+		sz.Add(self.sheet, 1, wx.EXPAND)
+
+		buttonPanel = wx.Panel(self, -1)
+		buttonPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+		self.importButton = wx.Button(buttonPanel, wx.ID_OK, "Import")
+		self.cancelButton = wx.Button(buttonPanel, wx.ID_CANCEL, "Cancel")
+		buttonPanel.GetSizer().Add(self.importButton)
+		buttonPanel.GetSizer().Add(self.cancelButton)
+		sz.Add(buttonPanel, 0, wx.RIGHT | wx.ALIGN_RIGHT, 10)
+
+		self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.ColHeaderSelected, self.sheet)
+
+		self.paths = paths
+		self.header = header
+
+		self.selectedCol = -1
+		self.colLabels = ["Data", "Depth", "?", "Leg", "Site", "Hole", "Core", "CoreType",
+						  "Section", "TopOffset", "BottomOffset", "RunNo", "Unselect", "Depth"]
+		self.typeLabels = ["NaturalGamma", "Susceptibility", "Reflectance", "Bulk Density(GRA)",
+						   "Pwave", "Other", "Add type..."]
+
+	def PopulateCells(self, paths):
+		expectedTokenCount = -1
+		addedRows = 0
+		for path in paths:
+			if path.find(".xml", 0) >= 0:
+				path = xml.ConvertFromXML(path, g.LastDir)
+
+			# convert to standard Correlator format
+			py_correlator.formatChange(path, g.DBPath + "tmp/")
+
+			curLine = 1
+			f = open(g.DBPath + "tmp/tmp.core", "r+")
+			for line in f:
+				tokens = line.split()
+				tokenCount = len(tokens)
+				if expectedTokenCount == -1:
+					expectedTokenCount = tokenCount
+				elif tokenCount != expectedTokenCount:
+					self.parent.OnShowMessage("Error", "Found {} columns on line {}, expected {}".format(tokenCount, curLine, expectedTokenCount))
+					return False
+
+				if tokens[0] == "-" or tokens[0] == "null":
+					continue
+
+				for index in range(tokenCount):
+					if len(tokens[index]) > 0:
+						if tokens[index] != "null":
+							self.sheet.SetCellValue(addedRows, index + 1, tokens[index])
+
+				curLine += 1
+				addedRows += 1
+				if addedRows % 30 == 0:
+					break
+			f.close()
+
+		return True
+
+	def AddUserTypeMenuItems(self, popupMenu):
+		menuId = 8
+		for type in g.GetUserTypes():
+			popupMenu.Append(menuId, "&" + type)
+			wx.EVT_MENU(popupMenu, menuId, self.OnTypeChanged)
+			menuId += 1
+
+	def ColHeaderSelected(self, event):
+		self.selectedCol = event.GetCol()
+		pos = event.GetPosition()
+
+		# brgtodo
+# 		if self.importType == "LOG" :
+# 			popupMenu = wx.Menu()
+# 			for i in [13, 0, 12]:
+# 				popupMenu.Append(i + 1, self.colLabels[i])
+# 			self.PopupMenu(popupMenu, pos)
+# 			return
+
+		if self.selectedCol == 0: # Data Type
+			popupMenu = wx.Menu()
+			for i in range(5):
+				popupMenu.Append(i + 1, "&" + self.typeLabels[i])
+				wx.EVT_MENU(popupMenu, i + 1, self.OnTypeChanged)
+			self.AddUserTypeMenuItems(popupMenu)
+			popupMenu.Append(7, "&Add type...")
+			wx.EVT_MENU(popupMenu, 7, self.OnTypeChanged)
+			self.PopupMenu(popupMenu, pos)
+		elif self.selectedCol == 1: # Leg/Expedition
+			popupMenu = wx.Menu()
+			popupMenu.Append(1, "&Edit Leg No")
+			wx.EVT_MENU(popupMenu, 1, self.OnEdit)
+			self.PopupMenu(popupMenu, pos)
+		elif self.selectedCol == 2: # Site
+			popupMenu = wx.Menu()
+			popupMenu.Append(2, "&Edit Site No")
+			wx.EVT_MENU(popupMenu, 2, self.OnEdit)
+			self.PopupMenu(popupMenu, pos)
+		elif self.selectedCol >= 3: # Non-special column
+			popupMenu = wx.Menu()
+			for i in range(len(self.colLabels)):
+				popupMenu.Append(i + 1, "&" + self.colLabels[i])
+				wx.EVT_MENU(popupMenu, i + 1, self.OnLabelChanged)
+			self.PopupMenu(popupMenu, pos)
+
+	def OnEdit(self, event):
+		pass
+
+	def OnAddType(self):
+		typeDlg = dialog.AddTypeDialog(self)
+		if typeDlg.ShowModal() == wx.ID_OK:
+			pass
+
+	def OnTypeChanged(self, event):
+		menuId = event.GetId()
+		datatype = ""
+		if menuId > 0 and menuId < 7:
+			datatype = self.typeLabels[menuId - 1]
+		elif menuId == 7: # create datatype
+			self.OnAddType()
+		else:
+			userType = event.GetEventObject().GetLabel(menuId)
+			datatype = userType[1:] # strip leading '&'
+		
+		# brgtodo? if in Edit mode, prevent change to an existing datatype
+		# see dbmanager.py line 7708 ("Change")
+
+		for ridx in range(self.sheet.GetNumberRows()):
+			self.sheet.SetCellValue(ridx, 0, datatype)
+
+	def OnLabelChanged(self, event):
+		# Unselect - a log editing thing? Resetting label to original val?
+		opId = event.GetId()
+		if opId < 13 or opId == 14:
+			self.sheet.SetColLabelValue(self.selectedCol, self.colLabels[opId - 1])
+		elif opId == 13: # Unselect - a log editing thing? Resetting label to original val?
+			origin_label = ""
+			ith = 0 
+			for label in self.importLabel:
+				if ith == self.selectedCol:
+					origin_label = label
+					break
+				ith = ith + 1
+			self.sheet.SetColLabelValue(self.selectedCol, origin_label)
+
+		self.selectedCol = -1
+
+	def UpdateColHeaders(self, header):
+		print "UpdateColHeaders given {}".format(header)
+		if header != "":
+			# attempt to determine the file's delimiter
+			delims = [' ', ',', '\t']
+			counts = [len(header.split(d)) for d in delims]
+			maxIndex = counts.index(max(counts))
+			print "Guessing delimiter = {}".format(delims[maxIndex])
+
+			tokens = header.split(delims[maxIndex])
+			for i in range(len(tokens)):
+				self.sheet.SetColLabelValue(i + 1, tokens[i].capitalize())
+		else:
+			self.sheet.SetColLabelValue(1, "Leg")
+			self.sheet.SetColLabelValue(2, "Site")
+			self.sheet.SetColLabelValue(3, "Hole")
+			self.sheet.SetColLabelValue(4, "Core")
+			self.sheet.SetColLabelValue(5, "CoreType")
+			self.sheet.SetColLabelValue(6, "Section")
+			self.sheet.SetColLabelValue(7, "TopOffset")
+		

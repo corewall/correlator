@@ -4,8 +4,11 @@ from importManager import py_correlator
 
 import constants as const
 import dialog
+import globals as g
+import xml_handler
 
 from datetime import datetime
+import xml.sax
 
 # filename maker
 def MakeFileName(type, title, filetype):
@@ -489,6 +492,11 @@ class DBView:
 		self.panes = [] # wx.CollapsiblePanes - retain to re-Layout() as needed
 		self.menu = None # action menu
 
+		# parsing stuff - brgtodo 8/1/2014 pull into app globals?
+		self.parser = xml.sax.make_parser()
+		self.handler = xml_handler.XMLHandler()
+		self.parser.setContentHandler(self.handler)
+
 		self.InitUI(siteList)
 		self.InitMenus()
 
@@ -503,10 +511,12 @@ class DBView:
 		siteLabel.SetFont(slFont)
 		self.currentSite = wx.Choice(self.sitePanel, -1)
 		self.loadButton = wx.Button(self.sitePanel, -1, "Load")
+		self.importButton = wx.Button(self.sitePanel, -1, "Import Data...")
 
 		self.sitePanel.GetSizer().Add(siteLabel, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.currentSite, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.loadButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+		self.sitePanel.GetSizer().Add(self.importButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.parentPanel.GetSizer().Add(self.sitePanel, 0, border=10, flag=wx.BOTTOM | wx.LEFT)
 
 		self.dataPanel = wx.Panel(self.parentPanel, -1)
@@ -517,6 +527,7 @@ class DBView:
 		self.UpdateSites(siteList)
 		self.parentPanel.Bind(wx.EVT_CHOICE, self.SiteChanged, self.currentSite)
 		self.parentPanel.Bind(wx.EVT_BUTTON, self.LoadPressed, self.loadButton)
+		self.parentPanel.Bind(wx.EVT_BUTTON, self.ImportPressed, self.importButton)
 
 	def InitMenus(self):
 		# master dictionary of all menu items
@@ -797,7 +808,7 @@ class DBView:
 		self.parent.Window.timeseries_flag = False
 
 		site = holeList[0].holeSet.site # shorten some otherwise long statements
-		sitePath = self.parent.DBPath + 'db/' + site.GetDir()
+		sitePath = g.DBPath + 'db/' + site.GetDir()
 
 		# load holes (independent of enabled status, client can pass whatever list of holes they like)
 		for hole in holeList:
@@ -949,8 +960,40 @@ class DBView:
 		self.parent.Window.UpdateDrawing()
 		self.parent.compositePanel.OnUpdate() # make sure growth rate is updated
 
+	def GetFileHeader(self, path):
+		if path.find(".xml", 0) >= 0:
+			path = xml.ConvertFromXML(path, g.LastDir)
+
+		header = ""
+		with open(path, 'r+') as f:
+			line = f.readline().rstrip()
+			c1 = line[0].capitalize()
+			if c1 == 'E' or c1 == 'L' or c1 == "#": # "Expedition", "Leg", or comment
+				header = line
+
+		return header
+
+	def ImportPressed(self, evt):
+		opendlg = wx.FileDialog(self.parent, "Select core data files", g.LastDir, "", "*.*", style=wx.MULTIPLE)
+		if opendlg.ShowModal() == wx.ID_OK:
+			g.LastDir = opendlg.GetDirectory()
+			paths = opendlg.GetPaths()
+			headerSet = set([self.GetFileHeader(path) for path in paths])
+			if len(headerSet) == 1: # do all header lines match?
+				self.ImportHoleData(paths, headerSet.pop()) # pop lone header string
+			else:
+				self.parent.OnShowMessage("Error", "Unmatched headers found, only one datatype can be imported at a time", 1)
+		opendlg.Destroy()
+
+	def ImportHoleData(self, paths, header):
+		# create import spreadsheet dialog
+		dlg = dialog.ImportDialog(self.dataFrame, -1, paths, header)
+		if dlg.ShowModal() == wx.ID_OK:
+			print "okayed out of import dialog, make rocket go now!"
+			pass
+
 	def ViewFile(self, filename):
-		holefile = self.parent.DBPath + "db/" + self.GetCurrentSite().GetDir() + filename
+		holefile = g.DBPath + "db/" + self.GetCurrentSite().GetDir() + filename
 		self.dataFrame.fileText.Clear()
 		self.dataFrame.fileText.LoadFile(holefile)
 		self.dataFrame.sideNote.SetSelection(3) # File View tab
@@ -959,12 +1002,12 @@ class DBView:
 		exportDlg = dialog.ExportCoreDialog(self.dataFrame)
 		exportDlg.Centre()
 		if exportDlg.ShowModal() == wx.ID_OK:
-			fileDlg = wx.FileDialog(self.dataFrame, "Select Directory for Export", self.parent.Directory, style=wx.SAVE)
+			fileDlg = wx.FileDialog(self.dataFrame, "Select Directory for Export", g.LastDir, style=wx.SAVE)
 			if fileDlg.ShowModal() == wx.ID_OK:
 				self.parent.OnNewData(None)
 
 				siteDir = holeList[0].holeSet.site.GetDir()
-				path = self.parent.DBPath + 'db/' + siteDir
+				path = g.DBPath + 'db/' + siteDir
 
 				# load holes (ignoring enabled state)
 				for hole in holeList:

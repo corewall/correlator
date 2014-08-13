@@ -1,17 +1,20 @@
 import xml.sax.handler
 
+def ConvertFromXML(filepath, parentDir): # brgtodo 8/2/2014 app-level Directory
+	parser = xml.sax.make_parser()
+	handler = XMLHandler()
+	parser.setContentHandler(handler)
+	handler.init()
+	convertedFilePath = parentDir + ".tmp"
+	handler.openFile(convertedFilePath)
+	parser.parse(filepath)
+
+	return convertedFilePath
+	
+
 class XMLHandler(xml.sax.handler.ContentHandler):
 	def __init__(self):
-		self.type = ""
-		self.site = ""
-		self.leg = ""
-		self.datatype = ""
-		self.hole = ""
-		self.core = ""
-		self.fout = None
-		self.splice_flag = False
-		self.count = 0
-		self.backup = [] 
+		self.init()
 
 	def init(self):
 		self.type = ""
