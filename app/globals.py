@@ -31,6 +31,44 @@ def OnShowMessage(type, msg, numButton):
 	dlg.Destroy()
 	return ret
 
+def GetTypeNum(type):
+	type = 7 # user type
+	if type == "NaturalGamma":
+		type = 4
+	elif type == "Susceptibility":
+		type = 3
+	elif type == "Reflectance":
+		type = 5
+	elif type == "Bulk Density(GRA)":
+		type = 1
+	elif type == "Pwave":
+		type = 2
+	elif type == "Other": # brgtodo "Other" may be a pre-custom type vestige
+		type = 7
+	return type
+
+def GetTypeAbbv(type):
+	datatype = type
+	if type == "NaturalGamma":
+		datatype = "ngfix"
+	elif type == "Susceptibility":
+		datatype = "susfix"
+	elif type == "Reflectance":
+		datatype = "reflfix"
+	elif type == "Bulk Density(GRA)":
+		datatype = "grfix" 
+	elif type == "Pwave":
+		datatype = "pwfix" 
+	elif type == "Other":
+		datatype = "otherfix"
+	return datatype
+
+# make internal db filename based on type
+def MakeFileName(type, title, filetype):
+	datatype = GetTypeAbbv(type)
+	filename = title + '.' + datatype + '.' + filetype + '.table' 
+	return filename
+
 
 # User (Custom) Type f'ns
 # brgtodo own module?

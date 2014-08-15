@@ -10,26 +10,6 @@ import xml_handler
 from datetime import datetime
 import xml.sax
 
-# filename maker
-def MakeFileName(type, title, filetype):
-	datatype = type
-	if type == "NaturalGamma":
-		datatype = "ngfix"
-	elif type == "Susceptibility":
-		datatype = "susfix"
-	elif type == "Reflectance":
-		datatype = "reflfix"
-	elif type == "Bulk Density(GRA)":
-		datatype = "grfix" 
-	elif type == "Pwave":
-		datatype = "pwfix" 
-	elif type == "Other":
-		datatype = "otherfix" 
-
-	filename = title + '.' + datatype + '.' + filetype + '.table' 
-	return filename
-
-
 # parse routines for members maintained as numeric/boolean/etc rather than a string
 def ParseEnableToken(enableToken):
 	return enableToken == 'Enable'
@@ -340,7 +320,7 @@ class SiteData:
 		if hs is not None:
 			if hs.cullTable is None:
 				hs.cullTable = CullTable()
-				hs.cullTable.file = MakeFileName(type, self.name, 'cull')
+				hs.cullTable.file = glb.MakeFileName(type, self.name, 'cull')
 				hs.cullTable.enable = True
 				print "no cull file exists, creating new {}".format(hs.cullTable.file)
 			else:
@@ -968,7 +948,7 @@ class DBView:
 		with open(path, 'r+') as f:
 			line = f.readline().rstrip()
 			c1 = line[0].capitalize()
-			if c1 == 'E' or c1 == 'L' or c1 == "#": # "Expedition", "Leg", or comment
+			if c1 == 'L' or c1 == "#": # "Leg", or comment brgtodo check "Exp[edition]"?
 				header = line
 
 		return header

@@ -10,6 +10,7 @@ import wx.lib.sheet as sheet
 from wx.lib import plot
 import random, sys, os, re, time, ConfigParser, string
 import numpy
+from datetime import datetime
 
 import dialog
 import globals as glb
@@ -160,6 +161,9 @@ class AddTypeDialog(wx.Dialog):
 
 	def OnOK(self, event):
 		newType = self.txt.GetValue()
+		if len(newType) == 0:
+			glb.OnShowMessage("Error", "Enter a type name", 1)
+			return
 		if newType.find("-", 0) >= 0:
 			glb.OnShowMessage("Error", "Types cannot contain hyphens (-)", 1)
 			return
@@ -1133,14 +1137,19 @@ class ImportDialog(wx.Dialog):
 	def __init__(self, parent, id, paths, header):
 		wx.Dialog.__init__(self, parent, id, "Import", size=(800, 600), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
+		self.paths = paths
+		self.header = header
+
+		self.selectedCol = -1
+		self.colLabels = ["Data", "Depth", "?", "Leg", "Site", "Hole", "Core", "CoreType",
+						  "Section", "TopOffset", "BottomOffset", "RunNo", "Unselect", "Depth"]
+		self.typeLabels = ["NaturalGamma", "Susceptibility", "Reflectance", "Bulk Density(GRA)",
+						   "Pwave", "Other", "Add type..."]
+
+		# layout
 		sz = wx.BoxSizer(wx.VERTICAL)
 		self.SetSizer(sz)
 		self.sheet = CoreSheet(self, 120, 100)
-		self.sheet.SetColLabelValue(0, "Data Type")
-		for i in range(1, 39):
-			self.sheet.SetColLabelValue(i, "?")
-		self.UpdateColHeaders(header)
-		self.PopulateCells(paths)
 		sz.Add(self.sheet, 1, wx.EXPAND)
 
 		buttonPanel = wx.Panel(self, -1)
@@ -1151,16 +1160,16 @@ class ImportDialog(wx.Dialog):
 		buttonPanel.GetSizer().Add(self.cancelButton)
 		sz.Add(buttonPanel, 0, wx.RIGHT | wx.ALIGN_RIGHT, 10)
 
+		# events
 		self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.ColHeaderSelected, self.sheet)
+		self.Bind(wx.EVT_BUTTON, self.OnOK, self.importButton)
 
-		self.paths = paths
-		self.header = header
-
-		self.selectedCol = -1
-		self.colLabels = ["Data", "Depth", "?", "Leg", "Site", "Hole", "Core", "CoreType",
-						  "Section", "TopOffset", "BottomOffset", "RunNo", "Unselect", "Depth"]
-		self.typeLabels = ["NaturalGamma", "Susceptibility", "Reflectance", "Bulk Density(GRA)",
-						   "Pwave", "Other", "Add type..."]
+		# spreadsheet setup + init
+		self.sheet.SetColLabelValue(0, "Data Type")
+		for i in range(1, 39):
+			self.sheet.SetColLabelValue(i, "?")
+		self.UpdateColHeaders(header)
+		self.PopulateCells(paths)
 
 	def PopulateCells(self, paths):
 		expectedTokenCount = -1
@@ -1247,10 +1256,20 @@ class ImportDialog(wx.Dialog):
 	def OnEdit(self, event):
 		pass
 
+	def OnOK(self, event):
+		# confirm a data type was selected
+		if len(self.sheet.GetCellValue(3, 0)) == 0:
+			glb.OnShowMessage("Error", "Select a Data Type by clicking the leftmost column header", 1)
+			return
+		elif not self.HasCol("Data"):
+			glb.OnShowMessage("Error", "Select the Data column", 1)
+		elif self.DoImport():
+			self.EndModal(wx.ID_OK)
+
 	def OnAddType(self):
 		typeDlg = dialog.AddTypeDialog(self)
 		if typeDlg.ShowModal() == wx.ID_OK:
-			pass
+			return typeDlg.txt.GetValue()
 
 	def OnTypeChanged(self, event):
 		menuId = event.GetId()
@@ -1258,7 +1277,7 @@ class ImportDialog(wx.Dialog):
 		if menuId > 0 and menuId < 7:
 			datatype = self.typeLabels[menuId - 1]
 		elif menuId == 7: # create datatype
-			self.OnAddType()
+			datatype = self.OnAddType()
 		else:
 			userType = event.GetEventObject().GetLabel(menuId)
 			datatype = userType[1:] # strip leading '&'
@@ -1286,8 +1305,15 @@ class ImportDialog(wx.Dialog):
 
 		self.selectedCol = -1
 
+	def HasCol(self, colName):
+		result = False
+		for cidx in range(self.sheet.GetNumberCols()):
+			if self.sheet.GetColLabelValue(cidx) == colName:
+				result = True
+				break
+		return result
+
 	def UpdateColHeaders(self, header):
-		print "UpdateColHeaders given {}".format(header)
 		if header != "":
 			# attempt to determine the file's delimiter
 			delims = [' ', ',', '\t']
@@ -1298,12 +1324,169 @@ class ImportDialog(wx.Dialog):
 			tokens = header.split(delims[maxIndex])
 			for i in range(len(tokens)):
 				self.sheet.SetColLabelValue(i + 1, tokens[i].capitalize())
-		else:
-			self.sheet.SetColLabelValue(1, "Leg")
-			self.sheet.SetColLabelValue(2, "Site")
-			self.sheet.SetColLabelValue(3, "Hole")
-			self.sheet.SetColLabelValue(4, "Core")
-			self.sheet.SetColLabelValue(5, "CoreType")
-			self.sheet.SetColLabelValue(6, "Section")
-			self.sheet.SetColLabelValue(7, "TopOffset")
+		else: # use default Correlator columns
+			for cidx in range(3,11): # 'Leg' through 'BottomOffset'
+				self.sheet.SetColLabelValue(cidx - 2, self.colLabels[cidx])
 		
+	# brgtodo
+	def GetDatasort(self):
+		datasort = [ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
+		cols = self.sheet.GetNumberCols()
+		for i in range(cols):
+			if self.sheet.GetColLabelValue(i) == "Leg":
+				datasort[0] = i - 1 
+			elif self.sheet.GetColLabelValue(i) == "Site":
+				datasort[1] = i - 1
+			elif self.sheet.GetColLabelValue(i) == "Hole":
+				datasort[2] = i - 1
+			elif self.sheet.GetColLabelValue(i) == "Core":
+				datasort[3] = i - 1
+			elif self.sheet.GetColLabelValue(i) == "CoreType":
+				datasort[4] = i - 1
+			elif self.sheet.GetColLabelValue(i) == "Section":
+				datasort[5] = i - 1
+			elif self.sheet.GetColLabelValue(i) == "TopOffset":
+				datasort[6] = i - 1
+				datasort[7] = i - 1
+			elif self.sheet.GetColLabelValue(i) == "BottomOffset":
+				datasort[7] = i - 1
+			elif self.sheet.GetColLabelValue(i) == "Depth":
+				datasort[8] = i - 1
+			elif self.sheet.GetColLabelValue(i) == "Data":
+				datasort[9] = i - 1
+			elif self.sheet.GetColLabelValue(i) == "RunNo":
+				datasort[10] = i - 1
+
+		# CHECKING VALIDATION
+		for ith in range(10) :
+			if ith == 4: # okay for no CoreType col (4) to be defined
+				continue
+			if datasort[ith] == -1 :
+				colName = self.colLabels[ith + 3]
+				glb.OnShowMessage("Error", "Please select a {} column".format(colName), 1)
+				return []
+
+		# use Depth if TopOffset or BottomOffset are absent
+		if datasort[6] == -1:
+			datasort[6] = datasort[8]
+		if datasort[7] == -1:
+			datasort[7] = datasort[8]
+
+		return datasort
+
+	def DoImport(self):
+		# brgtodo - logs and datafile editing cases
+		
+		glb.MainFrame.OnNewData(None)
+		
+		datasort = self.GetDatasort()
+		if datasort == []:
+			return False
+
+		# write datasort to file for some unknown reason (C++ side?)
+		leg = self.sheet.GetCellValue(3, datasort[0] + 1)
+		site = self.sheet.GetCellValue(3, datasort[1] + 1)
+		lsPair = leg + "-" + site
+		siteDirPath = glb.DBPath + "db/" + lsPair
+
+		if os.access(siteDirPath, os.F_OK) == False:
+			os.mkdir(siteDirPath)
+
+		typeStr = self.sheet.GetCellValue(3, 0) # Data Type
+		typeNum = glb.GetTypeNum(typeStr)
+		typeAbbv = glb.GetTypeAbbv(typeStr)
+		typeAnnot = ""
+		if typeAbbv == typeStr:
+			typeAnnot = typeStr
+
+		colSortFile = siteDirPath + "/." + typeAbbv
+		fout = open(colSortFile, 'w+')
+		for r in datasort:
+			s = str(r) + "\n"
+			fout.write(s)
+		fout.close()
+
+		# file prefix: [root]/[siteDir]/[leg]-[site]
+		dataFilePrefix = siteDirPath + "/" + lsPair
+
+		# confirm imported data doesn't already exist
+
+		pathCount = 0
+		for path in self.paths:
+			idx = datasort[2] + 1
+			hole = self.sheet.GetCellValue(pathCount * 30 + 3, idx)
+			if hole[0] == '\t':
+				hole = hole[1:]
+			dataFileName = dataFilePrefix + "-" + hole + "." + typeAbbv + ".dat"
+			fout = open(dataFileName, 'w+')
+			s = "# " + "Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo " + "\n"
+			fout.write(s)
+			s = "# " + "Data Type " + typeStr + "\n"
+			fout.write(s)
+			s = "# " + "Updated Time " + str(datetime.today()) + "\n"
+			fout.write(s)
+			s = "# Generated By Correlator\n"
+			fout.write(s)
+
+			if path.find(".xml", 0) >= 0:
+				path = xml.ConvertFromXML(path, glb.LastDir)
+			tmpPath = glb.DBPath + "tmp/"
+			py_correlator.formatChange(path, tmpPath)
+
+			# "MAX COLUMN TESTING"
+			# finds the first line with >= 10 columns and sets MAX_COLUMN to
+			# that number - 1, making it zero-based for array indexing.
+			MAX_COLUMN = 9 
+			f = open(tmpPath + "tmp.core", 'r+')
+			for line in f :
+				modifiedLine = line[0:-1].split()
+				if modifiedLine[0] == 'null' :
+					continue
+				MAX_COLUMN = len(modifiedLine) - 1
+				if MAX_COLUMN < 9 : 
+					continue
+				break
+			f.close()
+
+			f = open(tmpPath + "tmp.core", 'r+')
+			for line in f :
+				modifiedLine = line[0:-1].split()
+				if modifiedLine[0] == 'null' :
+					continue
+				max = len(modifiedLine)
+				s = ""
+				if max <= MAX_COLUMN :
+					continue;
+				if modifiedLine[MAX_COLUMN].find("null", 0) >= 0 :
+					continue
+				else :
+					for j in range(11) :
+						idx = datasort[j]
+						if idx > MAX_COLUMN :
+							continue
+						if idx >= 0 :
+							s = s + modifiedLine[idx] + " "
+						else :
+							s = s + "-" + " "
+					s = s + "\n"
+					fout.write(s)
+			f.close()
+			fout.close()
+
+			glb.MainFrame.LOCK = 0
+			py_correlator.openHoleFile(dataFileName, -1, typeNum, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, typeAnnot)
+			glb.MainFrame.OnInitDataUpdate()
+			glb.MainFrame.LOCK = 1
+
+			s = "Import Core Data: " + dataFileName + "\n"
+			glb.MainFrame.logFileptr.write(s)
+
+			glb.MainFrame.OnNewData(None)
+
+			pathCount += 1
+
+		glb.MainFrame.logFileptr.write("\n")
+
+		# 8/15/2014 brgtodo: update DB file, then reload into model+view!
+		
+		return True
