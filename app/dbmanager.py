@@ -15,6 +15,7 @@ import xml.sax
 
 from importManager import py_correlator
 
+import dbutils as dbu
 import dialog
 import globals as glb
 import xml_handler
@@ -152,6 +153,18 @@ class DataFrame(wx.Panel):
 	def OnHide(self,event):
 		self.Show(False)
 		self.parent.midata.Check(False)
+		
+	def AddSessionReports(self):
+		reportRoot = self.tree.AppendItem(self.root, 'Session Reports')
+		reportList = dbu.LoadSessionReports()
+		for reportTuple in reportList: # (dir, user, time)
+			reportItem = self.tree.AppendItem(reportRoot, 'Report')
+			self.tree.SetItemText(reportItem, reportTuple[0], 1)
+			self.tree.SetItemText(reportItem, reportTuple[1], 7)
+			self.tree.SetItemText(reportItem, reportTuple[2], 6)
+		if len(reportList) >= 50 :
+			# brgtodo: give option to delete right here rather than forcing manual
+			glb.OnShowMessage("Information", "Please, Clean Session Reports", 1)
 
 	# handles all of the many many many right-click commands in Data Manager
 	def OnPOPMENU(self, event):
@@ -420,7 +433,7 @@ class DataFrame(wx.Panel):
 								os.system('rm \"'+ glb.DBPath +filename + '\"')
 
 				self.tree.Delete(self.selectedIdx)
-				self.LoadSessionReports()
+				self.AddSessionReports()
 				glb.OnShowMessage("Information", "Successfully deleted", 1)
 		elif opId == 31 :
 			# EXPORT SESSION REPORT
@@ -4756,206 +4769,14 @@ class DataFrame(wx.Panel):
 		#		self.listPanel.SetCellValue(row, 19, str(max))
 
 
-	""" Confirm existence of dirs and files corresponding to sites listed in root-level
-	datalist.db. If not, regenerate root datalist.db to reflect filesystem state. """
-	def ValidateDatabase(self):
-		if os.access(glb.DBPath + 'db/', os.F_OK) == False :
-			os.mkdir(glb.DBPath + 'db/')
-
-		if os.access(glb.DBPath + 'db/datalist.db', os.F_OK) == False :
-			root_f = open(glb.DBPath + 'db/datalist.db', 'w+')
-			root_f.close()
-
-		validate = True 
-		root_f = open(glb.DBPath + 'db/datalist.db', 'r+')
-		for root_line in root_f :
-			list = root_line.splitlines()
-			if list[0] == '' :
-				continue
-			for data_item in list :
-				if os.access(glb.DBPath + 'db/' + data_item + '/datalist.db', os.F_OK) == False :
-					validate = False 
-					break
-
-		root_f.close()
-		if validate == False :
-			print "[ERROR] Data list is not valide, DATALIST WILL BE RE-GENERATED"
-			root_f = open(glb.DBPath + 'db/datalist.db', 'w+')
-			list = os.listdir(glb.DBPath + 'db/')
-			for dir in list :
-				if dir != "datalist.db" :
-					if dir.find("-", 0) > 0 :
-						if os.access(glb.DBPath + 'db/' + dir + '/datalist.db', os.F_OK) == True :
-							root_f.write(dir + "\n")
-			root_f.close()
-
-	def LoadSessionReports(self):
-		log_report = self.tree.AppendItem(self.root, 'Session Reports')
-		list = os.listdir(glb.DBPath + 'log/')
-		for dir in list :
-			if dir != ".DS_Store" :
-				report_item = self.tree.AppendItem(log_report, 'Report')
-				self.tree.SetItemText(report_item, dir, 1)
-				last = dir.find(".", 0)
-				user = dir[0:last]
-				self.tree.SetItemText(report_item, user, 7)
-				start = last + 1
-				last = dir.find("-", start)
-				last = dir.find("-", last+1)
-				last = dir.find("-", last+1)
-				time = dir[start:last] + " "
-				start = last + 1
-				last = dir.find("-", start)
-				time += dir[start:last] + ":"
-				start = last + 1
-				last = dir.find(".", start)
-				time += dir[start:last]
-				self.tree.SetItemText(report_item, time, 6)
-		if len(list) >= 50 :
-			glb.OnShowMessage("Information", "Please, Clean Session Reports", 1)
-
-	def LoadDatabase(self):
-		self.ValidateDatabase()
-		self.LoadSessionReports()
-		siteNames = self.LoadSiteNames()
-		self.loadedSites = self.LoadSites(siteNames)
-
-	def LoadSiteNames(self):
-		dbRootFile = open(glb.DBPath + 'db/datalist.db', 'r+')
-		loadedSites = []
-		for site in dbRootFile:
-			site = site.strip()
-			if site == '' or site in loadedSites:
-				continue
-			else:
-				loadedSites.append(site)
-		return sorted(loadedSites)
-
-	# parse single-line types
-	def ParseOthers(self, site, siteLines):
-		for line in siteLines:
-			tokens = line.split(': ')
-			if tokens[0] == 'affinetable':
-				affine = AffineData()
-				affine.FromTokens(tokens)
-				site.affineTables.append(affine)
-			elif tokens[0] == 'splicetable':
-				splice = SpliceData()
-				splice.FromTokens(tokens)
-				site.spliceTables.append(splice)
-			elif tokens[0] == 'eldtable':
-				eld = EldData()
-				eld.FromTokens(tokens)
-				site.eldTables.append(eld)
-			elif tokens[0] == 'log':
-				log = DownholeLogTable()
-				log.FromTokens(tokens)
-				site.logTables.append(log)
-			elif tokens[0] == 'strat':
-				strat = StratTable()
-				strat.FromTokens(tokens)
-				site.stratTables.append(strat)
-			elif tokens[0] == 'age':
-				age = AgeTable()
-				age.FromTokens(tokens)
-				site.ageTables.append(age)
-			elif tokens[0] == 'series':
-				series = SeriesTable()
-				series.FromTokens(tokens)
-				site.seriesTables.append(series)
-			elif tokens[0] == 'image':
-				image = ImageTable()
-				image.FromTokens(tokens)
-				site.imageTables.append(image)
-
-	def ParseHoleSets(self, site, siteLines):
-		curType = None
-		for line in siteLines:
-			tokens = line.split(': ')
-			#if tokens[0] == 'type' and tokens[1] not in site.holeSets:
-			#	curType = tokens[1]
-			#	site.holeSets[tokens[1]] = HoleSet(curType)
-			if tokens[0] == 'type':
-				curType = tokens[1]
-				site.AddHoleSet(curType)
-			elif tokens[0] == 'typeData':
-				site.holeSets[curType].continuous = ParseContinuousToken(tokens[1])
-			elif tokens[0] == 'typeDecimate':
-				site.holeSets[curType].decimate = ParseDecimateToken(tokens[1])
-			elif tokens[0] == 'typeSmooth':
-				site.holeSets[curType].smooth = ParseSmoothToken(tokens[1])
-			elif tokens[0] == 'typeMin':
-				site.holeSets[curType].min = tokens[1]
-			elif tokens[0] == 'typeMax':
-				site.holeSets[curType].max = tokens[1]
-			elif tokens[0] == 'culltable' or tokens[0] == 'uni_culltable':
-				cull = CullTable()
-				cull.FromTokens(tokens)
-				site.holeSets[curType].cullTable = cull
-
-	# For some reason holes are the only data we serialize as multiple lines. Why?
-	# Maintaining as single lines (like everything else) would simplify parsing.
-	def ParseHoles(self, site, siteLines):
-		curHole = None
-		curType = None
-		for line in siteLines:
-			token = line.split(': ')
-			if token[0] == 'hole':
-				if curHole != None:
-					site.AddHole(curType, curHole)
-				curHole = HoleData(token[1])
-			elif token[0] == 'type':
-				curType = token[1]
- 			elif token[0] == "dataName":
-				curHole.dataName = token[1]
- 			elif token[0] == "depth" :
-				curHole.depth = token[1]
- 			elif token[0] == "file" :
-				curHole.file = token[1]
- 			elif token[0] == "min" :
-				curHole.min = token[1]
- 			elif token[0] == "max" :
-				curHole.max = token[1]
- 			elif token[0] == "updatedTime" :
-				curHole.updatedTime = token[1]
- 			elif token[0] == "enable" :
-				curHole.enable = ParseEnableToken(token[1])
- 			elif token[0] == "byWhom" :
-				curHole.byWhom = token[1]
- 			elif token[0] == "source" :
-				curHole.origSource = token[1]
- 			elif token[0] == "data" :
-				curHole.data = token[1]
-		if curHole != None:
-			site.AddHole(curType, curHole)
-
-	def LoadSites(self, siteNames):
-		loadedSites = []
-		for siteName in siteNames:
-			site = SiteData(siteName)
-
-			siteFile = open(glb.DBPath + 'db/' + siteName + '/datalist.db', 'r+')
-			siteLines = siteFile.readlines()
-			for idx, line in enumerate(siteLines):
-				siteLines[idx] = siteLines[idx].strip('\r\n')
-
-			self.ParseHoleSets(site, siteLines)
-			self.ParseHoles(site, siteLines)
-			self.ParseOthers(site, siteLines)
-			#site.dump()
-			loadedSites.append(site)
-
-		return loadedSites
-
 	# brg 12/4/2013: Builds data manager UI
 	def OnLOADCONFIG(self):
-		self.LoadDatabase()
+		loadedSites = dbu.LoadDatabase()
 
 		# self.parent - "master" Correlator class
 		# self - old dbmanager (has required variables and methods)
 		# self.dbPanel - Notebook panel in which to embed DBView
-		# self.loadedSites - list of sites loaded from root datalist.db
-		self.dbview = DBView(self.parent, self, self.dbPanel, self.loadedSites)
+		self.dbview = DBView(self.parent, self, self.dbPanel, loadedSites)
 
 		root_f = open(glb.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
@@ -7337,6 +7158,7 @@ class DataFrame(wx.Panel):
 				glb.OnShowMessage("Error", "Please define data column", 1)
 				return
 
+		# get leg and site to build filename
 		idx = datasort[0] +1
 		leg = self.dataPanel.GetCellValue(3, idx)
 		idx = datasort[1] + 1
@@ -7345,10 +7167,14 @@ class DataFrame(wx.Panel):
 			leg = leg[1:]
 		if site[0] == '\t' :
 			site = site[1:]
+
+
 		prefilename = glb.DBPath + "db/" + leg + "-" + site
+		print "creating leg-site dir {}".format(prefilename)
 		if os.access(prefilename, os.F_OK) == False :
 			os.mkdir(prefilename)
 
+		# brg 8/14/2014: Why do we write datasort contents into this file? C++ side?
 		filename = prefilename + "/." + datatype 
 		fout = open(filename, 'w+')
 		for r in datasort :
@@ -7357,6 +7183,7 @@ class DataFrame(wx.Panel):
 		fout.close()
 		
 		prefilename = prefilename + "/" + leg + "-" + site
+		print "now prefilename = {}".format(prefilename)
 
 		# create node on tree
 		# Check leg-site node
@@ -7406,6 +7233,8 @@ class DataFrame(wx.Panel):
 			hole = self.dataPanel.GetCellValue(i* 30 + 3, idx)
 			if hole[0] == '\t' :
 				hole = hole[1:]
+
+			# create datafile and write header
 			filename = prefilename + "-" + hole + "." + datatype + ".dat"
 			fout = open(filename, 'w+')
 			s = "# " + "Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo " + "\n"
@@ -7429,6 +7258,11 @@ class DataFrame(wx.Panel):
 			py_correlator.formatChange(temp_path, tempfile)
 
 			# MAX COLUMN TESTING
+			# brg 8/14/2014: looks like this finds the first line with
+			# >= 10 columns and sets MAX_COLUMN to that number - 1,
+			# making it zero-based for array indexing. However, it breaks
+			# after the first line with >= 10 columns, so if we're looking
+			# for the file-wide most-columns line, this won't work in all cases.
 			MAX_COLUMN = 9 
 			f = open(tempfile+"tmp.core", 'r+')
 			for line in f :
@@ -7442,6 +7276,7 @@ class DataFrame(wx.Panel):
 				break
 			f.close()
 
+			print "MAX_COLUMN = {}".format(MAX_COLUMN)
 			f = open(tempfile+"tmp.core", 'r+')
 			for line in f :
 				modifiedLine = line[0:-1].split()

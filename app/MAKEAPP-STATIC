@@ -5,6 +5,7 @@ rm canvas.py
 rm constants.py
 rm correlator.py
 rm dbmanager.py
+rm dbutils.py
 rm dialog.py
 rm frames.py
 rm globals.py
@@ -28,6 +29,7 @@ cp canvas.py ../bin/static/
 cp constants.py ../bin/static/
 cp correlator.py ../bin/static/
 cp dbmanager.py ../bin/static/
+cp dbutils.py ../bin/static/
 cp dialog.py ../bin/static/
 cp frames.py ../bin/static/
 cp globals.py ../bin/static

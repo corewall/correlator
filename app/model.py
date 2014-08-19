@@ -10,36 +10,6 @@ import xml_handler
 from datetime import datetime
 import xml.sax
 
-# parse routines for members maintained as numeric/boolean/etc rather than a string
-def ParseEnableToken(enableToken):
-	return enableToken == 'Enable'
-
-def ParseContinuousToken(contToken):
-	return contToken == 'Continuous'
-
-def ParseDecimateToken(decToken):
-	try:
-		decInt = int(decToken)
-		return decInt
-	except ValueError:
-		return 1
-
-def ParseSmoothToken(smoothToken):
-	if smoothToken == "":
-		return SmoothData()
-	else:
-		toks = smoothToken.split()
-		width = int(toks[0])
-		unit = const.DEPTH if toks[1] == "Depth(cm)" else const.POINTS
-		if toks[2] == "UnsmoothedOnly":
-			style = const.UNSMOOTHED
-		elif toks[2] == "SmoothedOnly":
-			style = const.SMOOTHED
-		elif toks[2] == "Smoothed&Unsmoothed":
-			style = const.BOTH
-
-	return SmoothData(width, unit, style)
-
 def MakeRangeString(min, max):
 	return "Range: (" + min + ", " + max + ")"
 
@@ -78,14 +48,6 @@ class TableData:
 
 	def __repr__(self):
 		return "%s %s %s %s %s" % (self.file, self.updatedTime, self.byWhom, str(self.enable), self.origSource)
-
-	def FromTokens(self, tokens):
-		self.file = tokens[1]
-		self.updatedTime = tokens[2]
-		self.byWhom = tokens[3]
-		self.enable = ParseEnableToken(tokens[4])
-		if len(tokens) > 5 and tokens[5] != '-':
-			self.origSource = tokens[5]
 
 	def GetEnableStr(self):
 		return "Enable" if self.enable else "Disable"
@@ -341,8 +303,6 @@ class AffineData(TableData):
 		TableData.__init__(self)
 	def __repr__(self):
 		return "AffineTable " + TableData.__repr__(self)
-	def FromTokens(self, tokens):
-		TableData.FromTokens(self, tokens)
 	def GetName(self):
 		return "Affine"
 
@@ -351,8 +311,6 @@ class SpliceData(TableData):
 		TableData.__init__(self)
 	def __repr__(self):
 		return "SpliceTable " + TableData.__repr__(self)
-	def FromTokens(self, tokens):
-		TableData.FromTokens(self, tokens)
 	def GetName(self):
 		return "Splice"
 
@@ -361,8 +319,6 @@ class EldData(TableData):
 		TableData.__init__(self)
 	def __repr__(self):
 		return "EldTable " + TableData.__repr__(self)
-	def FromTokens(self, tokens):
-		TableData.FromTokens(self, tokens)
 	def GetName(self):
 		return "ELD"
 
@@ -374,8 +330,6 @@ class UniCullTable(TableData):
 		TableData.__init__(self)
 	def __repr__(self):
 		return "UniCullTable " + TableData.__repr__(self)
-	def FromTokens(self, tokens):
-		TableData.FromTokens(self, tokens)
 	def GetName(self):
 		return "Universal Cull Table"
 
@@ -385,9 +339,6 @@ class CullTable(TableData):
 		TableData.__init__(self)
 	def __repr__(self):
 		return "CullTable " + TableData.__repr__(self)
-	def FromTokens(self, tokens):
-		TableData.FromTokens(self, tokens)
-		print self
 	def GetName(self):
 		return "Cull Table"
 
@@ -396,8 +347,6 @@ class StratTable(TableData):
 		TableData.__init__(self)
 	def __repr__(self):
 		return "StratTable " + TableData.__repr__(self)
-	def FromTokens(self, tokens):
-		TableData.FromTokens(self, tokens)
 	def GetName(self):
 		return "Stratigraphy" # brgtodo - correct
 
@@ -406,8 +355,6 @@ class AgeTable(TableData):
 		TableData.__init__(self)
 	def __repr__(self):
 		return "AgeTable " + TableData.__repr__(self)
-	def FromTokens(self, tokens):
-		TableData.FromTokens(self, tokens)
 	def GetName(self):
 		return "Age/Depth"
 
@@ -416,8 +363,6 @@ class SeriesTable(TableData):
 		TableData.__init__(self)
 	def __repr__(self):
 		return "SeriesTable " + TableData.__repr__(self)
-	def FromTokens(self, tokens):
-		TableData.FromTokens(self, tokens)
 	def GetName(self):
 		return "Age"
 
@@ -426,8 +371,6 @@ class ImageTable(TableData):
 		TableData.__init__(self)
 	def __repr__(self):
 		return "ImageTable " + TableData.__repr__(self)
-	def FromTokens(self, tokens):
-		TableData.FromTokens(self, tokens)
 	def GetName(self):
 		return "Image Table"
 
@@ -447,22 +390,6 @@ class DownholeLogTable(TableData):
 
 	def GetName(self):
 		return self.dataType
-
-	def FromTokens(self, tokens):
-		self.file = tokens[1]
-		self.updatedTime = tokens[2]
-		self.byWhom = tokens[3]
-		self.origSource = tokens[4]
-		self.dataIndex = tokens[5]
-		self.enable = ParseEnableToken(tokens[6])
-		self.dataType = tokens[7]
-		if len(tokens) >= 10:
-			self.min = tokens[8]
-			self.max = tokens[9]
-		if len(tokens) >= 11:
-			self.decimate = ParseDecimateToken(tokens[10])
-		if len(tokens) >= 12:
-			self.smooth = ParseSmoothToken(tokens[11])
 
 class DBView:
 	def __init__(self, parent, dataFrame, parentPanel, siteList):
