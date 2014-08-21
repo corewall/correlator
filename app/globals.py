@@ -31,35 +31,35 @@ def OnShowMessage(type, msg, numButton):
 	dlg.Destroy()
 	return ret
 
-def GetTypeNum(type):
+def GetTypeNum(typeStr):
 	type = 7 # user type
-	if type == "NaturalGamma":
+	if typeStr == "NaturalGamma":
 		type = 4
-	elif type == "Susceptibility":
+	elif typeStr == "Susceptibility":
 		type = 3
-	elif type == "Reflectance":
+	elif typeStr == "Reflectance":
 		type = 5
-	elif type == "Bulk Density(GRA)":
+	elif typeStr == "Bulk Density(GRA)":
 		type = 1
-	elif type == "Pwave":
+	elif typeStr == "Pwave":
 		type = 2
-	elif type == "Other": # brgtodo "Other" may be a pre-custom type vestige
+	elif typeStr == "Other": # brgtodo "Other" may be a pre-custom type vestige
 		type = 7
 	return type
 
-def GetTypeAbbv(type):
-	datatype = type
-	if type == "NaturalGamma":
+def GetTypeAbbv(typeStr):
+	datatype = typeStr
+	if typeStr == "NaturalGamma":
 		datatype = "ngfix"
-	elif type == "Susceptibility":
+	elif typeStr == "Susceptibility":
 		datatype = "susfix"
-	elif type == "Reflectance":
+	elif typeStr == "Reflectance":
 		datatype = "reflfix"
-	elif type == "Bulk Density(GRA)":
+	elif typeStr == "Bulk Density(GRA)":
 		datatype = "grfix" 
-	elif type == "Pwave":
+	elif typeStr == "Pwave":
 		datatype = "pwfix" 
-	elif type == "Other":
+	elif typeStr == "Other":
 		datatype = "otherfix"
 	return datatype
 
