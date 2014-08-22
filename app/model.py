@@ -3,12 +3,12 @@ import wx
 from importManager import py_correlator
 
 import constants as const
+import dbutils as dbu
 import dialog
 import globals as glb
-import xml_handler
+import xml_handler as xml
 
 from datetime import datetime
-import xml.sax
 
 def MakeRangeString(min, max):
 	return "Range: (" + min + ", " + max + ")"
@@ -229,9 +229,10 @@ class SiteData:
 			self.holeSets[type] = HoleSet(type)
 
 	def AddHole(self, type, hole):
-		if type in self.holeSets:
-			self.holeSets[type].site = self
-			self.holeSets[type].AddHole(hole)
+		if type not in self.holeSets:
+			self.AddHoleSet(type)
+		self.holeSets[type].site = self
+		self.holeSets[type].AddHole(hole)
 
 	""" return currently enabled AffineTable if there is one """
 	def GetAffine(self):
@@ -392,24 +393,20 @@ class DownholeLogTable(TableData):
 		return self.dataType
 
 class DBView:
-	def __init__(self, parent, dataFrame, parentPanel, siteList):
+	def __init__(self, parent, dataFrame, parentPanel, siteDict):
 		self.parent = parent # 1/6/2014 brg: Don't like this naming...app?
 		self.dataFrame = dataFrame # old DB Manager DataFrame
 		self.parentPanel = parentPanel # wx.Panel
 		self.panes = [] # wx.CollapsiblePanes - retain to re-Layout() as needed
 		self.menu = None # action menu
+		self.siteDict = siteDict # dictionary of sites keyed on site name
 
-		# parsing stuff - brgtodo 8/1/2014 pull into app globals?
-		self.parser = xml.sax.make_parser()
-		self.handler = xml_handler.XMLHandler()
-		self.parser.setContentHandler(self.handler)
-
-		self.InitUI(siteList)
+		self.InitUI()
 		self.InitMenus()
 
 		self.UpdateView(self.GetCurrentSite())
 
-	def InitUI(self, siteList):
+	def InitUI(self):
 		self.sitePanel = wx.Panel(self.parentPanel, -1)
 		self.sitePanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
 		siteLabel = wx.StaticText(self.sitePanel, -1, "Current Site: ", style=wx.BOLD)
@@ -419,11 +416,13 @@ class DBView:
 		self.currentSite = wx.Choice(self.sitePanel, -1)
 		self.loadButton = wx.Button(self.sitePanel, -1, "Load")
 		self.importButton = wx.Button(self.sitePanel, -1, "Import Data...")
+		self.writeButton = wx.Button(self.sitePanel, -1, "Write DB")
 
 		self.sitePanel.GetSizer().Add(siteLabel, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.currentSite, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.loadButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.importButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+		self.sitePanel.GetSizer().Add(self.writeButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.parentPanel.GetSizer().Add(self.sitePanel, 0, border=10, flag=wx.BOTTOM | wx.LEFT)
 
 		self.dataPanel = wx.Panel(self.parentPanel, -1)
@@ -431,11 +430,16 @@ class DBView:
 		self.dataPanel.SetBackgroundColour('white')
 		self.parentPanel.GetSizer().Add(self.dataPanel, 0, border=10, flag=wx.BOTTOM | wx.LEFT)
 
-		self.UpdateSites(siteList)
+		self.UpdateSites()
 		self.parentPanel.Bind(wx.EVT_CHOICE, self.SiteChanged, self.currentSite)
 		self.parentPanel.Bind(wx.EVT_BUTTON, self.LoadPressed, self.loadButton)
 		self.parentPanel.Bind(wx.EVT_BUTTON, self.ImportPressed, self.importButton)
+		self.parentPanel.Bind(wx.EVT_BUTTON, self.WritePressed, self.writeButton)
 
+	def WritePressed(self, event):
+		site = self.GetCurrentSite()
+		dbu.SaveSite(site)
+	
 	def InitMenus(self):
 		# master dictionary of all menu items
 		self.menuIds = {'Load': 1,
@@ -627,9 +631,10 @@ class DBView:
 		self.parentPanel.GetEventHandler().ProcessEvent(event)
 		event.Skip()
 
-	def UpdateSites(self, siteList):
+	def UpdateSites(self):
 		self.currentSite.Clear()
-		for site in siteList:
+		for siteKey in sorted(self.siteDict):
+			site = self.siteDict[siteKey]
 			self.currentSite.Append(site.name, clientData=site)
 		
 		# brg 4/10/2014: Must explicitly set a current selection on Windows 
@@ -894,7 +899,7 @@ class DBView:
 
 	def ImportHoleData(self, paths, header):
 		# create import spreadsheet dialog
-		dlg = dialog.ImportDialog(self.dataFrame, -1, paths, header)
+		dlg = dialog.ImportDialog(self.dataFrame, -1, paths, header, self.siteDict)
 		if dlg.ShowModal() == wx.ID_OK:
 			print "okayed out of import dialog, make rocket go now!"
 			pass
