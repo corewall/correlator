@@ -1079,7 +1079,7 @@ class SplicePanel():
 			#	self.parent.Window.range.remove(alt_splice)
 			#self.parent.Window.range.append(newrange)
 
-			path = self.parent.DBPath + 'db/' + self.parent.dataFrame.title  + '/'
+			path = glb.DBPath + 'db/' + self.parent.dataFrame.title  + '/'
 			ret = py_correlator.loadAltSpliceFile(path + selectedSplice, selectedType)
 			if ret == "" :
 				glb.OnShowMessage("Error", "Could not create Splice Records", 1)
@@ -3049,7 +3049,7 @@ class FilterPanel():
 		self.valueE.SetValue("999")
 
 		if holeSet.HasCull() and holeSet.IsCullEnabled():
-			cullFilePath = holeSet.site.GetPath(self.parent.DBPath + "db/") + holeSet.cullTable.file
+			cullFilePath = holeSet.site.GetPath(glb.DBPath + "db/") + holeSet.cullTable.file
 
 			self.cull.SetValue(True)
 			f = open(cullFilePath, 'r+')
@@ -3497,7 +3497,7 @@ class FilterPanel():
 
 		if type != "Log" :
 			site.SetCull(type, self.parent.user)
-			cullFile = site.GetPath(self.parent.DBPath + "db/") + site.GetCull(type).file
+			cullFile = site.GetPath(glb.DBPath + "db/") + site.GetCull(type).file
 			py_correlator.saveCullTable(cullFile, type)
 			site.SyncToData()
 			self.parent.dataFrame.OnUPDATE_CULLTABLE(type)
