@@ -18,8 +18,8 @@ from importManager import py_correlator
 import dbutils as dbu
 import dialog
 import globals as glb
+import model
 import xml_handler
-from model import * # brgtodo 4/24/2014: Remove import *
 
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
@@ -4776,7 +4776,7 @@ class DataFrame(wx.Panel):
 		# self.parent - "master" Correlator class
 		# self - old dbmanager (has required variables and methods)
 		# self.dbPanel - Notebook panel in which to embed DBView
-		self.dbview = DBView(self.parent, self, self.dbPanel, loadedSites)
+		self.dbview = model.DBView(self.parent, self, self.dbPanel, loadedSites)
 
 		root_f = open(glb.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
@@ -4798,7 +4798,7 @@ class DataFrame(wx.Panel):
 
 				sub_f = open(glb.DBPath + 'db/' + data_item + '/datalist.db', 'r+')
 
-				curSite = SiteData(data_item)
+				curSite = model.SiteData(data_item)
 
 				root = self.tree.AppendItem(self.root, data_item) # site name
 				self.tree.SetItemBold(root, True)
