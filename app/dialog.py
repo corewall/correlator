@@ -1138,7 +1138,7 @@ class OpenFrame(wx.Dialog):
 
 class ImportDialog(wx.Dialog):
 	def __init__(self, parent, id, paths, header, siteDict):
-		wx.Dialog.__init__(self, parent, id, "Import", size=(800, 600), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+		wx.Dialog.__init__(self, parent, id, "Import", size=(1000, 700), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
 		self.paths = paths
 		self.header = header
@@ -1378,23 +1378,24 @@ class ImportDialog(wx.Dialog):
 
 		return datasort
 
+	""" return list of unique hole names in Hole column """
+	def GetImportHoles(self, holeCol):
+		holes = set()
+		curRow = 3 
+		while curRow < self.sheet.GetNumberRows():
+			val = self.sheet.GetCellValue(curRow, holeCol)
+			if val == "":
+				break
+			holes.add(val)
+			curRow += 1
+		return list(holes)
+	
 	def DoImport(self):
 		# brgtodo - logs and datafile editing cases
-		
-		glb.MainFrame.OnNewData(None)
 		
 		datasort = self.GetDatasort()
 		if datasort == []:
 			return False
-
-		# write datasort to file for some unknown reason (C++ side?)
-		leg = self.sheet.GetCellValue(3, datasort[0] + 1)
-		site = self.sheet.GetCellValue(3, datasort[1] + 1)
-		lsPair = leg + "-" + site
-		siteDirPath = glb.DBPath + "db/" + lsPair
-
-		if os.access(siteDirPath, os.F_OK) == False:
-			os.mkdir(siteDirPath)
 
 		typeStr = self.sheet.GetCellValue(3, 0) # Data Type
 		typeNum = glb.GetTypeNum(typeStr)
@@ -1403,6 +1404,28 @@ class ImportDialog(wx.Dialog):
 		if typeAbbv == typeStr:
 			typeAnnot = typeStr
 
+		leg = self.sheet.GetCellValue(3, datasort[0] + 1)
+		site = self.sheet.GetCellValue(3, datasort[1] + 1)
+		lsPair = leg + "-" + site
+
+		# brgtodo: confirm hole/datatype pair doesn't already exist
+		holesToImport = self.GetImportHoles(datasort[2] + 1)
+		for h in holesToImport:
+			if self.siteDict[lsPair].HasHole(typeStr, h):
+				glb.OnShowMessage("Error", "Site {} already contains hole {} of type {}".format(lsPair, h, typeStr), 1)
+				return False
+		
+		glb.MainFrame.OnNewData(None)
+		
+		# create site dir if needed # brgtodo dbutils?
+		siteDirPath = glb.DBPath + "db/" + lsPair	
+		if os.access(siteDirPath, os.F_OK) == False:
+			os.mkdir(siteDirPath)
+			siteDb = open(glb.DBPath + "db/datalist.db", "a+")
+			siteDb.write("\n" + lsPair)
+			siteDb.close()
+		
+		# write datasort to file for unknown reasons (C++ side?)
 		colSortFile = siteDirPath + "/." + typeAbbv
 		fout = open(colSortFile, 'w+')
 		for r in datasort:
@@ -1410,16 +1433,12 @@ class ImportDialog(wx.Dialog):
 			fout.write(s)
 		fout.close()
 
-		# file prefix: [root]/[siteDir]/[leg]-[site]
-		dataFilePrefix = siteDirPath + "/" + lsPair
-
-		# brgtodo: confirm imported data doesn't already exist
-
 		pathCount = 0
+		dataFilePrefix = siteDirPath + "/" + lsPair # [root]/[siteDir]/[leg]-[site]
 		for path in self.paths:
 			idx = datasort[2] + 1
-			hole = self.sheet.GetCellValue(pathCount * 30 + 3, idx)
-			if hole[0] == '\t':
+			hole = holesToImport[pathCount]
+			if hole[0] == '\t': # brgtodo necessary? wouldn't tabs be stripped from tsv data at this point?
 				hole = hole[1:]
 			dataFileName = dataFilePrefix + "-" + hole + "." + typeAbbv + ".dat"
 			fout = open(dataFileName, 'w+')
@@ -1489,6 +1508,7 @@ class ImportDialog(wx.Dialog):
 				destSite.AddHole(holeData, typeStr)
 				dbu.SaveSite(destSite)
 			else:
+				self.siteDict[lsPair] = model.SiteData(lsPair)
 				print "todo: need to create new site" #brgtodo
 			
 			pathCount += 1

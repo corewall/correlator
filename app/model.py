@@ -1,4 +1,5 @@
 import wx
+from datetime import datetime
 
 from importManager import py_correlator
 
@@ -8,7 +9,6 @@ import dialog
 import globals as glb
 import xml_handler as xml
 
-from datetime import datetime
 
 def MakeRangeString(min, max):
 	return "Range: (" + min + ", " + max + ")"
@@ -261,6 +261,19 @@ class SiteData:
 		else:
 			print "Couldn't find type " + type + " in site " + self.name + " holeSets"
 			return None
+		
+	def FindHole(self, type, hole):
+		type = FixType(type)
+		if type in self.holeSets:
+			if hole in self.holeSets[type].holes:
+				return self.holeSets[type].holes[hole]
+		return None
+	
+	def HasHoleSet(self, type):
+		return self.FindHoleSet(type) is not None
+	
+	def HasHole(self, type, hole):
+		return self.FindHole(type, hole) is not None
 
 	def SetDecimate(self, type, decimate):
 		hs = self.FindHoleSet(type)
