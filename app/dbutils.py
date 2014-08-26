@@ -130,10 +130,12 @@ def WriteHoleSet(holeSet, siteFile):
 	siteFile.write("\n\n")
 
 def WriteLine(destFile, key, value):
-	destFile.write(key + ": " + value + "\n")
+	line = "{}: {}\n".format(key, value)
+	destFile.write(line)
 	
 def WriteToken(destFile, token):
-	destFile.write(token + ": ")
+	line = "{}: ".format(token)
+	destFile.write(line)
 
 def WriteHole(hole, siteFile):
 	WriteLine(siteFile, "hole", hole.name)
