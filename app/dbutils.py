@@ -99,13 +99,13 @@ def SaveSite(site):
 	for eld in site.eldTables:
 		WriteSavedTable(eld, "eldtable", siteFile)
 	for strat in site.stratTables:
-		WriteSavedTable(strat, "strat", siteFile)
+		WriteSpecialSavedTable(strat, "strat", siteFile)
 	for age in site.ageTables:
-		WriteSavedTable(age, "age", siteFile)
+		WriteSpecialSavedTable(age, "age", siteFile)
 	for series in site.seriesTables:
-		WriteSavedTable(series, "series", siteFile)
+		WriteSpecialSavedTable(series, "series", siteFile)
 	for image in site.imageTables:
-		WriteSavedTable(image, "image", siteFile)
+		WriteSpecialSavedTable(image, "image", siteFile)
 	for log in site.logTables:
 		WriteDownholeLog(log, siteFile)
 	siteFile.close()
@@ -153,8 +153,20 @@ def WriteHole(hole, siteFile):
 	siteFile.write("\n")
 	
 def WriteSavedTable(table, typeToken, siteFile):
-	for token in [typeToken, table.file, table.updatedTime, table.byWhom, table.GetEnableStr(), table.origSource]:
+	for token in [typeToken, table.file, table.updatedTime, table.byWhom, table.GetEnableStr()]:
 		WriteToken(siteFile, token)
+	if table.origSource == "":
+		siteFile.write("-")
+	else:
+		WriteToken(siteFile, table.origSource)
+	siteFile.write("\n\n")
+	
+# for age, timeseries, stratigraphy, image tables, which handle source file slightly differently than
+# affine, splice, and ELD
+def WriteSpecialSavedTable(table, typeToken, siteFile):
+	for token in [typeToken, table.file, table.updatedTime, table.byWhom, table.origSource]:
+		WriteToken(siteFile, token)
+	siteFile.write(table.GetEnableStr())
 	siteFile.write("\n\n")
 	
 def WriteDownholeLog(log, siteFile):
@@ -192,19 +204,19 @@ def ParseOthers(site, siteLines):
 			site.logTables.append(log)
 		elif tokens[0] == 'strat':
 			strat = model.StratTable()
-			ParseTableData(strat, tokens)
+			ParseSpecialTableData(strat, tokens)
 			site.stratTables.append(strat)
 		elif tokens[0] == 'age':
 			age = model.AgeTable()
-			ParseTableData(age, tokens)
+			ParseSpecialTableData(age, tokens)
 			site.ageTables.append(age)
 		elif tokens[0] == 'series':
 			series = model.SeriesTable()
-			ParseTableData(series, tokens)
+			ParseSpecialTableData(series, tokens)
 			site.seriesTables.append(series)
 		elif tokens[0] == 'image':
 			image = model.ImageTable()
-			ParseTableData(image, tokens)
+			ParseSpecialTableData(image, tokens)
 			site.imageTables.append(image)
 
 def ParseHoleSets(site, siteLines):
@@ -305,6 +317,15 @@ def ParseTableData(table, tokens):
 	table.enable = ParseEnableToken(tokens[4])
 	if len(tokens) > 5 and tokens[5] != '-':
 		table.origSource = tokens[5]
+		
+# age, timeseries, image, stratigraphy are written in a slightly different format
+# than affine, splice, and ELD tables - original source comes before enabled state
+def ParseSpecialTableData(table, tokens):
+	table.file = tokens[1]
+	table.updatedTime = tokens[2]
+	table.byWhom = tokens[3]
+	table.origSource = tokens[4]
+	table.enable = ParseEnableToken(tokens[5])
 		
 def ParseDownholeLog(log, tokens):
 	log.file = tokens[1]
