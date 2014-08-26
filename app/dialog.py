@@ -190,7 +190,8 @@ class AddTypeDialog(wx.Dialog):
 
 class EditBoxDialog(wx.Dialog):
 	def __init__(self, parent, title):
-		wx.Dialog.__init__(self, parent, -1, title, size=(300, 130), style= wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, -1, title, size=(300, 130),
+							style=wx.STAY_ON_TOP | wx.DEFAULT_DIALOG_STYLE)
 
 		self.Center()
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
@@ -200,6 +201,7 @@ class EditBoxDialog(wx.Dialog):
 
 		grid = wx.GridSizer(1,2)
 		okBtn = wx.Button(self, wx.ID_OK, "OK")
+		okBtn.SetDefault()
 		grid.Add(okBtn)
 		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Cancel")
 		grid.Add(cancelBtn, 0, wx.LEFT, 10)
@@ -1243,12 +1245,12 @@ class ImportDialog(wx.Dialog):
 		elif self.selectedCol == 1: # Leg/Expedition
 			popupMenu = wx.Menu()
 			popupMenu.Append(1, "&Edit Leg No")
-			wx.EVT_MENU(popupMenu, 1, self.OnEdit)
+			wx.EVT_MENU(popupMenu, 1, self.OnEditLeg)
 			self.PopupMenu(popupMenu, pos)
 		elif self.selectedCol == 2: # Site
 			popupMenu = wx.Menu()
 			popupMenu.Append(2, "&Edit Site No")
-			wx.EVT_MENU(popupMenu, 2, self.OnEdit)
+			wx.EVT_MENU(popupMenu, 2, self.OnEditSite)
 			self.PopupMenu(popupMenu, pos)
 		elif self.selectedCol >= 3: # Non-special column
 			popupMenu = wx.Menu()
@@ -1257,8 +1259,19 @@ class ImportDialog(wx.Dialog):
 				wx.EVT_MENU(popupMenu, i + 1, self.OnLabelChanged)
 			self.PopupMenu(popupMenu, pos)
 
-	def OnEdit(self, event):
-		pass
+	def OnEditSite(self, event):
+		editDlg = dialog.EditBoxDialog(self, "Enter New Site")
+		if editDlg.ShowModal() == wx.ID_OK:
+			# brgtodo for now, assume Site column index is 2
+			for ridx in range(self.sheet.GetNumberRows()):
+				self.sheet.SetCellValue(ridx, 2, editDlg.txt.GetValue())
+	
+	def OnEditLeg(self, event):
+		editDlg = dialog.EditBoxDialog(self, "Enter New Leg")
+		if editDlg.ShowModal() == wx.ID_OK:
+			# brgtodo for now, assume Leg column index is 1
+			for ridx in range(self.sheet.GetNumberRows()):
+				self.sheet.SetCellValue(ridx, 1, editDlg.txt.GetValue())
 
 	def OnOK(self, event):
 		# confirm a data type was selected
@@ -1274,6 +1287,7 @@ class ImportDialog(wx.Dialog):
 		typeDlg = dialog.AddTypeDialog(self)
 		if typeDlg.ShowModal() == wx.ID_OK:
 			return typeDlg.txt.GetValue()
+		return None
 
 	def OnTypeChanged(self, event):
 		menuId = event.GetId()
@@ -1282,6 +1296,8 @@ class ImportDialog(wx.Dialog):
 			datatype = self.typeLabels[menuId - 1]
 		elif menuId == 7: # create datatype
 			datatype = self.OnAddType()
+			if datatype is None: # user canceled
+				return
 		else:
 			userType = event.GetEventObject().GetLabel(menuId)
 			datatype = userType[1:] # strip leading '&'
