@@ -39,12 +39,12 @@ def FixType(typeStr):
 
 # FileMetadata a better name?
 class TableData:
-	def __init__(self):
-		self.file = ''
-		self.updatedTime = ''
-		self.byWhom = ''
+	def __init__(self, file="", origSource=""):
+		self.file = file
+		self.updatedTime = glb.GetTimestamp()
+		self.byWhom = glb.User
 		self.enable = False
-		self.origSource = ''
+		self.origSource = origSource
 
 	def __repr__(self):
 		return "%s %s %s %s %s" % (self.file, self.updatedTime, self.byWhom, str(self.enable), self.origSource)
@@ -56,20 +56,17 @@ class TableData:
 		return self.enable
 
 	def UpdateTimestamp(self):
-		tempstamp = str(datetime.today()) # parse date and hh:mm time
-		last = tempstamp.find(":", 0)
-		last = tempstamp.find(":", last+1)
-		self.updatedTime = tempstamp[0:last]
+		self.updatedTime = glb.GetTimestamp()
 
 class HoleData(TableData):
 	def __init__(self, name):
 		TableData.__init__(self)
 		self.name = name
-		self.dataName = '[no dataName]'
-		self.depth = '[no depth]'
-		self.min = '[no min]'
-		self.max = '[no max]'
-		self.data = '[no data]'
+		self.dataName = 'Undefined'
+		self.depth = '[no depth]' # brgtodo unused?
+		self.min = '-9999.0'
+		self.max = '9999.0'
+		self.data = '[no data]' # weird 6 7 8 9 string
 		self.holeSet = None # parent HoleSet
 		self.gui = None # HoleGUI
 
@@ -114,10 +111,10 @@ class HoleSet:
 		self.cullTable = None # appears there can only be one of these per HoleSet
 		self.type = type # built-in type string e.g. NaturalGamma, Pwave, or Other
 		self.continuous = True # if False, discrete
-		self.decimate = '[no decimate]' # numeric?
+		self.decimate = '1' # numeric?
 		self.smooth = SmoothData()
-		self.min = '[no min]'
-		self.max = '[no max]'
+		self.min = '-9999.0' # brgtodo numeric?
+		self.max = '9999.0' # numeric?
 		self.site = None # parent SiteData
 		self.gui = None # HoleSetGUI
 
@@ -135,6 +132,20 @@ class HoleSet:
 		if isinstance(hole, HoleData) and hole.name not in self.holes:
 			hole.holeSet = self
 			self.holes[hole.name] = hole
+		self.UpdateRange()
+
+	def UpdateRange(self):
+		setMax = -9999.0
+		setMin = 9999.0
+		for hole in self.holes.values():
+			holeMin = float(hole.min)
+			holeMax = float(hole.max)
+			if holeMin < setMin:
+				setMin = holeMin
+			if holeMax > setMax:
+				setMax = holeMax
+		self.min = str(setMin)
+		self.max = str(setMax)
 
 	def HasCull(self):
 		return self.cullTable != None
@@ -229,6 +240,7 @@ class SiteData:
 			self.holeSets[type] = HoleSet(type)
 
 	def AddHole(self, type, hole):
+		#print "AddHole: type = {}, hole = {}".format(type, hole)
 		if type not in self.holeSets:
 			self.AddHoleSet(type)
 		self.holeSets[type].site = self
@@ -590,6 +602,7 @@ class DBView:
 		# Add Holes
 		for hsKey in sorted(site.holeSets.keys()): # sort by holeset type
 			hs = site.holeSets[hsKey]
+			#print "holeset type = {}".format(hs.type)
 			hsPane = wx.CollapsiblePane(self.dataPanel, -1, hs.type, style=wx.CP_NO_TLW_RESIZE)
 			hsPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
 			self.dataPanel.GetSizer().Add(hsPane, 0, border=5, flag=wx.ALL)

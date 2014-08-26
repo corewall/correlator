@@ -1440,8 +1440,9 @@ class ImportDialog(wx.Dialog):
 			hole = holesToImport[pathCount]
 			if hole[0] == '\t': # brgtodo necessary? wouldn't tabs be stripped from tsv data at this point?
 				hole = hole[1:]
-			dataFileName = dataFilePrefix + "-" + hole + "." + typeAbbv + ".dat"
-			fout = open(dataFileName, 'w+')
+			dataFileName = lsPair + "-" + hole + "." + typeAbbv + ".dat" # filename
+			dataFilePath = dataFilePrefix + dataFileName
+			fout = open(dataFilePath, 'w+')
 			dbu.WriteDataHeader(fout, typeStr)
 
 			if path.find(".xml", 0) >= 0:
@@ -1464,6 +1465,7 @@ class ImportDialog(wx.Dialog):
 				break
 			f.close()
 
+			# write source file contents to internal datafile
 			f = open(tmpPath + "tmp.core", 'r+')
 			for line in f :
 				modifiedLine = line[0:-1].split()
@@ -1489,27 +1491,29 @@ class ImportDialog(wx.Dialog):
 			f.close()
 			fout.close()
 
+			# load file into C++ side to retrieve range
 			glb.MainFrame.LOCK = 0
-			py_correlator.openHoleFile(dataFileName, -1, typeNum, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, typeAnnot)
+			py_correlator.openHoleFile(dataFilePath, -1, typeNum, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, typeAnnot)
 			glb.MainFrame.OnInitDataUpdate()
 			glb.MainFrame.LOCK = 1
 
-			s = "Import Core Data: " + dataFileName + "\n"
+			s = "Import Core Data: " + dataFilePath + "\n"
 			glb.MainFrame.logFileptr.write(s)
 
 			# brgtodo model-level method to add a hole (creating new site if needed)
 			if lsPair in self.siteDict:
 				destSite = self.siteDict[lsPair]
-				holeData = model.HoleData(hole)
-				holeData.enable = "Enable"
-				holeData.file = dataFileName
-				holeData.origSource = path
-				# brgtodo: min/max, timestamp, user, etc
-				destSite.AddHole(holeData, typeStr)
-				dbu.SaveSite(destSite)
 			else:
-				self.siteDict[lsPair] = model.SiteData(lsPair)
-				print "todo: need to create new site" #brgtodo
+				destSite = self.siteDict[lsPair] = model.SiteData(lsPair)
+			
+			holeData = model.HoleData(hole)
+			holeData.file = dataFileName
+			holeData.origSource = path
+			dataRange = py_correlator.getRange(typeStr)
+			holeData.min = str(int(float(dataRange[0]) * 100.0) / 100.0) # "round" to two digits
+			holeData.max = str(int(float(dataRange[1]) * 100.0) / 100.0)
+			destSite.AddHole(typeStr, holeData)
+			dbu.SaveSite(destSite)
 			
 			pathCount += 1
 
