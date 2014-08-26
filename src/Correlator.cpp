@@ -4322,7 +4322,7 @@ Tie* Correlator::createTie( int type, Core* coreA, double posA, Core* coreB, dou
 	//coreB->addTie(tieptr);
 
 
-	//m_ties.push_back(tieptr);
+	m_ties.push_back(tieptr);
 	//cout << "createTie, m_ties.size() = " << m_ties.size() << endl;
 	
 
