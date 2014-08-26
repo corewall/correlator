@@ -111,7 +111,7 @@ def SaveSite(site):
 	siteFile.close()
 		
 def GetDBFilePath(siteName):
-	return glb.DBPath + "db/" + siteName + "/datalist2.db"
+	return glb.DBPath + "db/" + siteName + "/datalist.db"
 
 def WriteHoleSet(holeSet, siteFile):
 	for holeKey in sorted(holeSet.holes): # sorted acts on dictionary keys by default

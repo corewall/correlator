@@ -111,7 +111,7 @@ class HoleSet:
 		self.cullTable = None # appears there can only be one of these per HoleSet
 		self.type = type # built-in type string e.g. NaturalGamma, Pwave, or Other
 		self.continuous = True # if False, discrete
-		self.decimate = '1' # numeric?
+		self.decimate = 1
 		self.smooth = SmoothData()
 		self.min = '-9999.0' # brgtodo numeric?
 		self.max = '9999.0' # numeric?
@@ -463,6 +463,7 @@ class DBView:
 
 	def WritePressed(self, event):
 		site = self.GetCurrentSite()
+		site.SyncToGui()
 		dbu.SaveSite(site)
 	
 	def InitMenus(self):
@@ -927,8 +928,9 @@ class DBView:
 		# create import spreadsheet dialog
 		dlg = dialog.ImportDialog(self.dataFrame, -1, paths, header, self.siteDict)
 		if dlg.ShowModal() == wx.ID_OK:
-			print "okayed out of import dialog, make rocket go now!"
-			pass
+			curSite = self.GetCurrentSite()
+			if dlg.importedSite == curSite.name:
+				self.UpdateView(curSite) # update to show just-imported data
 
 	def ViewFile(self, filename):
 		holefile = glb.DBPath + "db/" + self.GetCurrentSite().GetDir() + filename

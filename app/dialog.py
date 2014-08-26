@@ -1145,6 +1145,7 @@ class ImportDialog(wx.Dialog):
 		self.paths = paths
 		self.header = header
 		self.siteDict = siteDict # dictionary of sites keyed on site name
+		self.importedSite = None
 
 		self.selectedCol = -1
 		self.colLabels = ["Data", "Depth", "?", "Leg", "Site", "Hole", "Core", "CoreType",
@@ -1162,8 +1163,9 @@ class ImportDialog(wx.Dialog):
 		buttonPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
 		self.importButton = wx.Button(buttonPanel, wx.ID_OK, "Import")
 		self.cancelButton = wx.Button(buttonPanel, wx.ID_CANCEL, "Cancel")
-		buttonPanel.GetSizer().Add(self.importButton)
-		buttonPanel.GetSizer().Add(self.cancelButton)
+		buttonPanel.GetSizer().Add(wx.StaticText(buttonPanel, -1, "[help text/instructions here?]"), 1, wx.ALL, 5)
+		buttonPanel.GetSizer().Add(self.importButton, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+		buttonPanel.GetSizer().Add(self.cancelButton, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 		sz.Add(buttonPanel, 0, wx.RIGHT | wx.ALIGN_RIGHT, 10)
 
 		# events
@@ -1450,7 +1452,7 @@ class ImportDialog(wx.Dialog):
 		fout.close()
 
 		pathCount = 0
-		dataFilePrefix = siteDirPath + "/" + lsPair # [root]/[siteDir]/[leg]-[site]
+		dataFilePrefix = siteDirPath + "/" # [root]/[siteDir]/
 		for path in self.paths:
 			idx = datasort[2] + 1
 			hole = holesToImport[pathCount]
@@ -1533,10 +1535,10 @@ class ImportDialog(wx.Dialog):
 			
 			pathCount += 1
 
-			glb.MainFrame.OnNewData(None)			
+			glb.MainFrame.OnNewData(None)
 
 		glb.MainFrame.logFileptr.write("\n")
-
-		# 8/15/2014 brgtodo: update DB file, then reload into model+view!
+	
+		self.importedSite = lsPair
 		
 		return True
