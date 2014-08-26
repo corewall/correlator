@@ -57,7 +57,6 @@ class MainFrame(wx.Frame):
 
 		self.statusBar = self.CreateStatusBar()
 
-		self.user = user
 		self.Width = winsize[0]
 		self.Height = winsize[1]
 		#self.Width, self.Height = self.GetClientSizeTuple()
@@ -1212,7 +1211,7 @@ class MainFrame(wx.Frame):
 				global_logFile = self.logFileptr
 
 				global_logFile.write("Start of Session:\n")
-				s = "BY " + getpass.getuser()  + "\n"
+				s = "BY " + glb.User  + "\n"
 				global_logFile.write(s)
 				s = str(datetime.today()) + "\n\n"
 				global_logFile.write(s)
@@ -2868,7 +2867,7 @@ class MainFrame(wx.Frame):
 
 		global_logFile = open(glb.DBPath + global_logName, "a+")
 		global_logFile.write("Start of Session:\n")
-		s = "BY " + getpass.getuser()  + "\n"
+		s = "BY " + glb.User  + "\n"
 		global_logFile.write(s)
 		s = str(datetime.today()) + "\n\n"
 		global_logFile.write(s)
@@ -2954,7 +2953,7 @@ class CorrelatorApp(wx.App):
 		openframe = dialog.OpenFrame(None, -1, user, vers.ShortVersion)
 		openframe.Centre()
 		ret =  openframe.ShowModal()
-		user = openframe.user
+		glb.User = openframe.user
 		openframe.Destroy()
 		if ret == wx.ID_CANCEL :
 			if global_logFile != None :
@@ -3037,10 +3036,6 @@ if __name__ == "__main__":
 
 	new = False
 
-	tempstamp = str(datetime.today())
-	last = tempstamp.find(" ", 0)
-	stamp = tempstamp[0:last] + "-"  
-
 	if platform_name[0] == "Windows" :
 		if os.access(User_Dir  + "\\Correlator\\", os.F_OK) == False :
 			os.mkdir(User_Dir  + "\\Correlator\\")
@@ -3084,24 +3079,16 @@ if __name__ == "__main__":
 	if os.access(myPath + '/log/', os.F_OK) == False :
 		os.mkdir(myPath + '/log/')
 
-#	tempstamp = str(datetime.today())
-#	last = tempstamp.find(" ", 0)
-#	stamp = tempstamp[0:last] + "-"
+	stamp = glb.GetLogTimestamp()
 
-	start = last+ 1 
-	last = tempstamp.find(":", start)
-	stamp += tempstamp[start:last] + "-"
-	start = last+ 1 
-	last = tempstamp.find(":", last+1)
-	stamp += tempstamp[start:last]
-
-	global_logName = "log/" + getpass.getuser() + "." + stamp + ".txt"
+	defaultUser = getpass.getuser()
+	global_logName = "log/" + defaultUser + "." + stamp + ".txt"
 	if platform_name[0] == "Windows" :
-		global_logName= "log\\" + getpass.getuser() + "." + stamp + ".txt"
+		global_logName= "log\\" + defaultUser + "." + stamp + ".txt"
 
 	global_logFile = open(myPath + global_logName, "a+")
 	global_logFile.write("Start of Session:\n")
-	s = "BY " + getpass.getuser()  + "\n"
+	s = "BY " + defaultUser + "\n"
 	global_logFile.write(s)
 	s = str(datetime.today()) + "\n\n"
 	global_logFile.write(s)
@@ -3110,9 +3097,9 @@ if __name__ == "__main__":
 	app = CorrelatorApp(new)
 	app.MainLoop()
 	win_size = app.frame.Width, app.frame.Height
-
 	py_correlator.finalize()
 
+	# record window size at shutdown to restore
 	startlogFile = open(myPath + "/tmp/success.txt", "w+")
 	startlogFile.write("close\n")
 	s = str(win_size[0]) + "\n"

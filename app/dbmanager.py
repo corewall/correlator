@@ -1518,7 +1518,7 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(newline, "Enable", 2)
 			self.tree.SetItemTextColour(newline, wx.BLUE)
 			self.tree.SetItemText(newline, stamp, 6)
-			self.tree.SetItemText(newline, self.parent.user, 7)
+			self.tree.SetItemText(newline, glb.User, 7)
 			self.tree.SetItemText(newline, path, 9)
 			self.tree.SetItemText(newline, title + '/', 10)
 
@@ -1592,7 +1592,7 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(newline, "Enable", 2)
 			self.tree.SetItemTextColour(newline, wx.BLUE)
 			self.tree.SetItemText(newline, stamp, 6)
-			self.tree.SetItemText(newline, self.parent.user, 7)
+			self.tree.SetItemText(newline, glb.User, 7)
 			self.tree.SetItemText(newline, path, 9)
 			self.tree.SetItemText(newline, title + '/', 10)
 
@@ -1655,7 +1655,7 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(newline, "Enable", 2)
 			self.tree.SetItemTextColour(newline, wx.BLUE)
 			self.tree.SetItemText(newline, stamp, 6)
-			self.tree.SetItemText(newline, self.parent.user, 7)
+			self.tree.SetItemText(newline, glb.User, 7)
 			self.tree.SetItemText(newline, path, 9)
 			self.tree.SetItemText(newline, title + '/', 10)
 
@@ -1752,7 +1752,7 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(newline, "Enable", 2)
 			self.tree.SetItemTextColour(newline, wx.BLUE)
 			self.tree.SetItemText(newline, stamp, 6)
-			self.tree.SetItemText(newline, self.parent.user, 7)
+			self.tree.SetItemText(newline, glb.User, 7)
 			self.tree.SetItemText(newline, path, 9)
 			self.tree.SetItemText(newline, title + '/', 10)
 
@@ -2359,7 +2359,7 @@ class DataFrame(wx.Panel):
 				#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
 				stamp = tempstamp[0:last]
 				self.tree.SetItemText(age_child, stamp, 6)
-				self.tree.SetItemText(age_child, self.parent.user, 7)
+				self.tree.SetItemText(age_child, glb.User, 7)
 
 
 		ageFile = open(path+ filename, "w+")
@@ -2498,7 +2498,7 @@ class DataFrame(wx.Panel):
 				#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
 				stamp = tempstamp[0:last]
 				self.tree.SetItemText(age_child, stamp, 6)
-				self.tree.SetItemText(age_child, self.parent.user, 7)
+				self.tree.SetItemText(age_child, glb.User, 7)
 
 
 		ageFile = open(path+ filename, "w+")
@@ -2599,7 +2599,7 @@ class DataFrame(wx.Panel):
 				#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
 				stamp = tempstamp[0:last]
 				self.tree.SetItemText(age_child, stamp, 6)
-				self.tree.SetItemText(age_child, self.parent.user, 7)
+				self.tree.SetItemText(age_child, glb.User, 7)
 
 
 		ageFile = open(path+ filename, "w+")
@@ -4240,14 +4240,14 @@ class DataFrame(wx.Panel):
 
 			self.tree.SetItemText(subroot, stamp, 6)
 
-			self.tree.SetItemText(subroot, self.parent.user, 7)
+			self.tree.SetItemText(subroot, glb.User, 7)
 			if len(source_filename) > 0 :
 				self.tree.SetItemText(subroot, source_filename, 9)
 
 			self.tree.SetItemText(subroot, self.title + '/', 10)
 
 			dblist_f = open(glb.DBPath + 'db/' + self.title + '/datalist.db', 'a+')
-			s = '\n' + sub_title + 'table: ' + filename + ': ' + stamp + ': ' + self.parent.user + ': Enable' + ': ' + source_filename +'\n'
+			s = '\n' + sub_title + 'table: ' + filename + ': ' + stamp + ': ' + glb.User + ': Enable' + ': ' + source_filename +'\n'
                         dblist_f.write(s)
 			dblist_f.close()
 		else :
@@ -4260,7 +4260,7 @@ class DataFrame(wx.Panel):
 			stamp = tempstamp[0:last]
 
 			self.tree.SetItemText(subroot, stamp, 6)
-			self.tree.SetItemText(subroot, self.parent.user, 7)
+			self.tree.SetItemText(subroot, glb.User, 7)
 
 			parentItem = self.tree.GetItemParent(property)
 			filename = self.tree.GetItemText(subroot, 8) 
@@ -4508,7 +4508,7 @@ class DataFrame(wx.Panel):
 				subroot = self.tree.AppendItem(item, '-Cull Table' )
 			self.tree.Expand(subroot)
 
-			self.tree.SetItemText(subroot, type + '.' +  self.parent.user + '.cull.table', 8)
+			self.tree.SetItemText(subroot, type + '.' +  glb.User + '.cull.table', 8)
 
 			self.tree.SetItemTextColour(subroot, wx.BLUE)
 			self.tree.SetItemText(subroot, "Enable", 2)
@@ -4519,7 +4519,7 @@ class DataFrame(wx.Panel):
 			#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
 			stamp = tempstamp[0:last]
 			self.tree.SetItemText(subroot, stamp, 6)
-			self.tree.SetItemText(subroot, self.parent.user, 7)
+			self.tree.SetItemText(subroot, glb.User, 7)
 
 			title = self.tree.GetItemText(parentItem, 0)
 
@@ -4530,13 +4530,13 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(subroot, title + '/', 10)
 
 			#dblist_f = open(glb.DBPath +'db/' + title + '/datalist.db', 'a+')
-			#s = '\nculltable: ' + filename + ': ' + stamp + ': ' + self.parent.user + ': ' + self.tree.GetItemText(subroot, 2) + '\n'
+			#s = '\nculltable: ' + filename + ': ' + stamp + ': ' + glb.User + ': ' + self.tree.GetItemText(subroot, 2) + '\n'
 			#dblist_f.write(s)
 			#dblist_f.close()
 
 			if isUniversal == True :
 				dblist_f = open(glb.DBPath +'db/' + title + '/datalist.db', 'a+')
-				s = '\nuni_culltable: ' + filename + ': ' + stamp + ': ' + self.parent.user + ': ' + self.tree.GetItemText(subroot, 2) + ': ' + source_path + '\n'
+				s = '\nuni_culltable: ' + filename + ': ' + stamp + ': ' + glb.User + ': ' + self.tree.GetItemText(subroot, 2) + ': ' + source_path + '\n'
 				dblist_f.write(s)
 				dblist_f.close()
 			else :
@@ -4549,7 +4549,7 @@ class DataFrame(wx.Panel):
 			#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
 			stamp = tempstamp[0:last]
 			self.tree.SetItemText(selectItem, stamp, 6)
-			self.tree.SetItemText(selectItem, self.parent.user, 7)
+			self.tree.SetItemText(selectItem, glb.User, 7)
 
 			title = self.tree.GetItemText(parentItem, 0)
 			#self.OnUPDATE_DB_FILE(title, parentItem)
@@ -6305,7 +6305,7 @@ class DataFrame(wx.Panel):
 		self.tree.SetItemText(selectItem, str(self.parent.max), 5)
 
 		self.tree.SetItemText(selectItem, stamp, 6)
-		self.tree.SetItemText(selectItem, self.parent.user, 7)
+		self.tree.SetItemText(selectItem, glb.User, 7)
 
 		# Check Affine/Update Affine Tables
 		parentItem = self.tree.GetItemParent(selectItem)
@@ -6890,7 +6890,7 @@ class DataFrame(wx.Panel):
 
 		self.tree.SetItemText(item, self.selectedDataType, 1)
 		self.tree.SetItemText(item, stamp, 6)
-		self.tree.SetItemText(item, self.parent.user, 7)
+		self.tree.SetItemText(item, glb.User, 7)
 		self.tree.SetItemText(item, str(selected), 11)
 
 		self.parent.LOCK = 0
@@ -7060,7 +7060,7 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(newline, str(max), 5)
 
 			self.tree.SetItemText(newline, stamp, 6)
-			self.tree.SetItemText(newline, self.parent.user, 7)
+			self.tree.SetItemText(newline, glb.User, 7)
 			self.tree.SetItemText(newline, self.paths, 9)
 			self.tree.SetItemText(newline, title + '/', 10)
 			self.tree.SetItemText(newline, str(selected), 11)
@@ -7327,7 +7327,7 @@ class DataFrame(wx.Panel):
 				self.tree.SetItemText(newline, str(self.parent.min), 4)
 				self.tree.SetItemText(newline, str(self.parent.max), 5)
 				self.tree.SetItemText(newline, stamp, 6)
-				self.tree.SetItemText(newline, self.parent.user, 7)
+				self.tree.SetItemText(newline, glb.User, 7)
 				self.tree.SetItemText(newline, self.paths[i], 9)
 				self.tree.SetItemText(newline, leg + "-" + site + "/", 10)
 				self.tree.SetItemText(newline, str(datasort[6]) + " " + str(datasort[7]) + " " + str(datasort[8]) + " " + str(datasort[9]) + " ", 11)

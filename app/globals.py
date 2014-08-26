@@ -11,16 +11,18 @@
 import os
 import wx
 
+from datetime import datetime
+
 import dialog
 
 ### Variables
 
 MainFrame = None # ref to root window
+User = None # current user
 
 # I/O vars
 DBPath = "-" # path to db folder root (e.g. ~/Documents/Correlator/1.8.0/)
 LastDir = "" # most recent directory from/to which a file was loaded/saved
-
 
 ### Functions
 
@@ -69,6 +71,29 @@ def MakeFileName(type, title, filetype):
 	filename = title + '.' + datatype + '.' + filetype + '.table' 
 	return filename
 
+# timestamps
+ # YYYY-MM-DD HH:MM, used for datafiles' last updated time
+def GetTimestamp():
+	now = str(datetime.today())
+	last = now.find(":", 0)
+	last = now.find(":", last + 1)
+	timestamp = now[0:last]
+	return timestamp
+
+ # YYYY-MM-DD-HH-MM, used to create internal log file names
+def GetLogTimestamp():
+	# brgtodo: now = datetime.today()
+	# "{}-{}-{}-{}-{}".format(now[0], now[1], now[2], now[3], now[4])
+	now = str(datetime.today())
+	last = now.find(" ", 0)
+	stamp = now[0:last] + "-"
+	start = last+ 1 
+	last = now.find(":", start)
+	stamp += now[start:last] + "-"
+	start = last+ 1 
+	last = now.find(":", last+1)
+	stamp += now[start:last]
+	return stamp
 
 # User (Custom) Type f'ns
 # brgtodo own module?

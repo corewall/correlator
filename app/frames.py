@@ -3496,7 +3496,7 @@ class FilterPanel():
 			type = "NaturalGamma"
 
 		if type != "Log" :
-			site.SetCull(type, self.parent.user)
+			site.SetCull(type, glb.User)
 			cullFile = site.GetPath(glb.DBPath + "db/") + site.GetCull(type).file
 			py_correlator.saveCullTable(cullFile, type)
 			site.SyncToData()
