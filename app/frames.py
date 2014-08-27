@@ -334,7 +334,27 @@ class ProgressFrame(wx.Frame):
 class BetterLegendPlotCanvas(plot.PlotCanvas):
 	def __init__(self, parent):
 		plot.PlotCanvas.__init__(self, parent)
+		self.SetEnablePointLabel(True)
+		self.SetPointLabelFunc(self.MouseOverPoint)
+		self.parent.Bind(wx.EVT_MOTION, self.OnMotion)
 
+	def OnMotion(self, event):
+		#show closest point (when enbled)
+		if self.GetEnablePointLabel() == True:
+			#make up dict with info for the pointLabel
+			#I've decided to mark the closest point on the closest curve
+			dlst = self.GetClosestPoint( self._getXY(event), pointScaled= True)
+			if dlst != []: #returns [] if none
+				curveNum, legend, pIndex, pointXY, scaledXY, distance = dlst
+				#make up dictionary to pass to my user function (see DrawPointLabel)
+				mDataDict= {"pointXY":pointXY, "scaledXY":scaledXY, "pIndex": pIndex}
+				#pass dict to update the pointLabel
+				self.UpdatePointLabel(mDataDict)
+		event.Skip() #go to next handler
+	
+	def MouseOverPoint(self, dc, mDataDict):
+		print "mouseover some point: {}".format(mDataDict)
+	
 	def _drawLegend(self, dc, graphics, rhsW, topH, legendBoxWH, legendSymExt, legendTextExt):
 		"""Draws legend symbols and text"""
 		# top right hand corner of graph box is ref corner
