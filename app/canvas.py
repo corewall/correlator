@@ -3773,7 +3773,7 @@ class DataCanvas(wxBufferedWindow):
 					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type)
 				else :
 					givenOp = 4 if opt == 0 else 5 # brgtodo 5/1/2014: name these types!
-					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCoreB), shift, givenOp, ciA.type)
+					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), shift, givenOp, ciA.type)
 
 				self.parent.AffineChange = True
 
@@ -3805,10 +3805,10 @@ class DataCanvas(wxBufferedWindow):
 
 	def OnUndoCore(self, opt):
 		self.parent.compositePanel.OnButtonEnable(1, False)
-		if opt == 0 :
+		if opt == 0 : # "Previous Offset"
 			py_correlator.undo(1, "X", 0)
 			self.parent.AffineChange = True
-			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
+			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
 
 			s = "Composite undo previous offset: " + str(datetime.today()) + "\n\n"
 			self.parent.logFileptr.write(s)
@@ -3816,7 +3816,7 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.UpdateSend()
 			self.parent.UpdateData()
 			self.parent.UpdateStratData()
-		else :
+		else : # "Offset of Core Above"
 			if self.selectedLastTie < 0 :
 				self.selectedLastTie = len(self.TieData) - 1
 			if self.selectedLastTie >= 0 and self.selectedLastTie < len(self.TieData):
