@@ -369,7 +369,7 @@ class DataCanvas(wxBufferedWindow):
 		#     hole's mindata, hole's maxdata, hole name, number of cores in hole)
 		# 
 		# Subsequent elements are tuples of each core's metadata + all depth/data pairs:
-		#    (1-based core index in hole, top, bottom, mindata, maxdata, affine offset, stretch, annotated type,
+		#    (core name (number as string), top, bottom, mindata, maxdata, affine offset, stretch, annotated type,
 		#     core quality, list of sections' top depths, list of core's depth/data tuples)
 		#
 		# Note: top and bottom don't seem to reflect the actual core top and bottom at all. In some cases the core's
