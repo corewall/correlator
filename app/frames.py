@@ -7,13 +7,17 @@
 import platform
 platform_name = platform.uname()
 
-import wx 
-from wx.lib import plot
 import random, sys, os, re, time, ConfigParser, string
 from datetime import datetime
+import math
 
 import numpy.oldnumeric as _Numeric
 import numpy
+import warnings
+warnings.simplefilter('ignore', numpy.RankWarning)
+
+import wx 
+from wx.lib import plot
 
 from importManager import py_correlator
 
@@ -366,37 +370,62 @@ class BetterLegendPlotCanvas(plot.PlotCanvas):
 			legendItemsDrawn += 1
 		dc.SetFont(self._getFont(self._fontSizeAxis)) # reset
 
+# convenience class to maintain data to display on mouseover of growth rate graph
+# brgtodo 9/2/2014: What's the right way to do this? Passing around tuples is easy
+# but indexing into them makes for hard-to-read code. Using a dictionary would get
+# past that issue, but something about a class seems more "correct" to me, probably
+# due to heavy OOP background.
+class HoverData():
+	def __init__(self, mbsf, mcd, hole, core, growthRate):
+		self.mbsf = mbsf
+		self.mcd = mcd
+		self.hole = hole
+		self.core = core
+		self.growthRate = growthRate
+
 
 class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
-	def __init__(self, parent):
+	def __init__(self, parent, statusText):
 		BetterLegendPlotCanvas.__init__(self, parent)
 		
 		self.growthPlotData = []
 		self.growthRateLines = []
+		self.hoverData = []
 		self.minMcd = 99999.9
 		self.maxMcd = -99999.9
 		self.maxMbsfDepth = -99999.9
+		self.statusText = statusText
 		
+		self.plotMin = 99999.9
+
 		self.SetEnablePointLabel(True)
 		self.SetPointLabelFunc(self.MouseOverPoint)
 		self.parent.Bind(wx.EVT_MOTION, self.OnMotion)
 
 	def OnMotion(self, event):
-		#show closest point (when enbled)
 		if self.GetEnablePointLabel() == True:
-			#make up dict with info for the pointLabel
-			#I've decided to mark the closest point on the closest curve
-			dlst = self.GetClosestPoint( self._getXY(event), pointScaled= True)
-			if dlst != []: #returns [] if none
+			dlst = self.GetClosestPoint( self._getXY(event), pointScaled = True)
+			if dlst != []:
 				curveNum, legend, pIndex, pointXY, scaledXY, distance = dlst
-				#make up dictionary to pass to my user function (see DrawPointLabel)
-				mDataDict= {"pointXY":pointXY, "scaledXY":scaledXY, "pIndex": pIndex}
-				#pass dict to update the pointLabel
+				mDataDict= {"pointXY":pointXY}
 				self.UpdatePointLabel(mDataDict)
 		event.Skip() #go to next handler
 	
 	def MouseOverPoint(self, dc, mDataDict):
-		print "mouseover some point: {}".format(mDataDict)
+		minDist = None
+		closest = None
+		nx = mDataDict["pointXY"][0]
+		ny = mDataDict["pointXY"][1]
+		for hd in self.hoverData:
+			x = hd.mbsf
+			y = hd.mcd
+			dist = math.sqrt(math.pow(nx - x, 2) + math.pow(ny - y, 2))
+			if minDist is None or dist < minDist:
+				minDist = dist
+				closest = hd
+			
+		growthRate = round(closest.growthRate[0], 3) if not math.isnan(closest.growthRate[0]) else "undefined"		
+		self.statusText.SetLabel("{}{}: Growth rate {}".format(closest.hole, closest.core, growthRate))
 	
 	# scrollMax = max scrollable depth in GUI
 	def UpdatePlot(self, holeData, startDepth, endDepth, scrollMax):
@@ -404,21 +433,18 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 		if len(self.growthRateLines) == 0:
 			return
 
-		tenPercentLine = plot.PolyLine([(0,0),(self.maxMbsfDepth, self.maxMbsfDepth * 1.1)], legend='10%', colour='black', width=2)
+		#tenPercentLine = plot.PolyLine([(0,0),(self.maxMbsfDepth, self.maxMbsfDepth * 1.1)], legend='10%', colour='black', width=2)
 		# order matters: draw 10% line, then data lines, then data markers/points
-		self.growthPlotData = [tenPercentLine] + self.growthPlotData
+		#self.growthPlotData = [tenPercentLine] + self.growthPlotData
 		self.growthPlotData = self.growthRateLines + self.growthPlotData
 
-		gc = plot.PlotGraphics(self.growthPlotData, 'Growth Rate', 'mbsf', 'mcd')
+		gc = plot.PlotGraphics(self.growthPlotData, 'Growth Rate', 'CSF', 'CCSF')
 		
-		xmin = startDepth
+		xmin = self.plotMin #startDepth
 		xmax = endDepth
 		if xmax > scrollMax:
 			xmax = scrollMax
-#		if xmax > maxMcd:
-#			xmax = maxMcd
 		xax = (xmin, xmax)
-#		print "xmin = {}, xmax = {}".format(xmin, xmax)
 
 		yax = (round(self.minMcd, 0) - 5, round(self.maxMcd, 0) + 5)
 		if self.minMcd >= self.maxMcd:
@@ -431,6 +457,8 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 		minMcd = 10000.0
 		maxMcd = -10000.0
 		self.growthRateLines = []
+		self.hoverData = []
+		self.plotMin = 99999.9
 		holeNum = 0
 		holeSet = set([]) # avoid duplicate holes with different datatypes
 		holeMarker = ['circle', 'square', 'triangle', 'plus', 'triangle_down']
@@ -440,34 +468,62 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 			if holeName not in holeSet:
 				holeSet.add(holeName)
 				growthRatePoints = []
+				mbsfVals = []
+				mcdVals = []
 
 				# brg 10/14/2013: hole[0][0][8] indicates the number of cores in the hole, but this isn't
 				# always reliable - make sure we don't overrun the list of cores given such errant data
 				numCores = min(hole[0][0][8], len(hole[0]) - 1)
 
 				for core in range(numCores):
+					#print "Core Info: {}".format(hole[0][core + 1])
 					offset = hole[0][core + 1][5]
 					topSectionMcd = hole[0][core + 1][9][0]
 					mbsfDepth = topSectionMcd - offset
+					
+					# compute core length in horrible way: bottom data coord's depth - top data coord's depth
+					coreLength = hole[0][core + 1][10][-1][0] - hole[0][core + 1][10][0][0]
 
 					# determine min/max for plotting purposes
-					if mbsfDepth > maxMbsfDepth:
-						maxMbsfDepth = mbsfDepth
+#					if mbsfDepth > maxMbsfDepth:
+#						maxMbsfDepth = mbsfDepth
 					if mbsfDepth >= startDepth and mbsfDepth <= endDepth:
 						if topSectionMcd < minMcd:
 							minMcd = topSectionMcd
 						if topSectionMcd > maxMcd:
 							maxMcd = topSectionMcd
+					coreEnd = topSectionMcd + coreLength
+					if coreEnd >= startDepth and coreEnd < self.plotMin:
+						self.plotMin = mbsfDepth
+						if topSectionMcd < minMcd: # brgtodo dup
+							minMcd = topSectionMcd
+						if topSectionMcd > maxMcd:
+							maxMcd = topSectionMcd
+
+#					if topSectionMcd >= startDepth and topSectionMcd <= endDepth:
+#						if topSectionMcd < minMcd:
+#							minMcd = topSectionMcd
+#						if topSectionMcd > maxMcd:
+#							maxMcd = topSectionMcd
 
 					offsetMbsfPair = (mbsfDepth, topSectionMcd)
 					growthRatePoints.append(offsetMbsfPair)
+					mbsfVals.append(mbsfDepth)
+					mcdVals.append(topSectionMcd)
 
-				self.growthPlotData.append(plot.PolyMarker(growthRatePoints, marker=holeMarker[holeNum], legend=hole[0][0][7], colour=holeColor[holeNum], size=0.8))
+					# track point data for use in point labeling on mouseover
+					coreName = hole[0][core + 1][0]
+					growthRate = numpy.polyfit(mbsfVals, mcdVals, 1)
+					pointData = HoverData(mbsfDepth, topSectionMcd, holeName, coreName, growthRate)
+					self.hoverData.append(pointData)
+
+				self.growthPlotData.append(plot.PolyMarker(growthRatePoints, marker=holeMarker[holeNum],
+														 legend=hole[0][0][7], colour=holeColor[holeNum], size=1.5))
 
 				if len(growthRatePoints) == 1: # ensure we have at least two points
 					growthRatePoints = [(0,0)] + growthRatePoints
 
-				self.growthRateLines.append(plot.PolyLine(growthRatePoints, colour='black', width=1))
+				self.growthRateLines.append(plot.PolyLine(growthRatePoints, colour=holeColor[holeNum], width=1))
 				holeNum = (holeNum + 1) % len(holeMarker) # make sure we don't overrun marker/color lists
 
 		self.maxMbsfDepth = maxMbsfDepth
@@ -538,10 +594,10 @@ class CompositePanel():
 
 		# Growth Rate graph panel
 		self.grPanel = wx.Panel(self.plotNote, -1)
-		#self.grText = wx.StaticText(self.grPanel, -1, "Status text")
+		self.grText = wx.StaticText(self.grPanel, -1, "[hover to see point data]")
 		self.grPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
 
-		self.growthPlotCanvas = GrowthRatePlotCanvas(self.grPanel)
+		self.growthPlotCanvas = GrowthRatePlotCanvas(self.grPanel, self.grText)
 		self.growthPlotCanvas.SetEnableGrid(True)
 		self.growthPlotCanvas.SetEnableTitle(False)
 		self.growthPlotCanvas.SetEnableLegend(True)
@@ -550,7 +606,7 @@ class CompositePanel():
 		self.growthPlotCanvas.Show(True)
 
 		self.grPanel.GetSizer().Add(self.growthPlotCanvas, 1, wx.EXPAND)
-		#self.grPanel.GetSizer().Add(self.grText, 0, wx.EXPAND)
+		self.grPanel.GetSizer().Add(self.grText, 0, wx.EXPAND)
 
 		self.plotNote.AddPage(self.corrPlotCanvas, 'Evaluation')
 		self.plotNote.AddPage(self.grPanel, "Growth Rate")
