@@ -14,7 +14,7 @@ import math
 import numpy.oldnumeric as _Numeric
 import numpy
 import warnings
-warnings.simplefilter('ignore', numpy.RankWarning)
+warnings.simplefilter('ignore', numpy.RankWarning) # stifle RankWarnings when computing growth rate
 
 import wx 
 from wx.lib import plot
@@ -535,67 +535,48 @@ class CompositePanel():
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.parent = parent
-		self.leadLagValue = self.parent.leadLag
 		self.polyline_list =[]
 		self.growthPlotData = []
 		self.addItemsInFrame()
 		self.bestOffset = 0
 
 	def addItemsInFrame(self):
-		vbox_top = wx.BoxSizer(wx.VERTICAL)
-
-		vbox = wx.BoxSizer(wx.VERTICAL)
-
-		buttonsize = 85
-		if platform_name[0] == "Windows" :
-			buttonsize = 100
-			
-		# Panel 1
-		panel1 = wx.Panel(self.mainPanel, -1)
-		grid1 = wx.GridSizer(4, 2)
-		grid1.Add(wx.StaticText(panel1, -1, 'Interpolated depth step (m) : '), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.depthstep = wx.TextCtrl(panel1, -1, "0.11", size = (buttonsize, 25), style=wx.SUNKEN_BORDER )
-		#self.depthstep.Enable(False)
-		grid1.Add(self.depthstep, 0, wx.ALIGN_RIGHT)
-		grid1.Add(wx.StaticText(panel1, -1, 'Correlation window length : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.winlength = wx.TextCtrl(panel1, -1, str(self.parent.winLength), size =(buttonsize, 25), style=wx.SUNKEN_BORDER )
-		grid1.Add(self.winlength, 0, wx.ALIGN_RIGHT)
-		grid1.Add(wx.StaticText(panel1, -1, 'Correlation lead/lag : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.leadlag = wx.TextCtrl(panel1, -1, str(self.leadLagValue), size = (buttonsize, 25), style=wx.SUNKEN_BORDER )
-		grid1.Add(self.leadlag, 0, wx.ALIGN_RIGHT)
-
-		buttonsize = 90
-		if platform_name[0] == "Windows" :
-			buttonsize = 100
-			
-		grid1.Add(wx.StaticText(panel1, -1, ' ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-
-		addButton = wx.Button(panel1, -1, "Recorrelate", size =(buttonsize, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCorrelate, addButton)
-		grid1.Add(addButton, 0, wx.ALIGN_RIGHT)
-
-		panel1.SetSizer(grid1)
-		vbox.Add(panel1, 0, wx.TOP, 9)
-
 		self.plotNote = wx.Notebook(self.mainPanel, -1, style=wx.NB_TOP | wx.NB_MULTILINE)
 
 		# Correlation/Evaluation graph panel
-		self.corrPlotCanvas = BetterLegendPlotCanvas(self.plotNote)
-
-		if self.parent.Height > 768 :
-			self.corrPlotCanvas.SetSize((300,300))
-		else :
-			self.corrPlotCanvas.SetSize((300,250))
+		# brgtodo 9/6/2014: UI creation duplicated across Composite, Splice and ELD panels: consolidate
+		self.crPanel = wx.Panel(self.plotNote, -1)
+		self.crPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.corrPlotCanvas = BetterLegendPlotCanvas(self.crPanel)
 
 		self.corrPlotCanvas.SetEnableGrid(True)
 		self.corrPlotCanvas.SetEnableTitle(False)
 		self.corrPlotCanvas.SetBackgroundColour("White")
 		self.corrPlotCanvas.Show(True)
+		
+		crSubPanel = wx.Panel(self.crPanel, -1)
+		crSubPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+		bmp = wx.Bitmap("icons/sprocket.png")
+		crSettingsBtn = wx.BitmapButton(crSubPanel, -1, bmp)
+		self.crText = wx.StaticText(crSubPanel, -1, "Step: 0.135 | Window: 1.0 | Lead/Lag: 1.0")
+		crFont = self.crText.GetFont()
+		crFont.SetPointSize(10)
+		self.crText.SetFont(crFont)
+		crSubPanel.GetSizer().Add(self.crText, 1, wx.ALIGN_CENTER_VERTICAL)
+		crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+		
+		self.crPanel.GetSizer().Add(self.corrPlotCanvas, 1, wx.EXPAND)
+		self.crPanel.GetSizer().Add(crSubPanel, 0, wx.EXPAND)
+		
+		self.crPanel.Bind(wx.EVT_BUTTON, self.OnEvalSettings, crSettingsBtn)
 
 		# Growth Rate graph panel
 		self.grPanel = wx.Panel(self.plotNote, -1)
-		self.grText = wx.StaticText(self.grPanel, -1, "[hover to see point data]")
 		self.grPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+
+		grSubPanel = wx.Panel(self.grPanel, -1)
+		gpSettingsBtn = wx.BitmapButton(grSubPanel, -1, bmp)
+		self.grText = wx.StaticText(grSubPanel, -1, "[hover to see point data]")
 
 		self.growthPlotCanvas = GrowthRatePlotCanvas(self.grPanel, self.grText)
 		self.growthPlotCanvas.SetEnableGrid(True)
@@ -606,26 +587,29 @@ class CompositePanel():
 		self.growthPlotCanvas.Show(True)
 
 		self.grPanel.GetSizer().Add(self.growthPlotCanvas, 1, wx.EXPAND)
-		self.grPanel.GetSizer().Add(self.grText, 0, wx.EXPAND)
+        
+		grSubPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+		grSubPanel.GetSizer().Add(self.grText, 1, wx.ALIGN_CENTER_VERTICAL)
+		grSubPanel.GetSizer().Add(gpSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+		self.grPanel.GetSizer().Add(grSubPanel, 0, wx.EXPAND)
 
-		self.plotNote.AddPage(self.corrPlotCanvas, 'Evaluation')
+		self.plotNote.AddPage(self.crPanel, "Evaluation")
 		self.plotNote.AddPage(self.grPanel, "Growth Rate")
 
 		# add Notebook to main panel
 		self.plotNote.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectPlotNote)
 		self.plotNote.SetSelection(1)
+
+		vbox = wx.BoxSizer(wx.VERTICAL)
 		vbox.Add(self.plotNote, 5, wx.EXPAND | wx.ALL, 5)
 
 		# update drawings
-		xdata = [ (-self.leadLagValue, 0), (self.leadLagValue, 0) ]
+		xdata = [ (-self.parent.leadLag, 0), (self.parent.leadLag, 0) ]
 		self.xaxes = plot.PolyLine(xdata, legend='', colour='black', width =2)
 		ydata = [ (0, -1),( 0, 1) ]
 		self.yaxes = plot.PolyLine(ydata, legend='', colour='black', width =2)
-		data = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
-		self.OnUpdateData(data, [], 0)
-		self.OnUpdateDrawing()
-
-		self.UpdateGrowthPlot()
+		
+		self.OnUpdatePlots()
 
 		# Panel 3
 		panel3 = wx.Panel(self.mainPanel, -1)
@@ -736,8 +720,7 @@ class CompositePanel():
 		vbox.Add(self.saveButton, 0, wx.ALIGN_CENTER_VERTICAL)
 		self.saveButton.Enable(False)
 
-		vbox_top.Add(vbox, 1, wx.LEFT, 5)
-		self.mainPanel.SetSizer(vbox_top)
+		self.mainPanel.SetSizer(vbox)
 
 	def OnInitUI(self):
 		self.adjustButton.Enable(False)
@@ -808,15 +791,19 @@ class CompositePanel():
 	def OnUndoCoreAbove(self, evt):
 		self.parent.OnUndoCore(1)
 
-	def OnCorrelate(self, evt):
-		self.parent.depthStep = float(self.depthstep.GetValue())
-		self.parent.winLength = float(self.winlength.GetValue())
-		self.parent.leadLag = float(self.leadlag.GetValue())
-
-		self.parent.OnEvalSetup()
-		self.parent.OnUpdateGraphSetup(1)
-		if len(self.parent.Window.TieData) > 0 :
-			self.parent.Window.OnUpdateTie(1)
+	def OnEvalSettings(self, evt):
+		pos = self.crText.GetScreenPositionTuple()
+		dlg = dialog.CorrParamsDialog(self.plotNote, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
+		dlg.SetPosition(pos)
+		if dlg.ShowModal() == wx.ID_OK:
+			self.parent.depthStep = dlg.outDepthStep
+			self.parent.winLength = dlg.outWinLength
+			self.parent.leadLag = dlg.outLeadLag
+	
+			self.parent.OnEvalSetup()
+			self.parent.OnUpdateGraphSetup(1)
+			if len(self.parent.Window.TieData) > 0 :
+				self.parent.Window.OnUpdateTie(1)
 
 	def OnProject(self, evt):
 		dlg = dialog.ProjectDialog(self.parent)
@@ -836,22 +823,12 @@ class CompositePanel():
 			self.parent.UpdateData()
 			self.parent.UpdateStratData()
 
-	def OnUpdate(self):
-		self.leadLagValue = float(self.leadlag.GetValue())
-		self.corrPlotCanvas.Clear()
-		data = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
-		self.OnUpdateData(data, [], 0)
-		self.OnUpdateDrawing()
-		self.UpdateGrowthPlot()
-		
 	def OnUpdateDepth(self, data):
 		depth = int(10000.0 * float(data)) / 10000.0;
 		self.depth.SetValue(str(depth))
 
-	def OnUpdateDepthStep(self, depthstep):
-		depthstep = int(10000.0 * float(depthstep)) / 10000.0;
-		self.depthstep.SetValue(str(depthstep))
-
+	# brgtodo 9/4/2014: only called from this module, and always to set "empty" data:
+	# merge f'ns and add default params?
 	def OnUpdateData(self, data, bestdata, best):
 		self.bestOffset = best 
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
@@ -874,35 +851,48 @@ class CompositePanel():
 		self.polyline_list.append(line)
 
 	def OnSelectPlotNote(self, event):
-		#self.corrPlotPanel.Hide()
-		self.corrPlotCanvas.Hide()
-		#self.growthPlotPanel.Hide()
-		self.growthPlotCanvas.Hide()
+		self.crPanel.Hide()
+		self.grPanel.Hide()	
 		if event.GetSelection() == 0:
-			#self.corrPlotPanel.Show()
-			self.corrPlotCanvas.Show()
+			self.crPanel.Show()
 		elif event.GetSelection() == 1:
 			self.UpdateGrowthPlot()
-			self.growthPlotCanvas.Show()
+			self.grPanel.Show()
 
+	def OnUpdatePlots(self):
+		self.UpdateEvalPlot()
+		self.UpdateGrowthPlot()
+	
 	def UpdateGrowthPlot(self):
 		# 9/18/2013 brg: Was unable to get Window attribute on init without adding this
 		# hasattr call. Unclear why - its (Window is an instance of DataCanvas)
 		# lone init() method, where Window is initialized, is called before this,
 		# or so it would seem. Interestingly, other attributes declared beneath
 		# Window in DataCanvas.init() were also unavailable. Funky.
+		# 9/4/2014 brgtodo: init CompositePanel, etc after DataCanvas is complete - should solve this issue
 		growthRateLines = []
 		if hasattr(self.parent, 'Window'):
 			win = self.parent.Window
 			self.growthPlotCanvas.UpdatePlot(win.HoleData, win.rulerStartDepth, win.rulerEndDepth, self.parent.ScrollMax)
 		else:
 			return
+		
+	def UpdateEvalPlot(self):
+		self.corrPlotCanvas.Clear()
+		data = [(-self.parent.leadLag, 0), (0, 0), (self.parent.leadLag, 0)]
+		self.OnUpdateData(data, [], 0)
+		self.UpdateEvalStatus()
+		self.OnUpdateDrawing()
+
+	def UpdateEvalStatus(self):
+		roundedDepthStep = int(10000.0 * float(self.parent.depthStep)) / 10000.0
+		self.crText.SetLabel("Step: {} | Window: {} | Lead/Lag: {}".format(roundedDepthStep, self.parent.winLength, self.parent.leadLag))
 
 	def OnUpdateDrawing(self):
 		self.polyline_list.append(self.xaxes)
 		self.polyline_list.append(self.yaxes)
 		gc = plot.PlotGraphics(self.polyline_list, 'Evaluation Graph', 'depth Axis', 'coef Axis')
-		self.corrPlotCanvas.Draw(gc, xAxis = (-self.leadLagValue , self.leadLagValue), yAxis = (-1, 1))	
+		self.corrPlotCanvas.Draw(gc, xAxis = (-self.parent.leadLag , self.parent.leadLag), yAxis = (-1, 1))
 		self.polyline_list = []
 
 class SplicePanel():
@@ -919,51 +909,34 @@ class SplicePanel():
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
 		vbox = wx.BoxSizer(wx.VERTICAL)
 
-		# Panel 1
-		panel1 = wx.Panel(self.mainPanel, -1)
-		grid1 = wx.GridSizer(4, 2)
-
-		buttonsize = 85
-		if platform_name[0] == "Windows" :
-			buttonsize = 100
-			
-		grid1.Add(wx.StaticText(panel1, -1, 'Interpolated depth step (m) : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.depthstep = wx.TextCtrl(panel1, -1, "0.11", size = (buttonsize, 25), style=wx.SUNKEN_BORDER )
-		#self.depthstep.Enable(False)
-		grid1.Add(self.depthstep, 0, wx.ALIGN_RIGHT)
-		grid1.Add(wx.StaticText(panel1, -1, 'Correlation window length : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.winlength = wx.TextCtrl(panel1, -1, str(self.parent.winLength), size =(buttonsize, 25), style=wx.SUNKEN_BORDER )
-		grid1.Add(self.winlength, 0, wx.ALIGN_RIGHT)
-		grid1.Add(wx.StaticText(panel1, -1, 'Correlation lead/lag : ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.leadlag = wx.TextCtrl(panel1, -1, str(self.leadLagValue), size = (buttonsize, 25), style=wx.SUNKEN_BORDER )
-		grid1.Add(self.leadlag, 0, wx.ALIGN_RIGHT)
-
-		buttonsize = 90 
-		if platform_name[0] == "Windows" :
-			buttonsize = 100
-		grid1.Add(wx.StaticText(panel1, -1, ' ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-		addButton = wx.Button(panel1, -1, "Recorrelate", size =(buttonsize, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCorrelate, addButton)
-		grid1.Add(addButton, 0, wx.ALIGN_RIGHT)
-
-		panel1.SetSizer(grid1)
-		vbox.Add(panel1, 0, wx.TOP, 9)
-
 		# Panel 2
-		panel2 = wx.Panel(self.mainPanel, -1)
+		panel2 = wx.Panel(self.mainPanel, -1, style=wx.SIMPLE_BORDER)
+		panel2.SetSizer(wx.BoxSizer(wx.VERTICAL))
+
 		# Setup graph
 		# parent, id, pos, size, style, name
 		self.corrPlotCanvas = plot.PlotCanvas(panel2)
-		if self.parent.Height > 768 :
-			self.corrPlotCanvas.SetSize((300,300))
-		else :
-			self.corrPlotCanvas.SetSize((300,250))
 
-		#self.corrPlotCanvas.SetEnableZoom( True )
 		self.corrPlotCanvas.SetEnableGrid( True )
 		self.corrPlotCanvas.SetBackgroundColour("White")
 		#self.corrPlotCanvas.Centre(wxBOTH)
 		self.corrPlotCanvas.Show(True)
+		
+		crSubPanel = wx.Panel(panel2, -1)
+		crSubPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+		bmp = wx.Bitmap("icons/sprocket.png")
+		crSettingsBtn = wx.BitmapButton(crSubPanel, -1, bmp)
+		self.crText = wx.StaticText(crSubPanel, -1, "Step: 0.135 | Window: 1.0 | Lead/Lag: 1.0")
+		crFont = self.crText.GetFont()
+		crFont.SetPointSize(10)
+		self.crText.SetFont(crFont)
+		crSubPanel.GetSizer().Add(self.crText, 1, wx.ALIGN_CENTER_VERTICAL)
+		crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+		
+		panel2.GetSizer().Add(self.corrPlotCanvas, 1, wx.EXPAND)
+		panel2.GetSizer().Add(crSubPanel, 0, wx.EXPAND)
+		
+		panel2.Bind(wx.EVT_BUTTON, self.OnEvalSettings, crSettingsBtn)
 
 		xdata = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
 		self.xaxes = plot.PolyLine(xdata, legend='', colour='black', width =2)
@@ -973,7 +946,7 @@ class SplicePanel():
 		data = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
 		self.OnUpdateData(data, [])
 		self.OnUpdateDrawing()
-		vbox.Add(panel2, 0, wx.TOP, 5)
+		vbox.Add(panel2, 1, wx.TOP | wx.BOTTOM | wx.EXPAND, 5)
 
 		# Panel 3
 		panel3 = wx.Panel(self.mainPanel, -1)
@@ -1060,7 +1033,7 @@ class SplicePanel():
 		hbox3.Add(sizer32)
 
 		panel3.SetSizer(hbox3)
-		vbox.Add(panel3, 0, wx.BOTTOM, 3)
+		vbox.Add(panel3, 0, wx.TOP | wx.BOTTOM, 5)
 
 		self.altClearBtn = wx.Button(self.mainPanel, -1, "Clear Alt. Splice", size =(150, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCLEAR_ALTSPLICE, self.altClearBtn)
@@ -1210,10 +1183,6 @@ class SplicePanel():
 		else :
 			self.parent.Window.Constrained = 0 
 
-	def OnUpdateDepth(self, data):
-		depth_value = int(10000.0 * float(data)) / 10000.0;
-		self.depth.SetValue(str(depth_value))
-
 	def OnClearTie(self, evt):
 		self.parent.Window.activeSPTie = -1
 		self.parent.Window.OnClearTies(1)
@@ -1305,34 +1274,35 @@ class SplicePanel():
 			self.undoButton.Enable(False)
 			self.appendButton.Enable(False)
 
-
-	def OnCorrelate(self, evt):
-		self.parent.depthStep = float(self.depthstep.GetValue())
-		self.parent.winLength = float(self.winlength.GetValue())
-		self.parent.leadLag = float(self.leadlag.GetValue())
-
-		self.parent.OnEvalSetup()
-		self.parent.OnUpdateGraphSetup(2) 
-		self.parent.Window.OnUpdateTie(2)
-
+	def OnEvalSettings(self, evt):
+		pos = self.crText.GetScreenPositionTuple()
+		dlg = dialog.CorrParamsDialog(self.mainPanel, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
+		dlg.SetPosition(pos)
+		if dlg.ShowModal() == wx.ID_OK:
+			self.parent.depthStep = dlg.outDepthStep
+			self.parent.winLength = dlg.outWinLength
+			self.parent.leadLag = dlg.outLeadLag
+	
+			self.parent.OnEvalSetup()
+			self.parent.OnUpdateGraphSetup(2)
+			self.parent.Window.OnUpdateTie(2)
 
 	def OnUpdate(self):
-		self.leadLagValue = float(self.leadlag.GetValue())
 		self.corrPlotCanvas.Clear()
-		data = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
+		data = [ (-self.parent.leadLag, 0),( 0, 0), (self.parent.leadLag, 0) ]
 		self.OnUpdateData(data, [])
 		self.OnUpdateDrawing()
+		self.UpdateEvalStatus()
 		self.mainPanel.Update()
 		self.parent.Update()
-
 
 	def OnUpdateDepth(self, data):
 		depth_value = int(10000.0 * float(data)) / 10000.0;
 		self.depth.SetValue(str(depth_value))
 
-	def OnUpdateDepthStep(self, depthstep):
-		depthstep = int(10000.0 * float(depthstep)) / 10000.0;
-		self.depthstep.SetValue(str(depthstep))
+	def UpdateEvalStatus(self):
+		roundedDepthStep = int(10000.0 * float(self.parent.depthStep)) / 10000.0
+		self.crText.SetLabel("Step: {} | Window: {} | Lead/Lag: {}".format(roundedDepthStep, self.parent.winLength, self.parent.leadLag))
 
 	def OnUpdateData(self, data, bestdata):
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
@@ -1832,52 +1802,10 @@ class ELDPanel():
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
 		vbox = wx.BoxSizer(wx.VERTICAL)
 
-
-		# Panel 1
-		panel1 = wx.Panel(self.mainPanel, -1)
-		grid1 = wx.FlexGridSizer(4, 2)
-		grid1.AddGrowableCol(1, 1)
-
-		buttonsize = 40
-		if platform_name[0] == "Windows" :
-			buttonsize = 60
-			
-		grid1.Add(wx.StaticText(panel1, -1, 'Interpolated depth step (m):', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.depthstep = wx.TextCtrl(panel1, -1, "0.11", size = (buttonsize, 25), style=wx.SUNKEN_BORDER )
-		#self.depthstep.Enable(False)
-		grid1.Add(self.depthstep, 0, flag=wx.LEFT | wx.EXPAND, border=5)
-		grid1.Add(wx.StaticText(panel1, -1, 'Correlation window length:', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.winlength = wx.TextCtrl(panel1, -1, str(self.parent.winLength), size =(buttonsize, 25), style=wx.SUNKEN_BORDER )
-		grid1.Add(self.winlength, 0, flag=wx.LEFT | wx.EXPAND, border=5)
-		grid1.Add(wx.StaticText(panel1, -1, 'Correlation lead/lag:', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.leadlag = wx.TextCtrl(panel1, -1, str(self.leadLagValue), size = (buttonsize, 25), style=wx.SUNKEN_BORDER )
-		grid1.Add(self.leadlag, 0, flag=wx.LEFT | wx.EXPAND, border=5)
-
-		buttonsize = 90 
-		if platform_name[0] == "Windows" :
-			buttonsize = 100
-		grid1.Add(wx.StaticText(panel1, -1, ' ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-		#autoButton = wx.Button(panel1, -1, "Auto Core-Log Integration", size =(190, 30))
-		#self.mainPanel.Bind(wx.EVT_BUTTON, self.OnAutoCorrelate, autoButton)
-		#grid1.Add(autoButton)
-
-		addButton = wx.Button(panel1, -1, "Recorrelate", size =(buttonsize, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCorrelate, addButton)
-		grid1.Add(addButton, 0, wx.ALIGN_CENTER)
-
-		panel1.SetSizer(grid1)
-		vbox.Add(panel1, 0, wx.TOP, 2)
-
 		# Panel 2
-		panel2 = wx.Panel(self.mainPanel, -1)
-		# Setup graph
-		# parent, id, pos, size, style, name
+		panel2 = wx.Panel(self.mainPanel, -1, style=wx.BORDER_SIMPLE)
+		panel2.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.corrPlotCanvas = plot.PlotCanvas(panel2)
-		if self.parent.Height > 768 :
-			self.corrPlotCanvas.SetSize((300,300))
-		else :
-			#self.corrPlotCanvas.SetSize((300,250))
-			self.corrPlotCanvas.SetSize((300,230))
 
 		#self.corrPlotCanvas.SetEnableZoom( True )
 		self.corrPlotCanvas.SetEnableGrid( True )
@@ -1885,15 +1813,32 @@ class ELDPanel():
 		#self.corrPlotCanvas.Centre(wxBOTH)
 		self.corrPlotCanvas.Show(True)
 
-		xdata = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
+		xdata = [ (-self.parent.leadLag, 0),( 0, 0), (self.parent.leadLag, 0) ]
 		self.xaxes = plot.PolyLine(xdata, legend='', colour='black', width =2)
 		ydata = [ (0, -1),( 0, 1) ]
 		self.yaxes = plot.PolyLine(ydata, legend='', colour='black', width =2)
 
-		data = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
+		data = [ (-self.parent.leadLag, 0),( 0, 0), (self.parent.leadLag, 0) ]
 		self.OnUpdateData(data, [])
 		self.OnUpdateDrawing()
-		vbox.Add(panel2, 0, wx.TOP, 5)
+		
+		crSubPanel = wx.Panel(panel2, -1)
+		crSubPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+		bmp = wx.Bitmap("icons/sprocket.png")
+		crSettingsBtn = wx.BitmapButton(crSubPanel, -1, bmp)
+		self.crText = wx.StaticText(crSubPanel, -1, "Step: 0.135 | Window: 1.0 | Lead/Lag: 1.0")
+		crFont = self.crText.GetFont()
+		crFont.SetPointSize(10)
+		self.crText.SetFont(crFont)
+		crSubPanel.GetSizer().Add(self.crText, 1, wx.ALIGN_CENTER_VERTICAL)
+		crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+		
+		panel2.GetSizer().Add(self.corrPlotCanvas, 1, wx.EXPAND)
+		panel2.GetSizer().Add(crSubPanel, 0, wx.EXPAND)
+		
+		panel2.Bind(wx.EVT_BUTTON, self.OnEvalSettings, crSettingsBtn)
+		
+		vbox.Add(panel2, 1, wx.EXPAND | wx.BOTTOM, 10)
 
 		buttonsize = 300
 		if platform_name[0] == "Windows" :
@@ -1983,13 +1928,11 @@ class ELDPanel():
 				self.parent.Window.UpdateDrawing()
 				break
 
-
 	def OnInitUI(self):
 		self.fileList.Clear()
 		self.SetFlag(False)
 		#self.floating.SetValue(True)
 		#self.SetFloating(None)
-
 
 	def OnSAVE(self, event):
 		if self.parent.Window.LogData != [] :
@@ -2110,32 +2053,35 @@ class ELDPanel():
 	def OnAutoCorrelate(self, evt):
 		self.parent.Window.ShowAutoPanel = True
 	
-	def OnCorrelate(self, evt):
-		self.parent.depthStep = float(self.depthstep.GetValue())
-		self.parent.winLength = float(self.winlength.GetValue())
-		self.parent.leadLag = float(self.leadlag.GetValue())
-
-		self.parent.OnEvalSetup()
-		self.parent.OnUpdateGraphSetup(3)
-		self.parent.Window.OnUpdateTie(2)
-
+	def OnEvalSettings(self, evt):
+		pos = self.crText.GetScreenPositionTuple()
+		dlg = dialog.CorrParamsDialog(self.mainPanel, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
+		dlg.SetPosition(pos)
+		if dlg.ShowModal() == wx.ID_OK:
+			self.parent.depthStep = dlg.outDepthStep
+			self.parent.winLength = dlg.outWinLength
+			self.parent.leadLag = dlg.outLeadLag
+	
+			self.parent.OnEvalSetup()
+			self.parent.OnUpdateGraphSetup(3)
+			self.parent.Window.OnUpdateTie(2)
+	
 	def OnUpdate(self):
-		self.leadLagValue = float(self.leadlag.GetValue())
 		self.corrPlotCanvas.Clear()
-		data = [ (-self.leadLagValue, 0),( 0, 0), (self.leadLagValue, 0) ]
+		data = [ (-self.parent.leadLag, 0),( 0, 0), (self.parent.leadLag, 0) ]
 		self.OnUpdateData(data, [])
 		self.OnUpdateDrawing()
+		self.UpdateEvalStatus()
 		self.mainPanel.Update()
 		self.parent.Update()
 
+	def UpdateEvalStatus(self):
+		roundedDepthStep = int(10000.0 * float(self.parent.depthStep)) / 10000.0
+		self.crText.SetLabel("Step: {} | Window: {} | Lead/Lag: {}".format(roundedDepthStep, self.parent.winLength, self.parent.leadLag))
 		
 	def OnUpdateDepth(self, data):
 		depthstep = int(10000.0 * float(data)) / 10000.0;
 		self.depth.SetValue(str(depthstep))
-
-	def OnUpdateDepthStep(self, depthstep):
-		depthstep = int(10000.0 * float(depthstep)) / 10000.0;
-		self.depthstep.SetValue(str(depthstep))
 
 	def OnUpdateData(self, data, bestdata):
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
@@ -2160,7 +2106,7 @@ class ELDPanel():
 		self.polyline_list.append(self.xaxes)
 		self.polyline_list.append(self.yaxes)
 		gc = plot.PlotGraphics(self.polyline_list, 'Evaluation Graph', 'depth Axis', 'coef Axis')
-		self.corrPlotCanvas.Draw(gc, xAxis = (-self.leadLagValue , self.leadLagValue), yAxis = (-1, 1))	
+		self.corrPlotCanvas.Draw(gc, xAxis = (-self.parent.leadLag , self.parent.leadLag), yAxis = (-1, 1))	
 		self.polyline_list = []
 
 

@@ -796,7 +796,7 @@ class DataCanvas(wxBufferedWindow):
 			#	self.parent.OnActivateWindow(1)
 			self.parent.showSplicePanel = 0 
 			self.parent.showELDPanel = 0 
-			self.parent.compositePanel.OnUpdate()
+			self.parent.compositePanel.OnUpdatePlots()
 		elif note_id == 2 :
 			self.splicePanel.Show()
 			self.parent.showSplicePanel = 1

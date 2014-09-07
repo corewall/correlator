@@ -1014,6 +1014,45 @@ class ProjectDialog(wx.Dialog):
 		self.mbsfText.SetLabel("MBSF/CSF-A of core " + coreName + " = " + str(coreTuple[1]))
 
 
+class CorrParamsDialog(wx.Dialog):
+	def __init__(self, parent, depthStep, winLength, leadLag):
+		wx.Dialog.__init__(self, parent, -1, "Correlation Parameters", size=(280,170), style=wx.DEFAULT_DIALOG_STYLE)
+		
+		paramPanel = wx.Panel(self, -1)
+		sz = wx.FlexGridSizer(3, 2, hgap=5, vgap=5)
+		sz.Add(wx.StaticText(paramPanel, -1, 'Interpolated Depth Step (m):'), 0, wx.ALIGN_CENTER_VERTICAL)
+		self.depthStep = wx.TextCtrl(paramPanel, -1, str(depthStep), size=(70,-1))
+		sz.Add(self.depthStep, 1)
+		sz.Add(wx.StaticText(paramPanel, -1, 'Correlation Window Length:'),  0, wx.ALIGN_CENTER_VERTICAL)
+		self.winLength = wx.TextCtrl(paramPanel, -1, str(winLength), size=(70,-1))
+		sz.Add(self.winLength, 1)
+		sz.Add(wx.StaticText(paramPanel, -1, 'Correlation Lead/Lag:'), 0, wx.ALIGN_CENTER_VERTICAL)
+		self.leadLag = wx.TextCtrl(paramPanel, -1, str(leadLag), size=(70,-1))
+		sz.Add(self.leadLag, 1)
+		paramPanel.SetSizer(sz)
+		
+		# brgtodo 9/4/2014: CreateButtonSizer() for default OK/Cancel/etc button panel creation?
+		buttonPanel = wx.Panel(self, -1)
+		buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.cancelButton = wx.Button(buttonPanel, wx.ID_CANCEL, "Cancel")
+		self.applyButton = wx.Button(buttonPanel, wx.ID_OK, "Apply")
+		self.applyButton.SetDefault()
+		buttonSizer.Add(self.cancelButton, 0, wx.ALL, 5)
+		buttonSizer.Add(self.applyButton, 0, wx.ALL, 5)
+		buttonPanel.SetSizer(buttonSizer)
+		
+		self.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.GetSizer().Add(paramPanel, 1, wx.EXPAND | wx.ALL, 5)
+		self.GetSizer().Add(buttonPanel, 0, wx.ALIGN_RIGHT | wx.RIGHT | wx.BOTTOM, 5)
+		
+		self.Bind(wx.EVT_BUTTON, self.OnApply, self.applyButton)
+		
+	def OnApply(self, evt):
+		self.outDepthStep = float(self.depthStep.GetValue())
+		self.outWinLength = float(self.winLength.GetValue())
+		self.outLeadLag = float(self.leadLag.GetValue())
+		self.EndModal(wx.ID_OK)
+
 
 class AboutDialog(wx.Dialog):
 	def __init__(self, parent, version) :

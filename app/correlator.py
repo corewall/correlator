@@ -631,32 +631,19 @@ class MainFrame(wx.Frame):
 	def OnUpdateDepthStep(self):
 		self.depthStep = py_correlator.getAveDepStep()
 		self.origin_depthStep = int(10000.0 * float(self.depthStep)) / 10000.0;
-		#print "[DEBUG] Update Depth Step " + str(self.origin_depthStep)
 
-		self.compositePanel.OnUpdateDepthStep(self.depthStep)
-		self.splicePanel.OnUpdateDepthStep(self.depthStep)
-		self.eldPanel.OnUpdateDepthStep(self.depthStep)
+		self.compositePanel.OnUpdatePlots()
+		self.splicePanel.OnUpdate()
+		self.eldPanel.OnUpdate()
 		self.OnEvalSetup()
 
 	def OnUpdateGraphSetup(self, idx):
-		self.compositePanel.depthstep.SetValue(str(self.depthStep))
-		self.compositePanel.winlength.SetValue(str(self.winLength))
-		self.compositePanel.leadlag.SetValue(str(self.leadLag))
 		if idx == 1 :
-			self.compositePanel.OnUpdate()
-
-		self.splicePanel.depthstep.SetValue(str(self.depthStep))
-		self.splicePanel.winlength.SetValue(str(self.winLength))
-		self.splicePanel.leadlag.SetValue(str(self.leadLag))
-		if idx == 2 :
+			self.compositePanel.OnUpdatePlots()
+		elif idx == 2 :
 			self.splicePanel.OnUpdate()
-
-		self.eldPanel.depthstep.SetValue(str(self.depthStep))
-		self.eldPanel.winlength.SetValue(str(self.winLength))
-		self.eldPanel.leadlag.SetValue(str(self.leadLag))
-		if idx == 3 :
+		elif idx == 3 :
 			self.eldPanel.OnUpdate()
-
 
 	def GetSpliceCore(self):
 		l = self.Window.GetSpliceCore()
