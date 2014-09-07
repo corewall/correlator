@@ -447,13 +447,12 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 		xax = (xmin, xmax)
 
 		yax = (round(self.minMcd, 0) - 5, round(self.maxMcd, 0) + 5)
-		if self.minMcd >= self.maxMcd:
+		if self.minMcd > self.maxMcd:
 			yax = None # auto range y-axis
 		self.Draw(gc, xAxis = xax, yAxis = yax)
 		self.growthPlotData = []	
 
 	def _updateData(self, holeData, startDepth, endDepth):
-		maxMbsfDepth = 0.0
 		minMcd = 10000.0
 		maxMcd = -10000.0
 		self.growthRateLines = []
@@ -485,8 +484,6 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 					coreLength = hole[0][core + 1][10][-1][0] - hole[0][core + 1][10][0][0]
 
 					# determine min/max for plotting purposes
-#					if mbsfDepth > maxMbsfDepth:
-#						maxMbsfDepth = mbsfDepth
 					if mbsfDepth >= startDepth and mbsfDepth <= endDepth:
 						if topSectionMcd < minMcd:
 							minMcd = topSectionMcd
@@ -499,12 +496,6 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 							minMcd = topSectionMcd
 						if topSectionMcd > maxMcd:
 							maxMcd = topSectionMcd
-
-#					if topSectionMcd >= startDepth and topSectionMcd <= endDepth:
-#						if topSectionMcd < minMcd:
-#							minMcd = topSectionMcd
-#						if topSectionMcd > maxMcd:
-#							maxMcd = topSectionMcd
 
 					offsetMbsfPair = (mbsfDepth, topSectionMcd)
 					growthRatePoints.append(offsetMbsfPair)
@@ -526,7 +517,6 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 				self.growthRateLines.append(plot.PolyLine(growthRatePoints, colour=holeColor[holeNum], width=1))
 				holeNum = (holeNum + 1) % len(holeMarker) # make sure we don't overrun marker/color lists
 
-		self.maxMbsfDepth = maxMbsfDepth
 		self.minMcd = minMcd
 		self.maxMcd = maxMcd
 
@@ -595,6 +585,8 @@ class CompositePanel():
 
 		self.plotNote.AddPage(self.crPanel, "Evaluation")
 		self.plotNote.AddPage(self.grPanel, "Growth Rate")
+		
+		self.grPanel.Bind(wx.EVT_BUTTON, self.OnGrowthSettings, gpSettingsBtn)
 
 		# add Notebook to main panel
 		self.plotNote.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectPlotNote)
@@ -792,8 +784,8 @@ class CompositePanel():
 		self.parent.OnUndoCore(1)
 
 	def OnEvalSettings(self, evt):
-		pos = self.crText.GetScreenPositionTuple()
 		dlg = dialog.CorrParamsDialog(self.plotNote, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
+		pos = self.crText.GetScreenPositionTuple()
 		dlg.SetPosition(pos)
 		if dlg.ShowModal() == wx.ID_OK:
 			self.parent.depthStep = dlg.outDepthStep
@@ -804,6 +796,19 @@ class CompositePanel():
 			self.parent.OnUpdateGraphSetup(1)
 			if len(self.parent.Window.TieData) > 0 :
 				self.parent.Window.OnUpdateTie(1)
+				
+	def OnGrowthSettings(self, evt):
+		min = self.parent.optPanel.min_depth.GetValue()
+		max = self.parent.optPanel.max_depth.GetValue()
+		dlg = dialog.DepthRangeDialog(self.plotNote, min, max)
+		pos = self.grText.GetScreenPositionTuple()
+		dlg.SetPosition(pos)
+		if dlg.ShowModal() == wx.ID_OK:
+			self.parent.optPanel.depthmax = dlg.outMax	# update mirrored prefs GUI (brgtodo 9/6/2014 gross)
+			self.parent.optPanel.min_depth.SetValue(str(dlg.outMin))
+			self.parent.optPanel.max_depth.SetValue(str(dlg.outMax))
+			self.parent.optPanel.slider2.SetValue(1)
+			self.parent.OnUpdateDepthRange(dlg.outMin, dlg.outMax)
 
 	def OnProject(self, evt):
 		dlg = dialog.ProjectDialog(self.parent)
@@ -3719,31 +3724,20 @@ class PreferencesPanel():
 		ret = dlg.ShowModal()
 		dlg.Destroy()
 
-
 	def OnShowLine(self, event):
 		self.parent.Window.showHoleGrid = self.opt3.GetValue()
 		self.parent.Window.UpdateDrawing()
-
 
 	def OnDepthViewAdjust(self, event):
 		min = float(self.min_depth.GetValue())
 		max = float(self.max_depth.GetValue())
 		if min >= max :
 			return
-		self.parent.Window.rulerStartDepth = min
-		self.parent.Window.SPrulerStartDepth = min
 		self.depthmax = max
-		x = (self.parent.Window.Height - self.parent.Window.startDepth) * self.parent.Window.gap
-		self.parent.Window.length = x / (max - min) * 1.0
-
-		if event != None :
-			self.parent.Window.UpdateScroll(1)
-			# set..... 
-			self.parent.Window.UpdateScroll(2)
-
 		self.slider2.SetValue(1)
-		self.parent.Window.UpdateDrawing()
-		self.parent.Window.UpdateDrawing()
+		
+		updateScroll = event is not None
+		self.parent.OnUpdateDepthRange(min, max, updateScroll)
 
 	def addItemsInFrame(self):
 		vbox_top = wx.BoxSizer(wx.VERTICAL)

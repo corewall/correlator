@@ -1016,7 +1016,7 @@ class ProjectDialog(wx.Dialog):
 
 class CorrParamsDialog(wx.Dialog):
 	def __init__(self, parent, depthStep, winLength, leadLag):
-		wx.Dialog.__init__(self, parent, -1, "Correlation Parameters", size=(280,170), style=wx.DEFAULT_DIALOG_STYLE)
+		wx.Dialog.__init__(self, parent, -1, "Correlation Parameters", size=(280,170), style=wx.CAPTION)
 		
 		paramPanel = wx.Panel(self, -1)
 		sz = wx.FlexGridSizer(3, 2, hgap=5, vgap=5)
@@ -1051,6 +1051,50 @@ class CorrParamsDialog(wx.Dialog):
 		self.outDepthStep = float(self.depthStep.GetValue())
 		self.outWinLength = float(self.winLength.GetValue())
 		self.outLeadLag = float(self.leadLag.GetValue())
+		self.EndModal(wx.ID_OK)
+
+
+class DepthRangeDialog(wx.Dialog):
+	def __init__(self, parent, min, max):
+		wx.Dialog.__init__(self, parent, -1, "Depth Display Range", size=(250,100), style=wx.CAPTION)
+		
+		# min/max edit controls
+		ctrlPanel = wx.Panel(self, -1)
+		ctrlPanel.SetSizer(wx.FlexGridSizer(1, 4, hgap=5))
+		sz = ctrlPanel.GetSizer()
+		sz.Add(wx.StaticText(ctrlPanel, -1, "min:"), 0, wx.ALIGN_CENTER_VERTICAL)
+		self.minField = wx.TextCtrl(ctrlPanel, -1, min, size=(70,-1))
+		sz.Add(self.minField, 0)
+		sz.Add(wx.StaticText(ctrlPanel, -1, "max:"), 0, wx.ALIGN_CENTER_VERTICAL)
+		self.maxField = wx.TextCtrl(ctrlPanel, -1, max, size=(70,-1))
+		sz.Add(self.maxField)
+		
+		# brgtodo 9/4/2014: CreateButtonSizer() for default OK/Cancel/etc button panel creation?
+		buttonPanel = wx.Panel(self, -1)
+		buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.cancelButton = wx.Button(buttonPanel, wx.ID_CANCEL, "Cancel")
+		self.applyButton = wx.Button(buttonPanel, wx.ID_OK, "Apply")
+		self.applyButton.SetDefault()
+		buttonSizer.Add(self.cancelButton, 0, wx.ALL, 5)
+		buttonSizer.Add(self.applyButton, 0, wx.ALL, 5)
+		buttonPanel.SetSizer(buttonSizer)
+
+		#btnSizer = self.CreateButtonSizer(wx.ID_CANCEL | wx.ID_APPLY)
+		
+		dlgSizer = wx.BoxSizer(wx.VERTICAL)
+		dlgSizer.Add(ctrlPanel, 1, wx.EXPAND | wx.ALL, 10)
+		dlgSizer.Add(buttonPanel, 0, wx.ALIGN_RIGHT | wx.RIGHT | wx.BOTTOM, 5)
+		self.SetSizer(dlgSizer)
+		
+		self.Bind(wx.EVT_BUTTON, self.OnApply, self.applyButton)
+		
+	def OnApply(self, evt):
+		min = float(self.minField.GetValue())
+		max = float(self.maxField.GetValue())
+		if min >= max:
+			return
+		self.outMin = min 
+		self.outMax = max
 		self.EndModal(wx.ID_OK)
 
 

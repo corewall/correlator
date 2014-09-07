@@ -627,6 +627,19 @@ class MainFrame(wx.Frame):
 
 	def OnUpdateDepth(self, depth):
 		self.compositePanel.OnUpdateDepth(depth)
+		
+	# Preferences "Depth Ruler Scale" min/max changed
+	def OnUpdateDepthRange(self, min, max, updateScroll=True):
+		self.Window.rulerStartDepth = min
+		self.Window.SPrulerStartDepth = min
+		x = (self.Window.Height - self.Window.startDepth) * self.Window.gap
+		self.Window.length = x / (max - min) * 1.0
+
+		if updateScroll:
+			self.Window.UpdateScroll(1)
+			self.Window.UpdateScroll(2)
+		self.Window.UpdateDrawing()
+		self.Window.UpdateDrawing() # brgtodo 9/6/2014 core area doesn't update completely without, why?
 
 	def OnUpdateDepthStep(self):
 		self.depthStep = py_correlator.getAveDepStep()
