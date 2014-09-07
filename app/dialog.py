@@ -377,21 +377,21 @@ class ExportCoreDialog(wx.Dialog):
 		sizer = wx.StaticBoxSizer(wx.StaticBox(opt_panel, -1, 'Options'), orient=wx.VERTICAL)
 
 		self.cull = wx.CheckBox(opt_panel, -1, 'Apply Cull')
-		sizer.Add(self.cull)
+		sizer.Add(self.cull, 1)
 		self.cull.SetValue(True)
 
 		self.affine = wx.CheckBox(opt_panel, -1, 'Apply Affine')
-		sizer.Add(self.affine)
+		sizer.Add(self.affine, 1)
 		self.splice = wx.CheckBox(opt_panel, -1, 'Apply Splice')
-		sizer.Add(self.splice, 0, wx.TOP, 4)
+		sizer.Add(self.splice, 1)
 		opt_panel.Bind(wx.EVT_CHECKBOX, self.OnSPLICE, self.splice)
 
 		self.eld = wx.CheckBox(opt_panel, -1, 'Apply ELD')
-		sizer.Add(self.eld, 0, wx.TOP, 4)
+		sizer.Add(self.eld, 1)
 		opt_panel.Bind(wx.EVT_CHECKBOX, self.OnELD, self.eld)
 
 		self.age = wx.CheckBox(opt_panel, -1, 'Apply Age Model')
-		sizer.Add(self.age, 0, wx.TOP, 4)
+		sizer.Add(self.age, 1)
 		#opt_panel.Bind(wx.EVT_CHECKBOX, self.OnAGE, self.age)
 
 		opt_panel.SetSizer(sizer)
@@ -399,11 +399,13 @@ class ExportCoreDialog(wx.Dialog):
 
 		format_panel = wx.Panel(panel, -1)
 		format_sizer = wx.StaticBoxSizer(wx.StaticBox(format_panel, -1, 'Format'), orient=wx.VERTICAL)
-		self.format = wx.RadioButton(format_panel, -1, "Text", (40, 185), style=wx.RB_GROUP)
+		self.format = wx.RadioButton(format_panel, -1, "Text", style=wx.RB_GROUP)
 		self.format.SetValue(True)
-		format_sizer.Add(self.format)
-		xml_btn = wx.RadioButton(format_panel, -1, "XML", (110, 185))
-		format_sizer.Add(xml_btn, 0, wx.TOP, 9)
+		format_sizer.Add(self.format, 1, wx.BOTTOM, 5)
+		self.csvFormat = wx.RadioButton(format_panel, -1, "CSV")
+		format_sizer.Add(self.csvFormat, 1, wx.BOTTOM, 5)
+		xml_btn = wx.RadioButton(format_panel, -1, "XML")
+		format_sizer.Add(xml_btn, 1)
 		format_panel.SetSizer(format_sizer)
 		vbox_opt.Add(format_panel, 0, wx.LEFT, 14)
 		panel.SetSizer(vbox_opt)
@@ -411,8 +413,8 @@ class ExportCoreDialog(wx.Dialog):
 
 		self.SetSizer(vbox)
 
-		wx.Button(self, wx.ID_OK, "Next", ((45, 200)))
-		wx.Button(self, wx.ID_CANCEL, "Cancel", ((140, 200)))
+		wx.Button(self, wx.ID_OK, "Next", (45, 200))
+		wx.Button(self, wx.ID_CANCEL, "Cancel", (140, 200))
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
 	def OnCharUp(self,event):
