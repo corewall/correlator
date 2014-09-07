@@ -521,17 +521,17 @@ class ColorTableDialog(wx.Dialog):
 		grid2.Add(self.colorPicker01)
 		
 		if platform_name[0] == "Windows" :	
-			grid2.Add(wx.StaticText(panel2, -1, 'mbsf             '))	
+			grid2.Add(wx.StaticText(panel2, -1, 'CSF             '))	
 		else :
-			grid2.Add(wx.StaticText(panel2, -1, 'mbsf'))
+			grid2.Add(wx.StaticText(panel2, -1, 'CSF'))
 
 		self.colorPicker02 = wx.ColourPickerCtrl(panel2, 2)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker02)
 		grid2.Add(self.colorPicker02, 0, wx.LEFT, 10)
 		if platform_name[0] == "Windows" :		
-			grid2.Add(wx.StaticText(panel2, -1, 'mcd               '))
+			grid2.Add(wx.StaticText(panel2, -1, 'CCSF               '))
 		else :
-			grid2.Add(wx.StaticText(panel2, -1, 'mcd'))
+			grid2.Add(wx.StaticText(panel2, -1, 'CCSF'))
 		self.colorPicker03 = wx.ColourPickerCtrl(panel2, 3)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker03)
 		grid2.Add(self.colorPicker03)

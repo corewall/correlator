@@ -2346,12 +2346,12 @@ class DataCanvas(wxBufferedWindow):
 
 			y = self.Height - self.ScrollSize
 			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("mbsf", start, y)
+			dc.DrawText("CSF", start, y)
 			start = start + paintgap
 			dc.SetPen(wx.Pen(self.colorDict['mcd'], 1))
 			dc.SetBrush(wx.Brush(self.colorDict['mcd']))
 			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("mcd", start, y)
+			dc.DrawText("CCSF", start, y)
 			start = start + paintgap
 			dc.SetPen(wx.Pen(self.colorDict['eld'], 1))
 			dc.SetBrush(wx.Brush(self.colorDict['eld']))

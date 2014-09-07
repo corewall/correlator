@@ -1453,7 +1453,7 @@ class AutoPanel():
 		self.valueD2 = wx.TextCtrl(panel2, -1, "0.938", size =(80, 25), style=wx.SUNKEN_BORDER )
 		self.valueD2.SetEditable(False)
 		grid2.Add(self.valueD2)
-		grid2.Add(wx.StaticText(panel2, -1, ' mbsf / mcd ratio', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+		grid2.Add(wx.StaticText(panel2, -1, ' CSF / CCSF ratio', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
 		self.valueD3 = wx.TextCtrl(panel2, -1, "", size =(80, 25), style=wx.SUNKEN_BORDER )
 		self.valueD3.SetEditable(False)
 		grid2.Add(self.valueD3)
@@ -2134,7 +2134,8 @@ class AgeDepthPanel():
 		self.viewBtn = wx.ToggleButton(self.mainPanel, -1, "Age Model View", size = (140, 25))
 		self.mainPanel.Bind(wx.EVT_TOGGLEBUTTON, self.SetChangeView, self.viewBtn)
 		vbox.Add(self.viewBtn, 0, wx.TOP, 9)
-		vbox.Add(wx.StaticText(self.mainPanel, -1, '    mbsf      mcd       eld      Age(Ma)     Name', (5, 5)), 0, wx.TOP, 9)
+		# brgtodo 9/6/2014: Use a spreadsheet instead
+		vbox.Add(wx.StaticText(self.mainPanel, -1, '   CSF      CCSF       eld      Age(Ma)     Name', (5, 5)), 0, wx.TOP, 9)
 
 		# Panel 1
 		buttonsize = 300
@@ -2181,7 +2182,7 @@ class AgeDepthPanel():
 		grid21 = wx.FlexGridSizer(4, 2)
 	
 		if platform_name[0] == "Windows" :					
-			self.depth_label = wx.StaticText(panel2, -1, "Mcd(m)")
+			self.depth_label = wx.StaticText(panel2, -1, "CCSF(m)")
 			grid21.Add(self.depth_label, 0, wx.TOP, 12)
 			self.depth = wx.TextCtrl(panel2, -1, "0.0", size =(70, 25), style=wx.SUNKEN_BORDER )
 			grid21.Add(self.depth, 0, wx.TOP| wx.RIGHT , 9)
@@ -2196,7 +2197,7 @@ class AgeDepthPanel():
 			grid21.Add(self.commenttxt, 0, wx.TOP| wx.RIGHT | wx.BOTTOM, 9)
 			sizer21.Add(grid21, 0, wx.LEFT | wx.RIGHT, 5)
 		else :
-			self.depth_label = wx.StaticText(panel2, -1, "Mcd(m)")
+			self.depth_label = wx.StaticText(panel2, -1, "CCSF(m)")
 			grid21.Add(self.depth_label)
 			self.depth = wx.TextCtrl(panel2, -1, "0.0", size =(70, 25), style=wx.SUNKEN_BORDER )
 			grid21.Add(self.depth, 0, wx.LEFT, 9)
@@ -2248,14 +2249,14 @@ class AgeDepthPanel():
 
 		sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Plot age versus'), orient=wx.VERTICAL)
 		if platform_name[0] == "Windows" :	
-			self.plotMbsfOpt = wx.RadioButton(panel3, -1, "mbsf                ", style=wx.RB_GROUP)
+			self.plotMbsfOpt = wx.RadioButton(panel3, -1, "CSF                ", style=wx.RB_GROUP)
 		else :
-			self.plotMbsfOpt = wx.RadioButton(panel3, -1, "mbsf", style=wx.RB_GROUP)
+			self.plotMbsfOpt = wx.RadioButton(panel3, -1, "CSF", style=wx.RB_GROUP)
 
 		self.plotMbsfOpt.SetValue(False)	
 		self.mainPanel.Bind(wx.EVT_RADIOBUTTON, self.SetChangePlot, self.plotMbsfOpt)
 		sizer31.Add(self.plotMbsfOpt)
-		self.plotMcdOpt = wx.RadioButton(panel3, -1, "mcd")
+		self.plotMcdOpt = wx.RadioButton(panel3, -1, "CCSF")
 		self.plotMcdOpt.SetValue(True)	
 		self.mainPanel.Bind(wx.EVT_RADIOBUTTON, self.SetChangePlot, self.plotMcdOpt)
 		sizer31.Add(self.plotMcdOpt)

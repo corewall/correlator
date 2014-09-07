@@ -3536,9 +3536,9 @@ int WriteAgeCoreData( char* agefilename, char* filename, Data* dataptr, int appl
 		if(fptr == NULL) continue;
 		// appliedflag = 0, appliedflag = 1 (affine), appliedflag = 2 (eld)	
 		if (appliedflag == 0)
-			fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(mbsf) Age(Ma)\n");
+			fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(CSF) Age(Ma)\n");
 		else if (appliedflag == 1)
-			fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(mcd) Age(Ma)\n");
+			fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(CCSF) Age(Ma)\n");
 		else 
 			fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(eld) Age(Ma)\n");
 		
@@ -3688,9 +3688,9 @@ int WriteAgeCoreHole( char* agefilename, char* filename, Hole* holeptr, int appl
 	if(fptr == NULL) return 0;
 	// appliedflag = 0, appliedflag = 1 (splice), appliedflag = 2 (eld)
 	if (appliedflag == 0)
-		fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(mbsf) Age(Ma)\n");
+		fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(CSF) Age(Ma)\n");
 	else if (appliedflag == 1)
-		fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(mcd) Age(Ma)\n");
+		fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(CCSF) Age(Ma)\n");
 	else 
 		fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(eld) Age(Ma)\n");
 	
