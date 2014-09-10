@@ -39,8 +39,16 @@ struct age_model_st {
 	double agerate;
 };
 
+// delimiters
+enum {
+	SPACETAB = 0, // delimiter used for all internal Correlator files (and export, until now)
+	COMMA = 1
+};
+
 int FindFormat( const char* filename, FILE *fptr ); 
 int FindCoreType( FILE *fptr );
+
+void SetDelimiter(const int delim);
 
 int ReadCoreFormat(FILE *fptr, Data* dataptr, int datatype, char* annotation);
 int ReadSplice( FILE *fptr, Data* dataptr );

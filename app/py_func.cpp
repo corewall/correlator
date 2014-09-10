@@ -6,6 +6,7 @@
  
 #include <iostream>
 #include <DataManager.h>
+#include <DataParser.h>
 #include <Correlator.h>
 #include <AutoCorrelator.h>
 
@@ -97,6 +98,7 @@ static PyObject* formatChange(PyObject *self, PyObject *args);
 static PyObject* setCoreQuality(PyObject *self, PyObject *args);
 static PyObject* getMcdRate(PyObject *self, PyObject *args);
 static PyObject* getSectionAtDepth(PyObject *self, PyObject *args);
+static PyObject* setDelimiter(PyObject *self, PyObject *args);
 
 #if defined(WIN32) || defined(CORRELATOR_MACOSX)
 PyMODINIT_FUNC initpy_correlator(void);
@@ -300,6 +302,9 @@ static PyMethodDef PyCoreMethods[] = {
 
     {"getSectionAtDepth", getSectionAtDepth, METH_VARARGS,
      "Given a hole and core, get section number at provided depth." },
+
+     {"setDelimiter", setDelimiter, METH_VARARGS,
+      "Set delimiter used for writing files: 0 = space + tab, 1 = comma." },
 
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
@@ -2198,6 +2203,18 @@ static PyObject* getSectionAtDepth(PyObject *self, PyObject *args)
 	const int sectionNumber = correlator.getSectionAtDepth(holeName, coreIndex, coreType, (double)depth);
 
 	return Py_BuildValue("i", sectionNumber);
+}
+
+static PyObject* setDelimiter(PyObject *self, PyObject *args)
+{
+	int delimiter = -1;
+	if (!PyArg_ParseTuple(args, "i", &delimiter))
+		return NULL;
+
+	SetDelimiter(delimiter);
+
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 static int getType(char *typeStr)

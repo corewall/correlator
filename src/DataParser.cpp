@@ -26,6 +26,8 @@
 //
 
 #include <iostream>
+#include <iomanip>
+#include <sstream>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -50,8 +52,86 @@
 
 //#include <XMLLoader.h>
 
+#define NEWOUTPUT 1 // brg 9/8/2014
+
 using namespace std;
 static int token_num = 0;
+
+static string DELIMS[] = { " \t", "," };
+static string delimiter = DELIMS[SPACETAB];
+
+void SetDelimiter(const int delim)
+{
+	cout << "SetDelimiter() called with arg " << delim << endl;
+	delimiter = DELIMS[delim];
+}
+
+static string _coreHeaders[] = { // 13 members
+	"Leg", "Site", "Hole", "Core", "CoreType", "Section", "TopOffset",
+	"BottomOffset", "Depth", "Data", "RunNo", "RawDepth", "Offset"
+};
+
+static string _affineHeaders[] = { // 7 members
+	"Leg", "Site", "Hole", "Core No", "Section Type", "Depth Offset", "Y/N"
+};
+
+static string _spliceHeaders[] = { // 19 members
+	"Site", "Hole", "Core No", "Section Type", "Section No", "Top", "Bottom", "CSF", "CCSF",
+	"TIE/APPEND", "Site", "Hole", "Core No", "Section Type", "Section No", "Top", "Bottom", "CSF", "CCSF"
+};
+
+static string _ageHeaders[] = { // 13 members
+	"Leg", "Site", "Hole", "Core", "CoreType", "Section", "TopOffset",
+	"BottomOffset", "Depth", "Data", "SedRate", "Depth(CSF)", "Age(Ma)"
+};
+
+static string _stratHeaders[] = { // 22 members
+	"No", "Datum Name", "Label", "Type", "Age top", "Age Bottom", "Leg", "Site", "Hole", "Core No",
+	"Section Type", "Section No", "Interval", "CSF", "Leg", "Site", "Hole", "Core No", "Section Type",
+	"Section No", "Interval", "CSF"
+};
+
+static vector<string> ageHeaders(_ageHeaders, _ageHeaders + 13);
+
+static void WriteHeader(const vector<string> headers, int delim)
+{}
+
+
+// Non-POD (Plain Old Data) objects such as std::string cannot be passed in a variable
+// argument list! Who knew? Thankfully we can convert std::strings using .c_str().
+static void makeDelimString(const string format, string &outStr, ...)
+{
+	const int argCount = format.length();
+	stringstream ss;
+	va_list args;
+	va_start(args, outStr);
+	for (int i = 0; i < argCount; i++) {
+		if (format[i] == 'i') {
+			int intArg = va_arg(args, int);
+			ss << intArg;
+		} else if (format[i] == 'f') {
+			double floatArg = va_arg(args, double); // float is auto-promoted to double
+
+			// brg 9/9/2014: Match fprintf-style output format - six decimal places
+			// filled with zeroes as necessary
+			ss << fixed << setprecision(6) << setfill('0') << floatArg;
+
+		} else if (format[i] == 'c') {
+			char charArg = va_arg(args, int); // char is auto-promoted to int
+			ss << charArg;
+		} else if (format[i] == 's') {
+			const char *strArg = va_arg(args, const char *);
+			ss << strArg;
+		}
+
+		if (i + 1 < argCount) // append delimiter for all but last arg
+			ss << delimiter;
+	}
+	outStr = ss.str();
+}
+
+
+
 
 Tie* findTie( Data* dataptr, int order );
 Strat* findStrat( Data* dataptr, int order );
@@ -2459,8 +2539,17 @@ int WriteAffineTable( FILE *fptr, Data* dataptr )
 				}
 			} else 
 				status = 'N';
+#ifdef NEWOUTPUT
+			// brgbrg
+			string dataLine;
+			const string format("sssicfc");
+			makeDelimString(format, dataLine, leg, site, holename, coreno, coretype, depthoffset, status);
+			dataLine += '\n';
+			fprintf(fptr, "%s", dataLine.c_str());
+#else
 			//fprintf (fptr, "%s \t%s \t%c \t%d \t%c \t%f \t%c \t\t%f \t%f\n", leg, site, holename, coreno, coretype, depthoffset, status, range->mindepth, range->maxdepth);
 			fprintf (fptr, "%s \t%s \t%s \t%d \t%c \t%f \t%c\n", leg, site, holename, coreno, coretype, depthoffset, status);
+#endif // NEWOUTPUT
 			prev_depthoffset = depthoffset;
 		}
 	}
@@ -2470,6 +2559,8 @@ int WriteAffineTable( FILE *fptr, Data* dataptr )
 
 int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 {
+	cout << "WriteSpliceTable!" << endl;
+
 	if(dataptr == NULL) return 0;
 
 
@@ -2538,6 +2629,17 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 			{
 				temp_value = tieInfoptr->m_valueptr;
 				if(temp_value == NULL) continue;
+
+#ifdef NEWOUTPUT
+				string dataLine;
+				const string format("ssiccffffs");
+				makeDelimString(format, dataLine, site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
+				                tieInfoptr->m_valuetype, tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
+				                temp_value->getMbsf(), temp_value->getMcd(), "TIE");
+				dataLine += delimiter;
+				// brgtodo 9/8/2014 end with delimiter or not?
+				fprintf(fptr, "%s", dataLine.c_str());
+#else
 				fprintf (fptr, "%s \t%s \t%d \t%c \t%c \t%f \t%f \t%f \t%f \tTIE",
 					site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
 					tieInfoptr->m_valuetype,
@@ -2545,12 +2647,25 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 					tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
 					temp_value->getMbsf(), temp_value->getMcd());
 					//tieInfoptr->m_mbsf, tieInfoptr->m_mcd);
+#endif // NEWOUTPUT
 
 				tieInfoptr = tieptr->getInfoTieTo();
 				if(tieInfoptr == NULL) continue;
 				if(tieInfoptr->m_coreptr == NULL) continue;
 				temp_value = tieInfoptr->m_valueptr;
 				if(temp_value == NULL) continue;
+
+#ifdef NEWOUTPUT
+				// brgbrg New Way Yay!
+				dataLine.clear();
+				//const string delim(" \t");
+				//const string format("ssiccffff");
+				makeDelimString("ssiccfff", dataLine, site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
+				                tieInfoptr->m_valuetype, tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
+				                temp_value->getMbsf(), temp_value->getMcd());
+				dataLine += '\n';
+				fprintf(fptr, "%s", dataLine.c_str());
+#else
 				fprintf (fptr, " \t%s \t%s \t%d \t%c \t%c \t%f \t%f \t%f \t%f\n",
 					site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
 					tieInfoptr->m_valuetype,
@@ -2558,7 +2673,7 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 					tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
 					temp_value->getMbsf(), temp_value->getMcd());					
 					//tieInfoptr->m_mbsf, tieInfoptr->m_mcd);
-										
+#endif // NEWOUTPUT
 			} else 
 			{
 				if(tieptr->isAll() == false)
@@ -2566,12 +2681,24 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 					if (tieInfoptr->m_valueptr != NULL)
 					{
 						temp_value = tieInfoptr->m_valueptr;
+
+#ifdef NEWOUTPUT
+						// brgbrg New Way Yay!
+						string dataLine;
+						const string format("ssiccffffs");
+						makeDelimString(format, dataLine, site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
+						                tieInfoptr->m_valuetype, tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
+						                temp_value->getMbsf(), temp_value->getMcd(), "APPEND");
+						dataLine += delimiter;
+						fprintf(fptr, "%s", dataLine.c_str());
+#else
 						fprintf (fptr, "%s \t%s \t%d \t%c \t%c \t%f \t%f \t%f \t%f \tAPPEND",
 						site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
 						tieInfoptr->m_valuetype,
 						//tieInfoptr->m_section[0], tieInfoptr->m_top, tieInfoptr->m_bottom, 
 						tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
-						temp_value->getMbsf(), temp_value->getMcd());		
+						temp_value->getMbsf(), temp_value->getMcd());
+#endif // NEWOUTPUT
 					} else 
 					{
 						last_value_idx = tieInfoptr->m_coreptr->getNumOfValues() -1;
@@ -2579,11 +2706,23 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 						if (first_value != NULL)
 						{
 							value_section = first_value->getSection();
+
+#ifdef NEWOUTPUT
+							// brgbrg New Way Yay!
+							string dataLine;
+							const string format("ssiccffffs");
+							makeDelimString(format, dataLine, site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
+							                first_value->getType(), value_section[0], first_value->getTop(), first_value->getBottom(), 
+							                first_value->getMbsf(), first_value->getMcd(), "APPEND");
+							dataLine += delimiter;
+							fprintf(fptr, "%s", dataLine.c_str());
+#else
 							fprintf (fptr, "%s \t%s \t%d \t%c \t%c \t%f \t%f \t%f \t%f \tAPPEND",
 							site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
 							first_value->getType(),
 							value_section[0], first_value->getTop(), first_value->getBottom(), 
-							first_value->getMbsf(), first_value->getMcd());							
+							first_value->getMbsf(), first_value->getMcd());
+#endif // NEWOUTPUT
 						}
 					}
 					tieInfoptr = tieptr->getInfoTieTo();
@@ -2593,23 +2732,45 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 					if (tieInfoptr->m_valueptr != NULL) 
 					{
 						temp_value = tieInfoptr->m_valueptr;
+#ifdef NEWOUTPUT
+						string dataLine;
+						const string format("ssiccffff");
+						makeDelimString(format, dataLine, site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
+						                tieInfoptr->m_valuetype, tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
+						                temp_value->getMbsf(), temp_value->getMcd());
+						dataLine += "\n";
+						fprintf(fptr, "%s", dataLine.c_str());
+#else
+
 						fprintf (fptr, " \t%s \t%s \t%d \t%c \t%c \t%f \t%f \t%f \t%f\n",
 						site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
 						tieInfoptr->m_valuetype,
 						//tieInfoptr->m_section[0], tieInfoptr->m_top, tieInfoptr->m_bottom, 
 						tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
 						temp_value->getMbsf(), temp_value->getMcd());
+#endif // NEWOUTPUT
 					} else 
 					{
 						first_value = tieInfoptr->m_coreptr->getValue(0);
 						if(first_value != NULL)
 						{
 							value_section = first_value->getSection();
+
+#ifdef NEWOUTPUT
+							string dataLine;
+							const string format("ssiccffff");
+							makeDelimString(format, dataLine, site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
+							                first_value->getType(),	value_section[0], first_value->getTop(), first_value->getBottom(), 
+							                first_value->getMbsf(), first_value->getMcd());
+							dataLine += "\n";
+							fprintf(fptr, "%s", dataLine.c_str());
+#else
 							fprintf (fptr, " \t%s \t%s \t%d \t%c \t%c \t%f \t%f \t%f \t%f\n",
 							site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
 							first_value->getType(),
 							value_section[0], first_value->getTop(), first_value->getBottom(), 
-							first_value->getMbsf(), first_value->getMcd());					
+							first_value->getMbsf(), first_value->getMcd());
+#endif // NEWOUTPUT
 						}
 					}
 				} else // tieptr->isAll == true
@@ -2617,13 +2778,23 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 					temp_value = tieInfoptr->m_valueptr;
 					if(temp_value == NULL) continue;
 
+#ifdef NEWOUTPUT
+					string dataLine;
+					const string format("ssiccffffs");
+					makeDelimString(format, dataLine, site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
+					                tieInfoptr->m_valuetype, tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
+					                temp_value->getMbsf(), temp_value->getMcd(), "TIE");
+					dataLine += delimiter;
+					fprintf(fptr, "%s", dataLine.c_str());
+#else
 					fprintf (fptr, "%s \t%s \t%d \t%c \t%c \t%f \t%f \t%f \t%f \tTIE",
 					site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
 					tieInfoptr->m_valuetype,
 					//tieInfoptr->m_section[0], tieInfoptr->m_top, tieInfoptr->m_bottom, 
 					tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
 					temp_value->getMbsf(), temp_value->getMcd());
-					//tieInfoptr->m_mbsf, tieInfoptr->m_mcd);		
+					//tieInfoptr->m_mbsf, tieInfoptr->m_mcd);
+#endif // NEWOUTPUT
 
 					tieInfoptr = tieptr->getInfoTieTo();
 					if(tieInfoptr == NULL) continue;
@@ -2631,6 +2802,14 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 					temp_value = tieInfoptr->m_valueptr;
 					if(temp_value == NULL) continue;
 					
+#ifdef NEWOUTPUT
+					dataLine.clear();
+					makeDelimString("ssiccffff", dataLine, site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
+					                tieInfoptr->m_valuetype, tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
+					                temp_value->getMbsf(), temp_value->getMcd());
+					dataLine += "\n";
+					fprintf(fptr, "%s", dataLine.c_str());
+#else
 					fprintf (fptr, " \t%s \t%s \t%d \t%c \t%c \t%f \t%f \t%f \t%f\n",
 					site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
 					tieInfoptr->m_valuetype,
@@ -2638,17 +2817,28 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 					tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
 					temp_value->getMbsf(), temp_value->getMcd());
 					//tieInfoptr->m_mbsf, tieInfoptr->m_mcd);
-										
+#endif // NEWOUTPUT
+
 					last_value_idx = tieInfoptr->m_coreptr->getNumOfValues() -1;
 					first_value = tieInfoptr->m_coreptr->getValue(last_value_idx);
 					if (first_value != NULL)
 					{
 						value_section = first_value->getSection();
+
+#ifdef NEWOUTPUT
+						dataLine.clear();
+						makeDelimString("ssiccffffs", dataLine, site, tieInfoptr->m_coreptr->getName(),
+						                tieInfoptr->m_coreptr->getNumber(), first_value->getType(),	value_section[0], first_value->getTop(),
+						                first_value->getBottom(), first_value->getMbsf(), first_value->getMcd(), "APPEND");
+						dataLine += "\n";
+						fprintf(fptr, "%s", dataLine.c_str());
+#else
 						fprintf (fptr, "%s \t%s \t%d \t%c \t%c \t%f \t%f \t%f \t%f \tAPPEND\n",
 						site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
 						first_value->getType(),
 						value_section[0], first_value->getTop(), first_value->getBottom(), 
-						first_value->getMbsf(), first_value->getMcd());							
+						first_value->getMbsf(), first_value->getMcd());
+#endif // NEWOUTPUT
 					}
 				}
 			}
@@ -3262,8 +3452,19 @@ int WriteCoreData( char* filename, Data* dataptr )
 				{
 					if(valueptr->getValueType() == INTERPOLATED_VALUE) continue;
 					
+#ifdef NEWOUTPUT
+					string dataLine;
+					const string format("sssicsffffcff");
+					makeDelimString(format, dataLine, leg, site, holeptr->getName(), coreptr->getNumber(),
+					                valueptr->getType(), valueptr->getSection(), valueptr->getTop(), valueptr->getBottom(),
+					                valueptr->getELD(), valueptr->getRawData(), '-', valueptr->getMbsf(), coreptr->getDepthOffset());
+					dataLine += '\n';
+					fprintf(fptr, "%s", dataLine.c_str());
+#else
 					fprintf (fptr, "%s \t%s \t%s \t%d \t%c \t%s", leg, site, holeptr->getName(), coreptr->getNumber(), valueptr->getType(), valueptr->getSection());
 					fprintf (fptr, " \t%f \t%f \t%f \t%f \t- \t%f \t%f\n", valueptr->getTop(), valueptr->getBottom(), valueptr->getELD(), valueptr->getRawData(), valueptr->getMbsf(), coreptr->getDepthOffset());
+#endif // NEWOUTPUT
+
 					sum_test = valueptr->getMbsf() + coreptr->getDepthOffset() ;
 					/*if (sum_test != valueptr->getMcd())
 						cout << "ERROR >>>>> AT " << holeptr->getName() << coreptr->getNumber() << " " << valueptr->getTop() << " " << valueptr->getBottom() << " " << valueptr->getELD() << endl;
@@ -3388,10 +3589,23 @@ int WriteCoreHole( char* filename, Hole* holeptr )
 				{
 					if(valueptr->getValueType() == INTERPOLATED_VALUE) continue;
 
+#ifdef NEWOUTPUT
+					// brgbrg
+					string dataLine;
+					const string format("sssicsffffcsff");
+					makeDelimString(format, dataLine, leg, site, name_str.c_str(), coreptr->getNumber(),
+					                valueptr->getType(), valueptr->getSection(), valueptr->getTop(), valueptr->getBottom(),
+					                valueptr->getELD(), valueptr->getRawData(), '-', coreptr->getParent()->getAnnotation(),
+					                valueptr->getMbsf(), coreptr->getDepthOffset());
+					dataLine += '\n';
+					fprintf(fptr, "%s", dataLine.c_str());
+#else
 					//fprintf (fptr, "%s \t%s \t%s \t%d \t%c \t%s", leg, site, holeptr->getName(), coreptr->getNumber(), valueptr->getType(), valueptr->getSection());
 					fprintf (fptr, "%s \t%s \t%s \t%d \t%c \t%s", leg, site, name_str.c_str(), coreptr->getNumber(), valueptr->getType(), valueptr->getSection());
 
-					fprintf (fptr, " \t%f \t%f \t%f \t%f \t- \t%s \t%f \t%s\n", valueptr->getTop(), valueptr->getBottom(), valueptr->getELD(), valueptr->getRawData(), coreptr->getParent()->getAnnotation(), valueptr->getMbsf(), coreptr->getDepthOffset());
+					fprintf (fptr, " \t%f \t%f \t%f \t%f \t- \t%s \t%f \t%f\n", valueptr->getTop(), valueptr->getBottom(), valueptr->getELD(), valueptr->getRawData(), coreptr->getParent()->getAnnotation(), valueptr->getMbsf(), coreptr->getDepthOffset());
+#endif // NEWOUTPUT
+
 					sum_test = valueptr->getMbsf() + coreptr->getDepthOffset() ;
 					/*if (sum_test != valueptr->getMcd())
 						cout << "ERROR >>>>> AT " << holeptr->getName() << coreptr->getNumber() << " " << valueptr->getTop() << " " << valueptr->getBottom() << " " << valueptr->getELD() << endl;
@@ -3417,6 +3631,17 @@ int WriteCoreHole( char* filename, Hole* holeptr )
 				if (valueptr->getValueType() == INTERPOLATED_VALUE) continue;
 				if (valueptr->getQuality() == GOOD)
 				{
+#ifdef NEWOUTPUT
+					string dataLine;
+					const string format("sssicsffffcsff");
+					makeDelimString(format, dataLine, leg, site, "spliced_record", coreptr->getNumber(),
+					                valueptr->getType(), valueptr->getSection(), valueptr->getTop(), valueptr->getBottom(),
+					                valueptr->getELD(), valueptr->getRawData(), '-', coreptr->getAnnotation(),
+					                valueptr->getMbsf(), coreptr->getDepthOffset());
+					dataLine += '\n';
+					fprintf(fptr, "%s", dataLine.c_str());
+#else
+
 					//fprintf (fptr, "%s \t%s \t%s \t%d \t%c \t%s", leg, site, holeptr->getName(), coreptr->getNumber(), valueptr->getType(), valueptr->getSection());
 					fprintf (fptr, "%s \t%s \tspliced_record \t%d \t%c \t%s", leg, site, coreptr->getNumber(), valueptr->getType(), valueptr->getSection());
 
@@ -3431,6 +3656,7 @@ int WriteCoreHole( char* filename, Hole* holeptr )
 					//{
 						fprintf (fptr, " \t%s \t%f \t%f\n", coreptr->getAnnotation(), valueptr->getMbsf(), coreptr->getDepthOffset());					
 					//}
+#endif // NEWOUTPUT
 				}
 			}
 		}	
@@ -3440,7 +3666,6 @@ int WriteCoreHole( char* filename, Hole* holeptr )
 
 	return 1;
 }
-
 
 int WriteAgeCoreData( char* agefilename, char* filename, Data* dataptr, int appliedflag )
 {
@@ -3614,11 +3839,21 @@ int WriteAgeCoreData( char* agefilename, char* filename, Data* dataptr, int appl
 					{
 						age =  (mbsf - prev_mbsf) + prev_age;
 					} 	
-					
+#ifdef NEWOUTPUT
+					// brgbrg
+					string dataLine;
+					const string format("sssicsfffffff");
+					makeDelimString(format, dataLine, leg, site, holeptr->getName(), coreptr->getNumber(), // sssi
+					                valueptr->getType(), valueptr->getSection(), valueptr->getTop(), valueptr->getBottom(), // csff
+					                valueptr->getMbsf(), valueptr->getRawData(), sedrate, valueptr->getELD(), age); // fffff
+					dataLine += '\n';
+					fprintf(fptr, "%s", dataLine.c_str());
+#else
 					//Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(m) Age(Ma)
 					fprintf (fptr, "%s \t%s \t%s \t%d \t%c \t%s", leg, site, holeptr->getName(), coreptr->getNumber(), valueptr->getType(), valueptr->getSection());
 					fprintf (fptr, " \t%f \t%f \t%f \t%f", valueptr->getTop(), valueptr->getBottom(), valueptr->getMbsf(), valueptr->getRawData());
-					fprintf (fptr, " \t%f \t%f \t%f\n", sedrate, valueptr->getELD(), age);					
+					fprintf (fptr, " \t%f \t%f \t%f\n", sedrate, valueptr->getELD(), age);
+#endif // NEWOUTPUT
 				}
 			}
 		}
@@ -3818,11 +4053,23 @@ int WriteAgeCoreHole( char* agefilename, char* filename, Hole* holeptr, int appl
 				{
 					age =  (mbsf - prev_mbsf) + prev_age;
 				}			
-		
+
+#ifdef NEWOUTPUT
+				// brgbrg
+				string dataLine;
+				const string format("sssicsfffffffs");
+				makeDelimString(format, dataLine, leg, site, name_str.c_str(), coreptr->getNumber(), // sssi
+				                valueptr->getType(), valueptr->getSection(), valueptr->getTop(), valueptr->getBottom(), // csff
+				                valueptr->getMbsf(), valueptr->getRawData(), sedrate, valueptr->getELD(), age, // fffff
+				                coreptr->getParent()->getAnnotation()); // s
+				dataLine += '\n';
+				fprintf(fptr, "%s", dataLine.c_str());
+#else
 				//fprintf (fptr, "%s \t%s \t%s \t%d \t%c \t%s", leg, site, holeptr->getName(), coreptr->getNumber(), valueptr->getType(), valueptr->getSection());
 				fprintf (fptr, "%s \t%s \t%s \t%d \t%c \t%s", leg, site, name_str.c_str(), coreptr->getNumber(), valueptr->getType(), valueptr->getSection());
 				fprintf (fptr, " \t%f \t%f \t%f \t%f", valueptr->getTop(), valueptr->getBottom(), valueptr->getMbsf(), valueptr->getRawData());
-				fprintf (fptr, " \t%f \t%f \t%f \t%s\n", sedrate, valueptr->getELD(), age, coreptr->getParent()->getAnnotation());					
+				fprintf (fptr, " \t%f \t%f \t%f \t%s\n", sedrate, valueptr->getELD(), age, coreptr->getParent()->getAnnotation());
+#endif // NEWOUTPUT
 			}
 		}
 	}
@@ -3952,7 +4199,16 @@ int	WriteLog( char* read_filename, char* write_filename, int depth_idx, int data
 		}
 		if((depth != -999) && (data !=-999))
 		{
+#ifdef NEWOUTPUT
+			// brgbrg
+			string dataLine;
+			const string format("ff");
+			makeDelimString(format, dataLine, depth, data);
+			dataLine += '\n';
+			fprintf(wfptr, "%s", dataLine.c_str());
+#else
 			fprintf (wfptr, "%.5f \t%.5f \t\n", depth, data);
+#endif // NEWOUTPUT
 		}
 	}
 	

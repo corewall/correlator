@@ -833,6 +833,10 @@ class DataFrame(wx.Panel):
 					dlg.Destroy()
 					return
 
+			useCsv = dlg.csvFormat.GetValue()
+			if useCsv:
+				py_correlator.setDelimiter(1) # write comma-delimited file for export
+			
 			count = 0
 			if dlg.age.GetValue() == True and age_item != None :
 				applied += "-age"
@@ -856,15 +860,19 @@ class DataFrame(wx.Panel):
 				count = py_correlator.saveCoreData(path + ".export.tmp", 1)
 			else :
 				count = py_correlator.saveCoreData(path + ".export.tmp", 0)
+				
+			if useCsv:
+				py_correlator.setDelimiter(0) # reset delimiter to space + tab so internal files are written normally
+			outExtension = ".csv" if useCsv else ".dat"
 
 			self.parent.OnNewData(None)
 
 			if dlg.splice.GetValue() == True and count == 1 :
-				if dlg.format.GetValue() == False :
-					outfile = output_prefix + "-" + title + "-" + applied + "." + datatype + ".dat"
+				if dlg.xmlFormat.GetValue():
+					outfile = output_prefix + "-" + title + "-" + applied + "." + datatype + outExtension
 					self.SAVE_CORE_TO_XML(path, ".export.tmp", output_path, outfile, dlg.age.GetValue(), dlg.splice.GetValue())
 				else :
-					outfile = output_prefix + "-" + title + "-" + applied + "." + datatype + ".dat"
+					outfile = output_prefix + "-" + title + "-" + applied + "." + datatype + outExtension
 					if sys.platform == 'win32' :
 						workingdir = os.getcwd()
 						os.chdir(path)
@@ -876,8 +884,8 @@ class DataFrame(wx.Panel):
 						os.system(cmd)
 			else :
 				for i in range(count) :
-					outfile = output_prefix + "-" + title + "-" + applied + holes[i] + "." + datatype + ".dat"
-					if dlg.format.GetValue() == False :
+					outfile = output_prefix + "-" + title + "-" + applied + holes[i] + "." + datatype + outExtension
+					if dlg.xmlFormat.GetValue():
 						self.SAVE_CORE_TO_XML(path, ".export.tmp"+ str(i), output_path, outfile, dlg.age.GetValue(), dlg.splice.GetValue())
 					else :
 						if sys.platform == 'win32' :
@@ -1758,6 +1766,7 @@ class DataFrame(wx.Panel):
 			self.parent.OnShowMessage("Information", "Successfully imported", 1)
 
 
+	# brg 9/9/2014: "Export" affine/splice/ELD etc - just copies internal file to selected location 
 	def OnEXPORT(self):
 		if self.selectedIdx != None :
 			#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
