@@ -2591,23 +2591,23 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
     int count=0;
     for(int i=0; i < numHoles; i++)
     {
-                 holeptr = dataptr->getHole(i);
-                 if (holeptr == NULL) continue;
-                 numCores =  holeptr->getNumOfCores();
-                 for(int j=0; j < numCores; j++)
-                 {
-                        coreptr = holeptr->getCore(j);
-                        if (coreptr == NULL) continue;
-                        numTies = coreptr->getNumOfTies();
-                        for(int k=0; k < numTies; k++)
-                        {
-                                tieptr = coreptr->getTie(k);
-                                if (tieptr->getType() == REAL_TIE)
-                                {
-                                        count++;
-                                }
-                        }
-                 }
+    	holeptr = dataptr->getHole(i);
+    	if (holeptr == NULL) continue;
+    	numCores =  holeptr->getNumOfCores();
+    	for(int j=0; j < numCores; j++)
+    	{
+    		coreptr = holeptr->getCore(j);
+    		if (coreptr == NULL) continue;
+    		numTies = coreptr->getNumOfTies();
+    		for(int k=0; k < numTies; k++)
+    		{
+    			tieptr = coreptr->getTie(k);
+    			if (tieptr->getType() == REAL_TIE)
+    			{
+    				count++;
+    			}
+    		}
+    	}
     }
 	if (count == 0) return 0;
 
@@ -2617,8 +2617,8 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 	char* value_section = NULL;
 	
   	for(int i=0; i < count; i++)
-        {
-                tieptr = findTie(dataptr, i);
+  	{
+  		tieptr = findTie(dataptr, i);
 
 		if(tieptr->getSharedFlag() == false)
 		{
@@ -2851,34 +2851,33 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 
 Tie* findTie( Data* dataptr, int order )
 {
-        int numHoles = dataptr->getNumOfHoles();
-        int numCores, numTies;
+	int numHoles = dataptr->getNumOfHoles();
+	int numCores, numTies;
 
-        Hole* holeptr;
-        Core* coreptr;
-        Tie* tieptr;
-        for(int i=0; i < numHoles; i++)
-        {
-                 holeptr = dataptr->getHole(i);
-                 if (holeptr == NULL) continue;
-                 numCores =  holeptr->getNumOfCores();
-                 for(int j=0; j < numCores; j++)
-                 {
-                        coreptr = holeptr->getCore(j);
-                        if (coreptr == NULL) continue;
-                        numTies = coreptr->getNumOfTies();
-                        for(int k=0; k < numTies; k++)
-                        {
-                                tieptr = coreptr->getTie(k);
-                                if (tieptr->getType() == REAL_TIE && tieptr->getOrder() == order)
-                                {
-                                        return tieptr;
-                                }
-                        }
-                 }
-        }
-        return NULL;
-
+	Hole* holeptr;
+	Core* coreptr;
+	Tie* tieptr;
+	for(int i=0; i < numHoles; i++)
+	{
+		holeptr = dataptr->getHole(i);
+		if (holeptr == NULL) continue;
+		numCores =  holeptr->getNumOfCores();
+		for(int j=0; j < numCores; j++)
+		{
+			coreptr = holeptr->getCore(j);
+			if (coreptr == NULL) continue;
+			numTies = coreptr->getNumOfTies();
+			for(int k=0; k < numTies; k++)
+			{
+				tieptr = coreptr->getTie(k);
+				if (tieptr->getType() == REAL_TIE && tieptr->getOrder() == order)
+				{
+					return tieptr;
+				}
+			}
+		}
+	}
+	return NULL;
 }
 
 int WriteEqLogDepthTable( FILE *fptr, Data* dataptr, const char* affinefilename )
@@ -2991,24 +2990,24 @@ Strat* findStrat( Data* dataptr, int order )
 	Strat* stratptr;
 	for(int i=0; i < numHoles; i++)
 	{
-		 holeptr = dataptr->getHole(i);
-		 if (holeptr == NULL) continue;
-		 numCores =  holeptr->getNumOfCores();
-		 for(int j=0; j < numCores; j++)
-		 {
-				coreptr = holeptr->getCore(j);
-				if(coreptr == NULL) continue;
-				numStrats = coreptr->getNumOfStrat();
-				for(int k=0; k < numStrats; k++)
+		holeptr = dataptr->getHole(i);
+		if (holeptr == NULL) continue;
+		numCores =  holeptr->getNumOfCores();
+		for(int j=0; j < numCores; j++)
+		{
+			coreptr = holeptr->getCore(j);
+			if(coreptr == NULL) continue;
+			numStrats = coreptr->getNumOfStrat();
+			for(int k=0; k < numStrats; k++)
+			{
+				stratptr = coreptr->getStrat(k);
+				if(stratptr == NULL) continue;
+				if(stratptr->getOrder() == order)
 				{
-						stratptr = coreptr->getStrat(k);
-						if(stratptr == NULL) continue;
-						if(stratptr->getOrder() == order)
-						{
-								return stratptr;
-						}
+					return stratptr;
 				}
-		 }
+			}
+		}
 	}
 	return NULL;
 }
@@ -3033,16 +3032,16 @@ int WriteStratTable( FILE *fptr, Data* dataptr )
     int count=0;
     for(int i=0; i < numHoles; i++)
     {
-                 holeptr = dataptr->getHole(i);
-                 if (holeptr == NULL) continue;
-                 numCores =  holeptr->getNumOfCores();
-                 for(int j=0; j < numCores; j++)
-                 {
-                        coreptr = holeptr->getCore(j);
-                        if (coreptr == NULL) continue;
-                        numStrats = coreptr->getNumOfStrat();
-						count += numStrats;
-                 }
+    	holeptr = dataptr->getHole(i);
+    	if (holeptr == NULL) continue;
+    	numCores =  holeptr->getNumOfCores();
+    	for(int j=0; j < numCores; j++)
+    	{
+    		coreptr = holeptr->getCore(j);
+    		if (coreptr == NULL) continue;
+    		numStrats = coreptr->getNumOfStrat();
+    		count += numStrats;
+    	}
     }
 	if (count == 0) return 0;
 
@@ -3556,11 +3555,11 @@ int WriteCoreHole( char* filename, Hole* holeptr )
 			name = annot[0];
 			for(name_iter = name_list.begin(); name_iter != name_list.end(); name_iter++)
 			{
-					if(*name_iter == name)
-					{
-						found = true;
-						break;
-					}
+				if(*name_iter == name)
+				{
+					found = true;
+					break;
+				}
 			}
 			if (found == false)
 			{
