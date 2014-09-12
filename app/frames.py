@@ -440,15 +440,15 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 
 		gc = plot.PlotGraphics(self.growthPlotData, 'Growth Rate', 'CSF', 'CCSF')
 		
-		xmin = self.plotMin #startDepth
+		xmin = self.plotMin
 		xmax = endDepth
 		if xmax > scrollMax:
 			xmax = scrollMax
+		if xmin > xmax:
+			xmin = 0
 		xax = (xmin, xmax)
 
 		yax = (round(self.minMcd, 0) - 5, round(self.maxMcd, 0) + 5)
-		if self.minMcd > self.maxMcd:
-			yax = None # auto range y-axis
 		self.Draw(gc, xAxis = xax, yAxis = yax)
 		self.growthPlotData = []	
 
@@ -482,28 +482,39 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 					
 					# compute core length in horrible way: bottom data coord's depth - top data coord's depth
 					coreLength = hole[0][core + 1][10][-1][0] - hole[0][core + 1][10][0][0]
+					coreEnd = topSectionMcd + coreLength
+					coreName = hole[0][core + 1][0]
 
 					# determine min/max for plotting purposes
+					inRange = False
+					#print "Core {}{} mbsf = {}, end = {}".format(holeName, coreName, mbsfDepth, coreEnd),
 					if mbsfDepth >= startDepth and mbsfDepth <= endDepth:
+						inRange = True
+						#print "mbsf in range [{}-{}]".format(startDepth, endDepth),
 						if topSectionMcd < minMcd:
+							#print " mcd = {}, new minMcd".format(topSectionMcd)
 							minMcd = topSectionMcd
 						if topSectionMcd > maxMcd:
+							#print " mcd = {}, new maxMcd".format(topSectionMcd)
 							maxMcd = topSectionMcd
-					coreEnd = topSectionMcd + coreLength
-					if coreEnd >= startDepth and coreEnd < self.plotMin:
-						self.plotMin = mbsfDepth
+					
+					if not inRange and (coreEnd >= startDepth and coreEnd < endDepth):
+						#print "coreEnd in range [{}-{}]".format(startDepth, self.plotMin),
+						self.plotMin = min(self.plotMin, mbsfDepth)
+						#print " new plotMin = {} ".format(self.plotMin),
 						if topSectionMcd < minMcd: # brgtodo dup
+							#print " mcd = {}, new minMcd".format(topSectionMcd)
 							minMcd = topSectionMcd
 						if topSectionMcd > maxMcd:
+							#print " mcd = {}, new maxMcd".format(topSectionMcd)
 							maxMcd = topSectionMcd
-
+					
 					offsetMbsfPair = (mbsfDepth, topSectionMcd)
 					growthRatePoints.append(offsetMbsfPair)
 					mbsfVals.append(mbsfDepth)
 					mcdVals.append(topSectionMcd)
 
 					# track point data for use in point labeling on mouseover
-					coreName = hole[0][core + 1][0]
 					growthRate = numpy.polyfit(mbsfVals, mcdVals, 1)
 					pointData = HoverData(mbsfDepth, topSectionMcd, holeName, coreName, growthRate)
 					self.hoverData.append(pointData)
