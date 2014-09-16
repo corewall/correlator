@@ -1765,6 +1765,58 @@ class DataFrame(wx.Panel):
 
 			self.parent.OnShowMessage("Information", "Successfully imported", 1)
 
+	# given parent node, return a list of all top-level children to get around the
+	# obnoxious "GetFirstChild(), then GetNextChild() for the rest" dance seen
+	# throughout this file
+	def GetChildren(self, parentNode):
+		kids = []
+		childNode, cookie = self.tree.GetFirstChild(parentNode)
+		while childNode.IsOk():
+			kids.append(childNode)
+			childNode = self.tree.GetNextSibling(childNode)
+		return kids
+	
+	# given siteRoot list item, return metadata needed to load each of site's hole files (all types):
+	# this is necessary to create affine, splice, and ELD tables on the fly
+	def GetAllSiteHoles(self, siteRoot):
+		holeData = []
+		#print "site = {}".format(self.tree.GetItemText(siteRoot, 0))
+		kids = self.GetChildren(siteRoot)
+		for k in kids:
+			nodeName = self.tree.GetItemText(k, 0)
+			typeInt, annot = self.parent.TypeStrToInt(nodeName)
+			if nodeName not in ["Age Models", "Downhole Log Data", "Image Data", "Saved Tables", "Stratigraphy"]:
+				#print "found type {}".format(nodeName)
+				subkids = self.GetChildren(k)
+				for sk in subkids:
+					if self.tree.GetItemText(sk, 0) != "-Cull Table":
+						# found hole data! make a tuple of metadata required for py_correlator.openHoleFile()
+						filename = self.parent.DBPath + "db/" + self.tree.GetItemText(sk, 10) + self.tree.GetItemText(sk, 8)
+						decimate = int(self.tree.GetItemText(sk, 3))
+						mdTuple = (filename, typeInt, annot, decimate) # full file path, integer data type, annotation (for user type), decimate value
+						holeData.append(mdTuple)
+		return holeData
+	
+	def GetTables(self, siteRoot, tableTypeStr):
+		tableData = []
+		kids = self.GetChildren(siteRoot)
+		for k in kids:
+			if self.tree.GetItemText(k, 0) == "Saved Tables":
+				subkids = self.GetChildren(k)
+				for sk in subkids:
+					if self.tree.GetItemText(sk, 1) == tableTypeStr:
+						filename = self.parent.DBPath + "db/" + self.tree.GetItemText(sk, 10) + self.tree.GetItemText(sk, 8)
+						enabled = True if self.tree.GetItemText(sk, 2) == "Enable" else False
+						tuple = (filename, enabled) # full file path, enabled state (stupid about multiple enabled tables)
+						tableData.append(tuple)
+		return tableData
+	
+	def GetAffineTables(self, siteRoot):
+		return self.GetTables(siteRoot, "AFFINE")
+
+	def GetSpliceTables(self, siteRoot):
+		return self.GetTables(siteRoot, "SPLICE")
+
 
 	# brg 9/9/2014: "Export" affine/splice/ELD etc - just copies internal file to selected location 
 	def OnEXPORT(self):
@@ -1778,31 +1830,47 @@ class DataFrame(wx.Panel):
 			self.parent.Directory = path
 			opendlg.Destroy()
 			if ret == wx.ID_OK :
-				parentItem = self.tree.GetItemParent(self.selectedIdx)
-				parentItem = self.tree.GetItemParent(parentItem)
-				title = self.tree.GetItemText(parentItem, 0)
+				selParentItem = self.tree.GetItemParent(self.selectedIdx)
+				siteItem = self.tree.GetItemParent(selParentItem)
+				title = self.tree.GetItemText(siteItem, 0)
+				holeData = self.GetAllSiteHoles(siteItem)
 
 				source = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + self.tree.GetItemText(self.selectedIdx, 8)
-				#outfile = self.tree.GetItemText(self.selectedIdx, 8)
 				outfile = filename + ".dat"
 
-				parentItem = self.tree.GetItemParent(self.selectedIdx)
-				temp_title = self.tree.GetItemText(parentItem, 0)
-				if temp_title == "Saved Tables" :
-					temp_title = self.tree.GetItemText(self.selectedIdx, 1)
-					if temp_title == "AFFINE" :
+				selParentTitle = self.tree.GetItemText(selParentItem, 0) 
+				if selParentTitle == "Saved Tables" :
+					tableType = self.tree.GetItemText(self.selectedIdx, 1)
+					if tableType == "AFFINE" :
+						for hd in holeData:
+							py_correlator.openHoleFile(hd[0], -1, hd[1], hd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, hd[2])
+						py_correlator.openAttributeFile(source, 0)
+						py_correlator.setDelimiter(1)
+						py_correlator.saveAttributeFile(path + '/' + outfile, 1)
+						py_correlator.setDelimiter(0)
 						outfile = filename + ".affine.table"
-					elif temp_title == "SPLICE" :
+					elif tableType == "SPLICE" :
+						for hd in holeData:
+							py_correlator.openHoleFile(hd[0], -1, hd[1], hd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, hd[2])
+						affineTables = self.GetAffineTables(siteItem)
+						for at in affineTables:
+							if at[1]: # enabled is True
+								py_correlator.openAttributeFile(at[0], 0)
+								break
+						py_correlator.openSpliceFile(source)
+						py_correlator.setDelimiter(1)
+						py_correlator.saveAttributeFile(path + '/' + outfile, 2)
+						py_correlator.setDelimiter(0)
 						outfile = filename + ".splice.table"
-					elif temp_title == "ELD" :
+					elif tableType == "ELD" :
 						outfile = filename + ".eld.table"
-				elif temp_title == "Age Models" :
-					temp_title = self.tree.GetItemText(self.selectedIdx, 1)
-					if temp_title == "AGE/DEPTH" :
+				elif selParentItem == "Age Models" :
+					tableType = self.tree.GetItemText(self.selectedIdx, 1)
+					if tableType == "AGE/DEPTH" :
 						outfile = filename + ".age-depth.table"
-					elif temp_title == "AGE" :
+					elif tableType == "AGE" :
 						outfile = filename + ".age.model"
-				elif temp_title == "Image Data" :
+				elif selParentItem == "Image Data" :
 					outfile = filename + ".dat"
 				else :
 					temp_title = self.tree.GetItemText(self.selectedIdx, 0)
@@ -1813,11 +1881,11 @@ class DataFrame(wx.Panel):
 					workingdir = os.getcwd()
 					# ------------------------
 					os.chdir(self.parent.DBPath + 'db\\' + title)
-					cmd = 'copy ' + self.tree.GetItemText(self.selectedIdx, 8)  + ' \"' + path + '\\' + str(outfile) + '\"'
+					cmd = 'copy ' + self.tree.GetItemText(self.selectedIdx, 8)  + ' \"' + path + '\\' + str(outfile) + "_ORIG" + '\"'
 					os.system(cmd)
 					os.chdir(workingdir)
-				else :	
-					cmd = 'cp \"' +  source  + '\" \"' + path + '/' + outfile + '\"'
+				else:
+					cmd = 'cp \"' +  source  + '\" \"' + path + '/' + outfile + "_ORIG" + '\"'
 					os.system(cmd)
 				self.parent.OnShowMessage("Information", "Successfully exported", 1)
 
@@ -4954,7 +5022,7 @@ class DataFrame(wx.Panel):
 
 	# brg 12/4/2013: Builds data manager UI
 	def OnLOADCONFIG(self):
-		self.LoadDatabase()
+		#self.LoadDatabase() # 9/12/2014 brg: for new db manager, don't bother loading for now
 
 		# self.parent - "master" Correlator class
 		# self - old dbmanager (has required variables and methods)
