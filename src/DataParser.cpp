@@ -2577,7 +2577,7 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 	int tiesize =0;
 	TieInfo* tieInfoptr = NULL;
 
-	fprintf (fptr, "# Site, Hole, Core No, Section Type, Section No, Top, Bottom, Mbsf, Mcd, TIE/APPEND Site, Hole, Core No, Section Type, Section No, Top, Bottom, Mbsf, Mcd\n");
+	fprintf (fptr, "# Site, Hole, Core No, Section Type, Section No, Top, Bottom, Mbsf, Mcd, TIE/APPEND, Site, Hole, Core No, Section Type, Section No, Top, Bottom, Mbsf, Mcd\n");
 	if(affinefilename == NULL)
 		fprintf (fptr, "# AffineTable None\n");
 	else 
@@ -2660,7 +2660,7 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 				dataLine.clear();
 				//const string delim(" \t");
 				//const string format("ssiccffff");
-				makeDelimString("ssiccfff", dataLine, site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(), 
+				makeDelimString("ssiccffff", dataLine, site, tieInfoptr->m_coreptr->getName(), tieInfoptr->m_coreptr->getNumber(),
 				                tieInfoptr->m_valuetype, tieInfoptr->m_section[0], temp_value->getTop(), temp_value->getBottom(), 
 				                temp_value->getMbsf(), temp_value->getMcd());
 				dataLine += '\n';
