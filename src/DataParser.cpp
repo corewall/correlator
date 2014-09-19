@@ -839,14 +839,14 @@ int ReadAffineTable(FILE *fptr, Data* dataptr)
 		getToken(line, token);		
 		toupper(&token[0]);
 		temp_hole_name = &token[0];
-		newHole = dataptr->getHole(temp_hole_name);
+		newHole = dataptr->getHole(temp_hole_name); // finds first hole whose name matches, whatever its data type
 		if(newHole == NULL) 
 		{
 			token_num = 0;
 			continue;
 		}
 		holeA = (char*) newHole->getName();
-		nholeA = dataptr->getNumOfHoles(holeA);
+		nholeA = dataptr->getNumOfHoles(holeA); // count all holes (any data type) whose name matches holeA
 		
 		// check core number
 		getToken(line, token);	
@@ -890,7 +890,10 @@ int ReadAffineTable(FILE *fptr, Data* dataptr)
 		newCore->setDepthOffset(depth_offset, value_type, applied, fromfile);
 		newCore->setAffineType(affinetype);
 		
-		numHoles = dataptr->getNumOfHoles();		
+		numHoles = dataptr->getNumOfHoles();
+
+		// affine values have been applied to the hole we found above, whatever its data type.
+		// Now do the same for all *other* holes with that name, but with other data types.
 		for(int i=1; i < nholeA; i++)
 		{
 			count =0;
@@ -1497,7 +1500,7 @@ int ReadEqLogDepthTable( FILE *fptr, Data* dataptr, const char* affinefilename )
 	{
 		getToken(line, token);	// Equivalent
 		toupper(&token[0]);
-		if(strcmp(token, "EQUIVALNET") == 0) 
+		if(strcmp(token, "EQUIVALENT") == 0)
 		{		
 			getToken(line, token);	// Log
 			getToken(line, token);	// Depth

@@ -2024,7 +2024,7 @@ static PyObject* saveAttributeFile(PyObject *self, PyObject *args)
 	{
 		manager.save( fileName, dataptr, SPLICE_TABLE );
 	}	
-	else if(type == 3)
+	else if(type == 3) // brg 9/10/2014 unused
 	{
 		manager.save( fileName, correlator.getSpliceHole(), dataptr->getLeg(), dataptr->getSite() );
 	}
@@ -2032,16 +2032,16 @@ static PyObject* saveAttributeFile(PyObject *self, PyObject *args)
 	{
 		manager.save( fileName, dataptr, EQLOGDEPTH_TABLE );
 	}
-	else if(type == 5)
+	else if(type == 5) // brg 9/10/2014 unused
 	{
 		if (logdataptr)
 			manager.save( fileName, logdataptr, LOG );
 	}
-	else if(type == 6)
+	else if(type == 6) // brg 9/10/2014 unused
 	{
 		manager.save( fileName, dataptr, SPLICER_AGE );
 	}
-	else if(type == 7)
+	else if(type == 7) // brg 9/10/2014 unused
 	{
 		manager.save( fileName, correlator.getSpliceHole(), dataptr->getLeg(), dataptr->getSite(), true );
 	}
