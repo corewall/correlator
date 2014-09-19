@@ -24,6 +24,8 @@ def opj(path):
 	return apply(os.path.join, tuple(path.split('/')))
 
 
+FormatDict = {"Text":0, "CSV":1, "XML":2}
+
 class DataFrame(wx.Panel):
 	def __init__(self, parent):
 		wx.Panel.__init__(self, parent, -1)
@@ -222,7 +224,7 @@ class DataFrame(wx.Panel):
 			self.OnIMPORT_TABLE("Splice")
 		elif opId == 16 :
 			# EXPORT
-			self.OnEXPORT()
+			self.OnExportSavedTable()
 		elif opId == 17 :
 			# IMPORT ELD TABLE
 			self.OnIMPORT_TABLE("ELD")
@@ -306,11 +308,7 @@ class DataFrame(wx.Panel):
 			if type == "AFFINE" :
 				self.SAVE_AFFINE_TO_XML(path, filename)
 			elif type == "SPLICE" :
-				# find leg
-				title = self.tree.GetItemText(self.selectedIdx, 10) 
-				last = title.find("-", 0)
-				leg = title[0:last]
-				self.SAVE_SPLICE_TO_XML(path, filename, leg)
+				self.SAVE_SPLICE_TO_XML(path, filename)
 			elif type == "ELD" :
 				self.SAVE_ELD_TO_XML(path, filename)
 			elif type == "AGE/DEPTH" :
@@ -905,141 +903,124 @@ class DataFrame(wx.Panel):
 
 		dlg.Destroy()
 
+	def SAVE_AFFINE_TO_XML(self, affineFile, outFile):
+		fin = open(affineFile, 'r+')
+		fout = open(outFile + '.xml', 'w+')
+		fout.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+		fout.write("<Correlator version=\"1.0\">\n")
 
-	def SAVE_AFFINE_TO_XML(self, source_path, filename):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style =wx.SAVE)
-		ret = opendlg.ShowModal()
-		#path = opendlg.GetPath()
-		path = opendlg.GetDirectory()
-		outfile = opendlg.GetFilename() 
-		self.parent.Directory = path
-		opendlg.Destroy()
-		if ret == wx.ID_OK :
-			fin = open(source_path + filename, 'r+')
-			fout = open(path + '/' + outfile + '.xml', 'w+')
-			fout.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-			fout.write("<Correlator version=\"1.0\">\n")
+		idx = 0
+		prevHole = ""
+		for line in fin :
+			#token = line.split(' \t')
+			token = line.split()
+			if len(token) == 1 : 
+				continue
 
-			idx = 0
-			prevHole = ""
-			for line in fin :
-				#token = line.split(' \t')
-				token = line.split()
-				if len(token) == 1 : 
-					continue
+			first = token[0]
+			if first[0] == '#' : continue
 
-				first = token[0]
-				if first[0] == '#' : continue
+			if idx == 0 :
+				fout.write("\t<Data type=\"affine table\" leg=\"" + token[0] + "\" site=\""+ token[1] + "\">\n")
+				idx = 1
 
-				if idx == 0 :
-					fout.write("\t<Data type=\"affine table\" leg=\"" + token[0] + "\" site=\""+ token[1] + "\">\n")
-					idx = 1
+			if prevHole != token[2] :
+				if prevHole != "" :
+					fout.write("\t\t</Hole>\n")
+				fout.write("\t\t<Hole value=\"" + token[2] + "\">\n")
+			applied = token[6]
+			fout.write("\t\t\t<Core id=\"" + token[3] + "\" type=\"" + token[4] + "\" applied=\"" + applied[0]+ "\" offset =\"" + token[5]+ "\" />\n")
 
-				if prevHole != token[2] :
-					if prevHole != "" :
-						fout.write("\t\t</Hole>\n")
-					fout.write("\t\t<Hole value=\"" + token[2] + "\">\n")
-				applied = token[6]
-				fout.write("\t\t\t<Core id=\"" + token[3] + "\" type=\"" + token[4] + "\" applied=\"" + applied[0]+ "\" offset =\"" + token[5]+ "\" />\n")
+			prevHole = token[2]
+				
+		if prevHole != "" :
+			fout.write("\t\t</Hole>\n")
+			fout.write("\t</Data>\n")
+		fout.write("</Correlator>\n")
+		fout.close()
+		fin.close()
 
-				prevHole = token[2]
-					
-			if prevHole != "" :
-				fout.write("\t\t</Hole>\n")
-				fout.write("\t</Data>\n")
-			fout.write("</Correlator>\n")
-			fout.close()
-			fin.close()
-			self.parent.OnShowMessage("Information", "Successfully exported", 1)
-
-
-	def SAVE_SPLICE_TO_XML(self, source_path, filename, leg):
-		#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-		opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
-		ret = opendlg.ShowModal()
-		#path = opendlg.GetPath()
-		path = opendlg.GetDirectory()
-		outfile = opendlg.GetFilename()
-		self.parent.Directory = path
-		opendlg.Destroy()
+	def SAVE_SPLICE_TO_XML(self, spliceFile, outFile):
 		affinetable = "None"
-		if ret == wx.ID_OK :
-			fin = open(source_path + filename, 'r+')
-			fout = open(path + '/' + outfile + '.xml', 'w+')
-			fout.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-			fout.write("<Correlator version=\"1.0\">\n")
+		fin = open(spliceFile, 'r+')
+		fout = open(outFile + '.xml', 'w+')
+		fout.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+		fout.write("<Correlator version=\"1.0\">\n")
 
-			idx = 0
-			for line in fin :
-				#token = line.split(' \t')
-				token = line.split()
-				token_size =  len(token)
-				if token_size == 1 : 
-					continue
+		idx = 0
+		for line in fin :
+			#token = line.split(' \t')
+			token = line.split()
+			token_size =  len(token)
+			if token_size == 1 : 
+				continue
 
-				first = token[0]
-				if first[0] == '#' : 
-					if token[1] == 'AffineTable' : 
-						affinetable = token[2]
-					continue
+			first = token[0]
+			if first[0] == '#' : 
+				if token[1] == 'AffineTable' : 
+					affinetable = token[2]
+				continue
 
-				if idx == 0 :
-					fout.write("\t<Data type =\"splice table\" leg =\"" + leg + "\" site=\""+ token[0] + "\" affinefilename=\"" + affinetable +"\">\n")
-				fout.write("\t\t<Tie id=\"" + str(idx) + "\">\n")
+			if idx == 0:
+				# find leg
+				title = self.tree.GetItemText(self.selectedIdx, 10) 
+				last = title.find("-", 0)
+				leg = title[0:last]
+				fout.write("\t<Data type =\"splice table\" leg =\"" + leg + "\" site=\""+ token[0] + "\" affinefilename=\"" + affinetable +"\">\n")
+			fout.write("\t\t<Tie id=\"" + str(idx) + "\">\n")
 
-				if token_size < 19 : 
-					temp_token = token[8]
-					last = temp_token.find("\r", 0)
-					if last < 0 :
-						last = temp_token.find("\n", 0)
-					last_token = temp_token[0:last]
+			if token_size < 19 : 
+				temp_token = token[8]
+				last = temp_token.find("\r", 0)
+				if last < 0 :
+					last = temp_token.find("\n", 0)
+				last_token = temp_token[0:last]
 
-					fout.write("\t\t\t<Core id=\"" + token[2] + "\" hole=\"" + token[1] + "\" type=\"" + token[3] + "\" section=\"" + token[4] + "\" top=\"" + token[5] + "\" bottom=\"" + token[6] + "\" mbsf=\"" + token[7] + "\" mcd=\"" + last_token + "\"/>\n")
+				fout.write("\t\t\t<Core id=\"" + token[2] + "\" hole=\"" + token[1] + "\" type=\"" + token[3] + "\" section=\"" + token[4] + "\" top=\"" + token[5] + "\" bottom=\"" + token[6] + "\" mbsf=\"" + token[7] + "\" mcd=\"" + last_token + "\"/>\n")
 
-					cmd = "tied"
-					if token_size < 10 :
-                                                cmd = "append"
-					elif token[9].find("APPEND", 0) >= 0 or token[9].find("append", 0) >= 0 :
-						cmd = "append"
+				cmd = "tied"
+				if token_size < 10 :
+                                            cmd = "append"
+				elif token[9].find("APPEND", 0) >= 0 or token[9].find("append", 0) >= 0 :
+					cmd = "append"
 
-					if token_size < 11 : 
-						fout.write("\t\t\t<Core tietype=\"" + cmd + "\"/>\n")
-					else :
-						fout.write("\t\t\t<Core tietype=\"" + cmd + "\" id=\"" + token[12] + "\" hole=\"" + token[11] + "\" type=\"" + token[13] + "\" section=\"" + token[14] + "\" top=\"" + token[15] + "\" bottom=\""+ token[16] + "\" mbsf=\"" + token[17] + "\" mcd=\"" + last_token + "\"/>\n")
-
-
+				if token_size < 11 : 
+					fout.write("\t\t\t<Core tietype=\"" + cmd + "\"/>\n")
 				else :
-					fout.write("\t\t\t<Core id=\"" + token[2] + "\" hole=\"" + token[1] + "\" type=\"" + token[3] + "\" section=\"" + token[4] + "\" top=\"" + token[5] + "\" bottom=\"" + token[6] + "\" mbsf=\"" + token[7] + "\" mcd=\"" + token[8] + "\"/>\n")
+					fout.write("\t\t\t<Core tietype=\"" + cmd + "\" id=\"" + token[12] + "\" hole=\"" + token[11] + "\" type=\"" + token[13] + "\" section=\"" + token[14] + "\" top=\"" + token[15] + "\" bottom=\""+ token[16] + "\" mbsf=\"" + token[17] + "\" mcd=\"" + last_token + "\"/>\n")
 
-					temp_token = token[18]
-					last = temp_token.find("\r", 0)
-					if last < 0 :
-						last = temp_token.find("\n", 0)
-					last_token = temp_token
-					if last != -1 :
-						last_token = temp_token[0:last]
-					#print temp_token, last_token, last
 
-					cmd = "tied"
-					if token[9] == "APPEND" or token[9] == "append" :
-						cmd = "append"
+			else :
+				fout.write("\t\t\t<Core id=\"" + token[2] + "\" hole=\"" + token[1] + "\" type=\"" + token[3] + "\" section=\"" + token[4] + "\" top=\"" + token[5] + "\" bottom=\"" + token[6] + "\" mbsf=\"" + token[7] + "\" mcd=\"" + token[8] + "\"/>\n")
 
-					if token_size < 11 : 
-						fout.write("\t\t\t<Core tietype=\"" + cmd + "\"/>\n")
-					else :
-						fout.write("\t\t\t<Core tietype=\"" + cmd + "\" id=\"" + token[12] + "\" hole=\"" + token[11] + "\" type=\"" + token[13] + "\" section=\"" + token[14] + "\" top=\"" + token[15] + "\" bottom=\""+ token[16] + "\" mbsf=\"" + token[17] + "\" mcd=\"" + last_token + "\"/>\n")
+				temp_token = token[18]
+				last = temp_token.find("\r", 0)
+				if last < 0 :
+					last = temp_token.find("\n", 0)
+				last_token = temp_token
+				if last != -1 :
+					last_token = temp_token[0:last]
+				#print temp_token, last_token, last
 
-				fout.write("\t\t</Tie>\n")
+				cmd = "tied"
+				if token[9] == "APPEND" or token[9] == "append" :
+					cmd = "append"
 
-				idx += 1 
-					
-			if idx != 0 :
-				fout.write("\t</Data>\n")
-			fout.write("</Correlator>\n")
-			fout.close()
-			fin.close()
-			self.parent.OnShowMessage("Information", "Successfully exported", 1)
+				if token_size < 11 : 
+					fout.write("\t\t\t<Core tietype=\"" + cmd + "\"/>\n")
+				else :
+					fout.write("\t\t\t<Core tietype=\"" + cmd + "\" id=\"" + token[12] + "\" hole=\"" + token[11] + "\" type=\"" + token[13] + "\" section=\"" + token[14] + "\" top=\"" + token[15] + "\" bottom=\""+ token[16] + "\" mbsf=\"" + token[17] + "\" mcd=\"" + last_token + "\"/>\n")
+
+			fout.write("\t\t</Tie>\n")
+
+			idx += 1 
+				
+		if idx != 0 :
+			fout.write("\t</Data>\n")
+		fout.write("</Correlator>\n")
+		fout.close()
+		fin.close()
+		#self.parent.OnShowMessage("Information", "Successfully exported", 1)
 
 
 	def SAVE_ELD_TO_XML(self, source_path, filename):
@@ -1797,6 +1778,10 @@ class DataFrame(wx.Panel):
 						holeData.append(mdTuple)
 		return holeData
 	
+	def LoadAllHoles(self, siteRoot):
+		for hd in self.GetAllSiteHoles(siteRoot):
+			py_correlator.openHoleFile(hd[0], -1, hd[1], hd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, hd[2])
+	
 	def GetTables(self, siteRoot, tableTypeStr):
 		tableData = []
 		kids = self.GetChildren(siteRoot)
@@ -1805,35 +1790,126 @@ class DataFrame(wx.Panel):
 				subkids = self.GetChildren(k)
 				for sk in subkids:
 					if self.tree.GetItemText(sk, 1) == tableTypeStr:
-						filename = self.parent.DBPath + "db/" + self.tree.GetItemText(sk, 10) + self.tree.GetItemText(sk, 8)
+						filename = self.tree.GetItemText(sk, 8)
+						fullpath = self.parent.DBPath + "db/" + self.tree.GetItemText(sk, 10) + filename
 						enabled = True if self.tree.GetItemText(sk, 2) == "Enable" else False
-						tuple = (filename, enabled) # full file path, enabled state (stupid about multiple enabled tables)
+						tuple = (filename, fullpath, enabled)
 						tableData.append(tuple)
 		return tableData
 	
+	def GetLogTables(self, siteRoot):
+		logTables = []
+		enabledLog = None
+		for kid in self.GetChildren(siteRoot):
+			if self.tree.GetItemText(kid, 0) == "Downhole Log Data":
+				for subkid in self.GetChildren(kid):
+					filename = self.tree.GetItemText(subkid, 8)
+					fullpath = self.parent.DBPath + "db/" + self.tree.GetItemText(subkid, 10) + filename
+					dataColumn = int(self.tree.GetItemText(subkid, 11))
+					enabled = True if self.tree.GetItemText(subkid, 2) == "Enable" else False
+					tuple = (filename, fullpath, dataColumn, enabled)
+					if enabledLog is None and enabled:
+						enabledLog = tuple
+					logTables.append(tuple)
+		return logTables, enabledLog
+	
 	def GetAffineTables(self, siteRoot):
-		return self.GetTables(siteRoot, "AFFINE")
-
+		affineTables = self.GetTables(siteRoot, "AFFINE")
+		enabledFilename = None
+		for at in affineTables:
+			if at[2]:
+				enabledFilename = at[0]
+				break
+		return affineTables, enabledFilename
+	
 	def GetSpliceTables(self, siteRoot):
-		return self.GetTables(siteRoot, "SPLICE")
+		enabledFilename = None
+		spliceTables = self.GetTables(siteRoot, "SPLICE")
+		for st in spliceTables:
+			if st[2]:
+				enabledFilename = st[0]
+				break
+		return spliceTables, enabledFilename
 
+	def ExportAffineTable(self, affineFile, outFile, formatStr):
+		if formatStr == "XML":
+			self.SAVE_AFFINE_TO_XML(affineFile, outFile)
+		else:
+			outFile += '.' + formatStr.lower()
+			py_correlator.openAttributeFile(affineFile, 0)
+			py_correlator.setDelimiter(FormatDict[formatStr])
+			py_correlator.saveAttributeFile(outFile, 1)
+			py_correlator.setDelimiter(FormatDict["Text"]) # always reset to "internal" file format
+			
+	def ExportSpliceTable(self, spliceFile, outFile, siteItem):
+		doExport = False
+		affineTables, curAffine = self.GetAffineTables(siteItem)
+		spliceDlg = dialog.ExportSpliceDialog(self, [at[0] for at in affineTables], curAffine)
+		if spliceDlg.ShowModal() == wx.ID_OK:
+			doExport = True
+			formatStr = spliceDlg.GetSelectedFormat() 
+			if formatStr == "XML":
+				self.SAVE_SPLICE_TO_XML(spliceFile, outFile)
+			else:
+				self.LoadAllHoles(siteItem)
+				for at in affineTables:
+					if at[0] == spliceDlg.GetSelectedAffine():
+						py_correlator.openAttributeFile(at[1], 0)
+						break
+				outFile += '.' + formatStr.lower()
+				py_correlator.openSpliceFile(spliceFile)
+				py_correlator.setDelimiter(FormatDict[formatStr])
+				py_correlator.saveAttributeFile(outFile, 2)
+				py_correlator.setDelimiter(FormatDict["Text"])
+				
+		return doExport
+				
+	def ExportELDTable(self, eldFile, outFile, siteItem):
+		doExport = False
+		affineTables, curAffine = self.GetAffineTables(siteItem)
+		spliceTables, curSplice = self.GetSpliceTables(siteItem)
+		eldDlg = dialog.ExportELDDialog(self, [at[0] for at in affineTables], curAffine, [st[0] for st in spliceTables], curSplice)
+		if eldDlg.ShowModal() == wx.ID_OK:
+			doExport = True
+			formatStr = eldDlg.GetSelectedFormat()
+			if formatStr == "XML":
+				self.SAVE_ELD_TO_XML(eldFile, outFile)
+			else:
+				self.LoadAllHoles(siteItem)
+				logTables, enabledLog = self.GetLogTables(siteItem)
+				if enabledLog is not None:
+					py_correlator.openLogFile(enabledLog[1], enabledLog[2])
+				for at in affineTables:
+					if at[0] == eldDlg.GetSelectedAffine():
+						py_correlator.openAttributeFile(at[1], 0)
+						break
+				for st in spliceTables:
+					if st[0] == eldDlg.GetSelectedSplice():
+						py_correlator.openSpliceFile(st[1])
+						break
+				# brgtodo: log file selection?
+				outFile += "." + formatStr.lower()
+				py_correlator.openAttributeFile(eldFile, 1)
+				py_correlator.setDelimiter(FormatDict[formatStr])
+				py_correlator.saveAttributeFile(outFile, 4)
+				py_correlator.setDelimiter(FormatDict["Text"])
 
+		return doExport
+                
+	
 	# brg 9/9/2014: "Export" affine/splice/ELD etc - just copies internal file to selected location 
-	def OnEXPORT(self):
+	def OnExportSavedTable(self):
 		if self.selectedIdx != None :
-			#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
 			opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
-			ret = opendlg.ShowModal()
-			#path = opendlg.GetPath()
-			path = opendlg.GetDirectory()
-			filename = opendlg.GetFilename()
-			self.parent.Directory = path
-			opendlg.Destroy()
-			if ret == wx.ID_OK :
+			if opendlg.ShowModal() == wx.ID_OK:
+				path = opendlg.GetDirectory()
+				filename = opendlg.GetFilename()
+				self.parent.Directory = path
+				opendlg.Destroy()
+
 				selParentItem = self.tree.GetItemParent(self.selectedIdx)
 				siteItem = self.tree.GetItemParent(selParentItem)
-				title = self.tree.GetItemText(siteItem, 0)
-				holeData = self.GetAllSiteHoles(siteItem)
+				#title = self.tree.GetItemText(siteItem, 0)
 
 				source = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + self.tree.GetItemText(self.selectedIdx, 8)
 				outfile = filename + ".dat"
@@ -1842,28 +1918,21 @@ class DataFrame(wx.Panel):
 				if selParentTitle == "Saved Tables" :
 					tableType = self.tree.GetItemText(self.selectedIdx, 1)
 					if tableType == "AFFINE" :
-						for hd in holeData:
-							py_correlator.openHoleFile(hd[0], -1, hd[1], hd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, hd[2])
-						py_correlator.openAttributeFile(source, 0)
-						py_correlator.setDelimiter(1)
-						py_correlator.saveAttributeFile(path + '/' + outfile, 1)
-						py_correlator.setDelimiter(0)
-						outfile = filename + ".affine.table"
-					elif tableType == "SPLICE" :
-						for hd in holeData:
-							py_correlator.openHoleFile(hd[0], -1, hd[1], hd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, hd[2])
-						affineTables = self.GetAffineTables(siteItem)
-						for at in affineTables:
-							if at[1]: # enabled is True
-								py_correlator.openAttributeFile(at[0], 0)
-								break
-						py_correlator.openSpliceFile(source)
-						py_correlator.setDelimiter(1)
-						py_correlator.saveAttributeFile(path + '/' + outfile, 2)
-						py_correlator.setDelimiter(0)
-						outfile = filename + ".splice.table"
+						formatDlg = dialog.ExportFormatDialog(self)
+						if formatDlg.ShowModal() == wx.ID_OK:
+							self.LoadAllHoles(siteItem)
+							outAffineFile = filename + "affine.table"
+							self.ExportAffineTable(source, path + '/' + outAffineFile, formatDlg.GetSelectedFormat())
+						else:
+							return
+					elif tableType == "SPLICE":
+						outSpliceFile = filename + ".splice.table"
+						if not self.ExportSpliceTable(source, path + '/' + outSpliceFile, siteItem):
+							return
 					elif tableType == "ELD" :
-						outfile = filename + ".eld.table"
+						outELDFile = filename + ".eld.table"
+						if not self.ExportELDTable(source, path + '/' + outELDFile, siteItem):
+							return
 				elif selParentItem == "Age Models" :
 					tableType = self.tree.GetItemText(self.selectedIdx, 1)
 					if tableType == "AGE/DEPTH" :
