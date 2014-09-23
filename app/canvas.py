@@ -8,6 +8,9 @@ platform_name = platform.uname()
 import wx 
 import wx.lib.sheet as sheet
 from wx.lib import plot
+
+import numpy
+
 from datetime import datetime
 import random, sys, os, re, time, ConfigParser, string
 
@@ -404,8 +407,9 @@ class DataCanvas(wxBufferedWindow):
 		self.drag = 0
 		self.selectedCore = -1
 		self.LogselectedCore = -1 
+		# brgtodo do we need both selectedTie and activeTie? 
 		self.selectedTie = -1 
-		self.activeTie = -1 
+		self.activeTie = -1
 		self.activeSPTie = -1 
 		self.activeSATie = -1 
 		self.activeCore = -1 
@@ -710,6 +714,10 @@ class DataCanvas(wxBufferedWindow):
 	def GetRulerUnitsFactor(self):
 		unitToFactorMap = {'m':1.0, 'cm':100.0, 'mm':1000.0}
 		return unitToFactorMap[self.rulerUnits]
+
+	# only affine for now
+	def GetCompositeTieCount(self):
+		 return len(self.TieData)
 
 	def OnSelectELDNote(self, event):
 		note_id = event.GetSelection()
@@ -2254,7 +2262,8 @@ class DataCanvas(wxBufferedWindow):
 					self.coefRange = 0
 				tempx = (x - startx) / self.coefRange + self.minData
 				tempx = round(tempx, 3)
-				dc.DrawText(str(tempx), x, self.startDepth - 15)
+				if self.drag == 0:
+					dc.DrawText(str(tempx), x, self.startDepth - 15)
 				break
 
 		section = self.parent.GetSectionAtDepth(coreInfo.hole, int(coreInfo.holeCore), type, ycoord)
@@ -2477,7 +2486,7 @@ class DataCanvas(wxBufferedWindow):
 			ycoord = ycoord * self.GetRulerUnitsFactor()
 			ycoord = round(ycoord, 3)
 			if self.MousePos[0] < self.splicerX :
-				if holeth != -1 :
+				if holeth != -1 and self.selectedTie < 0: # tie displays its depth, don't show mouse depth on drag
 					dc.DrawText(str(ycoord), self.WidthsControl[holeth], self.MousePos[1] - 5)
 				else :
 					dc.DrawText(str(ycoord), self.compositeX + 3, self.MousePos[1] - 5)
@@ -3003,6 +3012,7 @@ class DataCanvas(wxBufferedWindow):
 			y0 = 0
 			radius = self.tieDotSize / 2
 
+			fixedTieDepth = 0
 			for compTie in self.TieData: # draw composite ties
 				if compTie.fixed == 1:
 					dc.SetBrush(wx.Brush(self.colorDict['fixedTie']))
@@ -3025,7 +3035,15 @@ class DataCanvas(wxBufferedWindow):
 							dc.SetPen(wx.Pen(self.colorDict['shiftTie'], self.tieline_width, style=wx.DOT))
 
 						dc.DrawLine(x, y, x + self.holeWidth, y)
-						dc.DrawText(str(tempx), x - 45, y) 
+						
+						posStr = str(tempx)
+						if compTie.fixed == 1: # store fixed depth for shift calc on next go-around
+							fixedTieDepth = round(compTie.depth, 3)
+						else: # movable tie, add shift distance to info str
+							shiftDist =  fixedTieDepth - round(compTie.depth, 3)
+							signChar = '+' if shiftDist > 0 else '' 
+							posStr += ' (' + signChar + str(shiftDist) + ')'
+						dc.DrawText(posStr, x + 10, y + 10) 
 				x0 = x
 				y0 = y 
 
@@ -3582,10 +3600,7 @@ class DataCanvas(wxBufferedWindow):
 
 	def OnClearTies(self, mode) :
 		if mode == 0 : # composite
-			self.TieData = []
-			self.GuideCore = []
-			self.selectedTie = -1
-			self.parent.clearSend()
+			self.ClearCompositeTies()
 		elif mode == 1 : # splice
 			realties = len(self.RealSpliceTie)
 			curties = len(self.SpliceTieData)
@@ -3643,15 +3658,20 @@ class DataCanvas(wxBufferedWindow):
 
 			self.UpdateDrawing()
 
-
+	def ClearCompositeTies(self):
+		self.TieData = []
+		self.GuideCore = []
+		self.activeTie = -1
+		self.selectedTie = -1
+		self.parent.clearSend()
+		self.parent.compositePanel.UpdateUI()
+		
 	def OnTieSelectionCb(self, event) :
 		opId = event.GetId() 
 		self.activeTie = -1
 		self.showMenu = False
 		if opId == 1 : # Clear Tie
-			self.TieData = []
-			self.GuideCore = []
-			self.parent.clearSend()
+			self.ClearCompositeTies()
 		elif opId == 4: # undo to previous offset
 			py_correlator.undo(1, "X", 0)
 			self.parent.AffineChange = True
@@ -3667,7 +3687,6 @@ class DataCanvas(wxBufferedWindow):
 			#self.parent.UndoShiftSectionSend()
 			self.parent.UpdateData()
 			self.parent.UpdateStratData()
-			self.parent.compositePanel.OnButtonEnable(1, False)
 		elif opId == 5: # undo to offset of core above
 			if self.selectedTie >= 0 :
 				tie = self.TieData[self.selectedTie]
@@ -3686,7 +3705,6 @@ class DataCanvas(wxBufferedWindow):
 					self.AdjustDepthCore = []
 					self.parent.UpdateData()
 					self.parent.UpdateStratData()
-					self.parent.compositePanel.OnButtonEnable(1, False)
 		elif opId == 2 or opId == 3: # adjust this core and all below (2), adjust this core only (3)
 			if self.selectedTie >= 0 :
 				movableTie = self.TieData[self.selectedTie]
@@ -3708,8 +3726,6 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.UpdateStratData()
 
 					self.TieData = []
-					self.parent.compositePanel.OnButtonEnable(0, False)
-					self.parent.compositePanel.OnButtonEnable(1, True)
 					self.parent.compositePanel.UpdateGrowthPlot()
 
 					if opId == 3 : 
@@ -3733,12 +3749,11 @@ class DataCanvas(wxBufferedWindow):
 		self.selectedTie = -1
 		self.drag = 0 
 		self.UpdateDrawing()
+		self.parent.compositePanel.UpdateUI()
 
 	# opt = 0 (adjust this core only) or 1 (adjust this and all below)
 	# actionType = 0 (best correlation), 1 (current tie), 2 (given, aka value in "Depth Adjust" field)
 	def OnAdjustCore(self, opt, actionType, strOffset):
-		self.parent.compositePanel.OnButtonEnable(0, False)
-		self.parent.compositePanel.OnButtonEnable(1, True)
 		offset = float(strOffset)
 		if self.selectedLastTie < 0 :
 			self.selectedLastTie = len(self.TieData) - 1
@@ -3798,13 +3813,31 @@ class DataCanvas(wxBufferedWindow):
 				self.TieData = []
 
 			self.selectedTie = -1
+			self.activeTie = -1
 			self.GuideCore = []
 			self.drag = 0 
 			self.UpdateDrawing()
+			self.parent.compositePanel.UpdateUI()
 
+	def OnRemoveAffineShift(self, evt):
+		coreInfo = self.findCoreInfoByIndex(self.DrawData["MouseInfo"][0][0])
+		if coreInfo is not None:
+			py_correlator.undo(2, coreInfo.hole, int(coreInfo.holeCore))
+
+			self.parent.AffineChange = True
+			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
+
+			s = "Composite undo offsets the core above: hole " + coreInfo.hole + " core " + coreInfo.holeCore + ": " + str(datetime.today()) + "\n\n"
+			self.parent.logFileptr.write(s)
+			self.parent.UpdateData()
+			self.parent.UpdateStratData()
+			self.parent.UpdateSend()
+
+			self.AdjustDepthCore = []
+			self.parent.UpdateData()
 
 	def OnUndoCore(self, opt):
-		self.parent.compositePanel.OnButtonEnable(1, False)
+		#self.parent.compositePanel.OnButtonEnable(1, False)
 		if opt == 0 : # "Previous Offset"
 			py_correlator.undo(1, "X", 0)
 			self.parent.AffineChange = True
@@ -4394,6 +4427,8 @@ class DataCanvas(wxBufferedWindow):
 			for mouse in self.DrawData["MouseInfo"] :
 				if self.findCoreInfoByIndex(mouse[0]) != None:
 					popupMenu = wx.Menu()
+					popupMenu.Append(666, "&Remove affine shift")
+					wx.EVT_MENU(popupMenu, 666, self.OnRemoveAffineShift)
 					if self.parent.client != None :
 						popupMenu.Append(3, "&Show it on Corelyzer")
 						wx.EVT_MENU(popupMenu, 3, self.OnSetQTCb)
@@ -4761,7 +4796,59 @@ class DataCanvas(wxBufferedWindow):
 	def GetDataInfo(self, coreindex):
 		coreInfo = self.findCoreInfoByIndex(coreindex)
 		return (coreInfo.hole, int(coreInfo.holeCore), coreInfo.type, coreInfo.quality, coreInfo.holeCount)
+	
+	# Return dictionary keyed on hole name. Each value is a list of (core, mbsf, mcd, growthRate)
+	# tuples in core order. growthRate is based on all previous cores, i.e. the growth rate for
+	# core A5 is determined by shifts of A1-A4. Growth rate at topmost core is a default of 1.0.
+	def GetGrowthRateData(self):
+		coreDict = {}
+		for hole in self.HoleData:
+			holeName = hole[0][0][7]
+			if holeName not in coreDict:
+				coreDict[holeName] = {}
 
+			# gather core data: core sets may be inconsistent for different datatypes in same hole
+			mbsfVals = []
+			mcdVals = []
+			for core in hole[0][1:len(hole[0])]:
+				coreName = core[0]
+				if coreName not in coreDict[holeName]:
+					mcd = core[9][0] # first element in section depth list
+					mcdVals.append(mcd)
+					mbsf = mcd - core[5] # offset
+					mbsfVals.append(mbsf)
+					numVals = len(mbsfVals)
+					if numVals == 1:
+						growthRate = 1.0
+					elif numVals == 2:
+						 # insufficient points to compute rate at second core, use mcd of top core
+						 # brgtodo - better default for growth rate here?
+						growthRate = mcdVals[0]
+					else:
+						lastElt = numVals - 1
+						rawGrowthTuple = numpy.polyfit(mbsfVals[:lastElt], mcdVals[:lastElt], 1)
+						growthRate = round(rawGrowthTuple[0], 3)
+					coreDict[holeName][coreName] = (coreName, mbsf, mcd, growthRate)
+		
+		# create lists of core tuples sorted by core name, add to outCoreDict (keyed on hole name)
+		outCoreDict = {}
+		for hole in coreDict:
+			sortedList = []
+			sortedCoreTuples = sorted(coreDict[hole], key=int)
+			for key in sortedCoreTuples:
+				sortedList.append(coreDict[hole][key])
+			outCoreDict[hole] = sortedList
+				
+		#print "outCoreDict = {}".format(outCoreDict)
+		return outCoreDict
+	
+	def GetFixedCompositeTie(self):
+		if len(self.TieData) >= 1:
+			return self.TieData[0]
+		
+	def GetFixedCompositeTieCore(self):
+		if len(self.TieData) >= 1:
+			return self.findCoreInfoByIndex(self.TieData[0].core)
 
 	def CanSpliceCore(self, prevCore, coreToSplice):
 		result = False
@@ -5511,7 +5598,6 @@ class DataCanvas(wxBufferedWindow):
 							self.TieData.append(newTie) 
 
 							# if we now have two ties, set up guide core
-							self.parent.compositePanel.OnButtonEnable(2, True)
 							length = len(self.TieData) % 2
 							if length == 0 : 
 								self.activeTie = 1
@@ -5531,13 +5617,16 @@ class DataCanvas(wxBufferedWindow):
 								ciA = self.findCoreInfoByIndex(self.guideCore)
 								ciB = self.findCoreInfoByIndex(movableTie.core)
 								if ciA != None and ciA.hole == ciB.hole:
-									self.TieData.remove(l) # brgtodo 5/1/2014: not getting hit but l doesn't seem like it'll be valid...
+									# can't create composite tie on same hole, remove movable tie and notify user
+									del self.TieData[-1]
+									self.parent.OnShowMessage("Error", "Composite ties cannot be made in the same hole", 1)
+									return
 								else :
 									self.activeCore = self.selectedCore
 									self.OnUpdateGuideData(self.selectedCore, shiftx, shift)
 									self.parent.OnUpdateDepth(shift)
 									self.parent.TieUpdateSend(ciA.leg, ciA.site, ciA.hole, int(ciA.holeCore), ciB.hole, int(ciB.holeCore), y1, shift)
-									self.parent.compositePanel.OnButtonEnable(0, True)
+									#self.parent.compositePanel.UpdateUI() #OnButtonEnable(0, True)
 									flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
 									if flag == 1:
 										testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
@@ -5555,7 +5644,7 @@ class DataCanvas(wxBufferedWindow):
 													self.parent.OnAddGraph(testret, y2, y1)
 
 										self.parent.OnUpdateGraph()
-
+						self.parent.compositePanel.UpdateUI() # update for first or second tie	
 				elif len(self.LogTieData) == 0: # create splice tie
 					if (len(self.RealSpliceTie) == 0 and len(self.SpliceTieData) < 2) or(len(self.RealSpliceTie) >= 2 and len(self.SpliceTieData) < 4) :
 						fixed = 0 

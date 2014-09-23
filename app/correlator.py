@@ -2754,12 +2754,9 @@ class MainFrame(wx.Frame):
 		if self.config.has_option("applications", "shiftclue"):
 			str_temp = self.config.get("applications", "shiftclue")
 			if len(str_temp) > 0 :
-				if str_temp == "1" :
-					self.Window.ShiftClue = True 
-					self.compositePanel.showClue.SetValue(True)
-				else :
-					self.Window.ShiftClue = False 
-					self.compositePanel.showClue.SetValue(False)
+				showArrows = True if str_temp == '1' else False
+				self.Window.ShiftClue = showArrows 
+				self.optPanel.showAffineShiftArrows.SetValue(showArrows)
 
 
 		if self.config.has_option("applications", "scrollsize"):
