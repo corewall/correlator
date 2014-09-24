@@ -108,7 +108,8 @@ public:
 	int deleteTie( int tieindex );
 	
 	int undo(void);
-	int undoAbove(char* hole, int coreid);
+	int undoAffineShift(char * hole, const int coreid);
+	//int undoAbove(char* hole, int coreid);
 
 	void update( void );
 

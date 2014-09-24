@@ -1023,7 +1023,8 @@ static PyObject* undo(PyObject *self, PyObject *args)
 			correlator.undo();
 		} else if (flag == 2)
 		{
-			correlator.undoAbove(hole, coreid);
+			//correlator.undoAbove(hole, coreid);
+			correlator.undoAffineShift(hole, coreid);
 		}
 	}
 

@@ -521,9 +521,10 @@ int Correlator::undo(void)
 
 }
 
-int Correlator::undoAbove(char* hole, int coreid)
+// 9/23/2014 brgtodo: add ability to undo shift for core and all above?
+int Correlator::undoAffineShift(char* hole, const int coreid)
 {
-	if(m_dataptr == NULL) return -1;
+	if (m_dataptr == NULL) return -1;
 
 	//cout << "undo above ----------- " << hole << " " << coreid << endl;
 	
@@ -534,37 +535,36 @@ int Correlator::undoAbove(char* hole, int coreid)
 	Core* coreptr;
 	Value* value = NULL;
 	char* hole_ptr;
-	for(int i=0; i < numHoles; i++)
+	for (int i=0; i < numHoles; i++)
 	{
-			holeptr = m_dataptr->getHole(i);
-			hole_ptr = (char*) holeptr->getName();
-			if(strcmp(hole_ptr, hole) == 0)
+		holeptr = m_dataptr->getHole(i);
+		hole_ptr = (char*) holeptr->getName();
+		if (strcmp(hole_ptr, hole) == 0)
+		{
+			numCores =  holeptr->getNumOfCores();
+			for (int j=0; j < numCores; j++)
 			{
-					numCores =  holeptr->getNumOfCores();
-					for(int j=0; j < numCores; j++)
-					{
-							coreptr = holeptr->getCore(j);
-							if(coreptr == NULL) continue;
-							if(coreptr->getNumber() < coreid)
-							{
-									//cout << "undo -- " << coreptr->getNumber() << endl;
-									value = coreptr->getValue(0);
-									coreptr->disableTies();
-									coreptr->setDepthOffset(0, value->getType(), true);
-							}
-					}
+				coreptr = holeptr->getCore(j);
+				if (coreptr == NULL) continue;
+				if (coreptr->getNumber() == coreid)
+				{
+					//cout << "undo -- " << coreptr->getNumber() << endl;
+					value = coreptr->getValue(0);
+					coreptr->disableTies();
+					coreptr->setDepthOffset(0, value->getType(), true);
+				}
 			}
+		}
 	}
 
 
 #ifdef DEBUG
 	cout << "[Composite] Undo Above " << hole << coreid << endl;
 #endif
-	m_dataptr->update();
+	m_dataptr->update(); // brgtodo 9/23/2014: WHY DOUBLE UPDATE???
 	m_dataptr->update();
 
 	return 1;
-
 }
 
 double Correlator::getDataAtDepth( char* hole, int coreid, double depth, int coretype, char* annot )
