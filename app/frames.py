@@ -628,7 +628,7 @@ class CompositePanel():
 		choiceMethodPanel = wx.Panel(tiePanel, -1)
 		cmpSizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.coreChoice = wx.Choice(choiceMethodPanel, -1, size=(75,-1), choices=("core", "core + all below"))
-		self.tieMethod = wx.Choice(choiceMethodPanel, -1, choices=("to best correlation", "to tie", "to given..."))
+		self.tieMethod = wx.Choice(choiceMethodPanel, -1, choices=("to best correlation", "to tie")) #, "to given..."))
 		cmpSizer.Add(wx.StaticText(choiceMethodPanel, -1, "Shift"), 0, wx.RIGHT | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
 		cmpSizer.Add(self.coreChoice, 0, wx.RIGHT | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
 		cmpSizer.Add(self.tieMethod, 0, wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
@@ -638,7 +638,7 @@ class CompositePanel():
 		tieButtonPanel = wx.Panel(tiePanel, -1)
 		#tieButtonPanel.SetBackgroundColour(wx.GREEN)
 		self.clearButton = wx.Button(tieButtonPanel, -1, "Clear Tie")
-		self.applyButton = wx.Button(tieButtonPanel, -1, "Shift to Tie")
+		self.applyButton = wx.Button(tieButtonPanel, -1, "Adjust Depth")
 		tbpSz = wx.BoxSizer(wx.HORIZONTAL)
 		tbpSz.Add(self.clearButton, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 3)
 		tbpSz.Add(self.applyButton, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 3)
@@ -665,8 +665,8 @@ class CompositePanel():
 		sspSz.Add(wx.StaticText(suggShiftPanel, -1, "m"), 0, wx.ALIGN_CENTER_VERTICAL)
 		suggShiftPanel.SetSizer(sspSz)
 
-		setStaticBox = wx.StaticBox(setPanel, -1, "SET (help text)")
-		ssbSz = wx.StaticBoxSizer(setStaticBox, orient=wx.VERTICAL)
+		self.setStaticBox = wx.StaticBox(setPanel, -1, "SET (help text)")
+		ssbSz = wx.StaticBoxSizer(self.setStaticBox, orient=wx.VERTICAL)
 		# hard-code width to force StaticBox to full width of Composite panel - can't find any other way to do this
 		self.growthRateText = wx.StaticText(setPanel, -1, "[Shift-click a core]", size=(260,-1))	
 		ssbSz.Add(self.growthRateText, 0, wx.BOTTOM, 5)
@@ -720,7 +720,7 @@ class CompositePanel():
 		elif tieCount == 1:
 			self.tieStaticBox.SetLabel("TIE (Shift-click the core to be shifted)")
 		elif tieCount == 2:
-			self.tieStaticBox.SetLabel("TIE (Right-click green tie for menu or use UI below)")
+			self.tieStaticBox.SetLabel("TIE (Drag green tie; apply with right-click or buttons)")
 			
 	def UpdateGrowthRateText(self, hole=None, core=None, growthRate=None):
 		if hole is None: # set to default
@@ -748,7 +748,14 @@ class CompositePanel():
 		else:
 			self.UpdateGrowthRateText(None) # set to default
 			self.UpdateShiftText("")
-			pass
+		self.UpdateSetHelpText()
+	
+	def UpdateSetHelpText(self):
+		tieCount = self.parent.Window.GetCompositeTieCount()
+		if tieCount == 0:
+			self.setStaticBox.SetLabel("SET (Shift-click a core to be shifted)")
+		else:
+			self.setStaticBox.SetLabel("SET (Adjust shift (optional); click Apply Shift)")
 	
 	def OnInitUI(self):
 		self.UpdateUI()

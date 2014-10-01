@@ -82,6 +82,23 @@
 #define USERDEFINEDTYPE				37
 #define INTERPOLATED_VALUE			38
 
+// Old (prior to 1.9) Affine Types
+// 'Y' describes cores shifted a different distance than the core above.
+// Thus 'N' describes cores that are either unshifted, or shifted by the
+// 'this and all below' method (all cores below the selected
+// core have the same shift distance as the core above)
+#define AFFINE_N					0
+#define AFFINE_Y					1
+
+// IODP Affine/Composite types
+#define AFFINE_TIE					1
+#define AFFINE_SET					2
+#define AFFINE_ANCHOR				3
+
+#define AFFINE_TIE_STR				"TIE"
+#define AFFINE_SET_STR				"SET"
+#define AFFINE_ANCHOR_STR			"ANCHOR"
+
 // Strat types
 #define DIATOMS						0
 #define RADIOLARIA					1

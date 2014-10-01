@@ -55,6 +55,7 @@ public:
 	
 	void    setType( int type );
 	int     getType( void );
+	std::string getTypeStr();
 
 public:
 	Core*	createCore( int index );

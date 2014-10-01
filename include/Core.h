@@ -25,6 +25,7 @@
 #ifndef _CORE_CORE_H_
 #define _CORE_CORE_H_
 
+#include <string>
 #include <vector>
 #include <CoreObject.h>
 
@@ -162,7 +163,10 @@ public:
 	Value*	getLogValue( void );
 	
 	void	setQuality( int quality );
-	int		getQuality( void );	
+	int		getQuality( void );
+
+	void setComment(const std::string &comment);
+	std::string getComment();
 
 protected:
 	std::vector<Value*> m_values;
@@ -188,13 +192,14 @@ protected:
 	double m_mudline;
 	
 	Value* m_logValueptr;
+
 	//???
 	//coreptr->cum_dep_offset=0.0;
 	//coreptr->did_offset=False;
 			
 private:
 	int	m_number;
-	
+	std::string m_comment;
 };
 
 #endif

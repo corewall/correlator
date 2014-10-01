@@ -907,6 +907,7 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 	return 1.0f;
 }
 
+// SET affine shift
 double Correlator::project(char *hole, int core, int coretype, char *annot, float offset)
 {
 	cout << "Correlator::project offset of " << offset << endl;
@@ -922,6 +923,40 @@ double Correlator::project(char *hole, int core, int coretype, char *annot, floa
 	{
 		c->disableTies();
 		c->setDepthOffset(offset, val->getType(), true);
+		c->setAffineType(AFFINE_SET);
+		m_dataptr->update();
+
+		// apply shift to cores of other datatypes in the same hole
+		const int numHoles = m_dataptr->getNumOfHoles();
+		for (int holeIdx = 0; holeIdx < numHoles; holeIdx++)
+		{
+			Hole *holeptr = m_dataptr->getHole(holeIdx);
+			if (holeptr == NULL) continue;
+			if (strcmp(hole, holeptr->getName()) == 0)
+			{
+				if (coretype == USERDEFINEDTYPE) {
+					if (strcmp(annot, holeptr->getAnnotation()) == 0)
+						continue;
+				} else if (holeptr->getType() == coretype) {
+					continue;
+				}
+
+				const int numCores = holeptr->getNumOfCores();
+				for (int coreIdx = 0; coreIdx < numCores; coreIdx++)
+				{
+					Core *coreptr = holeptr->getCore(coreIdx);
+					if (coreptr == NULL) continue;
+					if (coreptr->getNumber() == core)
+					{
+						Value *topvalue = coreptr->getValue(0);
+						if (topvalue == NULL) continue;
+						coreptr->disableTies();
+						coreptr->setDepthOffset(offset, topvalue->getType(), true);
+					}
+				}
+			}
+		}
+
 		m_dataptr->update();
 	}
 

@@ -25,12 +25,10 @@
 // Direct questions, comments etc about Correlater Lib to hjhur@evl.uic.edu
 //
 
+#include <iostream>
+
 #include <Hole.h>
 #include <Actor.h>
-
-#ifdef DEBUG
-#include <iostream>
-#endif
 
 using namespace std;
 
@@ -405,7 +403,33 @@ void Hole::setType( int type )
 
 int Hole::getType( void )
 {
-        return m_type;
+	return m_type;
+}
+
+string Hole::getTypeStr()
+{
+	string typeStr;
+	if (m_type == GRA)
+		typeStr = "Bulk Density(GRA)";
+	else if (m_type == PWAVE)
+		typeStr = "Pwave";
+	else if (m_type == SUSCEPTIBILITY)
+		typeStr = "Susceptibility";
+	else if (m_type == NATURALGAMMA)
+		typeStr = "Natural Gamma";
+	else if (m_type == REFLECTANCE)
+		typeStr = "Reflectance";
+	else if (m_type == OTHERTYPE || m_type == USERDEFINEDTYPE)
+		typeStr = getAnnotation();
+	else if (m_type == SPLICE)
+		typeStr = "Spliced Records";
+	else if (m_type == SPLICED_RECORD)
+		typeStr = "Splice Record";
+	else if (m_type == ELD_RECORD)
+		typeStr = "ELD Record";
+	else
+		cout << "Unknown hole type [" << m_type << "], can't get type string" << endl;
+	return typeStr;
 }
 
 Core* Hole::createCore( int index )

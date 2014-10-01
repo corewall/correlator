@@ -4359,18 +4359,19 @@ class DataCanvas(wxBufferedWindow):
 				self.showMenu = True
 				popupMenu = wx.Menu()
 				# create Menu
-				popupMenu.Append(1, "&Clear")
-				wx.EVT_MENU(popupMenu, 1, self.OnTieSelectionCb)
-				if data.fixed == 0 : # move tie	
-					popupMenu.Append(3, "&Adjust depth with this core and all below")
-					wx.EVT_MENU(popupMenu, 3, self.OnTieSelectionCb)
+				if data.fixed == 0 : # movable tie	
 					popupMenu.Append(2, "&Adjust depth with this core only")
 					wx.EVT_MENU(popupMenu, 2, self.OnTieSelectionCb)
+					popupMenu.Append(3, "&Adjust depth with this core and all below")
+					wx.EVT_MENU(popupMenu, 3, self.OnTieSelectionCb)
 
-					popupMenu.Append(4, "&Undo to previous offset")
-					wx.EVT_MENU(popupMenu, 4, self.OnTieSelectionCb)
-					popupMenu.Append(5, "&Undo to offset of core above")
-					wx.EVT_MENU(popupMenu, 5, self.OnTieSelectionCb)
+#					popupMenu.Append(4, "&Undo to previous offset")
+#					wx.EVT_MENU(popupMenu, 4, self.OnTieSelectionCb)
+#					popupMenu.Append(5, "&Undo to offset of core above")
+#					wx.EVT_MENU(popupMenu, 5, self.OnTieSelectionCb)
+
+				popupMenu.Append(1, "&Clear")
+				wx.EVT_MENU(popupMenu, 1, self.OnTieSelectionCb)
 
 				self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
 				return

@@ -207,7 +207,7 @@ Data* DataManager::load( const char* filename, Data* dataptr, char* annotation )
 	} 
 	
 	// todo : consider...
-	string fullpath(filename);	
+	string fullpath(filename);
 	FILE *fptr= fopen(filename,"r+");
 	if(fptr == NULL) 
 	{
@@ -229,6 +229,9 @@ Data* DataManager::load( const char* filename, Data* dataptr, char* annotation )
 			return NULL;
 		}	
 	}
+
+	string filename2(filename);
+	filename2 += "_IODP";
 
 	int iscreatedHere = 0;	
 	DataInfo* info = NULL;
@@ -267,10 +270,21 @@ Data* DataManager::load( const char* filename, Data* dataptr, char* annotation )
 		ret = ReadCoreFormat(fptr, dataptr, m_coretype, annotation);	
 		break;
 	case AFFINE_TABLE:
-		ret = ReadAffineTable(fptr, dataptr);
+	{
+		//ret = ReadAffineTable(fptr, dataptr);
+		FILE *fptr2 = fopen(filename2.c_str(), "r+");
+		if (fptr2 == NULL) {
+			cout << "No IODP affine table, reading old style" << endl;
+			ret = ReadAffineTable(fptr, dataptr);
+		} else {
+			cout << "IODP affine table found, reading" << endl;
+			ret = ReadIODPAffineTable(fptr2, dataptr);
+		}
         break;
-	case SPLICE_TABLE:		
-		ret = ReadSpliceTable(fptr, dataptr);	
+	}
+	case SPLICE_TABLE:
+		cout << "DataManager::load -> ReadSpliceTable()" << endl;
+		ret = ReadSpliceTable(fptr, dataptr);
 		break;
 	case EQLOGDEPTH_TABLE:
 		if(info->m_appliedAffineFilename.length() > 0) 
@@ -338,39 +352,45 @@ Data* DataManager::load( const char* filename, Data* dataptr, char* annotation )
 		case ODPOTHER5:
 		case JANUSCLEAN:
 		case JANUSORIG:
-			{
-				m_files += filename;
-				int valideflag = dataptr->validate();
+		{
+			m_files += filename;
+			int valideflag = dataptr->validate();
 
 #ifdef DEBUG
-				if(valideflag == 1) 
-				{
-					cout << "[DataManager] successfully loaded : " << fullpath  << " : data are VALID" << endl;
-				} else 
-				{
-					cout << "[DataManager] successfully loaded : " << fullpath  << " : BUT data are NOT VALID" << endl;
-				} 
+			if(valideflag == 1)
+			{
+				cout << "[DataManager] successfully loaded : " << fullpath  << " : data are VALID" << endl;
+			} else
+			{
+				cout << "[DataManager] successfully loaded : " << fullpath  << " : BUT data are NOT VALID" << endl;
+			}
 #endif
-				info->m_coreDataFormat.push_back(format);
-				info->m_coreDataType.push_back(m_coretype);
-				info->m_coreDataFiles.push_back(string(fullpath));
-				
-				if(info->m_appliedAffineFilename != "")
+			info->m_coreDataFormat.push_back(format);
+			info->m_coreDataType.push_back(m_coretype);
+			info->m_coreDataFiles.push_back(string(fullpath));
+
+			if(info->m_appliedAffineFilename != "")
+			{
+				dataptr->init(ALL_TIE);
+				dataptr->update();
+				fptr= fopen(info->m_appliedAffineFilename.c_str(),"r+");
+				if(fptr != NULL)
 				{
-						dataptr->init(ALL_TIE);
-						dataptr->update();
-						fptr= fopen(info->m_appliedAffineFilename.c_str(),"r+");
-						if(fptr != NULL) 
-						{
-							ReadAffineTable(fptr, dataptr);
-						}
-						dataptr->update();
-						fclose(fptr);
+					//ReadAffineTable(fptr, dataptr);
+					FILE *fptr2 = fopen(filename2.c_str(), "r+");
+					if (fptr2 == NULL) {
+						cout << "No IODP affine table, reading old style" << endl;
+						ret = ReadAffineTable(fptr, dataptr);
+					} else {
+						cout << "IODP affine table found, reading" << endl;
+						ret = ReadIODPAffineTable(fptr2, dataptr);
+					}
 				}
-				
-				
+				dataptr->update();
+				fclose(fptr);
 			}
 			break;
+		}
 		case AFFINE_TABLE:
 				m_files += filename;		
 				info->m_appliedAffineFilename = fullpath;
@@ -659,8 +679,12 @@ int	DataManager::save( char* filename, Data* dataptr, char* affinefile )
 int	DataManager::save( char* filename, Data* dataptr, int format )
 {
 	if(dataptr == NULL || filename == NULL) return -1;
-	string fullpath(filename);	
-	FILE *fptr= fopen(filename,"w+");
+	string fullpath(filename);
+	FILE *fptr = fopen(filename,"w+");
+
+	string filename2(filename);
+	filename2 += "_IODP";
+	FILE *fptr2 = fopen(filename2.c_str(), "w+");
 	if(fptr == NULL) 
 	{
 		return -1;
@@ -689,12 +713,13 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 			} else 
 			{
 				ret = WriteAffineTable(fptr, dataptr);
+				WriteIODPAffineTable(fptr2, dataptr);
 			}
 		}
         break;
 	case SPLICE_TABLE:
 		{
-			int pos = fullpath.find(".xml");
+			int pos = fullpath.find(".xml"); // brgtodo unused
 			DataInfo* info = NULL;
 			//cout << " m_dataList = " << m_dataList.size() << endl;
 			if(m_dataList.size() > 0)
@@ -763,6 +788,7 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 	}
 	
 	fclose(fptr);
+	fclose(fptr2);
 	return ret;
 }
 

@@ -2188,6 +2188,9 @@ class DataFrame(wx.Panel):
 					filename = self.parent.DBPath + 'db/' + title + '/' + self.tree.GetItemText(selectItem, 8)
 					#  --- not to delete
 					os.system('rm \"'+ filename + '\"')
+					if "affine" in filename:
+						iodpFilename = filename + "_IODP"
+						os.system('rm \"' + iodpFilename + '\"')
 					self.parent.logFileptr.write("Delete " + filename + "\n\n")
 			else :
 				type = self.tree.GetItemText(selectItem, 0)

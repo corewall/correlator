@@ -130,11 +130,35 @@ static void makeDelimString(const string format, string &outStr, ...)
 	outStr = ss.str();
 }
 
-
-
-
 Tie* findTie( Data* dataptr, int order );
 Strat* findStrat( Data* dataptr, int order );
+
+// separate method for tokenizing internal affine/splice files, which are
+// delimited by " \t" for reasons I still don't understand.
+int tokenizeLine(char *lineStr, vector<string> &tokens) {
+	bool done = false;
+	int pos = 0;
+	const string line(lineStr);
+	while (!done) {
+		string token;
+		//cout << "search string: " << line.substr(pos) << endl;
+		int delimPos = line.find(" \t", pos);
+		if (delimPos != string::npos) {
+			token = line.substr(pos, delimPos - pos);
+			tokens.push_back(token);
+			pos = delimPos + 2; // skip past delimiter
+		} else { // last token
+			delimPos = line.find("\n", pos);
+			if (delimPos != string::npos) {
+				token = line.substr(pos, delimPos - pos);
+				tokens.push_back(token);
+			}
+			done = true;
+		}
+		//cout << "#" << token << "#" << endl;
+	}
+	return 1;
+}
 
 int getToken(FILE *fp, char *token)
 {
@@ -249,40 +273,54 @@ int getToken(char *str, char *token, char **buf)
 	return strlen(token);
 }
 
-int toupper(char *str)
+void toupper(string &str)
 {
-	int len = strlen(str);
+//	cout << "original string = " << str << endl;
+	for (int i = 0; i < str.size(); i++) {
+		char c = str[i];
+		str[i] = ::toupper(c);
+	}
+	//cout << "uppercased string = " << str << endl;
+	return;
+}
 
+void tolower(string &str)
+{
+//	cout << "original string = " << str << endl;
+	for (int i = 0; i < str.size(); i++) {
+		char c = str[i];
+		str[i] = ::tolower(c);
+	}
+	//cout << "uppercased string = " << str << endl;
+	return;
+}
+
+void toupper(char *str)
+{
+	const int len = strlen(str);
 	for (int i=0; i<len; i++) {
 		str[i] = ::toupper(str[i]);
 	}
-
-	return 0;
+	return;
 }
 
-int tolower(char *str)
+void tolower(char *str)
 {
-	int len = strlen(str);
-
+	const int len = strlen(str);
 	for (int i=0; i<len; i++) {
 		str[i] = ::tolower(str[i]);
 	}
-
-	return 0;
+	return;
 }
-
 
 int FindFormat(const char* filename, FILE *fptr)
 {
 	string strfile(filename);
-	
-	
 	int pos = strfile.find(".xml");
 	if(pos != string::npos) 
 	{
 		return XML_FILE;
 	}
-
 	
 	pos = strfile.find(".affine.table");
 	if(pos != string::npos) 
@@ -787,6 +825,135 @@ int ReadCoreFormat(FILE *fptr, Data* dataptr, int datatype, char* annotation)
 }
    
 
+int ReadIODPAffineTable(FILE *fptr, Data* dataptr)
+{
+	if(dataptr == NULL) return 0;
+
+	char line[MAX_LINE];
+	memset(line, 0, MAX_LINE);
+
+	char value_type;
+	int nholeA, coreidA, numHoles;
+	char* holeA;
+
+	while(fgets(line, MAX_LINE, fptr)!=NULL)
+	{
+		vector<string> tokens;
+		tokenizeLine(line, tokens);
+		int tokenIndex = 0;
+
+		string token = tokens[tokenIndex++];
+		if (token[0] == '#') // skip comment line
+			continue;
+
+		// ensure file site matches loaded holes' site (IODP format excludes leg)
+		if (strcmp(dataptr->getSite(), token.c_str()) != 0)
+		{
+			cout << "site name [" << token << "] does not match loaded site [" << dataptr->getSite() << "], bailing" << endl;
+			continue;
+		}
+
+		token = tokens[tokenIndex++];
+		toupper(token);
+		Hole *newHole = dataptr->getHole((char *)token.c_str()); // finds first hole whose name matches, whatever its data type
+		if (newHole == NULL)
+		{
+			cout << "hole name [" << token << "] does not match loaded any holes in site [" << dataptr->getSite() << "], bailing" << endl;
+			token_num = 0;
+			continue;
+		}
+		holeA = (char*) newHole->getName();
+		nholeA = dataptr->getNumOfHoles(holeA); // count all holes (any data type) whose name matches holeA
+
+		// core number
+		token = tokens[tokenIndex++];
+		Core *newCore = newHole->getCoreByNo(atoi(token.c_str()));
+		if (newCore == NULL)
+		{
+			cout << "core number [" << token << "] not found in hole [" << newHole->getName() << "], bailing" << endl;
+			continue;
+		}
+		coreidA = newCore->getNumber();
+
+		token = tokens[tokenIndex++];
+		toupper(token);
+		value_type = token[0];
+
+		token = tokens[tokenIndex++];
+		const double mbsfDepth = atof(token.c_str()); // CSF in IODP terms
+
+		token = tokens[tokenIndex++];
+		const double mcdDepth = atof(token.c_str()); // CCSF in IODP terms
+
+		token = tokens[tokenIndex++];
+		const double cumOffset = atof(token.c_str()); // cumulative offset
+
+		token = tokens[tokenIndex++];
+		const double diffOffset = atof(token.c_str()); // differential offset
+
+		token = tokens[tokenIndex++];
+		const double growthRate = atof(token.c_str()); // growth rate
+
+		token = tokens[tokenIndex++];
+		int shiftType = -1;
+		if (strcmp(token.c_str(), AFFINE_TIE_STR) == 0)
+			shiftType = AFFINE_TIE;
+		else if (strcmp(token.c_str(), AFFINE_SET_STR) == 0)
+			shiftType = AFFINE_SET;
+		else if (strcmp(token.c_str(), AFFINE_ANCHOR_STR) == 0)
+			shiftType = AFFINE_ANCHOR;
+		else {
+			cout << "Unknown affine shift type [" << token << "], skipping" << endl;
+			continue;
+		}
+
+		token = tokens[tokenIndex++]; // data type used - no internal use, skip
+		token = tokens[tokenIndex++];
+		const string qualityComment = token;
+
+		Value *newValue = newCore->getValue(0);
+		if (newValue)
+			value_type = newValue->getType();
+
+		const bool fromFile = true;
+		const bool applied = (shiftType != AFFINE_ANCHOR);
+		newCore->setDepthOffset(diffOffset, value_type, applied, fromFile);
+		newCore->setAffineType(shiftType);
+		newCore->setComment(qualityComment);
+
+		numHoles = dataptr->getNumOfHoles();
+
+		// affine values have been applied to the hole we found above, whatever its data type.
+		// Now do the same for all *other* holes with that name, but with other data types.
+		for (int i=1; i < nholeA; i++)
+		{
+			int count = 0;
+			for (int j=0; j < numHoles; j++)
+			{
+				newHole = dataptr->getHole(j);
+				char *temp_hole_name = (char*) newHole->getName();
+				if (strcmp(temp_hole_name,holeA) == 0)
+				{
+					if (count == i)
+					{
+						newCore = newHole->getCoreByNo(coreidA);
+						if (newCore)
+						{
+							newCore->setDepthOffset(diffOffset, value_type, applied, fromFile);
+							newCore->setAffineType(shiftType);
+							newCore->setComment(qualityComment);
+						}
+						break;
+					}
+					count++;
+				}
+			}
+		}
+	}
+
+	return 1;
+}
+
 int ReadAffineTable(FILE *fptr, Data* dataptr)
 {
 	if(dataptr == NULL) return 0;
@@ -799,7 +966,7 @@ int ReadAffineTable(FILE *fptr, Data* dataptr)
 	
 	Hole* newHole = NULL;
 	Core* newCore = NULL;
-	Value* newValue = NULL;	
+	Value* newValue = NULL;
 	
 	double depth_offset;
 	char value_type;
@@ -896,7 +1063,7 @@ int ReadAffineTable(FILE *fptr, Data* dataptr)
 		// Now do the same for all *other* holes with that name, but with other data types.
 		for(int i=1; i < nholeA; i++)
 		{
-			count =0;
+			count = 0;
 			for(int j=0; j < numHoles; j++)
 			{
 				newHole = dataptr->getHole(j);
@@ -2467,6 +2634,81 @@ int ReadLog( FILE *fptr, char* label, Data* dataptr, int selectedColumn, string&
 	return 1;
 }
 
+int WriteIODPAffineTable(FILE *fptr, Data *dataptr)
+{
+	if (dataptr == NULL)
+		return 0;
+
+	// 154	926	A	1	H	0.00	N
+	// leg site hole# Core# type depth applied-or-not
+	const char* leg = dataptr->getLeg();
+	const char* site = dataptr->getSite();
+
+	fprintf (fptr, "# Site, Hole, Core, Core Type, Depth CSF (m), Depth CCSF (m), Cumulative Offset (m), Differential Offset (m), Growth Rate, Shift Type, Data Used, Quality Comment\n");
+	fprintf (fptr, "# Generated By Correlator\n");
+	std::vector<char*> holeNames;
+
+	const int holesize = dataptr->getNumOfHoles();
+	for (int i=0; i < holesize; i++)
+	{
+		// ensure we don't write the same hole's cores twice in cases
+		// where multiple data types are loaded
+		Hole *holeptr = dataptr->getHole(i);
+		char *holename = (char*) holeptr->getName();
+		bool holeWritten = false;
+		for (int nameIdx=0; nameIdx < holeNames.size(); nameIdx++)
+		{
+			if (strcmp(holeNames[nameIdx],holename) == 0)
+			{
+				holeWritten = true;
+				break;
+			}
+		}
+		if (holeWritten == true) continue;
+		holeNames.push_back(holename);
+
+		// write hole
+		double cumOffset = 0.0;
+		const int coresize = holeptr->getNumOfCores();
+		for (int coreIdx=0; coreIdx < coresize; coreIdx++)
+		{
+			Core *coreptr = holeptr->getCore(coreIdx);
+			if (coreptr == NULL) continue;
+			const int coreno = coreptr->getNumber();
+
+			Value *valueptr = coreptr->getValue(0);
+			const char coretype = (valueptr != NULL ? valueptr->getType() : 'X');
+			const double depthOffset = coreptr->getDepthOffset();
+			const double coreTop = valueptr->getDepth();
+			const double shiftedTop = coreTop + depthOffset;
+			const double diffOffset = cumOffset - depthOffset;
+			cumOffset += depthOffset;
+			const double growthRate = (coreIdx == 0 ? 0.0 : shiftedTop / coreTop);
+			string shiftType = AFFINE_TIE_STR;
+			if (coreTop == 0.0 && diffOffset == 0.0)
+				shiftType = AFFINE_ANCHOR_STR;
+			if (coreptr->getAffineType() == AFFINE_SET)
+				shiftType = AFFINE_SET_STR;
+			string dataType = holeptr->getTypeStr();
+			string comment = coreptr->getComment();
+
+#ifdef NEWOUTPUT
+			string dataLine;
+			const string format("ssicfffffsss");
+			makeDelimString(format, dataLine, site, holename, coreno, coretype, coreTop, shiftedTop, cumOffset, depthOffset, growthRate, shiftType.c_str(), dataType.c_str(), comment.c_str());
+			dataLine += '\n';
+			fprintf(fptr, "%s", dataLine.c_str());
+#else
+			//fprintf (fptr, "%s \t%s \t%c \t%d \t%c \t%f \t%c \t\t%f \t%f\n", leg, site, holename, coreno, coretype, depthoffset, status, range->mindepth, range->maxdepth);
+			fprintf (fptr, "%s \t%s \t%s \t%d \t%c \t%f \t%c\n", leg, site, holename, coreno, coretype, depthOffset, status);
+#endif // NEWOUTPUT
+			//prev_depthoffset = depthoffset;
+		}
+	}
+
+	return 1;
+}
+
 int WriteAffineTable( FILE *fptr, Data* dataptr )
 {
 	if(dataptr == NULL) return 0;
@@ -3420,23 +3662,8 @@ int WriteCoreData( char* filename, Data* dataptr )
 		fptr = fopen(extfullpath.c_str(),"w+");
 		if(fptr == NULL) continue;
 		fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo RawDepth Offset\n");
-		if (holeptr->getType() == GRA)
-			str_type = "Bulk Density(GRA)";
-		else if (holeptr->getType() == PWAVE)
-			str_type = "Pwave";
-		else if (holeptr->getType() == SUSCEPTIBILITY)
-			str_type = "Susceptibility";
-		else if (holeptr->getType() == NATURALGAMMA)
-			str_type = "Natural Gamma";
-		else if (holeptr->getType() == REFLECTANCE)
-			str_type = "Reflectance";	
-		else if (holeptr->getType() == OTHERTYPE)
-			str_type = holeptr->getAnnotation();	
-		else if (holeptr->getType() == SPLICE)
-			str_type = "Spliced Records";	
-		else if (holeptr->getType() == USERDEFINEDTYPE)
-			str_type = holeptr->getAnnotation();										
 
+		str_type = holeptr->getTypeStr();
 		fprintf (fptr, "# Data Type %s\n", str_type.c_str());
 		fprintf (fptr, "# Generated By Correlator\n");		
 
@@ -3504,28 +3731,8 @@ int WriteCoreHole( char* filename, Hole* holeptr )
 		fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo Annotation RawDepth Offset\n");
 	} else {
 		fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo RawDepth Offset\n");
-	
-		if (holeptr->getType() == GRA)
-			str_type = "Bulk Density(GRA)";
-		else if (holeptr->getType() == PWAVE)
-			str_type = "Pwave";
-		else if (holeptr->getType() == SUSCEPTIBILITY)
-			str_type = "Susceptibility";
-		else if (holeptr->getType() == NATURALGAMMA)
-			str_type = "Natural Gamma";
-		else if (holeptr->getType() == REFLECTANCE)
-			str_type = "Reflectance";	
-		else if (holeptr->getType() == OTHERTYPE)
-			str_type = holeptr->getAnnotation();	
-		else if (holeptr->getType() == ELD_RECORD) 
-		{
-#ifdef DEBUG		
-			std::cout << "[DEBUG] Type : ELD Record " << std::endl;
-#endif
-			str_type = "ELD Record";
-		} else if (holeptr->getType() == USERDEFINEDTYPE)
-			str_type = holeptr->getAnnotation();		
-	}
+		str_type = holeptr->getTypeStr();
+
 #ifdef DEBUG	
 	cout << "[DEBUG] Export Core : Data type == " << holeptr->getType() << endl;
 #endif	
@@ -3768,23 +3975,8 @@ int WriteAgeCoreData( char* agefilename, char* filename, Data* dataptr, int appl
 			fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(CCSF) Age(Ma)\n");
 		else 
 			fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(eld) Age(Ma)\n");
-		
-		if (holeptr->getType() == GRA)
-			str_type = "Bulk Density(GRA)";
-		else if (holeptr->getType() == PWAVE)
-			str_type = "Pwave";
-		else if (holeptr->getType() == SUSCEPTIBILITY)
-			str_type = "Susceptibility";
-		else if (holeptr->getType() == NATURALGAMMA)
-			str_type = "Natural Gamma";
-		else if (holeptr->getType() == REFLECTANCE)
-			str_type = "Reflectance";	
-		else if (holeptr->getType() == OTHERTYPE)
-			str_type = holeptr->getAnnotation();	
-		else if (holeptr->getType() == SPLICE)
-			str_type = "Spliced Records";	
-		else if (holeptr->getType() == USERDEFINEDTYPE)
-			str_type = holeptr->getAnnotation();										
+
+		str_type = holeptr->getTypeStr();
 
 		fprintf (fptr, "# Data Type %s\n", str_type.c_str());
 		fprintf (fptr, "# Generated By Correlator\n");		
@@ -3930,25 +4122,8 @@ int WriteAgeCoreHole( char* agefilename, char* filename, Hole* holeptr, int appl
 		fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(CCSF) Age(Ma)\n");
 	else 
 		fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data SedRate Depth(eld) Age(Ma)\n");
-	
-	if (holeptr->getType() == GRA)
-		str_type = "Bulk Density(GRA)";
-	else if (holeptr->getType() == PWAVE)
-		str_type = "Pwave";
-	else if (holeptr->getType() == SUSCEPTIBILITY)
-		str_type = "Susceptibility";
-	else if (holeptr->getType() == NATURALGAMMA)
-		str_type = "Natural Gamma";
-	else if (holeptr->getType() == REFLECTANCE)
-		str_type = "Reflectance";	
-	else if (holeptr->getType() == OTHERTYPE)
-		str_type = holeptr->getAnnotation();	
-	else if (holeptr->getType() == SPLICED_RECORD)
-		str_type = "Spliced Record";	
-	else if (holeptr->getType() == ELD_RECORD)
-		str_type = "ELD Record";
-	else if (holeptr->getType() == USERDEFINEDTYPE)
-		str_type = holeptr->getAnnotation();		
+
+	str_type = holeptr->getTypeStr();
 	
 #ifdef DEBUG	
 	cout << "[DEBUG] Export Core : Data type == " << holeptr->getType() << endl;
