@@ -3732,6 +3732,7 @@ int WriteCoreHole( char* filename, Hole* holeptr )
 	} else {
 		fprintf (fptr, "# Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo RawDepth Offset\n");
 		str_type = holeptr->getTypeStr();
+	}
 
 #ifdef DEBUG	
 	cout << "[DEBUG] Export Core : Data type == " << holeptr->getType() << endl;
