@@ -29,6 +29,7 @@
 
 #include <Hole.h>
 #include <Actor.h>
+#include <DataParser.h> // GetTypeStr()
 
 using namespace std;
 
@@ -408,28 +409,7 @@ int Hole::getType( void )
 
 string Hole::getTypeStr()
 {
-	string typeStr;
-	if (m_type == GRA)
-		typeStr = "Bulk Density(GRA)";
-	else if (m_type == PWAVE)
-		typeStr = "Pwave";
-	else if (m_type == SUSCEPTIBILITY)
-		typeStr = "Susceptibility";
-	else if (m_type == NATURALGAMMA)
-		typeStr = "Natural Gamma";
-	else if (m_type == REFLECTANCE)
-		typeStr = "Reflectance";
-	else if (m_type == OTHERTYPE || m_type == USERDEFINEDTYPE)
-		typeStr = getAnnotation();
-	else if (m_type == SPLICE)
-		typeStr = "Spliced Records";
-	else if (m_type == SPLICED_RECORD)
-		typeStr = "Splice Record";
-	else if (m_type == ELD_RECORD)
-		typeStr = "ELD Record";
-	else
-		cout << "Unknown hole type [" << m_type << "], can't get type string" << endl;
-	return typeStr;
+	return GetTypeStr(m_type, m_annotation.c_str());
 }
 
 Core* Hole::createCore( int index )

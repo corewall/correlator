@@ -29,12 +29,14 @@
 
 #include <CoreTypes.h>
 #include <Correlator.h>
+#include <DataParser.h> // GetTypeStr()
 
 #include <Tie.h>
 #include <Strat.h>
 #include <Value.h>
 
 #include <iostream>
+#include <string>
 
 using namespace std;
 
@@ -552,6 +554,7 @@ int Correlator::undoAffineShift(char* hole, const int coreid)
 					value = coreptr->getValue(0);
 					coreptr->disableTies();
 					coreptr->setDepthOffset(0, value->getType(), true);
+					coreptr->setAffineDatatype(string(""));
 				}
 			}
 		}
@@ -619,6 +622,9 @@ double Correlator::compositeBelow(char* holeA, int coreidA, double posA, char* h
 	double offset = posB - posA;
 	//cout << "offset = " << offset << ", ";
 	
+	const string typeStr = GetTypeStr(coretype, annot);
+	coreptrA->setAffineDatatype(typeStr);
+
 	Value* value = NULL;
 	/*for(int i=1; i < nholeA; i++)
 	{
@@ -671,6 +677,7 @@ double Correlator::compositeBelow(char* holeA, int coreidA, double posA, char* h
 				//if(coreptr->getNumOfTies(COMPOSITED_TIE) > 0)
 				//	cout << coreptr->getNumOfTies(COMPOSITED_TIE)  << endl;
 				
+				coreptr->setAffineDatatype(typeStr);
 				if(coreptr->getNumber() > coreidA)
 				{
 					value = coreptr->getValue(0);
@@ -730,6 +737,9 @@ int Correlator::composite(char* holeA, int coreidA, double offset, int coretype,
 	}
 	Value* value = coreptr->getValue(0);
 	coreptr->setOffsetByAboveTie(offset, value->getType());
+	const string typeStr = GetTypeStr(coretype, annot);
+	coreptr->setAffineDatatype(typeStr);
+
 	m_givenCore = coreptr;
 
 	int numHoles = m_dataptr->getNumOfHoles();
@@ -760,7 +770,8 @@ int Correlator::composite(char* holeA, int coreidA, double offset, int coretype,
 					value = coreptr->getValue(0);
 					if(value == NULL) continue;
 					//coreptr->setDepthOffset(offset, value->getType(), true);
-					coreptr->setOffsetByAboveTie(offset, value->getType());	
+					coreptr->setOffsetByAboveTie(offset, value->getType());
+					coreptr->setAffineDatatype(typeStr);
 					break;		
 				}
 			}
@@ -784,8 +795,10 @@ int Correlator::compositeBelow(char* holeA, int coreidA, double offset, int core
 	}
 	Value* value = coreptr->getValue(0);
 	coreptr->setOffsetByAboveTie(offset, value->getType());
+	const string typeStr = GetTypeStr(coretype, annot);
+	coreptr->setAffineDatatype(typeStr);
+
 	m_givenCore = coreptr;
-	
 	
 	int numHoles = m_dataptr->getNumOfHoles();
 	int numCores;
@@ -814,6 +827,7 @@ int Correlator::compositeBelow(char* holeA, int coreidA, double offset, int core
 			{
 				coreptr = holeptr->getCore(j);
 				if(coreptr == NULL) continue;
+				coreptr->setAffineDatatype(typeStr);
 				if(coreptr->getNumber() > coreidA)
 				{
 					value = coreptr->getValue(0);
@@ -843,7 +857,7 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 {
 	Core* coreptrA = findCore(coretype, holeA, coreidA, annot);
 	Core* coreptrB = findCore(coretype, holeB, coreidB, annot);
-		
+
     if (coreptrA == NULL || coreptrB == NULL) 
 	{
 #ifdef DEBUG
@@ -857,6 +871,9 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 	Value* value = NULL;
 	double offset = posB - posA;
 	
+	const string typeStr = GetTypeStr(coretype, annot);
+	coreptrA->setAffineDatatype(typeStr);
+
 	m_dataptr->update();
 	offset = tieptr->getOffset();
 	
@@ -893,6 +910,7 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 					if(value == NULL) continue;
 					coreptr->disableTies();
 					coreptr->setDepthOffset(offset, value->getType(), true);
+					coreptr->setAffineDatatype(typeStr);
 					//cout << "got here ---------------- " << coreptr->getName() << coreptr->getNumber() << " "  << offset << " " << holeptr->getType() << endl;
 					//coreptr->setOffsetByAboveTie(offset, value->getType());	
 					break;		
@@ -908,10 +926,10 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 }
 
 // SET affine shift
-double Correlator::project(char *hole, int core, int coretype, char *annot, float offset)
+double Correlator::project(char *hole, int core, int datatype, char *annot, float offset)
 {
 	cout << "Correlator::project offset of " << offset << endl;
-	Core *c = findCore(coretype, hole, core, annot);
+	Core *c = findCore(datatype, hole, core, annot);
 	if (c == NULL)
 	{
 		cout << "[Project] Error: Cannot find core" << endl;
@@ -924,6 +942,8 @@ double Correlator::project(char *hole, int core, int coretype, char *annot, floa
 		c->disableTies();
 		c->setDepthOffset(offset, val->getType(), true);
 		c->setAffineType(AFFINE_SET);
+		const string typeStr = GetTypeStr(datatype, annot);
+		c->setAffineDatatype(typeStr);
 		m_dataptr->update();
 
 		// apply shift to cores of other datatypes in the same hole
@@ -934,10 +954,10 @@ double Correlator::project(char *hole, int core, int coretype, char *annot, floa
 			if (holeptr == NULL) continue;
 			if (strcmp(hole, holeptr->getName()) == 0)
 			{
-				if (coretype == USERDEFINEDTYPE) {
+				if (datatype == USERDEFINEDTYPE) {
 					if (strcmp(annot, holeptr->getAnnotation()) == 0)
 						continue;
-				} else if (holeptr->getType() == coretype) {
+				} else if (holeptr->getType() == datatype) {
 					continue;
 				}
 
@@ -952,6 +972,8 @@ double Correlator::project(char *hole, int core, int coretype, char *annot, floa
 						if (topvalue == NULL) continue;
 						coreptr->disableTies();
 						coreptr->setDepthOffset(offset, topvalue->getType(), true);
+						coreptr->setAffineType(AFFINE_SET);
+						coreptr->setAffineDatatype(typeStr);
 					}
 				}
 			}

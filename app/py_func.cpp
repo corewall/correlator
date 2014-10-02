@@ -1301,17 +1301,17 @@ static PyObject* project(PyObject *self, PyObject *args)
 {
 	char *hole = NULL;
 	int core = 0;
-	char *type = NULL;
+	char *datatypeStr = NULL;
 	float offset = 0.0f;
 
-	if (!PyArg_ParseTuple(args, "sisf", &hole, &core, &type, &offset))
+	if (!PyArg_ParseTuple(args, "sisf", &hole, &core, &datatypeStr, &offset))
 		return NULL;
 
 	char* annotation = NULL;
-	int coretype = USERDEFINEDTYPE;
-	getTypeAndAnnot(type, coretype, &annotation);
+	int datatype = USERDEFINEDTYPE;
+	getTypeAndAnnot(datatypeStr, datatype, &annotation);
 
-	float ret = (float) correlator.project(hole, core, coretype, annotation, offset);
+	float ret = (float) correlator.project(hole, core, datatype, annotation, offset);
 
 	return Py_BuildValue("f", ret);
 }

@@ -50,7 +50,7 @@ Core::Core( int index, CoreObject* parent ) :
   m_type(OTHERTYPE), m_smoothStatus(NONE),
   m_stddev(0.0f), m_mean(0.0f), m_logValueptr(NULL), m_cull_tabled(false),
   m_stretch(100.0f), m_mudline(0.0f), m_shiftByaboveCore(false),
-  CoreObject(parent), m_quality(GOOD), m_comment()
+  CoreObject(parent), m_quality(GOOD), m_affineDatatype(), m_comment()
 {
 	for(int i=0; i < 2; i++)
 	{
@@ -1418,12 +1418,11 @@ int Core::getQuality( void )
 	return m_quality;
 }
 
-void Core::setComment(const std::string &comment)
-{
-	m_comment = comment;
-}
-
+void Core::setComment(const std::string &comment) {	m_comment = comment; }
 std::string Core::getComment() { return m_comment; }
+
+void Core::setAffineDatatype(const std::string &datatype) { m_affineDatatype = datatype; }
+std::string Core::getAffineDatatype() { return m_affineDatatype; }
 	
 int	Core::getNumOfTies( void )
 {

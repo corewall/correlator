@@ -168,6 +168,9 @@ public:
 	void setComment(const std::string &comment);
 	std::string getComment();
 
+	void setAffineDatatype(const std::string &type);
+	std::string getAffineDatatype();
+
 protected:
 	std::vector<Value*> m_values;
 	std::vector<Tie*> m_ties;
@@ -199,7 +202,9 @@ protected:
 			
 private:
 	int	m_number;
+	std::string m_affineDatatype; // name of datatype used to create affine shift
 	std::string m_comment;
+
 };
 
 #endif

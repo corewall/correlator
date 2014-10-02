@@ -45,6 +45,8 @@ enum {
 	COMMA = 1
 };
 
+std::string GetTypeStr(const int datatype, const char *annotation);
+
 int FindFormat( const char* filename, FILE *fptr ); 
 int FindCoreType( FILE *fptr );
 

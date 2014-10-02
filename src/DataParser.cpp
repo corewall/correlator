@@ -313,6 +313,37 @@ void tolower(char *str)
 	return;
 }
 
+// convert integer datatype to string
+string GetTypeStr(const int datatype, const char *annotation)
+{
+	string typeStr;
+	if (datatype == GRA)
+		typeStr = "Bulk Density(GRA)";
+	else if (datatype == PWAVE)
+		typeStr = "Pwave";
+	else if (datatype == SUSCEPTIBILITY)
+		typeStr = "Susceptibility";
+	else if (datatype == NATURALGAMMA)
+		typeStr = "Natural Gamma";
+	else if (datatype == REFLECTANCE)
+		typeStr = "Reflectance";
+	else if (datatype == OTHERTYPE || datatype == USERDEFINEDTYPE) {
+		if (annotation != NULL)
+			typeStr = string(annotation);
+		else
+			cout << "annotation is NULL, cannot get user-defined type name" << endl;
+	}
+	else if (datatype == SPLICE)
+		typeStr = "Spliced Records";
+	else if (datatype == SPLICED_RECORD)
+		typeStr = "Splice Record";
+	else if (datatype == ELD_RECORD)
+		typeStr = "ELD Record";
+	else
+		cout << "Unknown data type [" << datatype << "], can't get type string" << endl;
+	return typeStr;
+}
+
 int FindFormat(const char* filename, FILE *fptr)
 {
 	string strfile(filename);
@@ -907,7 +938,8 @@ int ReadIODPAffineTable(FILE *fptr, Data* dataptr)
 			continue;
 		}
 
-		token = tokens[tokenIndex++]; // data type used - no internal use, skip
+		token = tokens[tokenIndex++];
+		const string affineDatatype = token;
 		token = tokens[tokenIndex++];
 		const string qualityComment = token;
 
@@ -919,6 +951,7 @@ int ReadIODPAffineTable(FILE *fptr, Data* dataptr)
 		const bool applied = (shiftType != AFFINE_ANCHOR);
 		newCore->setDepthOffset(diffOffset, value_type, applied, fromFile);
 		newCore->setAffineType(shiftType);
+		newCore->setAffineDatatype(affineDatatype);
 		newCore->setComment(qualityComment);
 
 		numHoles = dataptr->getNumOfHoles();
@@ -941,6 +974,7 @@ int ReadIODPAffineTable(FILE *fptr, Data* dataptr)
 						{
 							newCore->setDepthOffset(diffOffset, value_type, applied, fromFile);
 							newCore->setAffineType(shiftType);
+							newCore->setAffineDatatype(affineDatatype);
 							newCore->setComment(qualityComment);
 						}
 						break;
@@ -2689,7 +2723,7 @@ int WriteIODPAffineTable(FILE *fptr, Data *dataptr)
 				shiftType = AFFINE_ANCHOR_STR;
 			if (coreptr->getAffineType() == AFFINE_SET)
 				shiftType = AFFINE_SET_STR;
-			string dataType = holeptr->getTypeStr();
+			string dataType = coreptr->getAffineDatatype();
 			string comment = coreptr->getComment();
 
 #ifdef NEWOUTPUT
