@@ -35,10 +35,10 @@ class TopMenuFrame(wx.Frame):
 		topsize = (180, 245)
 		if platform_name[0] == "Windows" :
 			topsize = (185, 260)
-		wx.Frame.__init__(self, None, -1, "Tool Bar",
+		wx.Frame.__init__(self, parent, -1, "Tool Bar",
 						 wx.Point(20,100),
 						 topsize,
-						 style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
+						 style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.FRAME_FLOAT_ON_PARENT | wx.FRAME_TOOL_WINDOW) #wx.STAY_ON_TOP)
 
 		self.parent = parent
 		vbox = wx.BoxSizer(wx.VERTICAL)
@@ -628,7 +628,7 @@ class CompositePanel():
 		choiceMethodPanel = wx.Panel(tiePanel, -1)
 		cmpSizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.coreChoice = wx.Choice(choiceMethodPanel, -1, size=(75,-1), choices=("core", "core + all below"))
-		self.tieMethod = wx.Choice(choiceMethodPanel, -1, choices=("to best correlation", "to tie")) #, "to given..."))
+		self.tieMethod = wx.Choice(choiceMethodPanel, -1, choices=("to best correlation", "to tie", "to given..."))
 		cmpSizer.Add(wx.StaticText(choiceMethodPanel, -1, "Shift"), 0, wx.RIGHT | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
 		cmpSizer.Add(self.coreChoice, 0, wx.RIGHT | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
 		cmpSizer.Add(self.tieMethod, 0, wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
@@ -780,15 +780,28 @@ class CompositePanel():
 		self.Hide()
 
 	def OnApplyTieShift(self, evt):
-		if self.tieMethod.GetSelection() == 0: # to best correlation brgtodo consts!
+		curSel = self.tieMethod.GetSelection()
+		if curSel == 0: # to best correlation brgtodo consts!
 			shiftType = 0
 			offset = str(self.bestOffset)
-		else: # to tie
+		elif curSel == 1: # to tie
 			shiftType = 1
 			offset = self.depth.GetValue()
+		elif curSel == 2: # to given...
+			shiftType = 2
+			inputDlg = wx.TextEntryDialog(self.parent, "Enter an shift amount:", "Shift to given")
+			validInput = False
+			if inputDlg.ShowModal() == wx.ID_OK:
+				try:
+					offset = float(inputDlg.GetValue())
+					validInput = True
+				except ValueError:
+					self.parent.OnShowMessage("Error", "Cannot convert {} to floating point value".format(inputDlg.GetValue()), 1)
+			if not validInput:
+				return
+
 		affectedCore = 0 if self.coreChoice.GetSelection() == 0 else 1 # this core only, else core + all below
 		self.parent.OnAdjustCore(affectedCore, shiftType, offset)
-
 		self.UpdateGrowthPlot()
 		self.UpdateUI()
 		

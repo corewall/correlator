@@ -2006,7 +2006,7 @@ class DataCanvas(wxBufferedWindow):
 			min = (min * self.coefRange) + startX 
 			max = max - self.minRange
 			max = (max * self.coefRange) + startX 
-
+		
 		# draw lines 
 		y = 0
 		if self.DiscretePlotMode == 0 :
@@ -2234,7 +2234,13 @@ class DataCanvas(wxBufferedWindow):
 		self.minData = coreInfo.minData
 		return (coreInfo.type, coreInfo.holeCount)
 
-
+	def DrawHighlight(self, dc):
+		if "HighlightCore" in self.DrawData:
+			tuple = self.DrawData["HighlightCore"]
+			x, y, wid, hit = tuple
+			dc.SetPen(wx.Pen(wx.Colour(128, 128, 128), 1, wx.DOT))
+			dc.DrawLines(((x - 2, y - 2), (x + wid + 2, y - 2), (x + wid + 2, y + hit + 2), (x - 2, y + hit + 2), (x - 2, y - 2)))
+	
 	def DrawMouseInfo(self, dc, coreInfo, x, y, startx, flag, type):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
@@ -2469,6 +2475,7 @@ class DataCanvas(wxBufferedWindow):
 						type, holeth = self.DrawGraphInfo(dc, coreInfo, flag)
 						self.selectedHoleType = type
 						self.DrawMouseInfo(dc, coreInfo, x, y, startx, flag, type)
+						self.DrawHighlight(dc)
 			if type != "" :
 				break
 		self.parent.statusBar.SetStatusText(self.statusStr)
@@ -3666,6 +3673,22 @@ class DataCanvas(wxBufferedWindow):
 		self.parent.clearSend()
 		self.parent.compositePanel.UpdateUI()
 		
+	def UndoLastShift(self):
+		py_correlator.undo(1, "X", 0)
+		self.parent.AffineChange = True
+		py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
+
+		s = "Composite undo previous offset: " + str(datetime.today()) + "\n\n"
+		self.parent.logFileptr.write(s)
+		if self.parent.showReportPanel == 1 :
+			self.parent.OnUpdateReport()
+
+		self.AdjustDepthCore = []
+		self.parent.UpdateSend()
+		#self.parent.UndoShiftSectionSend()
+		self.parent.UpdateData()
+		self.parent.UpdateStratData()
+	
 	def OnTieSelectionCb(self, event) :
 		opId = event.GetId() 
 		self.activeTie = -1
@@ -3673,20 +3696,21 @@ class DataCanvas(wxBufferedWindow):
 		if opId == 1 : # Clear Tie
 			self.ClearCompositeTies()
 		elif opId == 4: # undo to previous offset
-			py_correlator.undo(1, "X", 0)
-			self.parent.AffineChange = True
-			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
-
-			s = "Composite undo previous offset: " + str(datetime.today()) + "\n\n"
-			self.parent.logFileptr.write(s)
-			if self.parent.showReportPanel == 1 :
-				self.parent.OnUpdateReport()
-
-			self.AdjustDepthCore = []
-			self.parent.UpdateSend()
-			#self.parent.UndoShiftSectionSend()
-			self.parent.UpdateData()
-			self.parent.UpdateStratData()
+			self.UndoLastShift()
+#			py_correlator.undo(1, "X", 0)
+#			self.parent.AffineChange = True
+#			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
+#
+#			s = "Composite undo previous offset: " + str(datetime.today()) + "\n\n"
+#			self.parent.logFileptr.write(s)
+#			if self.parent.showReportPanel == 1 :
+#				self.parent.OnUpdateReport()
+#
+#			self.AdjustDepthCore = []
+#			self.parent.UpdateSend()
+#			#self.parent.UndoShiftSectionSend()
+#			self.parent.UpdateData()
+#			self.parent.UpdateStratData()
 		elif opId == 5: # undo to offset of core above
 			if self.selectedTie >= 0 :
 				tie = self.TieData[self.selectedTie]
@@ -4364,9 +4388,8 @@ class DataCanvas(wxBufferedWindow):
 					wx.EVT_MENU(popupMenu, 2, self.OnTieSelectionCb)
 					popupMenu.Append(3, "&Adjust depth with this core and all below")
 					wx.EVT_MENU(popupMenu, 3, self.OnTieSelectionCb)
-
-#					popupMenu.Append(4, "&Undo to previous offset")
-#					wx.EVT_MENU(popupMenu, 4, self.OnTieSelectionCb)
+					#popupMenu.Append(4, "&Undo last shift")
+					#wx.EVT_MENU(popupMenu, 4, self.OnTieSelectionCb)
 #					popupMenu.Append(5, "&Undo to offset of core above")
 #					wx.EVT_MENU(popupMenu, 5, self.OnTieSelectionCb)
 
@@ -4428,6 +4451,8 @@ class DataCanvas(wxBufferedWindow):
 			for mouse in self.DrawData["MouseInfo"] :
 				if self.findCoreInfoByIndex(mouse[0]) != None:
 					popupMenu = wx.Menu()
+					popupMenu.Append(4, "&Undo last shift")
+					wx.EVT_MENU(popupMenu, 4, self.OnTieSelectionCb)
 					popupMenu.Append(666, "&Remove affine shift")
 					wx.EVT_MENU(popupMenu, 666, self.OnRemoveAffineShift)
 					if self.parent.client != None :
@@ -5952,6 +5977,7 @@ class DataCanvas(wxBufferedWindow):
 
 							l.append((n, pos[0], pos[1], x, 1))
 							self.DrawData["MouseInfo"] = l
+							self.DrawData["HighlightCore"] = (x, y, w, h)
 			elif key == "SpliceArea":
 				for s in data :
 					area = s 
@@ -6202,7 +6228,8 @@ class DataCanvas(wxBufferedWindow):
 			self.DrawData["DragCore"] = []
 
 		if got == 0:
-			self.DrawData["MouseInfo"] = [] 
+			self.DrawData["MouseInfo"] = []
+			self.DrawData.pop("HighlightCore", None) # remove key/value pair entirely
 			self.selectedCore = -1 
 
 		self.UpdateDrawing()
