@@ -3289,106 +3289,71 @@ class DataFrame(wx.Panel):
 		return ret 
 
 
+	# return TreeItemID of first enabled Downhole Log Data item (if any), else None
+	def GetEnabledLog(self, parentItem):
+		enabledLogItem = None
+		dldItem = self.FindItem(parentItem, 'Downhole Log Data')
+		if dldItem[0] == True:
+			logCount = self.tree.GetChildrenCount(dldItem[1], False)
+			(child, cookie) = self.tree.GetFirstChild(dldItem[1])
+			while child.IsOk():
+				if self.tree.GetItemText(child, 2) == "Enable":
+					enabledLogItem = child
+					break
+				(child, cookie) = self.tree.GetNextChild(dldItem[1], cookie)
+		return enabledLogItem
+	
 	def OnLOAD_LOG(self, parentItem):
-		child = self.FindItem(parentItem, 'Downhole Log Data')
-		if child[0] == True :
-			selectItem = child[1]
-			totalcount = self.tree.GetChildrenCount(selectItem, False)
-			self.parent.Window.LogData = []
-			if totalcount > 0 :
-				child = self.tree.GetFirstChild(selectItem)
-				child_item = child[0]
-				if self.tree.GetItemText(child_item, 2) == "Enable" :
-					path = self.parent.CurrentDir + self.tree.GetItemText(child_item, 8) 
-					py_correlator.openLogFile(path, int(self.tree.GetItemText(child_item, 11)))
+		child_item = self.GetEnabledLog(parentItem)
+		if child_item is not None:
+			path = self.parent.CurrentDir + self.tree.GetItemText(child_item, 8) 
+			py_correlator.openLogFile(path, int(self.tree.GetItemText(child_item, 11)))
 
-					s = "Downhole Log Data: " + path + self.tree.GetItemText(child_item, 8) + "\n"
-					self.parent.logFileptr.write(s)
+			s = "Downhole Log Data: " + path + self.tree.GetItemText(child_item, 8) + "\n"
+			self.parent.logFileptr.write(s)
 
-					decivalue = self.tree.GetItemText(child_item, 3)
-					if decivalue > 1 :
-						py_correlator.decimate('Log', int(decivalue))
-						
-					smooth = -1
-					smooth_data = self.tree.GetItemText(child_item, 12)
-					if smooth_data != "" :
-						smooth_array = smooth_data.split()
-						if "UnsmoothedOnly" == smooth_array[2] :
-							smooth = 0
-						elif "SmoothedOnly" == smooth_array[2] :
-							smooth = 1
-						elif "Smoothed&Unsmoothed" == smooth_array[2] :
-							smooth = 2 
-						if smooth_array[1] == "Depth(cm)" :
-							py_correlator.smooth('Log', int(smooth_array[0]), 2)
-						else :
-							py_correlator.smooth('Log', int(smooth_array[0]), 1)
-					ret = py_correlator.getData(5)
-					if ret != "" :
-						mudline = py_correlator.getMudline()
-						if mudline != 0.0 :
-							self.parent.Window.isLogShifted = True
+			decivalue = self.tree.GetItemText(child_item, 3)
+			if decivalue > 1 :
+				py_correlator.decimate('Log', int(decivalue))
+				
+			smooth = -1
+			smooth_data = self.tree.GetItemText(child_item, 12)
+			if smooth_data != "" :
+				smooth_array = smooth_data.split()
+				if "UnsmoothedOnly" == smooth_array[2] :
+					smooth = 0
+				elif "SmoothedOnly" == smooth_array[2] :
+					smooth = 1
+				elif "Smoothed&Unsmoothed" == smooth_array[2] :
+					smooth = 2 
+				if smooth_array[1] == "Depth(cm)" :
+					py_correlator.smooth('Log', int(smooth_array[0]), 2)
+				else :
+					py_correlator.smooth('Log', int(smooth_array[0]), 1)
+			print "Getting log data...",
+			ret = py_correlator.getData(5)
+			print "done"
+			if ret != "" :
+				mudline = py_correlator.getMudline()
+				if mudline != 0.0 :
+					self.parent.Window.isLogShifted = True
 
-						self.parent.filterPanel.OnLock()
-						self.parent.ParseData(ret, self.parent.Window.LogData)
-						min = float(self.tree.GetItemText(child_item, 4))
-						max = float(self.tree.GetItemText(child_item, 5))
-						coef = max - min
-						newrange = []
-						newrange = 'log', min, max, coef, smooth, True
-						self.parent.Window.range.append(newrange)
-						self.parent.UpdateSMOOTH_LogData()
+				self.parent.filterPanel.OnLock()
+				self.parent.ParseData(ret, self.parent.Window.LogData)
+				min = float(self.tree.GetItemText(child_item, 4))
+				max = float(self.tree.GetItemText(child_item, 5))
+				coef = max - min
+				newrange = []
+				newrange = 'log', min, max, coef, smooth, True
+				self.parent.Window.range.append(newrange)
+				self.parent.UpdateSMOOTH_LogData()
 
-						self.parent.filterPanel.OnRelease()
-						self.parent.Window.isLogMode = 1
-						self.parent.Window.SpliceTieData = []
-						self.parent.Window.CurrentSpliceCore = -1
-						self.parent.autoPanel.OnButtonEnable(0, True)
-						return True
-				for k in range(1, totalcount) :
-					child_item = self.tree.GetNextSibling(child_item)
-					if self.tree.GetItemText(child_item, 2) == "Enable" :
-						path = self.parent.CurrentDir + self.tree.GetItemText(child_item, 8) 
-						py_correlator.openLogFile(path, int(self.tree.GetItemText(child_item, 11)))
-						decivalue = self.tree.GetItemText(child_item, 3)
-						if decivalue > 1 :
-							py_correlator.decimate('Log', int(decivalue))
-						smooth = -1
-						smooth_data = self.tree.GetItemText(child_item, 12)
-						if smooth_data != "" :
-							smooth_array = smooth_data.split()
-							if "UnsmoothedOnly" == smooth_array[2] :
-								smooth = 0
-							elif "SmoothedOnly" == smooth_array[2] :
-								smooth = 1
-							elif "Smoothed&Unsmoothed" == smooth_array[2] :
-								smooth = 2 
-							if smooth_array[1] == "Depth(cm)" :
-								py_correlator.smooth('Log', int(smooth_array[0]), 2)
-							else :
-								py_correlator.smooth('Log', int(smooth_array[0]), 1)
-						ret = py_correlator.getData(5)
-						if ret != "" :
-							mudline = py_correlator.getMudline()
-							if mudline != 0.0 :
-								self.parent.Window.isLogShifted = True
-
-							self.parent.filterPanel.OnLock()
-							self.parent.ParseData(ret, self.parent.Window.LogData)
-							min = float(self.tree.GetItemText(child_item, 4))
-							max = float(self.tree.GetItemText(child_item, 5))
-							coef = max - min
-							newrange = []
-							newrange = 'log', min, max, coef, smooth, True
-							self.parent.Window.range.append(newrange)
-							self.parent.UpdateSMOOTH_LogData()
-
-							self.parent.filterPanel.OnRelease()
-							self.parent.Window.isLogMode = 1
-							self.parent.Window.SpliceTieData = []
-							self.parent.Window.CurrentSpliceCore = -1
-							self.parent.autoPanel.OnButtonEnable(0, True)
-							return True
+				self.parent.filterPanel.OnRelease()
+				self.parent.Window.isLogMode = 1
+				self.parent.Window.SpliceTieData = []
+				self.parent.Window.CurrentSpliceCore = -1
+				self.parent.autoPanel.OnButtonEnable(0, True)
+				return True
 		return False
 
 
