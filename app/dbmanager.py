@@ -3416,61 +3416,61 @@ class DataFrame(wx.Panel):
 				str_ba = str_ba[start_ba:max_ba]
 				max_ba = len(str_ba)
 				if platform_name[0] != "Windows" :
-                                        if max_ba < 3 :
-                                                strItem = str(bm0) + "0 \t"
-                                        else :
-                                                strItem = str(bm0) + "\t"
+					if max_ba < 3 :
+						strItem = str(bm0) + "0 \t"
+					else :
+						strItem = str(bm0) + "\t"
 
-                                        bm0 = int(100.00 * float(mcd)) / 100.00;
-                                        str_ba = str(bm0)
-                                        max_ba = len(str_ba)
-                                        start_ba = str_ba.find('.', 0)
-                                        str_ba = str_ba[start_ba:max_ba]
-                                        max_ba = len(str_ba)
-                                        if max_ba < 3 :
-                                                strItem = strItem + str(bm0) + "0 \t" + str(bm0) + "0 \t"
-                                        else :
-                                                strItem = strItem + str(bm0) + "\t" + str(bm0) + "\t"
+					bm0 = int(100.00 * float(mcd)) / 100.00;
+					str_ba = str(bm0)
+					max_ba = len(str_ba)
+					start_ba = str_ba.find('.', 0)
+					str_ba = str_ba[start_ba:max_ba]
+					max_ba = len(str_ba)
+					if max_ba < 3 :
+						strItem = strItem + str(bm0) + "0 \t" + str(bm0) + "0 \t"
+					else :
+						strItem = strItem + str(bm0) + "\t" + str(bm0) + "\t"
 
-                                        str_ba = str(age)
-                                        max_ba = len(str_ba)
-                                        start_ba = str_ba.find('.', 0)
-                                        str_ba = str_ba[start_ba:max_ba]
-                                        max_ba = len(str_ba)
-                                        if max_ba < 3 :
-                                                strItem += str(age) + "0 \t" + name
-                                        else :
-                                                strItem += str(age) + "\t" + name
-                                        if type == "handpick" :
-                                                strItem += " *handpick"
-                                else :
-                                        if max_ba < 3 :
-                                                strItem = str(bm0) + "0 \t"
-                                        else :
-                                                strItem = str(bm0) + " \t"
+					str_ba = str(age)
+					max_ba = len(str_ba)
+					start_ba = str_ba.find('.', 0)
+					str_ba = str_ba[start_ba:max_ba]
+					max_ba = len(str_ba)
+					if max_ba < 3 :
+						strItem += str(age) + "0 \t" + name
+					else :
+						strItem += str(age) + "\t" + name
+					if type == "handpick" :
+						strItem += " *handpick"
+				else :
+					if max_ba < 3 :
+						strItem = str(bm0) + "0 \t"
+					else :
+						strItem = str(bm0) + " \t"
 
-                                        bm0 = int(100.00 * float(mcd)) / 100.00;
-                                        str_ba = str(bm0)
-                                        max_ba = len(str_ba)
-                                        start_ba = str_ba.find('.', 0)
-                                        str_ba = str_ba[start_ba:max_ba]
-                                        max_ba = len(str_ba)
-                                        if max_ba < 3 :
-                                                strItem = strItem + str(bm0) + "0 \t" + str(bm0) + "0 \t"
-                                        else :
-                                                strItem = strItem + str(bm0) + " \t" + str(bm0) + " \t"
+					bm0 = int(100.00 * float(mcd)) / 100.00;
+					str_ba = str(bm0)
+					max_ba = len(str_ba)
+					start_ba = str_ba.find('.', 0)
+					str_ba = str_ba[start_ba:max_ba]
+					max_ba = len(str_ba)
+					if max_ba < 3 :
+						strItem = strItem + str(bm0) + "0 \t" + str(bm0) + "0 \t"
+					else :
+						strItem = strItem + str(bm0) + " \t" + str(bm0) + " \t"
 
-                                        str_ba = str(age)
-                                        max_ba = len(str_ba)
-                                        start_ba = str_ba.find('.', 0)
-                                        str_ba = str_ba[start_ba:max_ba]
-                                        max_ba = len(str_ba)
-                                        if max_ba < 3 :
-                                                strItem += str(age) + "0 \t" + name
-                                        else :
-                                                strItem += str(age) + " \t" + name
-                                        if type == "handpick" :
-                                                strItem += " *handpick"                                       
+					str_ba = str(age)
+					max_ba = len(str_ba)
+					start_ba = str_ba.find('.', 0)
+					str_ba = str_ba[start_ba:max_ba]
+					max_ba = len(str_ba)
+					if max_ba < 3 :
+						strItem += str(age) + "0 \t" + name
+					else :
+						strItem += str(age) + " \t" + name
+					if type == "handpick" :
+						strItem += " *handpick"                                       
 				if idx == 0 :
 					self.parent.Window.firstPntAge = age
 					self.parent.Window.firstPntDepth = depth 
