@@ -4191,7 +4191,7 @@ class DataFrame(wx.Panel):
 		logLoaded = False
 		if parentItem != None :
 			logLoaded = self.OnLOAD_LOG(parentItem)
-
+			self.parent.OnInitDataUpdate()
 			tableLoaded = self.OnLOAD_TABLE(parentItem)
 			self.parent.Window.LogselectedTie = -1 
 			self.parent.Window.activeSATie = -1 
