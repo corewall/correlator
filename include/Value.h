@@ -135,7 +135,9 @@ public:
 	int		isMannualCorrelated(void) { return m_manual_corr_status; };
 	
 protected:	
+	 // brgtodo 10/1/2014: only modified for splice - maintains core type, but doesn't parent core already know its type?
 	char m_type;
+
 	int m_affine_status;
 	int m_corr_status;
 	int m_manual_corr_status;
