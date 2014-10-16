@@ -4776,7 +4776,7 @@ class DataFrame(wx.Panel):
 		# self.parent - "master" Correlator class
 		# self - old dbmanager (has required variables and methods)
 		# self.dbPanel - Notebook panel in which to embed DBView
-		self.dbview = model.DBView(self.parent, self, self.dbPanel, loadedSites)
+		self.parent.dbcont.InitView(self.parent, self, self.dbPanel, loadedSites)
 
 		root_f = open(glb.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
@@ -4797,8 +4797,6 @@ class DataFrame(wx.Panel):
 				loaded_item_list.append(data_item)
 
 				sub_f = open(glb.DBPath + 'db/' + data_item + '/datalist.db', 'r+')
-
-				curSite = model.SiteData(data_item)
 
 				root = self.tree.AppendItem(self.root, data_item) # site name
 				self.tree.SetItemBold(root, True)
@@ -5656,6 +5654,8 @@ class DataFrame(wx.Panel):
 			self.parent.logFileptr.write(s)
 
 
+	# copies lines of source into dest, adding Correlator header to file, and
+	# converting spaces and tabs to space+tab delimiter
 	def OnFORMATTING(self, source, dest, tableType):
 		fin = open(source, 'r+')
 		#print "[DEBUG] FORMATTING : " + source + " to " + dest

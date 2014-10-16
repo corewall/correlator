@@ -8,6 +8,7 @@ platform_name = platform.uname()
 
 import random, sys, os, re, time, ConfigParser, string
 from datetime import datetime
+import wx
 
 from importManager import py_correlator
 
@@ -113,6 +114,33 @@ def SaveSite(site):
 		
 def GetDBFilePath(siteName):
 	return glb.DBPath + "db/" + siteName + "/datalist.db"
+
+def GetSitePath(siteName):
+	return glb.DBPath + "db/" + siteName + "/"
+
+def GetSiteFilePath(siteName, fileName):
+	return GetSitePath(siteName) + fileName
+
+def GetNewTableNum(tableList):
+	""" return max table number (e.g. the '3' in 321-1390.3.affine.table)
+	plus one - used when creating new saved table
+	>>> GetNewTableNum([])
+	'1'
+	""" 
+	result = 0
+	for tab in tableList:
+		idx1 = tab.file.find('.') + 1
+		idx2 = tab.file.find('.', idx1)
+		if idx1 != -1 and idx2 != -1:
+			curNum = int(tab.file[idx1:idx2])
+			if curNum > result:
+				result = curNum
+		else:
+			print "Unexpected table filename format, couldn't find two periods"
+	return str(result + 1)
+
+def MakeTableFilename(siteName, tableNum, tableType):
+	return siteName + '.' + tableNum + '.' + tableType + '.table'
 
 def WriteHoleSet(holeSet, siteFile):
 	for holeKey in sorted(holeSet.holes): # sorted acts on dictionary keys by default
@@ -377,8 +405,8 @@ def LoadSessionReports():
 			reportList.append(reportTuple)
 	return reportList
 
-def ImportAffineTable(leg, site):
-	opendlg = wx.FileDialog(self, "Select a affine table file", glb.LastDir, "", "*.*")
+def ImportAffineTable(parent, leg, site):
+	opendlg = wx.FileDialog(parent, "Select a affine table file", glb.LastDir, "", "*.*")
 	ret = opendlg.ShowModal()
 	path = opendlg.GetPath()
 	filename = opendlg.GetFilename();
@@ -386,8 +414,12 @@ def ImportAffineTable(leg, site):
 	glb.LastDir = opendlg.GetDirectory()
 	opendlg.Destroy()
 
+	print "path = {}".format(path)
+	print "filename = {}".format(filename)
+
 	if ret == wx.ID_OK :
 		last = path.find(".xml", 0)
+		siteflag = False
 		valid = False
 		main_form = False
 		if last < 0 :
@@ -414,7 +446,7 @@ def ImportAffineTable(leg, site):
 					elif modifiedLine[6] == '\tY\r' or modifiedLine[6] == '\tN\r' :
 						valid = True 
 
-				if leg == modifiedLine[0] and site == RemoveFRONTSPACE(modifiedLine[1]) :
+				if leg == modifiedLine[0] and site == modifiedLine[1].lstrip():
 					siteflag = True 
 				else :
 					valid = False 
@@ -431,44 +463,29 @@ def ImportAffineTable(leg, site):
 					OnFORMATTING(path, glb.LastDir + "/.tmp_table", "Affine")
 					path = glb.LastDir + "/.tmp_table"
 
-		else : # last >= 0
+		else: # XML file
 			tmpFile = "\\.tmp_table" if sys.platform == 'win32' else "/.tmp_table"
-			foo = xml_handler.ConvertFromXML(glb.LastDir + tmpFile)
-#			self.handler.init()
-#			if sys.platform == 'win32' :
-#				self.handler.openFile(glb.LastDir + "\\.tmp_table")
-#				self.parser.parse(path)
-#				path = glb.LastDir + "\\.tmp_table"
-#			else :
-#				self.handler.openFile(glb.LastDir + "/.tmp_table")
-#				self.parser.parse(path)
-#				path = glb.LastDir + "/.tmp_table"
-#			self.handler.closeFile()
-			
-			filename = ".tmp_table"
-			if self.handler.type == "affine table" :
+			path = xml_handler.ConvertFromXML(path, glb.LastDir + tmpFile)
+			handler = xml_handler.GetHandler()
+			if handler.type == "affine table":
 				valid = True
-			if self.handler.site == site and self.handler.leg == leg :
+			if handler.site == site and handler.leg == leg:
 				siteflag = True
-			else :
+			else:
 				valid = False 
 
-		if valid == True :
-			type = self.Add_TABLE('AFFINE' , 'affine', False, True, source_filename)
+		if valid:
 			glb.OnShowMessage("Information", "Successfully imported", 1)
-		elif siteflag == True :
-			glb.OnShowMessage("Error", "It is not affine table", 1)
-		else :
-			glb.OnShowMessage("Error", "It is not for " + self.title, 1)
-			
-def RemoveFRONTSPACE(self, line):
-	max = len(line)
-	for i in range(max) :
-		if line[i] != ' ' and line[i] != '\t' and line[i] != '\r' :
-			return line[i:max]
-	return line 
+			return model.AffineData(file=path, origSource=source_filename)
+		elif siteflag:
+			glb.OnShowMessage("Error", "File doesn't match expected affine format", 1)
+		else:
+			glb.OnShowMessage("Error", "File isn't for " + leg + "-" + site, 1)
+		
+		return None
+		
 
-def OnFORMATTING(self, source, dest, tableType):
+def OnFORMATTING(source, dest, tableType):
 	fin = open(source, 'r+')
 	#print "[DEBUG] FORMATTING : " + source + " to " + dest
 	fout = open(dest, 'w+')
@@ -505,3 +522,24 @@ def OnFORMATTING(self, source, dest, tableType):
 
 	fout.close()
 	fin.close()
+	
+def MoveFile(src, dest, copy=True):
+	if sys.platform == 'win32':
+		workingdir = os.getcwd()
+		cmd = 'copy ' + src + ' ' + dest
+		os.system(cmd)
+		if not copy:
+			cmd = 'del \"' + src + '\"'
+			os.system(cmd)
+		os.chdir(workingdir)
+	else:
+		cmd = 'cp \"' + src + '\" \"' + dest + '\"'
+		os.system(cmd)
+		if not copy:
+			cmd = 'rm \"' + src + '\"'
+			os.system(cmd)
+
+# launch doctests if this module is run
+if __name__ == "__main__":
+	import doctest
+	doctest.testmod()

@@ -1,3 +1,10 @@
+# Saved Table types
+AFFINE = 0
+SPLICE = 1
+ELD = 2
+
+SAVED_TABLE_STRS = ["affine", "splice", "eld"]
+
 # Smoothing
 
 # units

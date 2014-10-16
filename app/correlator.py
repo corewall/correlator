@@ -56,7 +56,9 @@ class MainFrame(wx.Frame):
 		# style=wxSYSTEM_MENU | wxCAPTION | wxCLOSE_BOX | wxNO_FULL_REPAINT_ON_RESIZE)
 
 		self.statusBar = self.CreateStatusBar()
-
+		
+		self.dbcont = model.DBController() 
+		
 		self.Width = winsize[0]
 		self.Height = winsize[1]
 		#self.Width, self.Height = self.GetClientSizeTuple()
@@ -318,6 +320,15 @@ class MainFrame(wx.Frame):
 		self.Bind(wx.EVT_MENU, self.UseNarrowScrollbars, self.miScrollnormal)
 		
 		menuBar.Append(menuView, "&View")
+		
+		menuImport = wx.Menu()
+		self.miImportData = menuImport.Append(-1, "Hole Data...", "Import hole data (e.g. Natural Gamma)")
+		menuImport.AppendSeparator()
+		self.miImportAffine = menuImport.Append(-1, "Affine Table...", "Import an affine table")
+		self.Bind(wx.EVT_MENU, self.dbcont.ImportAffineTable, self.miImportAffine)
+		self.miImportSplice = menuImport.Append(-1, "Splice Table...", "Import a splice table")
+		self.miImportEld = menuImport.Append(-1, "ELD Table...", "Import an Equivalent Log Depth table")
+		menuBar.Append(menuImport, "&Import")
 
 		# Help 
 		menuHelp = wx.Menu()

@@ -246,6 +246,67 @@ class SiteData:
 		self.holeSets[type].site = self
 		self.holeSets[type].AddHole(hole)
 
+	# copy existing table file to site dir, add to siteDict
+	def AddTableFile(self, tableFile, type):
+		srcPath = tableFile.file
+		tableList = self.GetTableList(type)
+		tableFile.file = dbu.MakeTableFilename(self.name, dbu.GetNewTableNum(tableList), const.SAVED_TABLE_STRS[type])
+		destPath = dbu.GetSiteFilePath(self.name, tableFile.file)
+		tableList.append(tableFile)
+		dbu.MoveFile(srcPath, destPath) # copy table to site dir
+	
+	def CreateTableFile(self, type, enable=True):
+		tableList = self.GetTableList(type)
+		tab = self.CreateTable(type)
+		tableNum = dbu.GetNewTableNum(tableList)
+		tab.file = dbu.MakeTableFilename(self.name, tableNum, const.SAVED_TABLE_STRS[type])
+		tab.enable = enable
+		tableList.append(tab)
+		if enable:
+			self.SetEnabledTable(tab.file, tableList)
+		return dbu.GetSiteFilePath(self.name, tab.file)
+	
+	def SaveTable(self, type, createNew):
+		filePath = ""
+		tableList = self.GetTableList(type)
+		if createNew or len(tableList) == 0:
+			filePath = self.CreateTableFile(type)
+		else: # update current table
+			curTab = self.GetTableByType(type)
+			filePath = dbu.GetSiteFilePath(self.name, curTab.file)
+		return filePath
+
+	""" return currently enabled table of specified type, if one exists """
+	def GetTableByType(self, type):
+		if type == const.AFFINE:
+			return self.GetAffine()
+		elif type == const.SPLICE:
+			return self.GetSplice()
+		elif type == const.ELD:
+			return self.GetEld()
+		else:
+			return None
+		
+	def CreateTable(self, type):
+		if type == const.AFFINE:
+			return AffineData()
+		elif type == const.SPLICE:
+			return SpliceData()
+		elif type == const.ELD:
+			return EldData()
+		else:
+			return None
+	
+	def GetTableList(self, type):
+		if type == const.AFFINE:
+			return self.affineTables
+		elif type == const.SPLICE:
+			return self.spliceTables
+		elif type == const.ELD:
+			return self.eldTables
+		else:
+			return None
+	
 	""" return currently enabled AffineTable if there is one """
 	def GetAffine(self):
 		return self.GetEnabledTable(self.affineTables)
@@ -258,6 +319,10 @@ class SiteData:
 	def GetEld(self):
 		return self.GetEnabledTable(self.eldTables)
 
+	def SetEnabledTable(self, enabledFile, tableList):
+		for tab in tableList:
+			tab.enable = (tab.file == enabledFile)
+	
 	""" generic "find the enabled table" routine """
 	def GetEnabledTable(self, tableList):
 		result = None
@@ -323,10 +388,21 @@ class SiteData:
 
 	def GetPath(self, prefix):
 		return prefix + self.GetDir()
+	
+	def GetLegAndSite(self):
+		return self.GetLeg(), self.GetSite()
+	
+	def GetLeg(self):
+		splitName = self.name.split('-')
+		return splitName[0]
+	
+	def GetSite(self):
+		splitName = self.name.split('-')
+		return splitName[1]
 
 class AffineData(TableData):
-	def __init__(self):
-		TableData.__init__(self)
+	def __init__(self, file="", origSource=""):
+		TableData.__init__(self, file, origSource)
 	def __repr__(self):
 		return "AffineTable " + TableData.__repr__(self)
 	def GetName(self):
@@ -416,6 +492,29 @@ class DownholeLogTable(TableData):
 
 	def GetName(self):
 		return self.dataType
+
+class DBController:
+	def __init__(self):
+		self.parent = None
+		self.parentPanel = None
+		self.view = None
+		self.siteDict = None
+		
+	# 10/14/2014 brgtodo: still have to init this stuff late due to
+	# family-sized platter of spaghetti initialization, ugh.
+	def InitView(self, parent, dataFrame, parentPanel, siteDict):
+		self.parent = parent
+		self.parentPanel= parentPanel
+		self.siteDict = siteDict
+		self.view = DBView(parent, dataFrame, parentPanel, siteDict)
+	
+	def ImportAffineTable(self, event):
+		curSite = self.view.GetCurrentSite()
+		leg, site = curSite.GetLegAndSite()
+		affineTable = dbu.ImportAffineTable(self.parentPanel, leg, site)
+		if affineTable is not None:
+			curSite.AddTableFile(affineTable, const.AFFINE)
+			curSite.SyncToData()
 
 class DBView:
 	def __init__(self, parent, dataFrame, parentPanel, siteDict):
@@ -597,7 +696,7 @@ class DBView:
 		self.panes = []
 		self.dataPanel.GetSizer().Clear(True)
 
-		if site == None:
+		if site is None:
 			return
 		
 		# Add Holes
@@ -827,6 +926,7 @@ class DBView:
 		for st in site.spliceTables:
 			if st.enable:
 				ret = py_correlator.openSpliceFile(sitePath + st.file)
+				print "trying to load splice: {}".format(sitePath + st.file)
 				if ret == 'error':
 					glb.OnShowMessage("Error", "Couldn't create splice record(s)", 1)
 				else:
@@ -931,7 +1031,7 @@ class DBView:
 			curSite = self.GetCurrentSite()
 			if dlg.importedSite == curSite.name:
 				self.UpdateView(curSite) # update to show just-imported data
-
+				
 	def ViewFile(self, filename):
 		holefile = glb.DBPath + "db/" + self.GetCurrentSite().GetDir() + filename
 		self.dataFrame.fileText.Clear()

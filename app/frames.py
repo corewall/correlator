@@ -130,6 +130,7 @@ class TopMenuFrame(wx.Frame):
 		self.parent.mitool.Check(False)
 		self.parent.Window.SetFocusFromKbd()
 
+	# 10/14/2014 brg: unused
 	def OnNEW(self, event):
 		if self.parent.CurrentDir != '' :
 			if self.parent.CHECK_CHANGES() == True :
@@ -201,12 +202,18 @@ class TopMenuFrame(wx.Frame):
 		# affine
 		affine_filename = "";
 		if affine_flag == True :
-			affine_filename = self.parent.dataFrame.Add_TABLE("AFFINE" , "affine", savedialog.affineUpdate.GetValue(), False, "")
-			py_correlator.saveAttributeFile(affine_filename, 1)
+			createNew = not savedialog.affineUpdate.GetValue()
+			#affine_filename = self.parent.dataFrame.Add_TABLE("AFFINE" , "affine", savedialog.affineUpdate.GetValue(), False, "")
+			curSite = self.parent.GetLoadedSite()
+			affinePath = curSite.SaveTable(const.AFFINE, createNew)
+			py_correlator.saveAttributeFile(affinePath, 1)
+			#py_correlator.saveAttributeFile(affine_filename, 1)
 
-			s = "Save Affine Table: " + affine_filename + "\n\n"
+			#s = "Save Affine Table: " + affine_filename + "\n\n"
+			s = "Save Affine Table: " + affinePath + "\n\n"
 			self.parent.logFileptr.write(s)
-			self.parent.AffineChange = False  
+			self.parent.AffineChange = False
+			curSite.SyncToData()
 		# splice
 		if splice_flag == True :
 			if self.parent.Window.SpliceData != [] :
@@ -3606,8 +3613,10 @@ class PreferencesPanel():
 
 			if type == "Natural Gamma" :
 				type = "NaturalGamma"
+				
+			self.parent.Window.UpdateRANGE(type, minRange, maxRange)
 
-		self.parent.dataFrame.UpdateMINMAX(type, minRange, maxRange)
+		#self.parent.dataFrame.UpdateMINMAX(type, minRange, maxRange)
 		self.parent.Window.UpdateDrawing()
 
 	def OnChangeWidth(self, event):
