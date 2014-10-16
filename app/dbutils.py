@@ -538,6 +538,17 @@ def MoveFile(src, dest, copy=True):
 		if not copy:
 			cmd = 'rm \"' + src + '\"'
 			os.system(cmd)
+			
+def DeleteFile(filepath):
+	if sys.platform == 'win32' :
+		workingdir = os.getcwd()
+		#os.chdir(glb.DBPath + 'db/' + title + '/')
+		os.system('del \"' + filepath + '\"')
+		os.chdir(workingdir)
+		#self.parent.logFileptr.write("Delete " + filename + "\n\n")
+	else :
+		os.system('rm \"'+ filepath + '\"')
+		#self.parent.logFileptr.write("Delete " + filename + "\n\n")	
 
 # launch doctests if this module is run
 if __name__ == "__main__":

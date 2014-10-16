@@ -127,6 +127,9 @@ class HoleSet:
 			print hole
 		if self.HasCull():
 			print self.cullTable
+			
+	def HasHoles(self):
+		return len(self.holes) > 0
 	
 	def AddHole(self, hole):
 		if isinstance(hole, HoleData) and hole.name not in self.holes:
@@ -275,6 +278,28 @@ class SiteData:
 			curTab = self.GetTableByType(type)
 			filePath = dbu.GetSiteFilePath(self.name, curTab.file)
 		return filePath
+	
+	""" remove item from site based on filename, which is unique per site """
+	def DeleteTable(self, filename):
+		for hskey, hs in self.holeSets.items():
+			for holekey, hole in hs.holes.items():
+				if hole.file == filename:
+					del hs.holes[holekey]
+					if not hs.HasHoles():
+						del self.holeSets[hskey]
+					return
+		for at in self.affineTables:
+			if at.file == filename:
+				self.affineTables.remove(at)
+				return
+		for st in self.spliceTables:
+			if st.file == filename:
+				self.spliceTables.remove(st)
+				return
+		for et in self.eldTables:
+			if et.file == filename:
+				self.eldTables.remove(et)
+				return
 
 	""" return currently enabled table of specified type, if one exists """
 	def GetTableByType(self, type):
@@ -524,6 +549,14 @@ class DBView:
 		self.panes = [] # wx.CollapsiblePanes - retain to re-Layout() as needed
 		self.menu = None # action menu
 		self.siteDict = siteDict # dictionary of sites keyed on site name
+		
+		# 10/15/2014 brg: Basis of a kludgy method to update GUI after an item
+		# has been deleted. Was getting segfaults when trying to call SiteChanged()
+		# from an event handler because SiteChanged() clears the GUI and rebuilds it.
+		# wx.CallAfter() didn't help, so I resorted to starting this timer in the
+		# offending event handler. Seems to work! I'll take it.
+		self.refreshTimer = wx.Timer(self.parentPanel)
+		self.parentPanel.Bind(wx.EVT_TIMER, self.SiteChanged, self.refreshTimer)
 
 		self.InitUI()
 		self.InitMenus()
@@ -570,11 +603,13 @@ class DBView:
 		self.menuIds = {'Load': 1,
 						'View': 2,
 						'Export': 3,
+						'Delete': 4,
 						'Enable All': 101,
 						'Disable All': 102}
 
-		self.holeMenuItems = ['Load', 'View', 'Export']
+		self.holeMenuItems = ['Load', 'View', 'Export', 'Delete']
 		self.holeSetMenuItems = ['Load', 'Export', 'Enable All', 'Disable All']
+		self.savedTableMenuItems = ['View', 'Export', 'Delete']
 
 	def BuildMenu(self, itemList):
 		self.menu = wx.Menu()
@@ -652,6 +687,9 @@ class DBView:
 		sizer.Add(button, 0, border=5, flag=wx.BOTTOM|wx.LEFT)
 		sizer.Add(gui.tableChoice, 0, border=5, flag=wx.BOTTOM|wx.LEFT)
 		sizer.Add(gui.enabledCb, 0, border=5, flag=wx.BOTTOM|wx.LEFT)
+		
+		panel.Bind(wx.EVT_BUTTON, lambda event, args=gui: self.PopActionsMenu(event, args), button)
+		panel.Bind(wx.EVT_MENU, lambda event, args=gui: self.HandleSavedTableMenu(event, args))
 
 		toPanel.GetSizer().Add(panel)
 
@@ -767,7 +805,9 @@ class DBView:
 		if self.currentSite.GetCount() > 0:
 			self.currentSite.SetSelection(0)
 
-	def SiteChanged(self, evt):
+	def SiteChanged(self, evt=None):
+		if self.refreshTimer.IsRunning():
+			self.refreshTimer.Stop()
 		siteIndex = self.currentSite.GetSelection()
 		curSite = self.currentSite.GetClientData(siteIndex)
 		if curSite != None:
@@ -808,6 +848,8 @@ class DBView:
 			self.BuildMenu(self.holeMenuItems)
 		elif isinstance(obj, HoleSet):
 			self.BuildMenu(self.holeSetMenuItems)
+		elif isinstance(obj, SavedTableGUI):
+			self.BuildMenu(self.savedTableMenuItems)
 			
 		evt.GetEventObject().PopupMenu(self.menu)
 
@@ -821,6 +863,11 @@ class DBView:
 		elif evt.GetId() == self.menuIds['Export']:
 			holeList = [hole]
 			self.ExportHoles(holeList)
+		elif evt.GetId() == self.menuIds['Delete']:
+			site = self.GetCurrentSite()
+			self.DeleteFile(hole.file)
+			site.SyncToData()
+			self.refreshTimer.Start(200)
 
 	def HandleHoleSetMenu(self, evt, holeSet):
 		holeSet.site.SyncToGui()
@@ -833,6 +880,16 @@ class DBView:
 		elif evt.GetId() == self.menuIds['Enable All'] or evt.GetId() == self.menuIds['Disable All']:
 			for hole in holeSet.holes.values():
 				hole.gui.enabledCb.SetValue(evt.GetId() == self.menuIds['Enable All'])
+				
+	def HandleSavedTableMenu(self, evt, gui):
+		gui.site.SyncToGui()
+		if evt.GetId() == self.menuIds['View']:
+			curTable = gui.GetCurrentTable()
+			self.ViewFile(curTable.file)
+		if evt.GetId() == self.menuIds['Delete']:
+			curTable = gui.GetCurrentTable()
+			self.DeleteFile(curTable.file)
+			gui.site.SyncToData()
 
 	def LoadHoles(self, holeList):
 		# pre stuff
@@ -1032,6 +1089,14 @@ class DBView:
 			if dlg.importedSite == curSite.name:
 				self.UpdateView(curSite) # update to show just-imported data
 				
+	def DeleteFile(self, filename):
+		if glb.OnShowMessage("About", "Are you sure you want to delete {}?".format(filename), 2) != wx.ID_OK:
+			return
+		curSite = self.GetCurrentSite()
+		filepath = dbu.GetSiteFilePath(curSite.name, filename)
+		dbu.DeleteFile(filepath)
+		curSite.DeleteTable(filename)
+	
 	def ViewFile(self, filename):
 		holefile = glb.DBPath + "db/" + self.GetCurrentSite().GetDir() + filename
 		self.dataFrame.fileText.Clear()
@@ -1252,6 +1317,16 @@ class SavedTableGUI:
 		else:
 			print "GetTables(): Unexpected saved table type: " + self.name
 			return []
+		
+	def GetCurrentTable(self):
+		result = None
+		tableList = self.GetTables()
+		curTableName = self.tableChoice.GetStringSelection()
+		for tab in tableList:
+			if tab.file == curTableName:
+				result = tab
+				break
+		return result
 
 class LogTableGUI:
 	def __init__(self, logTable, panel):
