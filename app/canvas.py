@@ -4173,6 +4173,7 @@ class DataCanvas(wxBufferedWindow):
 		event.Skip()
 
 
+	# called on up/down arrow keyup only (mouse drag handled elsewhere)
 	def UPDATE_TIE(self, upflag):
 		shift_delta = self.shift_range 
 		if upflag == True :
@@ -4189,7 +4190,7 @@ class DataCanvas(wxBufferedWindow):
 			movableTie.screenY = self.startDepth + (movableTie.depth - self.rulerStartDepth) * (self.length / self.gap)
 
 			fixedTie = self.TieData[self.activeTie - 1]
-			depth = 0
+			depth = movableTie.depth
 			depth2 = fixedTie.depth
 
 			ciA = self.findCoreInfoByIndex(fixedTie.core)
