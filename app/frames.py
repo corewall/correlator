@@ -3694,30 +3694,51 @@ class PreferencesPanel():
 			self.min.SetValue(str(ret[0]))
 			self.max.SetValue(str(ret[1]))
 
-
+	# convert self.all string ("All Susceptibility") to type string ("Susceptibility")
+	def _FixListTypeStr(self, type):
+		if type.find("All ") == 0:
+			type = type[4:]
+			if type == "Natural Gamma":
+				type = "NaturalGamma"
+		elif type == "Spliced Records":
+			type = "splice"
+		elif type == "Log":
+			type = "log"
+		return type
+	
+	# get all hole types in self.all - no splice or log
+	def _GetHoleTypes(self):
+		result = []
+		for str in self.all.GetStrings():
+			print str
+			if str.find("All ") != -1 and str != "All Holes":
+				result.append(self._FixListTypeStr(str))
+		return result
+	
+	# return list of types to apply min/max range change to - builds
+	# list if All Holes is selected, otherwise selected non-Log/Splice type
+	def _GetApplyList(self, allowSpliceAndLog=False):
+		result = []
+		curType = self.all.GetStringSelection()
+		if curType == "All Holes":
+			result = self._GetHoleTypes()
+		elif (curType != "Log" and curType != "Spliced Records") or allowSpliceAndLog:
+			result.append(self._FixListTypeStr(curType))
+		return result
+	
 	def OnChangeMinMax(self, event):
 		type = self.all.GetValue()
 		minRange = float(self.min.GetValue())
 		maxRange = float(self.max.GetValue())
 
-		if type  == 'All Holes' :
-			print "[DEBUG] Set All Holes"
-		elif type == 'Log' :
-			#print "[DEBUG] Set Log"
+		if type == 'Log' :
 			self.parent.Window.UpdateRANGE("log", minRange, maxRange)
-			self.parent.Window.UpdateDrawing()
 		elif type == 'Spliced Records' :
-			#print "[DEBUG] Spliced records"
 			self.parent.Window.UpdateRANGE("splice", minRange, maxRange)
-			self.parent.Window.UpdateDrawing()
-		else :
-			size = len(type)
-			type = type[4:size]
+		else: # holes
+			for applyType in self._GetApplyList():
+				self.parent.dataFrame.UpdateMINMAX(applyType, minRange, maxRange)
 
-			if type == "Natural Gamma" :
-				type = "NaturalGamma"
-
-		self.parent.dataFrame.UpdateMINMAX(type, minRange, maxRange)
 		self.parent.Window.UpdateDrawing()
 
 	def OnChangeWidth(self, event):
