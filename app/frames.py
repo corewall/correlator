@@ -38,7 +38,7 @@ class TopMenuFrame(wx.Frame):
 		wx.Frame.__init__(self, parent, -1, "Tool Bar",
 						 wx.Point(20,100),
 						 topsize,
-						 style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.FRAME_FLOAT_ON_PARENT | wx.FRAME_TOOL_WINDOW) #wx.STAY_ON_TOP)
+						 style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.FRAME_FLOAT_ON_PARENT | wx.FRAME_TOOL_WINDOW)
 
 		self.parent = parent
 		vbox = wx.BoxSizer(wx.VERTICAL)
@@ -543,8 +543,6 @@ class CompositePanel():
 
 	def addItemsInFrame(self):
 		self.plotNote = wx.Notebook(self.mainPanel, -1, style=wx.NB_TOP | wx.NB_MULTILINE)
-		
-		#self.mainPanel.SetBackgroundColour(wx.BLUE)
 
 		# Correlation/Evaluation graph panel
 		# brgtodo 9/6/2014: UI creation duplicated across Composite, Splice and ELD panels: consolidate
@@ -616,149 +614,121 @@ class CompositePanel():
 		
 		self.OnUpdatePlots()
 
-		# TIE panel
-		tiePanel = wx.Panel(self.mainPanel, -1)
-		#tiePanel.SetBackgroundColour(wx.GREEN)
-		tiePanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+		# Panel 3
+		panel3 = wx.Panel(self.mainPanel, -1)
+		hbox3 = wx.BoxSizer(wx.HORIZONTAL)
+
+		sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Depth option'), orient=wx.VERTICAL)
+		self.coreOnly = wx.RadioButton(panel3, -1, "This core only", style=wx.RB_GROUP)
+		sizer31.Add(self.coreOnly)
+		self.coreBelow = wx.RadioButton(panel3, -1, "This core and \nall below")
+		self.coreBelow.SetValue(True)
 		
-		self.tieStaticBox = wx.StaticBox(tiePanel, -1, 'TIE (Shift-click a core to start tie creation)')
-		#tieStaticBox.SetBackgroundColour(wx.RED)
-		tsbSizer = wx.StaticBoxSizer(self.tieStaticBox, orient=wx.VERTICAL)
+		buttonsize = 110
+		#if platform_name[0] == "Windows" :
+		#	buttonsize = 145
 		
-		choiceMethodPanel = wx.Panel(tiePanel, -1)
-		cmpSizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.coreChoice = wx.Choice(choiceMethodPanel, -1, size=(75,-1), choices=("core", "core + all below"))
-		self.tieMethod = wx.Choice(choiceMethodPanel, -1, choices=("to best correlation", "to tie", "to given..."))
-		cmpSizer.Add(wx.StaticText(choiceMethodPanel, -1, "Shift"), 0, wx.RIGHT | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
-		cmpSizer.Add(self.coreChoice, 0, wx.RIGHT | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
-		cmpSizer.Add(self.tieMethod, 0, wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
-		choiceMethodPanel.SetSizer(cmpSizer)
-		tsbSizer.Add(choiceMethodPanel, 0, wx.EXPAND | wx.BOTTOM, 5)
-		
-		tieButtonPanel = wx.Panel(tiePanel, -1)
-		#tieButtonPanel.SetBackgroundColour(wx.GREEN)
-		self.clearButton = wx.Button(tieButtonPanel, -1, "Clear Tie")
-		self.applyButton = wx.Button(tieButtonPanel, -1, "Adjust Depth")
-		tbpSz = wx.BoxSizer(wx.HORIZONTAL)
-		tbpSz.Add(self.clearButton, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 3)
-		tbpSz.Add(self.applyButton, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 3)
-		tieButtonPanel.SetSizer(tbpSz)
-		
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnApplyTieShift, self.applyButton)
+		sizer31.Add(self.coreBelow, wx.BOTTOM, 0)
+		self.actionType = wx.ComboBox(panel3, -1, "To tie", (0,0),(buttonsize,-1), ("To best correlation", "To tie", "To given"), wx.CB_DROPDOWN)
+		self.actionType.SetForegroundColour(wx.BLACK)
+		self.actionType.SetEditable(False)
+		sizer31.Add(self.actionType, 0, wx.TOP, 0)
+		hbox3.Add(sizer31, 1, wx.RIGHT, 0)
+
+		sizer32 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Undo option'), orient=wx.VERTICAL)
+		sizer32.Add(wx.StaticText(panel3, -1, 'Previous offset:', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+		#sizer32 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Undo option'), orient=wx.VERTICAL)
+		#self.corePrev = wx.RadioButton(panel3, -1, "Previous offset", style=wx.RB_GROUP)
+		#self.corePrev.SetValue(True)
+		#sizer32.Add(self.corePrev)
+
+		if platform_name[0] == "Windows" :
+			self.undoButton = wx.Button(panel3, -1, "Undo To", size=(135, 30))
+			self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoCore, self.undoButton)
+			self.undoButton.Enable(False)
+			sizer32.Add(self.undoButton)
+		else :	
+			self.undoButton = wx.Button(panel3, -1, "Undo To", size=(120, 30))
+			self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoCore, self.undoButton)
+			self.undoButton.Enable(False)
+			sizer32.Add(self.undoButton)
+
+
+		#self.coreAbove = wx.RadioButton(panel3, -1, "Offset of core \nabove")
+		## rBotton.Bind(wx.EVT_RADIOBUTTON, self.monActv)
+		#sizer32.Add(self.coreAbove)
+		#self.coreAbove.Enable(False)
+		#if platform_name[0] == "Windows" :
+		#	self.undoButton = wx.Button(panel3, -1, "Undo To", (165, 60), (135, 30))
+		#else :	
+		#	self.undoButton = wx.Button(panel3, -1, "Undo To", (165, 95), (120, 30))
+		#self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoCore, self.undoButton)
+		#self.undoButton.Enable(False)
+
+		sizer32.Add(wx.StaticText(panel3, -1, 'Offset of core\nabove:', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+		self.aboveButton = wx.Button(panel3, -1, "Undo To", size=(120, 30))
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoCoreAbove, self.aboveButton)
+		self.aboveButton.Enable(False)
+		sizer32.Add(self.aboveButton)
+
+		hbox3.Add(sizer32, 1)
+		panel3.SetSizer(hbox3)
+		vbox.Add(panel3, 1, wx.BOTTOM, 9)
+
+		buttonsize = 130
+		if platform_name[0] == "Windows" :
+			buttonsize = 145
+			
+		# Panel 4
+		panel4 = wx.Panel(self.mainPanel, -1)
+		hbox4 = wx.BoxSizer(wx.HORIZONTAL)
+		sizer41 = wx.StaticBoxSizer(wx.StaticBox(panel4, -1, 'Depth adjust (m)'), orient=wx.VERTICAL)
+		self.depth = wx.TextCtrl(panel4, -1, " ", size=(buttonsize, 25), style=wx.SUNKEN_BORDER )
+		sizer41.Add(self.depth)
+		hbox4.Add(sizer41, 1, wx.RIGHT, 10)
+
+		buttonsize = 120
+		if platform_name[0] == "Windows" :
+			buttonsize = 135
+			
+		sizer42 = wx.GridSizer(2, 1)
+		self.clearButton = wx.Button(panel4, -1, "Clear Tie", size=(buttonsize, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnClearTie, self.clearButton)
-		
-		tsbSizer.Add(tieButtonPanel, 0, wx.ALIGN_RIGHT | wx.EXPAND)
+		self.clearButton.Enable(False)
+		sizer42.Add(self.clearButton, 0, wx.TOP, 5)
 
-		tiePanel.GetSizer().Add(tsbSizer, 1, wx.RIGHT)
-		vbox.Add(tiePanel, 1, wx.BOTTOM, 10)
+		self.adjustButton = wx.Button(panel4, -1, "Adjust Depth", size=(buttonsize, 30))
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnAdjust, self.adjustButton)
+		self.adjustButton.Enable(False)
+		sizer42.Add(self.adjustButton)
+		hbox4.Add(sizer42, 1)
 
-		# SET panel
-		setPanel = wx.Panel(self.mainPanel, -1)
-		#setPanel.SetBackgroundColour(wx.BLUE)
-		setPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		panel4.SetSizer(hbox4)
+		vbox.Add(panel4, 0, wx.BOTTOM, 2)
 
-		suggShiftPanel = wx.Panel(setPanel, -1)
-		sspSz = wx.BoxSizer(wx.HORIZONTAL)
-		sspSz.Add(wx.StaticText(suggShiftPanel, -1, "Shift by"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 3)
-		self.depth = wx.TextCtrl(suggShiftPanel, -1)
-		sspSz.Add(self.depth, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
-		sspSz.Add(wx.StaticText(suggShiftPanel, -1, "m"), 0, wx.ALIGN_CENTER_VERTICAL)
-		suggShiftPanel.SetSizer(sspSz)
-
-		self.setStaticBox = wx.StaticBox(setPanel, -1, "SET (help text)")
-		ssbSz = wx.StaticBoxSizer(self.setStaticBox, orient=wx.VERTICAL)
-		# hard-code width to force StaticBox to full width of Composite panel - can't find any other way to do this
-		self.growthRateText = wx.StaticText(setPanel, -1, "[Shift-click a core]", size=(260,-1))	
-		ssbSz.Add(self.growthRateText, 0, wx.BOTTOM, 5)
-		ssbSz.Add(suggShiftPanel, 0, wx.BOTTOM, 10)
-
-		self.applySetButton = wx.Button(setPanel, -1, "Apply Shift")
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnApplySetShift, self.applySetButton)
-		
-		ssbSz.Add(self.applySetButton, 0, wx.ALIGN_RIGHT | wx.EXPAND)
-		setPanel.GetSizer().Add(ssbSz, 1, wx.EXPAND)
-		vbox.Add(setPanel, 1, wx.BOTTOM, 10)
+		self.showClue = wx.CheckBox(self.mainPanel, -1, 'Show depth adjust clue')
+		#self.showClue.SetValue(False)
+		self.showClue.SetValue(True)
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowClue, self.showClue)
+		vbox.Add(self.showClue, 0, wx.BOTTOM, 5)
 
 		vbox.Add(wx.StaticText(self.mainPanel, -1, '*Sub menu for tie: On dot, right mouse button.', (5, 5)), 0, wx.BOTTOM, 5)
 
-		#self.projectButton = wx.Button(self.mainPanel, -1, "Project...")
-		#self.mainPanel.Bind(wx.EVT_BUTTON, self.OnProject, self.projectButton)
-		#vbox.Add(self.projectButton, 0, wx.BOTTOM, 5)
+		self.projectButton = wx.Button(self.mainPanel, -1, "Project...", size=(buttonsize, 30))
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnProject, self.projectButton)
+		vbox.Add(self.projectButton, 0, wx.BOTTOM, 5)
 
-		self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine Table")
+		self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine Table", size =(150, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
-		vbox.Add(self.saveButton, 0, wx.ALIGN_CENTER_VERTICAL | wx.BOTTOM | wx.EXPAND, 1)
+		vbox.Add(self.saveButton, 0, wx.ALIGN_CENTER_VERTICAL)
 		self.saveButton.Enable(False)
 
 		self.mainPanel.SetSizer(vbox)
 
-	def UpdateUI(self):
-		self.UpdateTieUI()
-		self.UpdateSetUI()
-		
-	def UpdateTieUI(self):
-		tieCount = self.parent.Window.GetCompositeTieCount()
-		if tieCount == 0:
-			self.coreChoice.Enable(False)
-			self.tieMethod.Enable(False)
-			self.applyButton.Enable(False)
-			self.clearButton.Enable(False)
-		elif tieCount == 1:
-			self.coreChoice.Enable(False)
-			self.tieMethod.Enable(False)
-			self.applyButton.Enable(False)
-			self.clearButton.Enable(True)
-		elif tieCount == 2:
-			self.coreChoice.Enable(True)
-			self.tieMethod.Enable(True)
-			self.applyButton.Enable(True)
-		self.UpdateTieHelpText(tieCount)
-		
-	def UpdateTieHelpText(self, tieCount):
-		if tieCount == 0:
-			self.tieStaticBox.SetLabel("TIE (Shift-click a core to create anchor point)")
-		elif tieCount == 1:
-			self.tieStaticBox.SetLabel("TIE (Shift-click the core to be shifted)")
-		elif tieCount == 2:
-			self.tieStaticBox.SetLabel("TIE (Drag green tie; apply with right-click or buttons)")
-			
-	def UpdateGrowthRateText(self, hole=None, core=None, growthRate=None):
-		if hole is None: # set to default
-			grStr = "[Shift-click a core for growth rate]"
-		else:
-			grStr = "Growth rate of cores above {}{} = {}".format(hole, core, growthRate)
-		self.growthRateText.SetLabel(grStr)
-		
-	def UpdateShiftText(self, shiftAmount):
-		self.depth.SetValue(shiftAmount)
-	
-	def UpdateSetUI(self):
-		if self.parent.Window.GetCompositeTieCount() > 0:
-			coreInfo = self.parent.Window.GetFixedCompositeTieCore()
-			if coreInfo is not None:
-				holeDict = self.parent.Window.GetGrowthRateData()
-				coreList = holeDict[coreInfo.hole]
-				for grTuple in coreList: # grTuple: (core, mbsf, mcd, growthRate)
-					if grTuple[0] == coreInfo.holeCore:
-						self.UpdateGrowthRateText(coreInfo.hole, coreInfo.holeCore, grTuple[3])
-						shiftAmount = round((grTuple[1] * grTuple[3]) - grTuple[1], 3)
-						self.UpdateShiftText(str(shiftAmount))
-						break
-			#print "found coreInfo = {}".format(coreInfo)
-		else:
-			self.UpdateGrowthRateText(None) # set to default
-			self.UpdateShiftText("")
-		self.UpdateSetHelpText()
-	
-	def UpdateSetHelpText(self):
-		tieCount = self.parent.Window.GetCompositeTieCount()
-		if tieCount == 0:
-			self.setStaticBox.SetLabel("SET (Shift-click a core to be shifted)")
-		else:
-			self.setStaticBox.SetLabel("SET (Adjust shift (optional); click Apply Shift)")
-	
 	def OnInitUI(self):
-		self.UpdateUI()
+		self.adjustButton.Enable(False)
+		self.clearButton.Enable(False)
+		self.undoButton.Enable(False)
 
 	def OnSAVE(self, event):
 		dlg = dialog.Message3Button(self.parent, "Do you want to create new affine file?")
@@ -776,56 +746,47 @@ class CompositePanel():
 			self.parent.OnShowMessage("Information", "Successfully Saved", 1)
 			self.parent.AffineChange = False 
 
+	def OnButtonEnable(self, opt, enable):
+		if opt == 0 : 
+			self.adjustButton.Enable(enable)
+			self.clearButton.Enable(enable)
+			self.aboveButton.Enable(enable)
+		elif opt == 1:
+			self.undoButton.Enable(enable)
+		else :
+			self.clearButton.Enable(enable)
+
+	def OnShowClue(self, event):
+		self.parent.Window.ShiftClue = self.showClue.IsChecked()
+		self.parent.Window.UpdateDrawing()
+
 	def OnDismiss(self, evt):
 		self.Hide()
 
-	def OnApplyTieShift(self, evt):
-		curSel = self.tieMethod.GetSelection()
-		if curSel == 0: # to best correlation brgtodo consts!
-			shiftType = 0
+	def OnAdjust(self, evt):
+		offset = self.depth.GetValue()
+
+		type = 0 # To best correlation
+		if self.actionType.GetValue() == "To best correlation" :
 			offset = str(self.bestOffset)
-		elif curSel == 1: # to tie
-			shiftType = 1
-			offset = self.depth.GetValue()
-		elif curSel == 2: # to given...
-			shiftType = 2
-			inputDlg = wx.TextEntryDialog(self.parent, "Enter an shift amount:", "Shift to given")
-			validInput = False
-			if inputDlg.ShowModal() == wx.ID_OK:
-				try:
-					offset = float(inputDlg.GetValue())
-					validInput = True
-				except ValueError:
-					self.parent.OnShowMessage("Error", "Cannot convert {} to floating point value".format(inputDlg.GetValue()), 1)
-			if not validInput:
-				return
+		elif self.actionType.GetValue() == "To tie" :
+			type = 1 
+		elif self.actionType.GetValue() == "To given" :
+			type = 2 
 
-		affectedCore = 0 if self.coreChoice.GetSelection() == 0 else 1 # this core only, else core + all below
-		self.parent.OnAdjustCore(affectedCore, shiftType, offset)
+		if self.coreBelow.GetValue() == True : 
+			self.parent.OnAdjustCore(1, type, offset)
+		if self.coreOnly.GetValue() == True :
+			self.parent.OnAdjustCore(0, type, offset)
+
+		self.parent.Window.activeTie = -1
+
 		self.UpdateGrowthPlot()
-		self.UpdateUI()
-		
-	def OnApplySetShift(self, evt):
-		shift = float(self.depth.GetValue())
-		coreInfo = self.parent.Window.GetFixedCompositeTieCore()
-		py_correlator.project(coreInfo.hole, int(coreInfo.holeCore), coreInfo.type, shift)
-
-		self.parent.AffineChange = True
-		py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
-
-		# todo: notify Corelyzer of change
-		#self.parent.ShiftSectionSend(ciA.hole, ciA.holeCore, shift, opId)
-
-		if self.parent.showReportPanel == 1:
-			self.parent.OnUpdateReport()
-		self.parent.UpdateData()
-		self.parent.UpdateStratData()
-		self.OnClearTie(None) # remove fixed tie
-		
 
 	def OnClearTie(self, evt):
 		self.parent.Window.OnClearTies(0)
-		self.UpdateUI()
+		self.OnButtonEnable(0, False)
+		self.parent.Window.activeTie = -1
 
 	def OnUndoCore(self, evt):
 		self.parent.OnUndoCore(0)
@@ -1957,6 +1918,12 @@ class ELDPanel():
 		panel3.SetSizer(hbox3)
 		vbox.Add(panel3, 0, wx.BOTTOM, 5)
 
+		# brgtodo 6/25/2014: better var name
+		self.showClue = wx.CheckBox(self.mainPanel, -1, 'Show depth adjust arrows')
+		self.showClue.SetValue(True)
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowClue, self.showClue)
+		vbox.Add(self.showClue, 0, wx.BOTTOM, 5)
+
 		vbox.Add(wx.StaticText(self.mainPanel, -1, '*Sub menu for tie: On dot, right mouse button.', (5, 5)), 0, wx.BOTTOM, 9)
 		#vbox.Add(wx.StaticText(self.mainPanel, -1, '*Log data is required.', (5, 5)), 0, wx.BOTTOM, 9)
 
@@ -2014,6 +1981,10 @@ class ELDPanel():
 				py_correlator.setSaganOption(1)
 			else :
 				py_correlator.setSaganOption(0)
+
+	def OnShowClue(self, event):
+		self.parent.Window.LogClue = self.showClue.IsChecked()
+		self.parent.Window.UpdateDrawing()
 
 	def UpdateTieInfo(self, info, depth, tieNo):
 		i = tieNo / 2 
@@ -3800,7 +3771,7 @@ class PreferencesPanel():
 		
 		updateScroll = event is not None
 		self.parent.OnUpdateDepthRange(min, max, updateScroll)
-		
+
 	def OnShowAffineShiftArrows(self, event):
 		self.parent.Window.ShiftClue = self.showAffineShiftArrows.IsChecked()
 		self.parent.Window.UpdateDrawing()
@@ -3808,7 +3779,7 @@ class PreferencesPanel():
 	def OnShowLogShiftArrows(self, event):
 		self.parent.Window.LogClue = self.showLogShiftArrows.IsChecked()
 		self.parent.Window.UpdateDrawing()
-
+	
 	def addItemsInFrame(self):
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
 	
@@ -3863,12 +3834,11 @@ class PreferencesPanel():
 
 		vbox_top.Add(grid2, 0, wx.TOP | wx.LEFT, 9)
 		vbox_top.Add(wx.StaticLine(self.mainPanel, -1, size=(buttonsize,1)), 0, wx.TOP | wx.LEFT, 9)
-		
-		# brgbrg 
+
 		self.showAffineShiftArrows = wx.CheckBox(self.mainPanel, -1, "Show composite shift arrows")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftArrows, self.showAffineShiftArrows)
 		vbox_top.Add(self.showAffineShiftArrows, 0, wx.ALL, 5)
-		
+
 		self.showLogShiftArrows = wx.CheckBox(self.mainPanel, -1, "Show log shift arrows")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)
 		vbox_top.Add(self.showLogShiftArrows, 0, wx.ALL, 5)
