@@ -697,7 +697,7 @@ class CompositePanel():
 		self.clearButton.Enable(False)
 		sizer42.Add(self.clearButton, 0, wx.TOP, 5)
 
-		self.adjustButton = wx.Button(panel4, -1, "Adjust Depth", size=(buttonsize, 30))
+		self.adjustButton = wx.Button(panel4, -1, "Shift to Tie", size=(buttonsize, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnAdjust, self.adjustButton)
 		self.adjustButton.Enable(False)
 		sizer42.Add(self.adjustButton)
@@ -705,12 +705,6 @@ class CompositePanel():
 
 		panel4.SetSizer(hbox4)
 		vbox.Add(panel4, 0, wx.BOTTOM, 2)
-
-		self.showClue = wx.CheckBox(self.mainPanel, -1, 'Show depth adjust clue')
-		#self.showClue.SetValue(False)
-		self.showClue.SetValue(True)
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowClue, self.showClue)
-		vbox.Add(self.showClue, 0, wx.BOTTOM, 5)
 
 		vbox.Add(wx.StaticText(self.mainPanel, -1, '*Sub menu for tie: On dot, right mouse button.', (5, 5)), 0, wx.BOTTOM, 5)
 
@@ -755,10 +749,6 @@ class CompositePanel():
 			self.undoButton.Enable(enable)
 		else :
 			self.clearButton.Enable(enable)
-
-	def OnShowClue(self, event):
-		self.parent.Window.ShiftClue = self.showClue.IsChecked()
-		self.parent.Window.UpdateDrawing()
 
 	def OnDismiss(self, evt):
 		self.Hide()
@@ -1918,12 +1908,6 @@ class ELDPanel():
 		panel3.SetSizer(hbox3)
 		vbox.Add(panel3, 0, wx.BOTTOM, 5)
 
-		# brgtodo 6/25/2014: better var name
-		self.showClue = wx.CheckBox(self.mainPanel, -1, 'Show depth adjust arrows')
-		self.showClue.SetValue(True)
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowClue, self.showClue)
-		vbox.Add(self.showClue, 0, wx.BOTTOM, 5)
-
 		vbox.Add(wx.StaticText(self.mainPanel, -1, '*Sub menu for tie: On dot, right mouse button.', (5, 5)), 0, wx.BOTTOM, 9)
 		#vbox.Add(wx.StaticText(self.mainPanel, -1, '*Log data is required.', (5, 5)), 0, wx.BOTTOM, 9)
 
@@ -1981,10 +1965,6 @@ class ELDPanel():
 				py_correlator.setSaganOption(1)
 			else :
 				py_correlator.setSaganOption(0)
-
-	def OnShowClue(self, event):
-		self.parent.Window.LogClue = self.showClue.IsChecked()
-		self.parent.Window.UpdateDrawing()
 
 	def UpdateTieInfo(self, info, depth, tieNo):
 		i = tieNo / 2 
