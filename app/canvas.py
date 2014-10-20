@@ -3846,23 +3846,6 @@ class DataCanvas(wxBufferedWindow):
 			self.drag = 0 
 			self.UpdateDrawing()
 
-	def OnRemoveAffineShift(self, evt):
-		coreInfo = self.findCoreInfoByIndex(self.DrawData["MouseInfo"][0][0])
-		if coreInfo is not None:
-			py_correlator.undo(2, coreInfo.hole, int(coreInfo.holeCore))
-
-			self.parent.AffineChange = True
-			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
-
-			s = "Composite undo offsets the core above: hole " + coreInfo.hole + " core " + coreInfo.holeCore + ": " + str(datetime.today()) + "\n\n"
-			self.parent.logFileptr.write(s)
-			self.parent.UpdateData()
-			self.parent.UpdateStratData()
-			self.parent.UpdateSend()
-
-			self.AdjustDepthCore = []
-			self.parent.UpdateData()
-
 	def OnUndoCore(self, opt):
 		self.parent.compositePanel.OnButtonEnable(1, False)
 		if opt == 0 : # "Previous Offset"
@@ -4455,10 +4438,8 @@ class DataCanvas(wxBufferedWindow):
 			for mouse in self.DrawData["MouseInfo"] :
 				if self.findCoreInfoByIndex(mouse[0]) != None:
 					popupMenu = wx.Menu()
-					popupMenu.Append(4, "&Undo last shift")
-					wx.EVT_MENU(popupMenu, 4, self.OnTieSelectionCb)
-					popupMenu.Append(666, "&Remove affine shift")
-					wx.EVT_MENU(popupMenu, 666, self.OnRemoveAffineShift)
+					#popupMenu.Append(4, "&Undo last shift")
+					#wx.EVT_MENU(popupMenu, 4, self.OnTieSelectionCb)
 					if self.parent.client != None :
 						popupMenu.Append(3, "&Show it on Corelyzer")
 						wx.EVT_MENU(popupMenu, 3, self.OnSetQTCb)
