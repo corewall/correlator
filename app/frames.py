@@ -604,7 +604,7 @@ class CompositePanel():
 		self.plotNote.SetSelection(1)
 
 		vbox = wx.BoxSizer(wx.VERTICAL)
-		vbox.Add(self.plotNote, 5, wx.EXPAND | wx.ALL, 5)
+		vbox.Add(self.plotNote, 3, wx.EXPAND | wx.ALL, 5)
 
 		# update drawings
 		xdata = [ (-self.parent.leadLag, 0), (self.parent.leadLag, 0) ]
@@ -616,101 +616,85 @@ class CompositePanel():
 
 		# Panel 3
 		panel3 = wx.Panel(self.mainPanel, -1)
-		hbox3 = wx.BoxSizer(wx.HORIZONTAL)
 
-		sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Depth option'), orient=wx.VERTICAL)
-		self.coreOnly = wx.RadioButton(panel3, -1, "This core only", style=wx.RB_GROUP)
-		sizer31.Add(self.coreOnly)
-		self.coreBelow = wx.RadioButton(panel3, -1, "This core and \nall below")
-		self.coreBelow.SetValue(True)
+		sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'TIE Shift Options'), orient=wx.VERTICAL)
+		self.applyCore = wx.Choice(panel3, -1, choices=["This core only", "This core and all below"])
+		sizer31.Add(self.applyCore, 0, wx.EXPAND | wx.BOTTOM, 5)
 		
-		buttonsize = 110
-		#if platform_name[0] == "Windows" :
-		#	buttonsize = 145
+		# type depth panel
+		tdpSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.actionType = wx.Choice(panel3, -1, choices=["To tie", "To best correlation", "By given amount (m):"])
+		self.depth = wx.TextCtrl(panel3, -1)
+		tdpSizer.Add(self.actionType, 0, wx.RIGHT, 5)
+		tdpSizer.Add(self.depth)
+		sizer31.Add(tdpSizer, 0, wx.EXPAND | wx.TOP, 5)
 		
-		sizer31.Add(self.coreBelow, wx.BOTTOM, 0)
-		self.actionType = wx.ComboBox(panel3, -1, "To tie", (0,0),(buttonsize,-1), ("To best correlation", "To tie", "To given"), wx.CB_DROPDOWN)
-		self.actionType.SetForegroundColour(wx.BLACK)
-		self.actionType.SetEditable(False)
-		sizer31.Add(self.actionType, 0, wx.TOP, 0)
-		hbox3.Add(sizer31, 1, wx.RIGHT, 0)
+		self.mainPanel.Bind(wx.EVT_CHOICE, self.UpdateDepthField, self.actionType)
+		
+		commentSizer = wx.BoxSizer(wx.HORIZONTAL)
+		commentSizer.Add(wx.StaticText(panel3, -1, "Comment:"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+		commentSizer.Add(wx.TextCtrl(panel3, -1), 1)
+		sizer31.Add(commentSizer, 0, wx.EXPAND | wx.TOP, 10)
+		
+		btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.adjustButton = wx.Button(panel3, -1, "Shift to Tie")
+		self.clearButton = wx.Button(panel3, -1, "Clear Tie")
+		btnSizer.Add(self.clearButton, 1, wx.RIGHT, 5)
+		btnSizer.Add(self.adjustButton, 1, 5)
+		sizer31.AddStretchSpacer()
+		sizer31.Add(btnSizer, 0, wx.EXPAND | wx.TOP, 10)
 
-		sizer32 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Undo option'), orient=wx.VERTICAL)
-		sizer32.Add(wx.StaticText(panel3, -1, 'Previous offset:', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-		#sizer32 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Undo option'), orient=wx.VERTICAL)
-		#self.corePrev = wx.RadioButton(panel3, -1, "Previous offset", style=wx.RB_GROUP)
-		#self.corePrev.SetValue(True)
-		#sizer32.Add(self.corePrev)
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnClearTie, self.clearButton)
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnAdjust, self.adjustButton)
+		
+		panel3.SetSizer(sizer31)
+		vbox.Add(panel3, 0, wx.EXPAND)
+		
+		# Project... button
+		projectPanel = wx.Panel(self.mainPanel, -1)
+		setSizer = wx.StaticBoxSizer(wx.StaticBox(projectPanel, -1, "SET Dialog"), orient=wx.VERTICAL)
+		self.projectButton = wx.Button(projectPanel, -1, "SET By Growth Rate or %...")
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnProject, self.projectButton)
+		setSizer.Add(self.projectButton, 1, wx.EXPAND)
+		projectPanel.SetSizer(setSizer)
+		vbox.Add(projectPanel, 0, wx.EXPAND)
+
+		# undo panel
+		undoPanel = wx.Panel(self.mainPanel, -1)
+		sizer32 = wx.StaticBoxSizer(wx.StaticBox(undoPanel, -1, 'Undo Options'), orient=wx.VERTICAL)
+		
+		undoSizer = wx.FlexGridSizer(rows=2, cols=2, hgap=5, vgap=5)
+		undoSizer.AddGrowableCol(1)
+				
+		undoSizer.Add(wx.StaticText(undoPanel, -1, 'Previous offset:'), 0, wx.ALIGN_CENTER_VERTICAL)
 
 		if platform_name[0] == "Windows" :
-			self.undoButton = wx.Button(panel3, -1, "Undo To", size=(135, 30))
+			self.undoButton = wx.Button(undoPanel, -1, "Undo To", size=(135, 30))
 			self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoCore, self.undoButton)
 			self.undoButton.Enable(False)
-			sizer32.Add(self.undoButton)
+			undoSizer.Add(self.undoButton, 0, wx.EXPAND)
 		else :	
-			self.undoButton = wx.Button(panel3, -1, "Undo To", size=(120, 30))
+			self.undoButton = wx.Button(undoPanel, -1, "Undo To")#, size=(120, 30))
 			self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoCore, self.undoButton)
 			self.undoButton.Enable(False)
-			sizer32.Add(self.undoButton)
+			undoSizer.Add(self.undoButton, 0, wx.EXPAND)
 
-
-		#self.coreAbove = wx.RadioButton(panel3, -1, "Offset of core \nabove")
-		## rBotton.Bind(wx.EVT_RADIOBUTTON, self.monActv)
-		#sizer32.Add(self.coreAbove)
-		#self.coreAbove.Enable(False)
-		#if platform_name[0] == "Windows" :
-		#	self.undoButton = wx.Button(panel3, -1, "Undo To", (165, 60), (135, 30))
-		#else :	
-		#	self.undoButton = wx.Button(panel3, -1, "Undo To", (165, 95), (120, 30))
-		#self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoCore, self.undoButton)
-		#self.undoButton.Enable(False)
-
-		sizer32.Add(wx.StaticText(panel3, -1, 'Offset of core\nabove:', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.aboveButton = wx.Button(panel3, -1, "Undo To", size=(120, 30))
+		undoSizer.Add(wx.StaticText(undoPanel, -1, 'Offset of core above:'), 0, wx.ALIGN_CENTER_VERTICAL)
+		
+		self.aboveButton = wx.Button(undoPanel, -1, "Undo To")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoCoreAbove, self.aboveButton)
 		self.aboveButton.Enable(False)
-		sizer32.Add(self.aboveButton)
+		undoSizer.Add(self.aboveButton, 0, wx.EXPAND)
 
-		hbox3.Add(sizer32, 1)
-		panel3.SetSizer(hbox3)
-		vbox.Add(panel3, 1, wx.BOTTOM, 9)
+		sizer32.Add(undoSizer, 0, wx.EXPAND)
+		undoPanel.SetSizer(sizer32)
+		vbox.Add(undoPanel, 0, wx.EXPAND)
 
 		buttonsize = 130
 		if platform_name[0] == "Windows" :
 			buttonsize = 145
 			
-		# Panel 4
-		panel4 = wx.Panel(self.mainPanel, -1)
-		hbox4 = wx.BoxSizer(wx.HORIZONTAL)
-		sizer41 = wx.StaticBoxSizer(wx.StaticBox(panel4, -1, 'Depth adjust (m)'), orient=wx.VERTICAL)
-		self.depth = wx.TextCtrl(panel4, -1, " ", size=(buttonsize, 25), style=wx.SUNKEN_BORDER )
-		sizer41.Add(self.depth)
-		hbox4.Add(sizer41, 1, wx.RIGHT, 10)
-
-		buttonsize = 120
-		if platform_name[0] == "Windows" :
-			buttonsize = 135
-			
-		sizer42 = wx.GridSizer(2, 1)
-		self.clearButton = wx.Button(panel4, -1, "Clear Tie", size=(buttonsize, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnClearTie, self.clearButton)
-		self.clearButton.Enable(False)
-		sizer42.Add(self.clearButton, 0, wx.TOP, 5)
-
-		self.adjustButton = wx.Button(panel4, -1, "Shift to Tie", size=(buttonsize, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnAdjust, self.adjustButton)
-		self.adjustButton.Enable(False)
-		sizer42.Add(self.adjustButton)
-		hbox4.Add(sizer42, 1)
-
-		panel4.SetSizer(hbox4)
-		vbox.Add(panel4, 0, wx.BOTTOM, 2)
-
-		vbox.Add(wx.StaticText(self.mainPanel, -1, '*Sub menu for tie: On dot, right mouse button.', (5, 5)), 0, wx.BOTTOM, 5)
-
-		self.projectButton = wx.Button(self.mainPanel, -1, "Project...", size=(buttonsize, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnProject, self.projectButton)
-		vbox.Add(self.projectButton, 0, wx.BOTTOM, 5)
+		vbox.Add(wx.StaticText(self.mainPanel, -1, '* Right-click tie for context menu', (5, 5)), 0, wx.BOTTOM, 5)
 
 		self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine Table", size =(150, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
@@ -718,11 +702,17 @@ class CompositePanel():
 		self.saveButton.Enable(False)
 
 		self.mainPanel.SetSizer(vbox)
+		
+		self.UpdateDepthField()
 
 	def OnInitUI(self):
 		self.adjustButton.Enable(False)
 		self.clearButton.Enable(False)
 		self.undoButton.Enable(False)
+		
+	def UpdateDepthField(self, evt=None):
+		enableDepth = (self.actionType.GetSelection() == 2) # "By given amount"
+		self.depth.Enable(enableDepth)
 
 	def OnSAVE(self, event):
 		dlg = dialog.Message3Button(self.parent, "Do you want to create new affine file?")
@@ -757,20 +747,18 @@ class CompositePanel():
 		offset = self.depth.GetValue()
 
 		type = 0 # To best correlation
-		if self.actionType.GetValue() == "To best correlation" :
+		actionStr = self.actionType.GetStringSelection()
+		if actionStr == "To best correlation":
 			offset = str(self.bestOffset)
-		elif self.actionType.GetValue() == "To tie" :
-			type = 1 
-		elif self.actionType.GetValue() == "To given" :
-			type = 2 
+		elif actionStr == "To tie":
+			type = 1
+		elif actionStr == "By given amount (m):":
+			type = 2
 
-		if self.coreBelow.GetValue() == True : 
-			self.parent.OnAdjustCore(1, type, offset)
-		if self.coreOnly.GetValue() == True :
-			self.parent.OnAdjustCore(0, type, offset)
+		adjustType = self.applyCore.GetSelection() # 0 = this core only, 1 = core and all below
+		self.parent.OnAdjustCore(adjustType, type, offset)
 
 		self.parent.Window.activeTie = -1
-
 		self.UpdateGrowthPlot()
 
 	def OnClearTie(self, evt):
