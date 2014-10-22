@@ -2724,7 +2724,7 @@ int WriteIODPAffineTable(FILE *fptr, Data *dataptr)
 			if (coreTop == 0.0 && diffOffset == 0.0)
 				shiftType = AFFINE_ANCHOR_STR;
 			else if (depthOffset != 0.0) {
-				if (coreptr->getAffineType())
+				if (coreptr->getAffineType() == AFFINE_TIE)
 					shiftType = AFFINE_TIE_STR;
 				else if (coreptr->getAffineType() == AFFINE_SET)
 					shiftType = AFFINE_SET_STR;
