@@ -1028,6 +1028,7 @@ class ProjectDialog(wx.Dialog):
 		self.outCore = ""
 		self.outType = None
 		self.outOffset = 0
+		self.outComment = ""
 
 		wx.Dialog.__init__(self, parent, -1, "SET", size=(300,330), style=wx.DEFAULT_DIALOG_STYLE |
 						   wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
@@ -1104,6 +1105,7 @@ class ProjectDialog(wx.Dialog):
 		self.outHole = self.holeChoice.GetStringSelection()
 		self.outCore = self.coreChoice.GetStringSelection()
 		self.outOffset = float(self.shiftField.GetValue())
+		self.outComment = self.commentField.GetValue()
 		# self.outType already set
 		self.EndModal(wx.ID_OK)
 
@@ -1139,7 +1141,7 @@ class ProjectDialog(wx.Dialog):
 			s = sorted(coreDict[hole], key=int)
 			for key in s:
 				self.coreData[hole].append(coreDict[hole][key])
-			
+				
 		if self.holeChoice.GetCount() > 0:
 			self.holeChoice.Select(0)
 			self.UpdateCoreChoice()
@@ -1154,38 +1156,48 @@ class ProjectDialog(wx.Dialog):
 		for coreTuple in self.coreData[curHoleStr]:
 			self.coreChoice.Append(coreTuple[0])
 		if self.coreChoice.GetCount() > 0:
-			self.coreChoice.Select(0)
+			self.coreChoice.Insert("All", 0)
+			self.coreChoice.Select(1)
 			self.UpdateData()
 
 	# update growth rate, current core shift, etc 
 	def UpdateData(self, evt=None):
 		curHole = self.holeChoice.GetStringSelection()
 		coreIndex = self.coreChoice.GetSelection()
-		curCore = self.coreData[curHole][coreIndex]
-		self.curCoreName = curHole + self.coreChoice.GetStringSelection()
-		self.curCoreShift = curCore[2] - curCore[1]
-		
-		if coreIndex > 0:
-			prevCore = self.coreData[curHole][coreIndex - 1]
-			self.prevCoreName = curHole + self.coreChoice.GetString(coreIndex - 1)
-			growthRate = prevCore[2] if coreIndex == 1 else prevCore[3]
-			self.growthRate = round(growthRate, 3)
-		else:
+		if coreIndex == 0: # "All" selected
+			self.allSelected = True
+			self.curCoreName = None
 			self.prevCoreName = None
-			self.growthRate = None
-			
-		if self.growthRadio.GetValue():
-			if self.growthRate is not None:
-				self.suggShift = round(curCore[1] * self.growthRate - curCore[1], 3)
-			else:
-				self.suggShift = None
+			self.suggShift = None
+			self.growthRate = self.coreData[curHole][-1][3]
 		else:
-			try:
-				pct = float(self.percentField.GetValue())/100.0 + 1.0 
-				self.suggShift = round(curCore[1] * pct, 3) - curCore[1]
-			except ValueError:
-				self.suggShift = None
+			self.allSelected = False
+			coreIndex -= 1
+			curCore = self.coreData[curHole][coreIndex]
+			self.curCoreName = curHole + self.coreChoice.GetStringSelection()
+			self.curCoreShift = curCore[2] - curCore[1]
 			
+			if coreIndex > 0:
+				prevCore = self.coreData[curHole][coreIndex - 1]
+				self.prevCoreName = curHole + self.coreChoice.GetString(coreIndex)
+				growthRate = prevCore[2] if coreIndex == 1 else prevCore[3]
+				self.growthRate = round(growthRate, 3)
+			else:
+				self.prevCoreName = None
+				self.growthRate = None
+				
+			if self.growthRadio.GetValue():
+				if self.growthRate is not None:
+					self.suggShift = round(curCore[1] * self.growthRate - curCore[1], 3)
+				else:
+					self.suggShift = None
+			else:
+				try:
+					pct = float(self.percentField.GetValue())/100.0 + 1.0 
+					self.suggShift = round(curCore[1] * pct, 3) - curCore[1]
+				except ValueError:
+					self.suggShift = None
+
 		self.UpdateCurShiftText()
 		self.UpdateSuggShiftText()
 		self.UpdateShiftDiffText()
@@ -1193,7 +1205,10 @@ class ProjectDialog(wx.Dialog):
 
 	def UpdateGrowthRateText(self):
 		if self.growthRate is not None:
-			self.growthRateText.SetLabel(str(self.growthRate) + " at " + self.prevCoreName)
+			if self.allSelected:
+				self.growthRateText.SetLabel(str(self.growthRate) + " at hole bottom")
+			else:
+				self.growthRateText.SetLabel(str(self.growthRate) + " at " + self.prevCoreName)
 		else:
 			self.growthRateText.SetLabel("[n/a]")
 			
@@ -1212,7 +1227,10 @@ class ProjectDialog(wx.Dialog):
 			self.shiftDiffText.SetLabel("")
 	
 	def UpdateCurShiftText(self):
-		self.currentShiftText.SetLabel("Current " + self.curCoreName + " affine shift: " + str(self.curCoreShift))
+		if self.curCoreName is not None:
+			self.currentShiftText.SetLabel("Current " + self.curCoreName + " affine shift: " + str(self.curCoreShift))
+		else:
+			self.currentShiftText.SetLabel("Current affine shift: [n/a for All]")
 		
 	def OnSuggShiftChange(self, evt):
 		origSuggShift = self.suggShift
