@@ -950,7 +950,7 @@ double Correlator::projectAll(char *hole, int datatype, char *annot, const float
 		for (int coreIdx = 0; coreIdx < coreCount; coreIdx++) {
 			Core *c = h->getCore(coreIdx);
 			if (c == NULL) continue;
-			cout << hole << c->getNumber() << " ";
+			//cout << hole << c->getNumber() << " ";
 			Value *firstVal = c->getFirst();
 			if (firstVal == NULL) continue;
 			const double mbsf = firstVal->getDepth();
