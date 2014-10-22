@@ -31,96 +31,53 @@ def opj(path):
 
 class TopMenuFrame(wx.Frame):
 	def __init__(self, parent):
-		#topsize = (320, 60)
-		topsize = (180, 245)
-		if platform_name[0] == "Windows" :
-			topsize = (185, 260)
 		wx.Frame.__init__(self, parent, -1, "Tool Bar",
 						 wx.Point(20,100),
-						 topsize,
 						 style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.FRAME_FLOAT_ON_PARENT | wx.FRAME_TOOL_WINDOW)
 
 		self.parent = parent
-		vbox = wx.BoxSizer(wx.VERTICAL)
-		##newbtn = wx.BitmapButton(self, -1, wx.Bitmap('icons/New-32x32.png'))
-		#newbtn = wx.Button(self, -1, "New", size=(180,25))
-		#self.Bind(wx.EVT_BUTTON, self.OnNEW, newbtn)
-		##newbtn.SetToolTip(wx.ToolTip('New') ) 
-		#vbox.Add(newbtn)
-
-		#dbbtn = wx.BitmapButton(self, -1, wx.Bitmap('icons/DB-32x32.png'))
-		#self.dbbtn = wx.Button(self, -1, "Go to Data Manager", size=(180,25))
-		self.dbbtn = wx.Button(self, -1, "Go to Display", size=(180,25))
+		
+		frameSizer = wx.BoxSizer(wx.VERTICAL)
+		
+		vbox = wx.FlexGridSizer(9, 1, vgap=5)
+		self.dbbtn = wx.Button(self, -1, "Go to Display")
 		self.Bind(wx.EVT_BUTTON, self.OnDB, self.dbbtn)
-		#dbbtn.SetToolTip(wx.ToolTip('Go to data manager') ) 
-		vbox.Add(self.dbbtn)
+		vbox.Add(self.dbbtn, 0, wx.EXPAND)
 
-		#savebtn = wx.BitmapButton(self, -1, wx.Bitmap('icons/save-32x32.png'))
-		savebtn = wx.Button(self, -1, "Save", size=(180,25))
+		savebtn = wx.Button(self, -1, "Save")
 		self.Bind(wx.EVT_BUTTON, self.OnSAVE, savebtn)
-		#savebtn.SetToolTip(wx.ToolTip('Save current changes to data manager') ) 
-		vbox.Add(savebtn)
+		vbox.Add(savebtn, 0, wx.EXPAND)
 
-		self.cntbtn = wx.Button(self, -1, "Connect to Corelyzer", size=(180,25))
+		self.cntbtn = wx.Button(self, -1, "Connect to Corelyzer")
 		self.Bind(wx.EVT_BUTTON, self.OnCONNECT, self.cntbtn)
-		#self.cntbtn.Enable(False)
-		vbox.Add(self.cntbtn)
+		vbox.Add(self.cntbtn, 0, wx.EXPAND)
 
-		self.drawingbtn = wx.Button(self, -1, "Discrete Points", size=(180,25))
+		self.drawingbtn = wx.Button(self, -1, "Discrete Points")
 		self.Bind(wx.EVT_BUTTON, self.OnDRAWMODE, self.drawingbtn)
-		vbox.Add(self.drawingbtn)
+		vbox.Add(self.drawingbtn, 0, wx.EXPAND)
+		
+		self.compositeBtn = wx.Button(self, -1, "Go to Composite")
+		vbox.Add(self.compositeBtn, 0, wx.EXPAND)
+		self.Bind(wx.EVT_BUTTON, self.OnComposite, self.compositeBtn)
+		
+		self.spliceBtn = wx.Button(self, -1, "Go to Splice")
+		vbox.Add(self.spliceBtn, 0, wx.EXPAND)
+		self.Bind(wx.EVT_BUTTON, self.OnSplice, self.spliceBtn)
 
-		#clearbtn = wx.BitmapButton(self, -1, wx.Bitmap('icons/Clear-32x32.png'))
-		clearbtn = wx.Button(self, -1, "Clear All Ties", size=(180,25))
-		self.Bind(wx.EVT_BUTTON, self.OnCLEAR, clearbtn)
-		#clearbtn.SetToolTip(wx.ToolTip('Clear all shifts') ) 
-		vbox.Add(clearbtn)
+		self.filterBtn = wx.Button(self, -1, "Go to Filters")
+		vbox.Add(self.filterBtn, 0, wx.EXPAND)
+		self.Bind(wx.EVT_BUTTON, self.OnFilter, self.filterBtn)
+		
+		self.prefsBtn = wx.Button(self, -1, "Go to Display Prefs")
+		vbox.Add(self.prefsBtn, 0, wx.EXPAND)
+		self.Bind(wx.EVT_BUTTON, self.OnPrefs, self.prefsBtn)
 
-		#clearCPbtn = wx.BitmapButton(self, -1, wx.Bitmap('icons/Clear-32x32.png'))
-		clearCPbtn = wx.Button(self, -1, "Clear All Shifts", size=(180,25))
-		self.Bind(wx.EVT_BUTTON, self.OnCLEARCOMPOSITE, clearCPbtn)
-		#clearCPbtn.SetToolTip(wx.ToolTip('Clear all composite shifts') ) 
-		vbox.Add(clearCPbtn)
-
-		#clearSPbtn = wx.BitmapButton(self, -1, wx.Bitmap('icons/Clear-32x32.png'))
-		clearSPbtn = wx.Button(self, -1, "Clear All Splice Ties", size=(180,25))
-		self.Bind(wx.EVT_BUTTON, self.OnCLEARSPLICE, clearSPbtn)
-		#clearSPbtn.SetToolTip(wx.ToolTip('Clear all splice ties') ) 
-		vbox.Add(clearSPbtn)
-
-		#clearSAbtn = wx.BitmapButton(self, -1, wx.Bitmap('icons/Clear-32x32.png'))
-		clearSAbtn = wx.Button(self, -1, "Clear All Core-Log Ties", size=(180,25))
-		self.Bind(wx.EVT_BUTTON, self.OnCLEARSAGAN, clearSAbtn)
-		#clearSAbtn.SetToolTip(wx.ToolTip('Clear all correlate ties') ) 
-		vbox.Add(clearSAbtn)
-
-		#splicebtn = wx.BitmapButton(self, -1, wx.Bitmap('icons/Splice-32x32.png'))
-		#self.Bind(wx.EVT_BUTTON, self.OnSPLICE, splicebtn)
-		#splicebtn.SetToolTip(wx.ToolTip('Splice data on/off') ) 
-		#vbox.Add(splicebtn)
-
-		#logbtn = wx.BitmapButton(self, -1, wx.Bitmap('icons/Log-32x32.png'))
-		#self.Bind(wx.EVT_BUTTON, self.OnLOG, logbtn)
-		#logbtn.SetToolTip(wx.ToolTip('Log data on/off') ) 
-		#vbox.Add(logbtn)
-
-		#stratbtn = wx.BitmapButton(self, -1, wx.Bitmap('icons/Strat-32x32.png'))
-		#self.Bind(wx.EVT_BUTTON, self.OnSTRAT, stratbtn)
-		#stratbtn.SetToolTip(wx.ToolTip('Strat data on/off') ) 
-		#vbox.Add(stratbtn)
-
-		#clearbtn = wx.BitmapButton(self, -1, wx.Bitmap('icons/Clear-32x32.png'))
-		#self.Bind(wx.EVT_BUTTON, self.OnCLEAR, clearbtn)
-		#clearbtn.SetToolTip(wx.ToolTip('Clear all shifts') ) 
-		#vbox_bottom.Add(clearbtn)
-
-		#exitbtn = wx.BitmapButton(self, -1, wx.Bitmap('icons/ErrorCircle-32x32.png'))
-		exitbtn = wx.Button(self, -1, "Exit", size=(180,25))
+		exitbtn = wx.Button(self, -1, "Exit Correlator")
 		self.Bind(wx.EVT_BUTTON, self.OnEXIT, exitbtn)
-		#exitbtn.SetToolTip(wx.ToolTip('Exit') ) 
-		vbox.Add(exitbtn)
+		vbox.Add(exitbtn, 0, wx.EXPAND)
 
-		self.SetSizer(vbox)
+		frameSizer.Add(vbox, 1, wx.EXPAND | wx.ALL, 2)
+		self.SetSizerAndFit(frameSizer)
 
 		self.SetBackgroundColour(wx.Colour(255, 255, 255))
 		wx.EVT_CLOSE(self, self.OnHide)
@@ -273,31 +230,19 @@ class TopMenuFrame(wx.Frame):
 		self.parent.Window.UpdateDrawing()
 		self.parent.Window.SetFocusFromKbd()
 
-	def OnCLEAR(self, event):
-		self.parent.OnClearAllData(event)
-		self.parent.Window.SetFocusFromKbd()
+	def OnComposite(self, event):
+		self.parent.Window.sideNote.SetSelection(1)
+	
+	def OnSplice(self, event):
+		self.parent.Window.sideNote.SetSelection(2)
 
-	def OnCLEARCOMPOSITE(self, event):
-		self.parent.OnClearComposite(event)
-		self.parent.Window.SetFocusFromKbd()
-
-	def OnCLEARSPLICE(self, event):
-		self.parent.OnClearSpliceTie(event)
-		self.parent.Window.SetFocusFromKbd()
-
-	def OnCLEARSAGAN(self, event):
-		self.parent.OnClearSAGANTie(event)
+	def OnFilter(self, event):
+		self.parent.Window.sideNote.SetSelection(5)
+	
+	def OnPrefs(self, event):
+		self.parent.Window.sideNote.SetSelection(6)
 
 	def OnEXIT(self, event):
-		#if self.parent.dataFrame.IsShown() == True :
-		#	self.parent.dataFrame.Show(False)
-		#	self.parent.midata.Check(False)
-		#else :
-		#if self.parent.CurrentDir != '' and self.parent.changeFlag == True :
-		#	ret = self.parent.OnShowMessage("About", "Do you want to save changes?", 2)		
-		#	if ret == wx.ID_OK :
-		#		self.OnSAVE(event)
-		#self.Close(True)
 		self.parent.OnExitButton(event)
 
 class ProgressFrame(wx.Frame):
