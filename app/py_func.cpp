@@ -44,6 +44,7 @@ static PyObject* getRatio(PyObject *self, PyObject *args);
 static PyObject* finalize(PyObject *self, PyObject *args);
 static PyObject* composite(PyObject *self, PyObject *args);
 static PyObject* project(PyObject *self, PyObject *args);
+static PyObject* projectAll(PyObject *self, PyObject *args);
 static PyObject* evalcoef(PyObject *self, PyObject *args);
 static PyObject* evalcoef_splice(PyObject *self, PyObject *args);
 static PyObject* evalcoefLog(PyObject *self, PyObject *args);
@@ -139,7 +140,10 @@ static PyMethodDef PyCoreMethods[] = {
      "Composite Data."},
 
     {"project", project, METH_VARARGS,
-     "Composite Shift by Growth Rate."},
+     "Composite Shift one core by given offset."},
+
+     {"projectAll", projectAll, METH_VARARGS,
+      "Composite Shift all cores in a hole by given rate."},
 
     {"evalcoef", evalcoef, METH_VARARGS,
      "Evaluate Cores."},
@@ -1302,18 +1306,39 @@ static PyObject* project(PyObject *self, PyObject *args)
 	int core = 0;
 	char *datatypeStr = NULL;
 	float offset = 0.0f;
+	char *comment = NULL;
 
-	if (!PyArg_ParseTuple(args, "sisf", &hole, &core, &datatypeStr, &offset))
+	if (!PyArg_ParseTuple(args, "sisfs", &hole, &core, &datatypeStr, &offset, &comment))
 		return NULL;
 
 	char* annotation = NULL;
 	int datatype = USERDEFINEDTYPE;
 	getTypeAndAnnot(datatypeStr, datatype, &annotation);
 
-	float ret = (float) correlator.project(hole, core, datatype, annotation, offset);
+	float ret = (float) correlator.project(hole, core, datatype, annotation, offset, comment);
 
 	return Py_BuildValue("f", ret);
 }
+
+static PyObject* projectAll(PyObject *self, PyObject *args)
+{
+	char *hole = NULL;
+	char *datatypeStr = NULL;
+	float rate = 0.0f;
+	char *comment = NULL;
+
+	if (!PyArg_ParseTuple(args, "ssfs", &hole, &datatypeStr, &rate, &comment))
+		return NULL;
+
+	char* annotation = NULL;
+	int datatype = USERDEFINEDTYPE;
+	getTypeAndAnnot(datatypeStr, datatype, &annotation);
+
+	float ret = (float) correlator.projectAll(hole, datatype, annotation, rate, comment);
+
+	return Py_BuildValue("f", ret);
+}
+
 
 static PyObject* evalcoef(PyObject *self, PyObject *args)
 {

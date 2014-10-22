@@ -804,7 +804,11 @@ class CompositePanel():
 		dlg = dialog.ProjectDialog(self.parent)
 		result = dlg.ShowModal()
 		if result == wx.ID_OK:
-			py_correlator.project(dlg.outHole, int(dlg.outCore), dlg.outType, dlg.outOffset)
+			if dlg.outCore == "All":
+				rate = (dlg.outPercent/100.0 + 1.0) 
+				py_correlator.projectAll(dlg.outHole, dlg.outType, rate, dlg.outComment)
+			else:
+				py_correlator.project(dlg.outHole, int(dlg.outCore), dlg.outType, dlg.outOffset, dlg.outComment)
 
 			self.parent.AffineChange = True
 			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)

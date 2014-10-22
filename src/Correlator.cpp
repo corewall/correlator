@@ -936,10 +936,37 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 	return 1.0f;
 }
 
-// SET affine shift
-double Correlator::project(char *hole, int core, int datatype, char *annot, float offset)
+double Correlator::projectAll(char *hole, int datatype, char *annot, const float rate, char *comment)
 {
-	cout << "Correlator::project offset of " << offset << endl;
+	//cout << "projectAll!" << endl;
+	if (m_dataptr == NULL) return -1;
+
+	//cout << "searching for hole " << hole << "...";
+	Hole *h = m_dataptr->getHole(hole, datatype, annot);
+	if (h != NULL) {
+		//cout << "found" << endl;
+		const int coreCount = h->getNumOfCores();
+		//cout << "spinning through " << coreCount << " cores...";
+		for (int coreIdx = 0; coreIdx < coreCount; coreIdx++) {
+			Core *c = h->getCore(coreIdx);
+			if (c == NULL) continue;
+			cout << hole << c->getNumber() << " ";
+			Value *firstVal = c->getFirst();
+			if (firstVal == NULL) continue;
+			const double mbsf = firstVal->getDepth();
+			const double offset = mbsf * rate - mbsf;
+			//cout << "core num = " << c->getNumber() << ", MBSF depth = " << mbsf << ", offset for rate " << rate << " = " << offset << endl;
+			project(hole, c->getNumber(), datatype, annot, offset, comment);
+		}
+	}
+
+	return 0.0f;
+}
+
+// SET affine shift
+double Correlator::project(char *hole, int core, int datatype, char *annot, float offset, char *comment)
+{
+	//cout << "Correlator::project offset of " << offset << endl;
 	Core *c = findCore(datatype, hole, core, annot);
 	if (c == NULL)
 	{
@@ -955,6 +982,7 @@ double Correlator::project(char *hole, int core, int datatype, char *annot, floa
 		c->setAffineType(AFFINE_SET);
 		const string typeStr = GetTypeStr(datatype, annot);
 		c->setAffineDatatype(typeStr);
+		c->setComment(comment);
 		m_dataptr->update();
 
 		// apply shift to cores of other datatypes in the same hole
@@ -985,6 +1013,7 @@ double Correlator::project(char *hole, int core, int datatype, char *annot, floa
 						coreptr->setDepthOffset(offset, topvalue->getType(), true);
 						coreptr->setAffineType(AFFINE_SET);
 						coreptr->setAffineDatatype(typeStr);
+						coreptr->setComment(comment);
 					}
 				}
 			}

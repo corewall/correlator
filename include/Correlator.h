@@ -57,7 +57,8 @@ public:
 	int composite( char* holeA, int coreidA, double offset, int coretype, char* annot, char *comment );
 	int compositeBelow( char* holeA, int coreidA, double offset, int coretype, char* annot, char* comment );
 
-	double project(char *hole, int core, int datatype, char* annot, float offset);
+	double project(char *hole, int core, int datatype, char* annot, float offset, char *comment);
+	double projectAll(char *hole, int datatype, char* annot, const float rate, char *comment);
 
 	int splice( char* hole, int coreid, int type, char* annot, bool append = false );
 	int splice( Core* source, bool append = false );

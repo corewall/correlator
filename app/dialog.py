@@ -1104,8 +1104,12 @@ class ProjectDialog(wx.Dialog):
 	def OnApply(self, evt):
 		self.outHole = self.holeChoice.GetStringSelection()
 		self.outCore = self.coreChoice.GetStringSelection()
-		self.outOffset = float(self.shiftField.GetValue())
+		try:
+			self.outOffset = float(self.shiftField.GetValue())
+		except ValueError:
+			self.outOffset = 0.0
 		self.outComment = self.commentField.GetValue()
+		self.outPercent = float(self.percentField.GetValue())
 		# self.outType already set
 		self.EndModal(wx.ID_OK)
 
