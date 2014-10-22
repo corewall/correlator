@@ -1277,20 +1277,17 @@ static PyObject* composite(PyObject *self, PyObject *args)
 	int coretype = USERDEFINEDTYPE;
 	getTypeAndAnnot(type, coretype, &annotation);
 
-	float ret=0.0;
-	if (opt == 2)
+	float ret = 0.0;
+	if (opt == 2) // shift this core to tie/evaluation
 		ret = (float) (correlator.composite(holeA, coreidA, posA, holeB, coreidB, posB, coretype, annotation, comment));
-	else if(opt == 3)
+	else if(opt == 3) // shift this core and all below to tie/evaluation
 		ret = (float) (correlator.compositeBelow(holeA, coreidA, posA, holeB, coreidB, posB, coretype, annotation, comment));
-	else {
-		cout << "Unknown composite operation " << opt << ", expected 2 (shift this core only) or 3 (core and all below)" << endl;
-	}
-	// 10/21/2014 brg: Unused - opt 4 and 5 are undo operations and no longer follow this path
-//	else if (opt == 4) {
-//		ret = (float) (correlator.composite(holeA, coreidA, posB, coretype, annotation));
-//	} else if (opt == 5) {
-//		ret = (float) (correlator.compositeBelow(holeA, coreidA, posB, coretype, annotation));
-//	}
+	else if (opt == 4) // shift this core to given
+		ret = (float) (correlator.composite(holeA, coreidA, posB, coretype, annotation, comment));
+	else if (opt == 5) // shift this core and all below to given
+		ret = (float) (correlator.compositeBelow(holeA, coreidA, posB, coretype, annotation, comment));
+	else
+		cout << "Unknown composite operation " << opt << ", expected 2-5" << endl;
 
 	//correlator.generateSpliceHole();
 

@@ -54,9 +54,8 @@ public:
 	
 	double composite(char* holeA, int coreidA, double posA, char* holeB, int coreidB, double posB, int coretype, char* annot, char* comment);
 	double compositeBelow(char* holeA, int coreidA, double posA, char* holeB, int coreidB, double posB, int coretype, char* annot, char* comment);
-	// brg 10/21/2014 unused
-	//int composite( char* holeA, int coreidA, double offset, int coretype, char* annot );
-	//int compositeBelow( char* holeA, int coreidA, double offset, int coretype, char* annot );
+	int composite( char* holeA, int coreidA, double offset, int coretype, char* annot, char *comment );
+	int compositeBelow( char* holeA, int coreidA, double offset, int coretype, char* annot, char* comment );
 
 	double project(char *hole, int core, int datatype, char* annot, float offset);
 

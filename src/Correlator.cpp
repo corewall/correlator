@@ -606,7 +606,7 @@ void  Correlator::setFloating( bool flag )
 	m_floating = flag;
 }
  
- 
+// shift core and all below using tie or evaluation graph (best correlation)
 double Correlator::compositeBelow(char* holeA, int coreidA, double posA, char* holeB, int coreidB, double posB, int coretype, char* annot, char* comment)
 {
 	//int nholeA = m_dataptr->getNumOfHoles(holeA);
@@ -724,10 +724,8 @@ double Correlator::compositeBelow(char* holeA, int coreidA, double posA, char* h
 	return 1.0f;
 }
 
-
-// brg 10/21/2014: unused
-#if 0
-int Correlator::composite(char* holeA, int coreidA, double offset, int coretype, char* annot)
+// shift current core by specified distance
+int Correlator::composite(char* holeA, int coreidA, double offset, int coretype, char* annot, char *comment)
 {
 	//int nholeA = m_dataptr->getNumOfHoles(holeA);
 	//cout << " core type = " << coretype << endl;
@@ -744,6 +742,7 @@ int Correlator::composite(char* holeA, int coreidA, double offset, int coretype,
 	coreptr->setOffsetByAboveTie(offset, value->getType());
 	const string typeStr = GetTypeStr(coretype, annot);
 	coreptr->setAffineDatatype(typeStr);
+	coreptr->setComment(comment);
 
 	m_givenCore = coreptr;
 
@@ -777,6 +776,7 @@ int Correlator::composite(char* holeA, int coreidA, double offset, int coretype,
 					//coreptr->setDepthOffset(offset, value->getType(), true);
 					coreptr->setOffsetByAboveTie(offset, value->getType());
 					coreptr->setAffineDatatype(typeStr);
+					coreptr->setComment(comment);
 					break;		
 				}
 			}
@@ -788,8 +788,8 @@ int Correlator::composite(char* holeA, int coreidA, double offset, int coretype,
 	return 1.0f;
 }
 
-// brg 10/21/2014: unused
-int Correlator::compositeBelow(char* holeA, int coreidA, double offset, int coretype, char* annot)
+// shift core and all below by specified distance
+int Correlator::compositeBelow(char* holeA, int coreidA, double offset, int coretype, char* annot, char* comment)
 {
     Core* coreptr = findCore(coretype, holeA, coreidA, annot);
     if (coreptr == NULL) 
@@ -803,6 +803,7 @@ int Correlator::compositeBelow(char* holeA, int coreidA, double offset, int core
 	coreptr->setOffsetByAboveTie(offset, value->getType());
 	const string typeStr = GetTypeStr(coretype, annot);
 	coreptr->setAffineDatatype(typeStr);
+	coreptr->setComment(comment);
 
 	m_givenCore = coreptr;
 	
@@ -834,6 +835,7 @@ int Correlator::compositeBelow(char* holeA, int coreidA, double offset, int core
 				coreptr = holeptr->getCore(j);
 				if(coreptr == NULL) continue;
 				coreptr->setAffineDatatype(typeStr);
+				coreptr->setComment(comment);
 				if(coreptr->getNumber() > coreidA)
 				{
 					value = coreptr->getValue(0);
@@ -858,8 +860,8 @@ int Correlator::compositeBelow(char* holeA, int coreidA, double offset, int core
 	m_dataptr->update();	
 	return 1.0f;
 }
-#endif // #if 0 - this code is unused
 
+// shift using tie or evaluation graph (best correlation)
 double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB, int coreidB, double posB, int coretype, char* annot, char* comment)
 {
 	Core* coreptrA = findCore(coretype, holeA, coreidA, annot);
