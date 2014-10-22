@@ -1019,13 +1019,9 @@ static PyObject* undo(PyObject *self, PyObject *args)
 	if(dataptr)
 	{
 		if (flag == 1)
-		{
 			correlator.undo();
-		} else if (flag == 2)
-		{
-			//correlator.undoAbove(hole, coreid);
-			correlator.undoAffineShift(hole, coreid);
-		}
+		else if (flag == 2)
+			correlator.undoAbove(hole, coreid);
 	}
 
 	Py_INCREF(Py_None);
@@ -1270,8 +1266,9 @@ static PyObject* composite(PyObject *self, PyObject *args)
 	float posA, posB;
 	int opt;
 	char* type;
+	char* comment;
 
-	if (!PyArg_ParseTuple(args, "sifsifis", &holeA, &coreidA, &posA, &holeB, &coreidB, &posB, &opt, &type))
+	if (!PyArg_ParseTuple(args, "sifsifiss", &holeA, &coreidA, &posA, &holeB, &coreidB, &posB, &opt, &type, &comment))
 	{
 		return NULL;
 	}
@@ -1281,14 +1278,19 @@ static PyObject* composite(PyObject *self, PyObject *args)
 	getTypeAndAnnot(type, coretype, &annotation);
 
 	float ret=0.0;
-	if(opt == 2)
-		ret = (float) (correlator.composite(holeA, coreidA, posA, holeB, coreidB, posB, coretype, annotation));
+	if (opt == 2)
+		ret = (float) (correlator.composite(holeA, coreidA, posA, holeB, coreidB, posB, coretype, annotation, comment));
 	else if(opt == 3)
-		ret = (float) (correlator.compositeBelow(holeA, coreidA, posA, holeB, coreidB, posB, coretype, annotation));
-	else if(opt == 4)
-		ret = (float) (correlator.composite(holeA, coreidA, posB, coretype, annotation));
-	else if(opt == 5)
-		ret = (float) (correlator.compositeBelow(holeA, coreidA, posB, coretype, annotation));
+		ret = (float) (correlator.compositeBelow(holeA, coreidA, posA, holeB, coreidB, posB, coretype, annotation, comment));
+	else {
+		cout << "Unknown composite operation " << opt << ", expected 2 (shift this core only) or 3 (core and all below)" << endl;
+	}
+	// 10/21/2014 brg: Unused - opt 4 and 5 are undo operations and no longer follow this path
+//	else if (opt == 4) {
+//		ret = (float) (correlator.composite(holeA, coreidA, posB, coretype, annotation));
+//	} else if (opt == 5) {
+//		ret = (float) (correlator.compositeBelow(holeA, coreidA, posB, coretype, annotation));
+//	}
 
 	//correlator.generateSpliceHole();
 

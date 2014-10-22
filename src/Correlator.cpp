@@ -382,6 +382,7 @@ void Correlator::assignData( Data* dataptr )
 	}
 }
 
+// undo affine shift
 int Correlator::undo(void)
 {
 	char* holeA;
@@ -523,8 +524,7 @@ int Correlator::undo(void)
 
 }
 
-// 9/23/2014 brgtodo: add ability to undo shift for core and all above?
-int Correlator::undoAffineShift(char* hole, const int coreid)
+int Correlator::undoAbove(char* hole, const int coreid)
 {
 	if (m_dataptr == NULL) return -1;
 
@@ -555,6 +555,7 @@ int Correlator::undoAffineShift(char* hole, const int coreid)
 					coreptr->disableTies();
 					coreptr->setDepthOffset(0, value->getType(), true);
 					coreptr->setAffineDatatype(string(""));
+					coreptr->setComment("");
 				}
 			}
 		}
@@ -606,7 +607,7 @@ void  Correlator::setFloating( bool flag )
 }
  
  
-double Correlator::compositeBelow(char* holeA, int coreidA, double posA, char* holeB, int coreidB, double posB, int coretype, char* annot)
+double Correlator::compositeBelow(char* holeA, int coreidA, double posA, char* holeB, int coreidB, double posB, int coretype, char* annot, char* comment)
 {
 	//int nholeA = m_dataptr->getNumOfHoles(holeA);
 	//cout << " nholeA = " << nholeA << endl;	
@@ -624,6 +625,7 @@ double Correlator::compositeBelow(char* holeA, int coreidA, double posA, char* h
 	
 	const string typeStr = GetTypeStr(coretype, annot);
 	coreptrA->setAffineDatatype(typeStr);
+	coreptrA->setComment(comment);
 
 	Value* value = NULL;
 	/*for(int i=1; i < nholeA; i++)
@@ -678,6 +680,7 @@ double Correlator::compositeBelow(char* holeA, int coreidA, double posA, char* h
 				//	cout << coreptr->getNumOfTies(COMPOSITED_TIE)  << endl;
 				
 				coreptr->setAffineDatatype(typeStr);
+				coreptr->setComment(comment);
 				if(coreptr->getNumber() > coreidA)
 				{
 					value = coreptr->getValue(0);
@@ -722,6 +725,8 @@ double Correlator::compositeBelow(char* holeA, int coreidA, double posA, char* h
 }
 
 
+// brg 10/21/2014: unused
+#if 0
 int Correlator::composite(char* holeA, int coreidA, double offset, int coretype, char* annot)
 {
 	//int nholeA = m_dataptr->getNumOfHoles(holeA);
@@ -783,6 +788,7 @@ int Correlator::composite(char* holeA, int coreidA, double offset, int coretype,
 	return 1.0f;
 }
 
+// brg 10/21/2014: unused
 int Correlator::compositeBelow(char* holeA, int coreidA, double offset, int coretype, char* annot)
 {
     Core* coreptr = findCore(coretype, holeA, coreidA, annot);
@@ -852,13 +858,14 @@ int Correlator::compositeBelow(char* holeA, int coreidA, double offset, int core
 	m_dataptr->update();	
 	return 1.0f;
 }
+#endif // #if 0 - this code is unused
 
-double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB, int coreidB, double posB, int coretype, char* annot)
+double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB, int coreidB, double posB, int coretype, char* annot, char* comment)
 {
 	Core* coreptrA = findCore(coretype, holeA, coreidA, annot);
 	Core* coreptrB = findCore(coretype, holeB, coreidB, annot);
 
-    if (coreptrA == NULL || coreptrB == NULL) 
+	if (coreptrA == NULL || coreptrB == NULL)
 	{
 #ifdef DEBUG
         cout << "[Composite] Error : can not find core" << endl;
@@ -873,6 +880,7 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 	
 	const string typeStr = GetTypeStr(coretype, annot);
 	coreptrA->setAffineDatatype(typeStr);
+	coreptrA->setComment(comment);
 
 	m_dataptr->update();
 	offset = tieptr->getOffset();
@@ -911,6 +919,7 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 					coreptr->disableTies();
 					coreptr->setDepthOffset(offset, value->getType(), true);
 					coreptr->setAffineDatatype(typeStr);
+					coreptr->setComment(comment);
 					//cout << "got here ---------------- " << coreptr->getName() << coreptr->getNumber() << " "  << offset << " " << holeptr->getType() << endl;
 					//coreptr->setOffsetByAboveTie(offset, value->getType());	
 					break;		

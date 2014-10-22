@@ -633,7 +633,8 @@ class CompositePanel():
 		
 		commentSizer = wx.BoxSizer(wx.HORIZONTAL)
 		commentSizer.Add(wx.StaticText(panel3, -1, "Comment:"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
-		commentSizer.Add(wx.TextCtrl(panel3, -1), 1)
+		self.comment = wx.TextCtrl(panel3, -1)
+		commentSizer.Add(self.comment, 1)
 		sizer31.Add(commentSizer, 0, wx.EXPAND | wx.TOP, 10)
 		
 		btnSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -756,7 +757,7 @@ class CompositePanel():
 			type = 2
 
 		adjustType = self.applyCore.GetSelection() # 0 = this core only, 1 = core and all below
-		self.parent.OnAdjustCore(adjustType, type, offset)
+		self.parent.OnAdjustCore(adjustType, type, offset, self.comment.GetValue())
 
 		self.parent.Window.activeTie = -1
 		self.UpdateGrowthPlot()

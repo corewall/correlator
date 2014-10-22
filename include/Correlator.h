@@ -52,10 +52,11 @@ public:
 	
 	double repickDepth( int coreid, double relativepos );
 	
-	double composite(char* holeA, int coreidA, double posA, char* holeB, int coreidB, double posB, int coretype, char* annot);
-	double compositeBelow(char* holeA, int coreidA, double posA, char* holeB, int coreidB, double posB, int coretype, char* annot);
-	int composite( char* holeA, int coreidA, double offset, int coretype, char* annot );	
-	int compositeBelow( char* holeA, int coreidA, double offset, int coretype, char* annot );
+	double composite(char* holeA, int coreidA, double posA, char* holeB, int coreidB, double posB, int coretype, char* annot, char* comment);
+	double compositeBelow(char* holeA, int coreidA, double posA, char* holeB, int coreidB, double posB, int coretype, char* annot, char* comment);
+	// brg 10/21/2014 unused
+	//int composite( char* holeA, int coreidA, double offset, int coretype, char* annot );
+	//int compositeBelow( char* holeA, int coreidA, double offset, int coretype, char* annot );
 
 	double project(char *hole, int core, int datatype, char* annot, float offset);
 
@@ -108,8 +109,7 @@ public:
 	int deleteTie( int tieindex );
 	
 	int undo(void);
-	int undoAffineShift(char * hole, const int coreid);
-	//int undoAbove(char* hole, int coreid);
+	int undoAbove(char * hole, const int coreid);
 
 	void update( void );
 

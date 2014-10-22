@@ -619,8 +619,8 @@ class MainFrame(wx.Frame):
 			self.depthStep  = self.origin_depthStep
 		py_correlator.setEvalGraph(self.depthStep, self.winLength, self.leadLag)
 
-	def OnAdjustCore(self, opt, type, offset):
-		self.Window.OnAdjustCore(opt, type, offset)
+	def OnAdjustCore(self, opt, type, offset, comment):
+		self.Window.OnAdjustCore(opt, type, offset, comment)
 
 	def OnUndoCore(self, opt):
 		self.Window.OnUndoCore(opt)

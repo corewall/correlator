@@ -2719,14 +2719,18 @@ int WriteIODPAffineTable(FILE *fptr, Data *dataptr)
 			cumOffset += depthOffset;
 			const double growthRate = (coreIdx == 0 ? 0.0 : shiftedTop / coreTop);
 			string shiftType("");
+			string dataType("");
+			string comment("");
 			if (coreTop == 0.0 && diffOffset == 0.0)
 				shiftType = AFFINE_ANCHOR_STR;
-			else if (coreptr->getAffineType() == AFFINE_TIE)
-				shiftType = AFFINE_TIE_STR;
-			else if (coreptr->getAffineType() == AFFINE_SET)
-				shiftType = AFFINE_SET_STR;
-			string dataType = coreptr->getAffineDatatype();
-			string comment = coreptr->getComment();
+			else if (depthOffset != 0.0) {
+				if (coreptr->getAffineType())
+					shiftType = AFFINE_TIE_STR;
+				else if (coreptr->getAffineType() == AFFINE_SET)
+					shiftType = AFFINE_SET_STR;
+				dataType = coreptr->getAffineDatatype();
+				comment = coreptr->getComment();
+			}
 
 #ifdef NEWOUTPUT
 			string dataLine;

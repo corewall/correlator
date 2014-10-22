@@ -3745,7 +3745,8 @@ class DataCanvas(wxBufferedWindow):
 
 				if ciA != None and ciB != None:
 					#print "[DEBUG] Composite " + str(y1) +  " " + str(y2)
-					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type)
+					comment = self.parent.compositePanel.comment.GetValue()
+					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
 					self.parent.AffineChange = True
 					self.parent.UpdateData()
 					self.parent.UpdateStratData()
@@ -3779,7 +3780,7 @@ class DataCanvas(wxBufferedWindow):
 
 	# opt = 0 (adjust this core only) or 1 (adjust this and all below)
 	# actionType = 0 (best correlation), 1 (current tie), 2 (given, aka value in "Depth Adjust" field)
-	def OnAdjustCore(self, opt, actionType, strOffset):
+	def OnAdjustCore(self, opt, actionType, strOffset, comment):
 		self.parent.compositePanel.OnButtonEnable(0, False)
 		self.parent.compositePanel.OnButtonEnable(1, True)
 		offset = float(strOffset)
@@ -3813,10 +3814,10 @@ class DataCanvas(wxBufferedWindow):
 				#print "[DEBUG] Compostie " + str(y1) +  " " + str(y2)
 				if actionType < 2 :
 					opId = 2 if opt == 0 else 3
-					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type)
+					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
 				else :
 					givenOp = 4 if opt == 0 else 5 # brgtodo 5/1/2014: name these types!
-					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), shift, givenOp, ciA.type)
+					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), shift, givenOp, ciA.type, comment)
 
 				self.parent.AffineChange = True
 
