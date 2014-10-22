@@ -1109,7 +1109,10 @@ class ProjectDialog(wx.Dialog):
 		except ValueError:
 			self.outOffset = 0.0
 		self.outComment = self.commentField.GetValue()
-		self.outPercent = float(self.percentField.GetValue())
+		if self.growthRadio.GetValue():
+			self.outRate = self.growthRate
+		else:
+			self.outRate = float(self.percentField.GetValue())/100.0 + 1.0
 		# self.outType already set
 		self.EndModal(wx.ID_OK)
 
@@ -1173,6 +1176,7 @@ class ProjectDialog(wx.Dialog):
 			self.curCoreName = None
 			self.prevCoreName = None
 			self.suggShift = None
+			 # use bottom core's growth rate for "All" since it factors in all cores' shifts
 			self.growthRate = self.coreData[curHole][-1][3]
 		else:
 			self.allSelected = False

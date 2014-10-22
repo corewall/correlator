@@ -805,8 +805,7 @@ class CompositePanel():
 		result = dlg.ShowModal()
 		if result == wx.ID_OK:
 			if dlg.outCore == "All":
-				rate = (dlg.outPercent/100.0 + 1.0) 
-				py_correlator.projectAll(dlg.outHole, dlg.outType, rate, dlg.outComment)
+				py_correlator.projectAll(dlg.outHole, dlg.outType, dlg.outRate, dlg.outComment)
 			else:
 				py_correlator.project(dlg.outHole, int(dlg.outCore), dlg.outType, dlg.outOffset, dlg.outComment)
 
