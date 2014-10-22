@@ -2711,6 +2711,10 @@ int WriteIODPAffineTable(FILE *fptr, Data *dataptr)
 			const int coreno = coreptr->getNumber();
 
 			Value *valueptr = coreptr->getValue(0);
+			if (!valueptr) {
+				//cout << "core " << holename << coreptr->getNumber() << " has no values, skipping" << endl;
+				continue;
+			}
 			const char coretype = (valueptr != NULL ? valueptr->getType() : 'X');
 			const double depthOffset = coreptr->getDepthOffset();
 			const double coreTop = valueptr->getDepth();
