@@ -1015,78 +1015,97 @@ class ColorTableDialog(wx.Dialog):
 		self.parent.Window.UpdateDrawing()
 
 
-# adjust a core's MCD based on previous cores' growth rate
+# adjust a core's MCD based on previous cores' growth rate (aka SET)
 class ProjectDialog(wx.Dialog):
 	def __init__(self, parent):
 		self.parent = parent
 		self.coreData = {}
 		self.lastHole = -1
 		self.HoleData = self.parent.Window.HoleData
-
+		
 		# vars for output
 		self.outHole = ""
 		self.outCore = ""
 		self.outType = None
 		self.outOffset = 0
 
-		wx.Dialog.__init__(self, parent, -1, "Project", size=(300,200), style=wx.DEFAULT_DIALOG_STYLE |
+		wx.Dialog.__init__(self, parent, -1, "SET", size=(300,330), style=wx.DEFAULT_DIALOG_STYLE |
 						   wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
 		dlgSizer = wx.BoxSizer(wx.VERTICAL)
 		
-		corePanel = wx.Panel(self, -1)
-		coreSizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.holeChoice = wx.Choice(corePanel, -1, size=(70,-1))
-		self.coreChoice = wx.Choice(corePanel, -1, size=(70,-1))
-		coreSizer.Add(wx.StaticText(corePanel, -1, "Hole:"), 0, wx.TOP | wx.BOTTOM, 5)
-		coreSizer.Add(self.holeChoice, 0, wx.ALL, 5)
-		coreSizer.Add(wx.StaticText(corePanel, -1, "Core:"), 0, wx.TOP | wx.BOTTOM, 5)
-		coreSizer.Add(self.coreChoice, 0, wx.ALL, 5)
-		corePanel.SetSizer(coreSizer)
+		methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Suggest Shift Based On:"), orient=wx.VERTICAL)
+		hsz = wx.BoxSizer(wx.HORIZONTAL)
+		self.growthRadio = wx.RadioButton(self, -1, "Growth Rate:")
+		self.growthRadio.SetValue(True)
+		self.growthRateText = wx.StaticText(self, -1)
+		hsz.Add(self.growthRadio, 0)
+		hsz.Add(self.growthRateText, 0)
+		self.percentRadio = wx.RadioButton(self, -1, "Percentage:")
+		self.percentField = wx.TextCtrl(self, -1, "10.0", size=(70,-1))
+		hsz2 = wx.BoxSizer(wx.HORIZONTAL)
+		hsz2.Add(self.percentRadio, 0, wx.RIGHT, 5)
+		hsz2.Add(self.percentField)
+		hsz2.Add(wx.StaticText(self, -1, "%"), 0, wx.LEFT, 3)
+		methodSizer.Add(hsz, 0, wx.EXPAND | wx.BOTTOM, 5)
+		methodSizer.Add(hsz2)
 
-		self.growthRateText = wx.StaticText(self, -1, "Growth Rate at [previous core] = [GR])")
-		self.mbsfText = wx.StaticText(self, -1, "MBSF/CSF-A of [current core name] = [mbsf]")
-
-		shiftPanel = wx.Panel(self, -1)
+		coreSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Apply to Core(s)"), orient=wx.VERTICAL)
+		hsz = wx.BoxSizer(wx.HORIZONTAL)
+		hsz.Add(wx.StaticText(self, -1, "Hole:"), 0, wx.TOP | wx.BOTTOM, 5)
+		self.holeChoice = wx.Choice(self, -1, size=(70,-1))
+		hsz.Add(self.holeChoice, 0, wx.ALL, 5)
+		self.coreChoice = wx.Choice(self, -1, size=(70,-1))
+		hsz.Add(wx.StaticText(self, -1, "Core:"), 0, wx.TOP | wx.BOTTOM, 5)
+		hsz.Add(self.coreChoice, 0, wx.ALL, 5)
+		coreSizer.Add(hsz, 0, wx.EXPAND)
+		
+		self.currentShiftText = wx.StaticText(self, -1, "Current shift:")
+		coreSizer.Add(self.currentShiftText, 0, wx.EXPAND | wx.TOP, 10)
+		
 		shiftSizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.shiftLabel = wx.StaticText(shiftPanel, -1, "Suggested shift: ")
-		self.shiftField = wx.TextCtrl(shiftPanel, -1, "1.000")
-		shiftSizer.Add(self.shiftLabel, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
-		shiftSizer.Add(self.shiftField, 0)
-		shiftPanel.SetSizer(shiftSizer)
+		self.shiftLabel = wx.StaticText(self, -1, "Suggested shift: ")
+		self.shiftField = wx.TextCtrl(self, -1, "1.000", size=(80,-1))
+		self.shiftDiffText = wx.StaticText(self, -1, "(+0.432)")
+		shiftSizer.Add(self.shiftLabel, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 3)
+		shiftSizer.Add(self.shiftField, 0, wx.RIGHT, 2)
+		shiftSizer.Add(self.shiftDiffText, 1, wx.ALIGN_CENTER_VERTICAL)
+		
+		coreSizer.Add(shiftSizer, 0, wx.EXPAND | wx.TOP, 10)
+		
+		commentSizer = wx.BoxSizer(wx.HORIZONTAL)
+		commentSizer.Add(wx.StaticText(self, -1, "Comment:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+		self.commentField = wx.TextCtrl(self, -1)
+		commentSizer.Add(self.commentField, 1, wx.EXPAND)
 
-		buttonPanel = wx.Panel(self, -1)
 		buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.cancelButton = wx.Button(buttonPanel, wx.ID_CANCEL, "Cancel")
-		self.applyButton = wx.Button(buttonPanel, wx.ID_OK, "Apply")
+		self.cancelButton = wx.Button(self, wx.ID_CANCEL, "Cancel")
+		self.applyButton = wx.Button(self, wx.ID_OK, "Apply")
 		buttonSizer.Add(self.cancelButton, 0, wx.ALL, 5)
 		buttonSizer.Add(self.applyButton, 0, wx.ALL, 5)
-		buttonPanel.SetSizer(buttonSizer)
 
-		dlgSizer.Add(corePanel, 0, wx.ALL | wx.EXPAND, 10)
-		dlgSizer.Add(self.mbsfText, 0, wx.LEFT, 10)
-		dlgSizer.AddStretchSpacer()
-		dlgSizer.Add(self.growthRateText, 0, wx.LEFT, 10)
-		dlgSizer.AddStretchSpacer()
-		dlgSizer.Add(shiftPanel, 0, wx.LEFT, 10)
-		dlgSizer.AddStretchSpacer()
-		dlgSizer.Add(buttonPanel, 0, wx.ALIGN_RIGHT | wx.ALL, border=5)
+		dlgSizer.Add(methodSizer, 0, wx.ALL | wx.EXPAND, 5)
+		dlgSizer.Add(coreSizer, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND, 5)
+		dlgSizer.Add(commentSizer, 0, wx.LEFT | wx.RIGHT | wx.TOP | wx.EXPAND, 10)
+		dlgSizer.Add(buttonSizer, 0, wx.ALIGN_RIGHT | wx.ALL, border=5)
 	
 		self.SetSizer(dlgSizer)
 
 		self.InitChoices()
 
 		self.Bind(wx.EVT_CHOICE, self.UpdateCoreChoice, self.holeChoice)
-		self.Bind(wx.EVT_CHOICE, self.UpdateText, self.coreChoice)
+		self.Bind(wx.EVT_CHOICE, self.UpdateData, self.coreChoice)
 		self.Bind(wx.EVT_BUTTON, self.OnApply, self.applyButton)
+		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.growthRadio)
+		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.percentRadio)
+		self.Bind(wx.EVT_TEXT, self.UpdateData, self.percentField)
+		self.Bind(wx.EVT_TEXT, self.OnSuggShiftChange, self.shiftField)
 
 	def OnApply(self, evt):
-		print "OnApply called"
 		self.outHole = self.holeChoice.GetStringSelection()
 		self.outCore = self.coreChoice.GetStringSelection()
 		self.outOffset = float(self.shiftField.GetValue())
 		# self.outType already set
 		self.EndModal(wx.ID_OK)
-
 
 	def InitChoices(self):
 		self.coreData = {}
@@ -1136,34 +1155,72 @@ class ProjectDialog(wx.Dialog):
 			self.coreChoice.Append(coreTuple[0])
 		if self.coreChoice.GetCount() > 0:
 			self.coreChoice.Select(0)
-			self.UpdateText()
+			self.UpdateData()
 
-	def UpdateText(self, evt=None):
-		coreIndex = self.coreChoice.GetSelection()
+	# update growth rate, current core shift, etc 
+	def UpdateData(self, evt=None):
 		curHole = self.holeChoice.GetStringSelection()
-		self.UpdateGrowthRateText(coreIndex, curHole)
-		self.UpdateMbsfText(coreIndex, curHole)
-
-	def UpdateGrowthRateText(self, coreIndex, curHole):
+		coreIndex = self.coreChoice.GetSelection()
+		curCore = self.coreData[curHole][coreIndex]
+		self.curCoreName = curHole + self.coreChoice.GetStringSelection()
+		self.curCoreShift = curCore[2] - curCore[1]
+		
 		if coreIndex > 0:
-			coreTuple = self.coreData[curHole][coreIndex - 1]
-			belowMbsf = self.coreData[curHole][coreIndex][1]
-			coreName = curHole + str(coreTuple[0])
-			if coreIndex == 1:
-				gr = coreTuple[2] # use mcd depth (assuming 0.0 mbsf)
-			else:
-				gr = coreTuple[3]
-			self.growthRateText.SetLabel("Growth Rate at core " + coreName + " = " + str(round(gr, 3)))
-			suggShift = belowMbsf * gr - belowMbsf
-			self.shiftField.SetValue(str(suggShift))
+			prevCore = self.coreData[curHole][coreIndex - 1]
+			self.prevCoreName = curHole + self.coreChoice.GetString(coreIndex - 1)
+			growthRate = prevCore[2] if coreIndex == 1 else prevCore[3]
+			self.growthRate = round(growthRate, 3)
 		else:
-			self.growthRateText.SetLabel("Growth Rate undefined at topmost core")
-			self.shiftField.SetValue("")
+			self.prevCoreName = None
+			self.growthRate = None
+			
+		if self.growthRadio.GetValue():
+			if self.growthRate is not None:
+				self.suggShift = round(curCore[1] * self.growthRate - curCore[1], 3)
+			else:
+				self.suggShift = None
+		else:
+			try:
+				pct = float(self.percentField.GetValue())/100.0 + 1.0 
+				self.suggShift = round(curCore[1] * pct, 3) - curCore[1]
+			except ValueError:
+				self.suggShift = None
+			
+		self.UpdateCurShiftText()
+		self.UpdateSuggShiftText()
+		self.UpdateShiftDiffText()
+		self.UpdateGrowthRateText()
 
-	def UpdateMbsfText(self, coreIndex, curHole):
-		coreTuple = self.coreData[curHole][coreIndex]
-		coreName = curHole + str(coreTuple[0])
-		self.mbsfText.SetLabel("MBSF/CSF-A of core " + coreName + " = " + str(coreTuple[1]))
+	def UpdateGrowthRateText(self):
+		if self.growthRate is not None:
+			self.growthRateText.SetLabel(str(self.growthRate) + " at " + self.prevCoreName)
+		else:
+			self.growthRateText.SetLabel("[n/a]")
+			
+	def UpdateSuggShiftText(self, ):
+		if self.suggShift is not None:
+			self.shiftField.SetValue(str(self.suggShift))
+		else:
+			self.shiftField.SetValue("")
+			
+	def UpdateShiftDiffText(self):
+		if self.suggShift is not None:
+			shiftDiff = round(self.suggShift - self.curCoreShift, 3) 
+			sign = "+" if shiftDiff >= 0 else ""
+			self.shiftDiffText.SetLabel("(" + sign + str(shiftDiff) + ")")
+		else:
+			self.shiftDiffText.SetLabel("")
+	
+	def UpdateCurShiftText(self):
+		self.currentShiftText.SetLabel("Current " + self.curCoreName + " affine shift: " + str(self.curCoreShift))
+		
+	def OnSuggShiftChange(self, evt):
+		origSuggShift = self.suggShift
+		try:
+			self.suggShift = float(self.shiftField.GetValue())
+			self.UpdateShiftDiffText()
+		except ValueError:
+			self.suggShift = origSuggShift
 
 
 class CorrParamsDialog(wx.Dialog):
