@@ -926,17 +926,13 @@ int ReadIODPAffineTable(FILE *fptr, Data* dataptr)
 		const double growthRate = atof(token.c_str()); // growth rate
 
 		token = tokens[tokenIndex++];
-		int shiftType = -1;
+		int shiftType = AFFINE_NONE;
 		if (strcmp(token.c_str(), AFFINE_TIE_STR) == 0)
 			shiftType = AFFINE_TIE;
 		else if (strcmp(token.c_str(), AFFINE_SET_STR) == 0)
 			shiftType = AFFINE_SET;
 		else if (strcmp(token.c_str(), AFFINE_ANCHOR_STR) == 0)
 			shiftType = AFFINE_ANCHOR;
-		else {
-			cout << "Unknown affine shift type [" << token << "], skipping" << endl;
-			continue;
-		}
 
 		token = tokens[tokenIndex++];
 		const string affineDatatype = token;
@@ -2692,7 +2688,7 @@ int WriteIODPAffineTable(FILE *fptr, Data *dataptr)
 		bool holeWritten = false;
 		for (int nameIdx=0; nameIdx < holeNames.size(); nameIdx++)
 		{
-			if (strcmp(holeNames[nameIdx],holename) == 0)
+			if (strcmp(holeNames[nameIdx], holename) == 0)
 			{
 				holeWritten = true;
 				break;
@@ -2722,10 +2718,12 @@ int WriteIODPAffineTable(FILE *fptr, Data *dataptr)
 			const double diffOffset = cumOffset - depthOffset;
 			cumOffset += depthOffset;
 			const double growthRate = (coreIdx == 0 ? 0.0 : shiftedTop / coreTop);
-			string shiftType = AFFINE_TIE_STR;
+			string shiftType("");
 			if (coreTop == 0.0 && diffOffset == 0.0)
 				shiftType = AFFINE_ANCHOR_STR;
-			if (coreptr->getAffineType() == AFFINE_SET)
+			else if (coreptr->getAffineType() == AFFINE_TIE)
+				shiftType = AFFINE_TIE_STR;
+			else if (coreptr->getAffineType() == AFFINE_SET)
 				shiftType = AFFINE_SET_STR;
 			string dataType = coreptr->getAffineDatatype();
 			string comment = coreptr->getComment();

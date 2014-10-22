@@ -91,10 +91,12 @@
 #define AFFINE_Y					1
 
 // IODP Affine/Composite types
+#define AFFINE_NONE					0
 #define AFFINE_TIE					1
 #define AFFINE_SET					2
 #define AFFINE_ANCHOR				3
 
+#define AFFINE_NONE_STR				""
 #define AFFINE_TIE_STR				"TIE"
 #define AFFINE_SET_STR				"SET"
 #define AFFINE_ANCHOR_STR			"ANCHOR"

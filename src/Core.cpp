@@ -65,7 +65,7 @@ Core::Core( int index, CoreObject* parent ) :
 		  
 		m_affine[i].applied = false;
 		m_affine[i].valuetype = '\0';
-		m_affine[i].affinetype = 1;
+		m_affine[i].affinetype = AFFINE_NONE;
 	}
 }
 
@@ -188,7 +188,7 @@ void Core::reset( void )
 		  
 		m_affine[i].applied = false;
 		m_affine[i].valuetype = '\0';
-		m_affine[i].affinetype = 1;
+		m_affine[i].affinetype = AFFINE_NONE;
 	}
 
 	m_logValueptr = NULL;
@@ -1243,7 +1243,8 @@ void  Core::setOffsetByAboveTie(double offset, char valuetype)
 	offset = offset + m_affine[1].matrix[11];
 	//std::cout << offset << std::endl; 	
 	setDepthOffset(offset, valuetype, true);
-	m_affine[1].affinetype = 0;
+	//m_affine[1].affinetype = 0;
+	m_affine[1].affinetype = AFFINE_TIE;
 }
 
 void Core::setDepthOffset( double offset, bool applied, bool fromfile )
@@ -1252,13 +1253,13 @@ void Core::setDepthOffset( double offset, bool applied, bool fromfile )
 
 	m_affine[1].matrix[11] = offset;	
 	m_affine[1].applied = applied;
-	m_affine[1].affinetype = 1;
+	m_affine[1].affinetype = AFFINE_TIE;
 
 	if(fromfile == true)
 	{
 		m_affine[0].matrix[11] = offset;
 		m_affine[0].applied = applied;		
-		m_affine[0].affinetype = 1;
+		m_affine[0].affinetype = AFFINE_TIE;
 	}
 	m_updated = true;
 }
@@ -1270,13 +1271,13 @@ void Core::setDepthOffset( double offset, char valuetype, bool applied, bool fro
 	m_affine[1].matrix[11] = offset;
 	m_affine[1].valuetype = valuetype;	
 	m_affine[1].applied = applied;
-	m_affine[1].affinetype = 1;
+	m_affine[1].affinetype = AFFINE_TIE;
 	if(fromfile == true)
 	{
 		m_affine[0].matrix[11] = offset;		
 		m_affine[0].valuetype = valuetype;
 		m_affine[0].applied = applied;	
-		m_affine[1].affinetype = 1;
+		m_affine[1].affinetype = AFFINE_TIE;
 	}
 	m_updated = true;
 }
@@ -1286,7 +1287,7 @@ void Core::initDepthOffset( void )
 	m_affine[1].matrix[12] = 0.0;
 	m_affine[1].matrix[11] = 0.0;	
 	m_affine[1].applied = true;
-	m_affine[1].affinetype = 1;
+	m_affine[1].affinetype = AFFINE_TIE;
 	m_updated = true;	
 	//update();
 }
