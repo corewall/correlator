@@ -564,11 +564,13 @@ class CompositePanel():
 
 		sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'TIE Shift Options'), orient=wx.VERTICAL)
 		self.applyCore = wx.Choice(panel3, -1, choices=["This core only", "This core and all below"])
+		self.applyCore.SetSelection(0)
 		sizer31.Add(self.applyCore, 0, wx.EXPAND | wx.BOTTOM, 5)
 		
 		# type depth panel
 		tdpSizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.actionType = wx.Choice(panel3, -1, choices=["To tie", "To best correlation", "By given amount (m):"])
+		self.actionType.SetSelection(0)
 		self.depth = wx.TextCtrl(panel3, -1)
 		tdpSizer.Add(self.actionType, 0, wx.RIGHT, 5)
 		tdpSizer.Add(self.depth)

@@ -1032,6 +1032,8 @@ class ProjectDialog(wx.Dialog):
 
 		wx.Dialog.__init__(self, parent, -1, "SET", size=(300,330), style=wx.DEFAULT_DIALOG_STYLE |
 						   wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
+		self.SetBackgroundColour(wx.WHITE)
+		
 		dlgSizer = wx.BoxSizer(wx.VERTICAL)
 		
 		methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Suggest Shift Based On:"), orient=wx.VERTICAL)
@@ -1052,11 +1054,11 @@ class ProjectDialog(wx.Dialog):
 
 		coreSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Apply to Core(s)"), orient=wx.VERTICAL)
 		hsz = wx.BoxSizer(wx.HORIZONTAL)
-		hsz.Add(wx.StaticText(self, -1, "Hole:"), 0, wx.TOP | wx.BOTTOM, 5)
+		hsz.Add(wx.StaticText(self, -1, "Hole:"), 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
 		self.holeChoice = wx.Choice(self, -1, size=(70,-1))
 		hsz.Add(self.holeChoice, 0, wx.ALL, 5)
 		self.coreChoice = wx.Choice(self, -1, size=(70,-1))
-		hsz.Add(wx.StaticText(self, -1, "Core:"), 0, wx.TOP | wx.BOTTOM, 5)
+		hsz.Add(wx.StaticText(self, -1, "Core:"), 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
 		hsz.Add(self.coreChoice, 0, wx.ALL, 5)
 		coreSizer.Add(hsz, 0, wx.EXPAND)
 		
@@ -1291,18 +1293,18 @@ class CorrParamsDialog(wx.Dialog):
 
 class DepthRangeDialog(wx.Dialog):
 	def __init__(self, parent, min, max):
-		wx.Dialog.__init__(self, parent, -1, "Depth Display Range", size=(250,100), style=wx.CAPTION)
+		wx.Dialog.__init__(self, parent, -1, "Depth Display Range", style=wx.CAPTION)
 		
 		# min/max edit controls
 		ctrlPanel = wx.Panel(self, -1)
-		ctrlPanel.SetSizer(wx.FlexGridSizer(1, 4, hgap=5))
-		sz = ctrlPanel.GetSizer()
+		sz = wx.FlexGridSizer(1, 4, hgap=5)
 		sz.Add(wx.StaticText(ctrlPanel, -1, "min:"), 0, wx.ALIGN_CENTER_VERTICAL)
 		self.minField = wx.TextCtrl(ctrlPanel, -1, min, size=(70,-1))
 		sz.Add(self.minField, 0)
 		sz.Add(wx.StaticText(ctrlPanel, -1, "max:"), 0, wx.ALIGN_CENTER_VERTICAL)
 		self.maxField = wx.TextCtrl(ctrlPanel, -1, max, size=(70,-1))
 		sz.Add(self.maxField)
+		ctrlPanel.SetSizerAndFit(sz)
 		
 		# brgtodo 9/4/2014: CreateButtonSizer() for default OK/Cancel/etc button panel creation?
 		buttonPanel = wx.Panel(self, -1)
@@ -1319,7 +1321,7 @@ class DepthRangeDialog(wx.Dialog):
 		dlgSizer = wx.BoxSizer(wx.VERTICAL)
 		dlgSizer.Add(ctrlPanel, 1, wx.EXPAND | wx.ALL, 10)
 		dlgSizer.Add(buttonPanel, 0, wx.ALIGN_RIGHT | wx.RIGHT | wx.BOTTOM, 5)
-		self.SetSizer(dlgSizer)
+		self.SetSizerAndFit(dlgSizer)
 		
 		self.Bind(wx.EVT_BUTTON, self.OnApply, self.applyButton)
 		
