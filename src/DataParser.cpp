@@ -29,6 +29,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <ctype.h>
 
