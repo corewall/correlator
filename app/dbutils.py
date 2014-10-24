@@ -436,19 +436,14 @@ def ImportAffineTable(parent, leg, site):
 					modifiedLine = line[0:-1].split('\t')
 					max = len(modifiedLine)
 
-				if max == 9 or max == 7 or max == 8 :
-					if modifiedLine[6] == '\tY' or modifiedLine[6] == '\tN' :
-						valid = True 
-					elif modifiedLine[6] == 'Y' or modifiedLine[6] == 'N' :
-						valid = True 
-					elif modifiedLine[6] == 'Y\r' or modifiedLine[6] == 'N\r' :
-						valid = True 
-					elif modifiedLine[6] == '\tY\r' or modifiedLine[6] == '\tN\r' :
-						valid = True 
+				if max >= 7 and max <= 9:
+					ynValue = modifiedLine[6].strip()
+					if ynValue in ["N", 'Y']:
+						valid = True
 
 				if leg == modifiedLine[0] and site == modifiedLine[1].lstrip():
 					siteflag = True 
-				else :
+				else:
 					valid = False 
 
 				break
