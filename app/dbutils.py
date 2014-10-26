@@ -450,13 +450,9 @@ def ImportAffineTable(parent, leg, site):
 			f.close()
 
 			if valid == True and main_form == False :
-				filename = ".tmp_table"
-				if sys.platform == 'win32' :
-					OnFORMATTING(path, glb.LastDir + "\\.tmp_table", "Affine")
-					path = glb.LastDir + "\\.tmp_table"
-				else :
-					OnFORMATTING(path, glb.LastDir + "/.tmp_table", "Affine")
-					path = glb.LastDir + "/.tmp_table"
+				tmpFile = "\\.tmp_table" if sys.platform == "win32" else "/.tmp_table"
+				ReformatFile(path, glb.LastDir + tmpFile, "Affine")
+				path = glb.LastDir + tmpFile
 
 		else: # XML file
 			tmpFile = "\\.tmp_table" if sys.platform == 'win32' else "/.tmp_table"
@@ -512,13 +508,9 @@ def ImportSpliceTable(parent, leg, site):
 				break
 			f.close()
 			if valid == True and main_form == False :
-				filename = ".tmp_table"
-				if sys.platform == 'win32' :
-					OnFORMATTING(path, glb.LastDir + "\\.tmp_table", "Splice")
-					path = glb.LastDir + "\\.tmp_table"
-				else :
-					OnFORMATTING(path, glb.LastDir + "/.tmp_table", "Splice")
-					path = glb.LastDir + "/.tmp_table"
+				tmpFile = "\\.tmp_table" if sys.platform == "win32" else "/.tmp_table"
+				ReformatFile(path, glb.LastDir + tmpFile, "Splice")
+				path = glb.LastDir + tmpFile
 		else: # XML file
 			tmpFile = "\\.tmp_table" if sys.platform == 'win32' else "/.tmp_table"
 			path = xml_handler.ConvertFromXML(path, glb.LastDir + tmpFile)
@@ -581,13 +573,9 @@ def ImportELDTable(parent, leg, site):
 				break
 			f.close()
 			if valid == True and main_form == False :
-				filename = ".tmp_table"
-				if sys.platform == 'win32' :
-					OnFORMATTING(path, glb.LastDir + "\\.tmp_table", "ELD")
-					path = glb.LastDir + "\\.tmp_table"
-				else :
-					OnFORMATTING(path, glb.LastDir + "/.tmp_table", "ELD")
-					path = glb.LastDir + "/.tmp_table"
+				tmpFile = "\\.tmp_table" if sys.platform == "win32" else "/.tmp_table"
+				ReformatFile(path, glb.LastDir + tmpFile, "ELD")
+				path = glb.LastDir + tmpFile
 		else :
 			tmpFile = "\\.tmp_table" if sys.platform == 'win32' else "/.tmp_table"
 			path = xml_handler.ConvertFromXML(path, glb.LastDir + tmpFile)
@@ -610,7 +598,8 @@ def ImportELDTable(parent, leg, site):
 
 # add header information to file, convert space or tab delimiters to
 # Correlator's internal space+tab delimiter
-def OnFORMATTING(source, dest, tableType):
+# (this routine formerly dbmanager OnFORMATTING())
+def ReformatFile(source, dest, tableType):
 	fin = open(source, 'r+')
 	#print "[DEBUG] FORMATTING : " + source + " to " + dest
 	fout = open(dest, 'w+')
