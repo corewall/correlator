@@ -405,23 +405,23 @@ def LoadSessionReports():
 			reportList.append(reportTuple)
 	return reportList
 
+def ImportFile(parent, caption):
+	dlg = wx.FileDialog(parent, caption, glb.LastDir, "", "*.*")
+	result = dlg.ShowModal()
+	path = dlg.GetPath() # full file path
+	filename = dlg.GetFilename(); # filename only
+	glb.LastDir = dlg.GetDirectory()
+	dlg.Destroy()
+	return result, path, filename
+
 def ImportAffineTable(parent, leg, site):
-	opendlg = wx.FileDialog(parent, "Select a affine table file", glb.LastDir, "", "*.*")
-	ret = opendlg.ShowModal()
-	path = opendlg.GetPath()
-	filename = opendlg.GetFilename();
-	source_filename = path
-	glb.LastDir = opendlg.GetDirectory()
-	opendlg.Destroy()
-
-	print "path = {}".format(path)
-	print "filename = {}".format(filename)
-
-	if ret == wx.ID_OK :
+	result, origPath, filename = ImportFile(parent, "Select an affine table file")
+	if result == wx.ID_OK :
+		path = origPath
 		last = path.find(".xml", 0)
-		siteflag = False
-		valid = False
-		main_form = False
+		siteflag = False # does file's site/leg match destinaton site/leg?
+		valid = False # is file formatting valid?
+		main_form = False # if False, file needs header and conversion to ' \t\ delimiters
 		if last < 0 :
 			f = open(path, 'r+')
 			for line in f :
@@ -471,15 +471,145 @@ def ImportAffineTable(parent, leg, site):
 
 		if valid:
 			glb.OnShowMessage("Information", "Successfully imported", 1)
-			return model.AffineData(file=path, origSource=source_filename)
+			return model.AffineData(file=path, origSource=origPath)
 		elif siteflag:
 			glb.OnShowMessage("Error", "File doesn't match expected affine format", 1)
 		else:
 			glb.OnShowMessage("Error", "File isn't for " + leg + "-" + site, 1)
 		
 		return None
-		
 
+
+def ImportSpliceTable(parent, leg, site):
+	result, origPath, filename = ImportFile(parent, "Select a splice table file")
+	if result == wx.ID_OK :
+		path = origPath
+		last = path.find(".xml", 0)
+		valid = False
+		main_form = False
+		if last < 0 :
+			f = open(path, 'r+')
+			valid = False
+			for line in f :
+				if line[0] == "#" :
+					main_form = True 
+					continue
+				modifiedLine = line[0:-1].split()
+				if modifiedLine[0] == 'null' :
+					continue
+				max = len(modifiedLine)
+				if max == 1 :
+					modifiedLine = line[0:-1].split('\t')
+					max = len(modifiedLine)
+
+				if max == 19 and modifiedLine[9].lower().strip() == 'tie':
+					valid = True 
+				#print "[DEBUG] " + site + " = " + modifiedLine[0] + " ? "
+				if site == modifiedLine[0] :
+					siteflag = True
+				else :
+					valid = False 
+				break
+			f.close()
+			if valid == True and main_form == False :
+				filename = ".tmp_table"
+				if sys.platform == 'win32' :
+					OnFORMATTING(path, glb.LastDir + "\\.tmp_table", "Splice")
+					path = glb.LastDir + "\\.tmp_table"
+				else :
+					OnFORMATTING(path, glb.LastDir + "/.tmp_table", "Splice")
+					path = glb.LastDir + "/.tmp_table"
+		else: # XML file
+			tmpFile = "\\.tmp_table" if sys.platform == 'win32' else "/.tmp_table"
+			path = xml_handler.ConvertFromXML(path, glb.LastDir + tmpFile)
+			handler = xml_handler.GetHandler()
+			if handler.type == "splice table":
+				valid = True
+			if handler.site == site and handler.leg == leg:
+				siteflag = True
+			else:
+				valid = False
+
+		if valid:
+			glb.OnShowMessage("Information", "Successfully imported", 1)
+			return model.SpliceData(file=path, origSource=origPath)
+		elif siteflag == True :
+			glb.OnShowMessage("Error", "File doesn't match expected splice format", 1)
+		else :
+			glb.OnShowMessage("Error", "File isn't for " + leg + "-" + site, 1)
+			
+		return None
+	
+def ImportELDTable(parent, leg, site):
+	result, origPath, filename = ImportFile(parent, "Select an ELD table file")
+	if result == wx.ID_OK:
+		path = origPath
+		last = path.find(".xml", 0)
+		valid = False
+		main_form = False
+		if last < 0 :
+			f = open(path, 'r+')
+			valid = False
+			for line in f :
+				modifiedLine = line[0:-1].split(' \t')
+				max = len(modifiedLine)
+				if max == 1 :
+					modifiedLine = line[0:-1].split('\t')
+					max = len(modifiedLine)
+					if max == 1 :
+						modifiedLine = line[0:-1].split()
+						if modifiedLine[0] == 'null' :
+							continue
+						max = len(modifiedLine)
+
+				eld_leg = ''
+				eld_site = ''
+				for k in range(1, max) :
+					if modifiedLine[k] == 'Leg' :
+						eld_leg = modifiedLine[k+1]			
+					elif modifiedLine[k] == 'Site' :
+						eld_site = modifiedLine[k+1]			
+						break
+
+				if line[0] == "E" : 
+					valid = True
+
+				if eld_leg.find(leg, 0) >= 0 and eld_site.find(site,0) >= 0 : 
+					siteflag = True 
+				else :
+					valid = False 
+				break
+			f.close()
+			if valid == True and main_form == False :
+				filename = ".tmp_table"
+				if sys.platform == 'win32' :
+					OnFORMATTING(path, glb.LastDir + "\\.tmp_table", "ELD")
+					path = glb.LastDir + "\\.tmp_table"
+				else :
+					OnFORMATTING(path, glb.LastDir + "/.tmp_table", "ELD")
+					path = glb.LastDir + "/.tmp_table"
+		else :
+			tmpFile = "\\.tmp_table" if sys.platform == 'win32' else "/.tmp_table"
+			path = xml_handler.ConvertFromXML(path, glb.LastDir + tmpFile)
+			handler = xml_handler.GetHandler()
+			if handler.type == "eld table":
+				valid = True
+			if handler.site == site and handler.leg == leg:
+				siteflag = True
+			else:
+				valid = False 
+
+		if valid == True :
+			glb.OnShowMessage("Information", "Successfully imported", 1)
+			return model.EldData(file=path, origSource=origPath)
+		elif siteflag == True :
+			glb.OnShowMessage("Error", "File doesn't match expected ELD format", 1)
+		else :
+			glb.OnShowMessage("Error", "File isn't for " + leg + "-" + site, 1)
+		return None
+
+# add header information to file, convert space or tab delimiters to
+# Correlator's internal space+tab delimiter
 def OnFORMATTING(source, dest, tableType):
 	fin = open(source, 'r+')
 	#print "[DEBUG] FORMATTING : " + source + " to " + dest

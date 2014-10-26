@@ -200,7 +200,7 @@ class TopMenuFrame(wx.Frame):
 			return
 		
 		# affine
-		affine_filename = "";
+		affinePath = ""
 		if affine_flag == True :
 			createNew = not savedialog.affineUpdate.GetValue()
 			#affine_filename = self.parent.dataFrame.Add_TABLE("AFFINE" , "affine", savedialog.affineUpdate.GetValue(), False, "")
@@ -215,26 +215,29 @@ class TopMenuFrame(wx.Frame):
 			self.parent.AffineChange = False
 			curSite.SyncToData()
 		# splice
-		if splice_flag == True :
-			if self.parent.Window.SpliceData != [] :
-				filename = self.parent.dataFrame.Add_TABLE("SPLICE" , "splice", savedialog.spliceUpdate.GetValue(), False, "")
-				#py_correlator.saveAttributeFile(filename, 2, affine_filename)
-				py_correlator.saveSpliceFile(filename, affine_filename)
+		if splice_flag == True and self.parent.Window.SpliceData != []:
+			createNew = not savedialog.spliceUpdate.GetValue()
+			curSite = self.parent.GetLoadedSite()
+			splicePath = curSite.SaveTable(const.SPLICE, createNew)
+			py_correlator.saveSpliceFile(splicePath, affinePath)
 
-				self.parent.autoPanel.SetCoreList(1, [])
+			self.parent.autoPanel.SetCoreList(1, [])
 
-				s = "Save Splice Table: " + filename + "\n\n"
-				self.parent.logFileptr.write(s)
-				self.parent.SpliceChange = False  
+			s = "Save Splice Table: " + splicePath + "\n\n"
+			self.parent.logFileptr.write(s)
+			self.parent.SpliceChange = False
+			curSite.SyncToData()  
 
-		if eld_flag == True :
-			if self.parent.Window.LogData != [] :
-				filename = self.parent.dataFrame.Add_TABLE("ELD" , "eld", savedialog.eldUpdate.GetValue(), False, "")
-				py_correlator.saveAttributeFile(filename, 4)
+		if eld_flag == True and self.parent.Window.LogData != []:
+			createNew = not savedialog.eldUpdate.GetValue()
+			curSite = self.parent.GetLoadedSite()
+			eldPath = curSite.SaveTable(const.ELD, createNew)
+			py_correlator.saveAttributeFile(eldPath, 4)
 
-				s = "Save ELD Table: " + filename + "\n\n"
-				self.parent.logFileptr.write(s)
-				self.parent.EldChange = False  
+			s = "Save ELD Table: " + eldPath + "\n\n"
+			self.parent.logFileptr.write(s)
+			self.parent.EldChange = False  
+			curSite.SyncToData()
 
 		if age_flag == True :
 			filename = self.parent.dataFrame.OnSAVE_AGES(savedialog.ageUpdate.GetValue(), False)
@@ -594,13 +597,13 @@ class CompositePanel():
 		ret = dlg.ShowModal()
 		dlg.Destroy()
 		if ret == wx.ID_OK or ret == wx.ID_YES :
-			flag = True 
-			if ret == wx.ID_YES :
-				flag = False
-			filename = self.parent.dataFrame.Add_TABLE("AFFINE" , "affine", flag, False, "")
-			py_correlator.saveAttributeFile(filename, 1)
+			createFile = (ret == wx.ID_YES) 
+			curSite = self.parent.GetLoadedSite()
+			filePath = curSite.SaveTable(const.AFFINE, createFile)
+			curSite.SyncToData()
+			py_correlator.saveAttributeFile(filePath, 1)
 
-			s = "Save Affine Table: " + filename + "\n"
+			s = "Save Affine Table: " + filePath + "\n"
 			self.parent.logFileptr.write(s)
 			glb.OnShowMessage("Information", "Successfully Saved", 1)
 			self.parent.AffineChange = False 
@@ -1010,28 +1013,22 @@ class SplicePanel():
 				break
 		self.parent.Window.UpdateDrawing()
 
-
 	def OnSAVE(self, event):
-		#if self.parent.Window.SpliceData != [] :
-
 		dlg = dialog.Message3Button(self.parent, "Do you want to create new splice file?")
 		ret = dlg.ShowModal()
 		dlg.Destroy()
 		if ret == wx.ID_OK or ret == wx.ID_YES :
-			flag = True
-			if ret == wx.ID_YES :
-				flag = False
-			filename = self.parent.dataFrame.Add_TABLE("SPLICE" , "splice", flag, False, "")
-			py_correlator.saveAttributeFile(filename, 2)
+			createFile = (ret == wx.ID_YES)
+			curSite = self.parent.GetLoadedSite()
+			filePath = curSite.SaveTable(const.SPLICE, createFile)
+			curSite.SyncToData()
+			py_correlator.saveAttributeFile(filePath, 2)
 
-			s = "Save Splice Table: " + filename + "\n"
+			s = "Save Splice Table: " + filePath + "\n"
 			self.parent.logFileptr.write(s)
 			self.parent.autoPanel.SetCoreList(1, [])
 			glb.OnShowMessage("Information", "Successfully Saved", 1)
 			self.parent.SpliceChange = False 
-		#else :
-		#	glb.OnShowMessage("Error", "No data to save", 1)
-
 
 	def OnNEWSPLICE(self, event):
 		if self.parent.Window.SpliceData != [] :
@@ -1456,29 +1453,27 @@ class AutoPanel():
 	def OnButtonEnable(self, opt, enable):
 		self.mainPanel.Enable(enable)
 		if opt == 0 :
-			self.calopBtn.Enable(enable)
-			
+			self.calopBtn.Enable(enable)	
 
 	def OnSAVE(self, event):
 		if self.parent.Window.LogData != [] :
 			dlg = dialog.Message3Button(self.parent, "Do you want to create new eld file?")
 			ret = dlg.ShowModal()
 			dlg.Destroy()
-			if ret == wx.ID_OK or ret == wx.ID_YES :
-				flag = True
-				if ret == wx.ID_YES :
-					flag = False
-				filename = self.parent.dataFrame.Add_TABLE("ELD" , "eld", flag, False, "")
-				py_correlator.saveAttributeFile(filename, 4)
+			if ret == wx.ID_OK or ret == wx.ID_YES:
+				createFile = (ret == wx.ID_YES) 
+				curSite = self.parent.GetLoadedSite()
+				filePath = curSite.SaveTable(const.ELD, createFile)
+				curSite.SyncToData()
+				py_correlator.saveAttributeFile(filePath, 4)
 
-				s = "Save ELD Table: " + filename + "\n"
+				s = "Save ELD Table: " + filePath + "\n"
 				self.parent.logFileptr.write(s)
 				glb.OnShowMessage("Information", "Successfully Saved", 1)
 				self.parent.EldChange = False 
 		else :
 			glb.OnShowMessage("Error", "No data to save", 1)
 
-	
 	def SetCoreList(self, splice_flag, hole_data):
 		self.fileList.Clear()
 		if splice_flag == 1 :
@@ -1912,12 +1907,12 @@ class ELDPanel():
 			ret = dlg.ShowModal()
 			dlg.Destroy()
 			if ret == wx.ID_OK or ret == wx.ID_YES :
-				flag = True
-				if ret == wx.ID_YES :
-					flag = False
-				filename = self.parent.dataFrame.Add_TABLE("ELD" , "eld", flag, False, "")
-				py_correlator.saveAttributeFile(filename, 4)
-				s = "Save ELD Table: " + filename + "\n"
+				createFile = (ret == wx.ID_YES) 
+				curSite = self.parent.GetLoadedSite()
+				filePath = curSite.SaveTable(const.ELD, createFile)
+				curSite.SyncToData()
+				py_correlator.saveAttributeFile(filePath, 4)
+				s = "Save ELD Table: " + filePath + "\n"
 				self.parent.logFileptr.write(s)
 				glb.OnShowMessage("Information", "Successfully Saved", 1)
 				self.parent.EldChange = False 
@@ -3109,7 +3104,7 @@ class FilterPanel():
 			self.TypeChoiceChanged(event)
 			return
 
-		type = self.all.GetValue()
+		type = self.all.GetStringSelection()
 		if type  == 'All Holes' :
 			return
 		elif type == 'Log' :
@@ -3315,11 +3310,12 @@ class FilterPanel():
 		self.parent.Window.UpdateSMOOTH(typeName, smooth.style)
 		site.SetSmooth(typeName, smooth)
 
-	def UpdateSmoothLog(self):
+	def UpdateSmoothLog(self, site):
 		smooth = self.GetSmooth()
 		py_correlator.smooth("Log", smooth.width, smooth.unit)
 		self.parent.UpdateSMOOTH_LogData()
 		self.parent.Window.UpdateSMOOTH("log", smooth.style)
+		site.SetLogSmooth(smooth)
 
 	def UpdateSmoothSplice(self):
 		smooth = self.GetSmooth()
@@ -3342,7 +3338,7 @@ class FilterPanel():
 				if curType == 'Spliced Records':
 					continue
 				elif curType == 'Log' and type != 'Spliced Records':
-					self.UpdateSmoothLog()
+					self.UpdateSmoothLog(site)
 				else:
 					self.UpdateSmoothHole(site, curType)
 			self.parent.UpdateSMOOTH_CORE()
@@ -3354,7 +3350,7 @@ class FilterPanel():
 				smoothStyle = self.GetSmoothStyle() if self.GetSmoothEnable else -1
 				self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
 		elif type == 'Log':
-			self.UpdateSmoothLog()
+			self.UpdateSmoothLog(site)
 		else:
 			self.UpdateSmoothHole(site, type)
 			self.parent.UpdateSMOOTH_CORE()

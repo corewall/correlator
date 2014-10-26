@@ -327,7 +327,9 @@ class MainFrame(wx.Frame):
 		self.miImportAffine = menuImport.Append(-1, "Affine Table...", "Import an affine table")
 		self.Bind(wx.EVT_MENU, self.dbcont.ImportAffineTable, self.miImportAffine)
 		self.miImportSplice = menuImport.Append(-1, "Splice Table...", "Import a splice table")
+		self.Bind(wx.EVT_MENU, self.dbcont.ImportSpliceTable, self.miImportSplice)
 		self.miImportEld = menuImport.Append(-1, "ELD Table...", "Import an Equivalent Log Depth table")
+		self.Bind(wx.EVT_MENU, self.dbcont.ImportELDTable, self.miImportEld)
 		menuBar.Append(menuImport, "&Import")
 
 		# Help 

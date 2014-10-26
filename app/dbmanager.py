@@ -145,6 +145,8 @@ class DataFrame(wx.Panel):
 		for i in range(1, 39) :
 			self.dataPanel.SetColLabelValue(i, "?")
 
+		self.sideNote.SetSelection(1) # start on dbmv2
+
 		self.initialize = False
 
 		self.repCount = 0

@@ -19,14 +19,18 @@ def MakeDecimateString(dec):
 """ Generate a range list - [name, min, max, range coefficient, smoothing type, continuous or discrete] -
 from the provided HoleData or DownholeLogTable """
 def MakeRangeList(data, name):
-	if not isinstance(data, HoleData) and not isinstance(data, DownholeLogTable):
+	if isinstance(data, HoleData):
+		smoothStyle = data.holeSet.smooth.style
+		continuous = data.holeSet.continuous
+	elif isinstance(data, DownholeLogTable):
+		smoothStyle = data.smooth.style
+		continuous = True
+	else:
 		print "MakeRangeList() expects HoleData or DownholeLogData"
 		return []
 	min = float(data.min)
 	max = float(data.max)
 	coef = max - min
-	smoothStyle = data.holeSet.smooth.style
-	continuous = data.holeSet.continuous if isinstance(data, HoleData) else True
 
 	return [name, min, max, coef, smoothStyle, continuous]
 
@@ -272,7 +276,7 @@ class SiteData:
 	def SaveTable(self, type, createNew):
 		filePath = ""
 		tableList = self.GetTableList(type)
-		if createNew or len(tableList) == 0:
+		if createNew or self.GetEnabledTable(tableList) is None:
 			filePath = self.CreateTableFile(type)
 		else: # update current table
 			curTab = self.GetTableByType(type)
@@ -386,6 +390,11 @@ class SiteData:
 		hs = self.FindHoleSet(type)
 		if hs is not None:
 			self.holeSets[type].smooth = smooth
+			
+	def SetLogSmooth(self, smooth):
+		enabledLog = self.GetEnabledTable(self.logTables)
+		if enabledLog is not None:
+			enabledLog.smooth = smooth
 
 	def GetCull(self, type):
 		hs = self.FindHoleSet(type)
@@ -434,16 +443,16 @@ class AffineData(TableData):
 		return "Affine"
 
 class SpliceData(TableData):
-	def __init__(self):
-		TableData.__init__(self)
+	def __init__(self, file="", origSource=""):
+		TableData.__init__(self, file, origSource)
 	def __repr__(self):
 		return "SpliceTable " + TableData.__repr__(self)
 	def GetName(self):
 		return "Splice"
 
 class EldData(TableData):
-	def __init__(self):
-		TableData.__init__(self)
+	def __init__(self, file="", origSource=""):
+		TableData.__init__(self, file, origSource)
 	def __repr__(self):
 		return "EldTable " + TableData.__repr__(self)
 	def GetName(self):
@@ -533,13 +542,30 @@ class DBController:
 		self.siteDict = siteDict
 		self.view = DBView(parent, dataFrame, parentPanel, siteDict)
 	
-	def ImportAffineTable(self, event):
+	# import affine, splice, or ELD data
+	def ImportSavedTable(self, type):
 		curSite = self.view.GetCurrentSite()
 		leg, site = curSite.GetLegAndSite()
-		affineTable = dbu.ImportAffineTable(self.parentPanel, leg, site)
-		if affineTable is not None:
-			curSite.AddTableFile(affineTable, const.AFFINE)
+		if type == const.AFFINE:
+			importTable = dbu.ImportAffineTable(self.parentPanel, leg, site)
+		elif type == const.SPLICE:
+			importTable = dbu.ImportSpliceTable(self.parentPanel, leg, site)
+		elif type == const.ELD:
+			importTable = dbu.ImportELDTable(self.parentPanel, leg, site)
+
+		if importTable is not None:
+			curSite.AddTableFile(importTable, type)
 			curSite.SyncToData()
+		
+	def ImportAffineTable(self, event):
+		self.ImportSavedTable(const.AFFINE)
+		
+	def ImportSpliceTable(self, event):
+		self.ImportSavedTable(const.SPLICE)
+		
+	def ImportELDTable(self, event):
+		self.ImportSavedTable(const.ELD)
+	
 
 class DBView:
 	def __init__(self, parent, dataFrame, parentPanel, siteDict):
@@ -950,7 +976,10 @@ class DBView:
 		for log in site.logTables:
 			if log.enable:
 				py_correlator.openLogFile(sitePath + log.file, int(log.dataIndex))
-				# decimate
+				if log.decimate > 1:
+					py_correlator.decimate('Log', log.decimate)
+				if log.smooth.IsValid():
+					py_correlator.smooth('Log', log.smooth.width, log.smooth.unit)
 				# smooth
 				ret = py_correlator.getData(5)
 				if ret != "":
@@ -974,6 +1003,7 @@ class DBView:
 					break
 
 		# load saved tables (OnLOAD_TABLE())
+		self.parent.OnInitDataUpdate()
 		tableLoaded = [False, False, False]
 		for at in site.affineTables:
 			if at.enable:
@@ -1055,6 +1085,17 @@ class DBView:
 		self.parent.Window.SetFocusFromKbd()
 		self.parent.Window.UpdateDrawing()
 		self.parent.compositePanel.OnUpdate() # make sure growth rate is updated
+		
+		self.parent.compositePanel.saveButton.Enable(True)
+		if self.parent.Window.LogData == [] :
+			self.parent.splicePanel.saveButton.Enable(True)
+			self.parent.splicePanel.altButton.Enable(True)
+			self.parent.splicePanel.newButton.Enable(True)
+		else :
+			self.parent.eldPanel.saveButton.Enable(True)
+			self.parent.autoPanel.saveButton.Enable(True)
+			self.parent.splicePanel.altButton.Enable(False)
+			self.parent.splicePanel.newButton.Enable(False)
 
 	def GetFileHeader(self, path):
 		if path.find(".xml", 0) >= 0:
