@@ -1138,20 +1138,12 @@ class OpenFrame(wx.Dialog):
 			event.Skip() # allow unhandled key events to propagate up the chain
 
 
+# parent UI shell for importing hole data and downhole logs
 class ImportDialog(wx.Dialog):
-	def __init__(self, parent, id, paths, header, siteDict):
-		wx.Dialog.__init__(self, parent, id, "Import", size=(1000, 700), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
-
-		self.paths = paths
-		self.header = header
-		self.siteDict = siteDict # dictionary of sites keyed on site name
-		self.importedSite = None
+	def __init__(self, parent, id):
+		wx.Dialog.__init__(self, parent, id, size=(1000, 700), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
 		self.selectedCol = -1
-		self.colLabels = ["Data", "Depth", "?", "Leg", "Site", "Hole", "Core", "CoreType",
-						  "Section", "TopOffset", "BottomOffset", "RunNo", "Unselect", "Depth"]
-		self.typeLabels = ["NaturalGamma", "Susceptibility", "Reflectance", "Bulk Density(GRA)",
-						   "Pwave", "Other", "Add type..."]
 
 		# layout
 		sz = wx.BoxSizer(wx.VERTICAL)
@@ -1167,6 +1159,31 @@ class ImportDialog(wx.Dialog):
 		buttonPanel.GetSizer().Add(self.importButton, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 		buttonPanel.GetSizer().Add(self.cancelButton, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 		sz.Add(buttonPanel, 0, wx.RIGHT | wx.ALIGN_RIGHT, 10)
+		
+	def HasCol(self, colName):
+		result = False
+		for cidx in range(self.sheet.GetNumberCols()):
+			if self.sheet.GetColLabelValue(cidx) == colName:
+				result = True
+				break
+		return result		
+
+
+class ImportHoleDataDialog(ImportDialog):
+	def __init__(self, parent, id, paths, header, siteDict):
+		ImportDialog.__init__(self, parent, id)
+
+		self.SetTitle("Import Hole Data")
+
+		self.paths = paths
+		self.header = header
+		self.siteDict = siteDict # dictionary of sites keyed on site name
+		self.importedSite = None
+
+		self.colLabels = ["Data", "Depth", "?", "Leg", "Site", "Hole", "Core", "CoreType",
+						  "Section", "TopOffset", "BottomOffset", "RunNo", "Unselect", "Depth"]
+		self.typeLabels = ["NaturalGamma", "Susceptibility", "Reflectance", "Bulk Density(GRA)",
+						   "Pwave", "Other", "Add type..."]
 
 		# events
 		self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.ColHeaderSelected, self.sheet)
@@ -1326,14 +1343,6 @@ class ImportDialog(wx.Dialog):
 			self.sheet.SetColLabelValue(self.selectedCol, origin_label)
 
 		self.selectedCol = -1
-
-	def HasCol(self, colName):
-		result = False
-		for cidx in range(self.sheet.GetNumberCols()):
-			if self.sheet.GetColLabelValue(cidx) == colName:
-				result = True
-				break
-		return result
 
 	def UpdateColHeaders(self, header):
 		if header != "":

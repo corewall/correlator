@@ -1124,7 +1124,7 @@ class DBView:
 
 	def ImportHoleData(self, paths, header):
 		# create import spreadsheet dialog
-		dlg = dialog.ImportDialog(self.dataFrame, -1, paths, header, self.siteDict)
+		dlg = dialog.ImportHoleDataDialog(self.dataFrame, -1, paths, header, self.siteDict)
 		if dlg.ShowModal() == wx.ID_OK:
 			curSite = self.GetCurrentSite()
 			if dlg.importedSite == curSite.name:
