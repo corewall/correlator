@@ -5716,6 +5716,24 @@ class DataFrame(wx.Panel):
 			self.OpenLOGFILE(title, path)
 
 
+	# extracted logic from OpenLOGFILE - compares a leg or site to a given value,
+	# returns True if leg/site equals value, or leg/site contains value,
+	# or value contains site/leg
+	def IsValidLegOrSite(self, legsite, value):
+		valid = True
+		legsiteSize = len(legsite)
+		valueSize = len(value)
+		if legsiteSize > valueSize:
+			if legsite.find(value, 0) < 0 :
+				valid = False 
+		elif legsiteSize < valueSize:
+			if value.find(legsite, 0) < 0 :
+				valid = False 
+		else:
+			if legsite != value :
+				valid = False
+		return valid 
+
 	def OpenLOGFILE(self, title, path):
 		max = len(title)
 		last = title.find("-", 0)
@@ -5727,8 +5745,10 @@ class DataFrame(wx.Panel):
 		self.paths = path 
 		header_flag = False
 		total_count = 0
-		correaltor_flag = False
+		correlator_flag = False
+		legSiteMatch = True # does logfile's site/leg match site/leg to which it's being added?
 
+		# is file a single line?
 		f = open(path, 'r+')
 		count =0
 		for line in f :
@@ -5737,6 +5757,7 @@ class DataFrame(wx.Panel):
 				break
 		f.seek(0, os.SEEK_SET)
 
+		# if so, break it into multiple lines
 		f_obj = f
 		if count == 1 :
 			first_line = f.readline()
@@ -5763,94 +5784,35 @@ class DataFrame(wx.Panel):
 					maxvalue = maxvalue- 1 
 					value = value[0:maxvalue]
 					#print "[DEBUG] Open LOG data/ SITE,HOLE : " + value + ", "  + self.logHole
-					site_size = len(site)
-					value_size = len(value)
-					error_flag = False 
-					if site_size > value_size :
-						if site.find(value,0) < 0 :
-							error_flag = True 
-					elif site_size < value_size :
-						if value.find(site, 0) < 0 :
-							error_flag = True 
-					else :
-						if site != value :
-							error_flag = True 
-					if error_flag == True :
-						glb.OnShowMessage("Error", "This log is not for " + title, 1)
-						f.close()
-						fout.close()
-						return
+					legSiteMatch = self.IsValidLegOrSite(site, value)
+					if not legSiteMatch:
+						break
 					header_flag = True 
 				elif type == "LEG:" or type == "EXPEDITION:" :
 					maxvalue = len(value) 
 					value = value[0:maxvalue]
-					#print "[DEBUG] Open LOG data/ LEG : " + value
-					leg_size = len(leg)
-					value_size = len(value)
-					error_flag = False 
-					if leg_size > value_size :
-						if leg.find(value, 0) < 0 :
-							error_flag = True 
-					elif leg_size < value_size :
-						if value.find(leg, 0) < 0 :
-							error_flag = True 
-					else :
-						if leg != value :
-							error_flag = True 
-					if error_flag == True :
-						glb.OnShowMessage("Error", "This log is not for " + title, 1)
-						f.close()
-						fout.close()
-						return
+					legSiteMatch = self.IsValidLegOrSite(leg, value)
+					if not legSiteMatch:
+						break
 			elif line[0] == "#" : 
 				modifiedLine = line[0:-1].split()
 				if modifiedLine[1] == "Leg" :
 					if modifiedLine[2] != "Site" :
 						value = modifiedLine[2]
 						#print "[DEBUG] Open LOG data/ LEG : " + value
-
-						leg_size = len(leg)
-						value_size = len(value)
-						error_flag = False 
-						if leg_size > value_size :
-							if leg.find(value, 0) < 0 :
-								error_flag = True 
-						elif leg_size < value_size :
-							if value.find(leg, 0) < 0 :
-								error_flag = True 
-						else :
-							if leg != value :
-								error_flag = True 
-						if error_flag == True :
-							glb.OnShowMessage("Error", "This log is not for " + title, 1)
-							f.close()
-							fout.close()
-							return
+						legSiteMatch = self.IsValidLegOrSite(leg, value)
+						if not legSiteMatch:
+							break
 					else :
 						if modifiedLine[3] == "Depth" :
-							correaltor_flag = True 
+							correlator_flag = True 
 							header_flag = True 
 				elif modifiedLine[1] == "Site" :
 					value = modifiedLine[2]
 					#print "[DEBUG] Open LOG data/ Site: " + value
-
-					site_size = len(site)
-					value_size = len(value)
-					error_flag = False 
-					if site_size > value_size :
-						if site.find(value,0) < 0 :
-							error_flag = True 
-					elif site_size < value_size :
-						if value.find(site, 0) < 0 :
-							error_flag = True 
-					else :
-						if site != value :
-							error_flag = True 
-					if error_flag == True :
-						glb.OnShowMessage("Error", "This log is not for " + title, 1)
-						f.close()
-						fout.close()
-						return
+					legSiteMatch = self.IsValidLegOrSite(site, value)
+					if not legSiteMatch:
+						break
 				elif modifiedLine[1] == "Hole" :
 					self.logHole = modifiedLine[2]
 					#print "[DEBUG] Open LOG data/ HOLE : " + self.logHole
@@ -5874,44 +5836,15 @@ class DataFrame(wx.Panel):
 						continue
 						
 					value = modifiedLine[0]
-					#print "[DEBUG] Open LOG data/ LEG: " + value
-					leg_size = len(leg)
-					value_size = len(value)
-					error_flag = False 
-					if leg_size > value_size :
-						if leg.find(value, 0) < 0 :
-							error_flag = True 
-					elif leg_size < value_size :
-						if value.find(leg, 0) < 0 :
-							error_flag = True 
-					else :
-						if leg != value :
-							error_flag = True 
-					if error_flag == True :
-						glb.OnShowMessage("Error", "This log is not for " + title, 1)
-						f.close()
-						fout.close()
-						return
+					legSiteMatch = self.IsValidLegOrSite(leg, value)
+					if not legSiteMatch:
+						break
 
 					value = modifiedLine[1]
-					#print "[DEBUG] Open LOG data/ Site: " + value
-					site_size = len(site)
-					value_size = len(value)
-					error_flag = False 
-					if site_size > value_size :
-						if site.find(value,0) < 0 :
-							error_flag = True 
-					elif site_size < value_size :
-						if value.find(site, 0) < 0 :
-							error_flag = True 
-					else :
-						if site != value :
-							error_flag = True 
-					if error_flag == True :
-						glb.OnShowMessage("Error", "This log is not for " + title, 1)
-						f.close()
-						fout.close()
-						return
+					legSiteMatch = self.IsValidLegOrSite(site, value)
+					if not legSiteMatch:
+						break
+					
 					self.logHole = modifiedLine[2]
 					#print "[DEBUG] Open LOG data/ HOLE : " + self.logHole
 					header_flag = True
@@ -5952,8 +5885,7 @@ class DataFrame(wx.Panel):
 				elif  first_char >= 'A' and first_char <= 'z'  :
 					print "[DEBUG] additional Line =" + line 
 				else :
-
-					if correaltor_flag == False  :
+					if correlator_flag == False  :
 						if row < 120 : 
 							s = ""
 							count = 0
@@ -6003,6 +5935,9 @@ class DataFrame(wx.Panel):
 
 		f.close()
 		fout.close()
+		if not legSiteMatch:
+			glb.OnShowMessage("Error", "This log is not for " + title, 1)
+			return
 
 		self.importbtn.Enable(True)
 		self.sideNote.SetSelection(1)
