@@ -252,6 +252,9 @@ class SiteData:
 			self.AddHoleSet(type)
 		self.holeSets[type].site = self
 		self.holeSets[type].AddHole(hole)
+		
+	def AddLog(self, logTable):
+		self.logTables.append(logTable)
 
 	# copy existing table file to site dir, add to siteDict
 	def AddTableFile(self, tableFile, type):
@@ -303,6 +306,10 @@ class SiteData:
 		for et in self.eldTables:
 			if et.file == filename:
 				self.eldTables.remove(et)
+				return
+		for lt in self.logTables:
+			if lt.file == filename:
+				self.logTables.remove(lt)
 				return
 
 	""" return currently enabled table of specified type, if one exists """
@@ -511,13 +518,13 @@ class ImageTable(TableData):
 		return "Image Table"
 
 class DownholeLogTable(TableData):
-	def __init__(self):
-		TableData.__init__(self)
+	def __init__(self, file="", origSource=""):
+		TableData.__init__(self, file, origSource)
 		self.dataIndex = '[no dataIndex]'
 		self.dataType = '[no dataType]'
 		self.min = '[no min]'
 		self.max = '[no max]'
-		self.decimate = '[no decimate]'
+		self.decimate = 1
 		self.smooth = SmoothData()
 		self.gui = None # LogTableGUI
 
@@ -565,6 +572,11 @@ class DBController:
 		
 	def ImportELDTable(self, event):
 		self.ImportSavedTable(const.ELD)
+		
+	def ImportDownholeLog(self, event):
+		curSite = self.view.GetCurrentSite()
+		if dbu.ImportDownholeLog(self.parentPanel, curSite):
+			self.view.UpdateView(curSite)
 	
 
 class DBView:
@@ -636,6 +648,7 @@ class DBView:
 		self.holeMenuItems = ['Load', 'View', 'Export', 'Delete']
 		self.holeSetMenuItems = ['Load', 'Export', 'Enable All', 'Disable All']
 		self.savedTableMenuItems = ['View', 'Export', 'Delete']
+		self.logTableMenuItems = ['View', 'Delete']
 
 	def BuildMenu(self, itemList):
 		self.menu = wx.Menu()
@@ -737,10 +750,10 @@ class DBView:
 
 		toPanel.GetSizer().Add(panel)
 
-	def AddLogTableRow(self, toPanel, table):
+	def AddLogTableRow(self, toPanel, site, table):
 		panel, sizer = self.NewPanel(toPanel)
 
-		table.gui = LogTableGUI(table, panel)
+		table.gui = LogTableGUI(site, table, panel)
 
 		sizer.Add(wx.StaticText(panel, -1, table.GetName(), size=(90,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
 		button = wx.Button(panel, -1, "Actions...")
@@ -752,6 +765,8 @@ class DBView:
 		sizer.Add(wx.StaticText(panel, -1, "Source: " + table.origSource), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 
 		panel.Bind(wx.EVT_CHECKBOX, self.LogCheckboxChanged, table.gui.enabledCb)
+		panel.Bind(wx.EVT_BUTTON, lambda event, args=table.gui: self.PopActionsMenu(event, args), button)
+		panel.Bind(wx.EVT_MENU, lambda event, args=table.gui: self.HandleLogTableMenu(event, args))
 
 		toPanel.GetSizer().Add(panel)
 
@@ -794,7 +809,7 @@ class DBView:
 		self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, ltPane)
 		self.panes.append(ltPane)
 		for lt in site.logTables:
-			self.AddLogTableRow(ltPane.GetPane(), lt)
+			self.AddLogTableRow(ltPane.GetPane(), site, lt)
 
 		amPane = wx.CollapsiblePane(self.dataPanel, -1, "Age Models", style=wx.CP_NO_TLW_RESIZE)
 		amPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
@@ -876,6 +891,8 @@ class DBView:
 			self.BuildMenu(self.holeSetMenuItems)
 		elif isinstance(obj, SavedTableGUI):
 			self.BuildMenu(self.savedTableMenuItems)
+		elif isinstance(obj, LogTableGUI):
+			self.BuildMenu(self.logTableMenuItems)
 			
 		evt.GetEventObject().PopupMenu(self.menu)
 
@@ -916,6 +933,15 @@ class DBView:
 			curTable = gui.GetCurrentTable()
 			self.DeleteFile(curTable.file)
 			gui.site.SyncToData()
+			
+	def HandleLogTableMenu(self, evt, gui):
+		gui.site.SyncToGui()
+		if evt.GetId() == self.menuIds['View']:
+			self.ViewFile(gui.logTable.file)
+		if evt.GetId() == self.menuIds['Delete']:
+			self.DeleteFile(gui.logTable.file)
+			gui.site.SyncToData()
+			self.refreshTimer.Start(200)
 
 	def LoadHoles(self, holeList):
 		# pre stuff
@@ -1370,7 +1396,8 @@ class SavedTableGUI:
 		return result
 
 class LogTableGUI:
-	def __init__(self, logTable, panel):
+	def __init__(self, site, logTable, panel):
+		self.site = site
 		self.logTable = logTable
 		self.enabledCb = wx.CheckBox(panel, -1, "Enable")
 		self.SyncToData()

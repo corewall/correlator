@@ -13,6 +13,7 @@ import wx
 from importManager import py_correlator
 
 import constants as const
+import dialog
 import globals as glb
 import model
 import xml_handler
@@ -120,6 +121,22 @@ def GetSitePath(siteName):
 
 def GetSiteFilePath(siteName, fileName):
 	return GetSitePath(siteName) + fileName
+
+""" return max log number (e.g. the '2' in 6-4.DENSITY.2.log.dat)
+	plus one - used when creating new logfile"""	
+def GetNewLogNum(logList, datatype):
+	result = 0
+	for log in logList:
+		idx1 = log.file.find('.') + 1
+		idx2 = log.file.find('.', idx1) 
+		if idx1 != -1 and idx2 != -1 and datatype == log.file[idx1:idx2]:
+			idx2 += 1
+			idx3 = log.file.find('.', idx2)
+			if idx3 != -1:
+				curNum = int(log.file[idx2:idx3])
+				if curNum > result:
+					result = curNum
+	return str(result + 1)
 
 def GetNewTableNum(tableList):
 	""" return max table number (e.g. the '3' in 321-1390.3.affine.table)
@@ -413,6 +430,14 @@ def ImportFile(parent, caption):
 	glb.LastDir = dlg.GetDirectory()
 	dlg.Destroy()
 	return result, path, filename
+
+def ImportDownholeLog(parent, curSite):
+	result, logPath, filename = ImportFile(parent, "Select a downhole log data file")
+	if result == wx.ID_OK:
+		dlg = dialog.ImportLogDialog(parent, -1, logPath, curSite)
+		if dlg.valid and dlg.ShowModal() == wx.ID_OK:
+			return True
+	return False
 
 def ImportAffineTable(parent, leg, site):
 	result, origPath, filename = ImportFile(parent, "Select an affine table file")

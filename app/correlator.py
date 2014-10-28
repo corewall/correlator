@@ -330,6 +330,9 @@ class MainFrame(wx.Frame):
 		self.Bind(wx.EVT_MENU, self.dbcont.ImportSpliceTable, self.miImportSplice)
 		self.miImportEld = menuImport.Append(-1, "ELD Table...", "Import an Equivalent Log Depth table")
 		self.Bind(wx.EVT_MENU, self.dbcont.ImportELDTable, self.miImportEld)
+		menuImport.AppendSeparator()
+		self.miImportLog = menuImport.Append(-1, "Downhole Log...", "Import downhole log data")
+		self.Bind(wx.EVT_MENU, self.dbcont.ImportDownholeLog, self.miImportLog)
 		menuBar.Append(menuImport, "&Import")
 
 		# Help 
