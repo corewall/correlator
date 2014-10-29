@@ -3132,7 +3132,7 @@ class FilterPanel():
 				self.smoothcmd.SetStringSelection("None")
 		else :
 			self.smoothcmd.SetStringSelection("None")
-		self.smBackup = [ self.all.GetValue(), self.smoothcmd.GetStringSelection(),
+		self.smBackup = [ self.all.GetStringSelection(), self.smoothcmd.GetStringSelection(),
 						  self.width.GetValue(), self.unitscmd.GetStringSelection(),
 						  self.plotcmd.GetStringSelection()]
 
@@ -3199,7 +3199,7 @@ class FilterPanel():
 	def OnUNDODecimate(self, event):
 		opt = self.deciUndo[0]
 		deci = self.deciUndo[1]
-		self.deciUndo = [ self.all.GetValue(), self.decimate.GetValue() ]
+		self.deciUndo = [ self.all.GetStringSelection(), self.decimate.GetValue() ]
 
 		self.decimate.SetValue(deci)
 		self.all.SetStringSelection(opt)
@@ -3377,7 +3377,7 @@ class FilterPanel():
 		coreno = self.cullUndo[9]
 
 		# [ "All Holes", "False", "5.0", ">", "999.99", "<", "-999.99", False, "Use all cores", "999" ]
-		self.cullUndo = [ self.all.GetValue(), self.nocull.GetValue(), self.valueD.GetValue(),
+		self.cullUndo = [ self.all.GetStringSelection(), self.nocull.GetValue(), self.valueD.GetValue(),
 						self.cmd.GetStringSelection(), self.valueA.GetValue(),
 						self.signcmd.GetStringSelection(),
 						self.valueB.GetValue(), self.orCheck.GetValue(),
