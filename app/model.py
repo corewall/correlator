@@ -155,7 +155,7 @@ class HoleSet:
 		self.max = str(setMax)
 
 	def HasCull(self):
-		return self.cullTable != None
+		return self.cullTable is not None
 
 	def EnableCull(self, enable=True):
 		if self.HasCull():
@@ -257,6 +257,7 @@ class SiteData:
 		self.logTables.append(logTable)
 
 	# copy existing table file to site dir, add to siteDict
+	# tableFile.file is full path to source file
 	def AddTableFile(self, tableFile, type):
 		srcPath = tableFile.file
 		tableList = self.GetTableList(type)
@@ -478,8 +479,8 @@ class UniCullTable(TableData):
 
 # cull table that applies to a single HoleSet
 class CullTable(TableData):
-	def __init__(self):
-		TableData.__init__(self)
+	def __init__(self, file="", origSource=""):
+		TableData.__init__(self, file, origSource)
 	def __repr__(self):
 		return "CullTable " + TableData.__repr__(self)
 	def GetName(self):
@@ -642,11 +643,12 @@ class DBView:
 						'View': 2,
 						'Export': 3,
 						'Delete': 4,
+						'Import Cull Table': 10,
 						'Enable All': 101,
 						'Disable All': 102}
 
 		self.holeMenuItems = ['Load', 'View', 'Export', 'Delete']
-		self.holeSetMenuItems = ['Load', 'Export', 'Enable All', 'Disable All']
+		self.holeSetMenuItems = ['Load', 'Export', 'Enable All', 'Disable All', 'Import Cull Table']
 		self.savedTableMenuItems = ['View', 'Export', 'Delete']
 		self.logTableMenuItems = ['View', 'Delete']
 
@@ -684,13 +686,10 @@ class DBView:
 		sizer.AddSpacer((5,-1))
 		
 		sizer.Add(holeSet.gui.cullEnabledCb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		sizer.Add(holeSet.gui.cullInfo, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 
 		panel.Bind(wx.EVT_BUTTON, lambda event, args=holeSet: self.PopActionsMenu(event, args), holeSet.gui.actionButton)
 		panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args))
-		#panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args), self.loadItem)
-		#panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args), self.viewItem)
-		#panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args), self.enableAllItem)
-		#panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args), self.disableAllItem)
 
 		toPanel.GetSizer().Add(panel)
 
@@ -711,8 +710,6 @@ class DBView:
 
 		panel.Bind(wx.EVT_BUTTON, lambda event, args=hole: self.PopActionsMenu(event, args), button)
 		panel.Bind(wx.EVT_MENU, lambda event, args=hole: self.HandleHoleMenu(event, args))
-		#panel.Bind(wx.EVT_MENU, lambda event, args=hole: self.HandleHoleMenu(event, args), self.loadItem)
-		#panel.Bind(wx.EVT_MENU, lambda event, args=hole: self.HandleHoleMenu(event, args), self.viewItem)
 
 		toPanel.GetSizer().Add(panel)
 
@@ -917,12 +914,17 @@ class DBView:
 		if evt.GetId() == self.menuIds['Load']:
 			holeList = holeSet.holes.values()
 			self.LoadHoles(holeList)
-		if evt.GetId() == self.menuIds['Export']:
+		elif evt.GetId() == self.menuIds['Export']:
 			holeList = holeSet.holes.values()
 			self.ExportHoles(holeList)
 		elif evt.GetId() == self.menuIds['Enable All'] or evt.GetId() == self.menuIds['Disable All']:
 			for hole in holeSet.holes.values():
 				hole.gui.enabledCb.SetValue(evt.GetId() == self.menuIds['Enable All'])
+		elif evt.GetId() == self.menuIds['Import Cull Table']:
+			newCullTable = dbu.ImportCullTable(self.parent, holeSet)
+			if newCullTable is not None:
+				holeSet.cullTable = newCullTable
+				holeSet.site.SyncToData()
 				
 	def HandleSavedTableMenu(self, evt, gui):
 		gui.site.SyncToGui()
@@ -1321,6 +1323,7 @@ class HoleSetGUI:
 		self.decimateText = wx.StaticText(panel,  -1, "")
 		self.smoothText = wx.StaticText(panel, -1, "")
 		self.cullEnabledCb = wx.CheckBox(panel, -1, "Enable Cull")
+		self.cullInfo = wx.StaticText(panel, -1, "")
 		self.SyncToData()
 
 	def SyncToData(self):
@@ -1332,6 +1335,10 @@ class HoleSetGUI:
 		self.smoothText.SetLabel(self.holeSet.GetSmoothStr())
 		self.cullEnabledCb.Enable(self.holeSet.HasCull())
 		self.cullEnabledCb.SetValue(self.holeSet.IsCullEnabled())
+		if self.holeSet.HasCull():
+			cullPath = dbu.GetSiteFilePath(self.holeSet.site.name, self.holeSet.cullTable.file)
+			cullInfoStr = dbu.ReadCullInfo(cullPath)
+			self.cullInfo.SetLabel('[' + cullInfoStr + ']')
 
 	def SyncToGui(self):
 		self.holeSet.continuous = (self.continuousChoice.GetSelection() == 0)

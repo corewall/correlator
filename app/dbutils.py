@@ -122,6 +122,9 @@ def GetSitePath(siteName):
 def GetSiteFilePath(siteName, fileName):
 	return GetSitePath(siteName) + fileName
 
+def MakeCullFilename(siteName, datatype):
+	return siteName + '.' + glb.GetTypeAbbv(datatype) + '.cull.table'
+
 """ return max log number (e.g. the '2' in 6-4.DENSITY.2.log.dat)
 	plus one - used when creating new logfile"""	
 def GetNewLogNum(logList, datatype):
@@ -158,6 +161,16 @@ def GetNewTableNum(tableList):
 
 def MakeTableFilename(siteName, tableNum, tableType):
 	return siteName + '.' + tableNum + '.' + tableType + '.table'
+
+def ReadCullInfo(cullFilePath):
+	cullInfo = None
+	f = open(cullFilePath, 'r+')
+	for line in f:
+		if line.find("# Range ") >= 0:
+			cullInfo = line[8:].strip() # grab everything beyond '# Range '
+			break
+	f.close()
+	return cullInfo
 
 def WriteHoleSet(holeSet, siteFile):
 	for holeKey in sorted(holeSet.holes): # sorted acts on dictionary keys by default
@@ -492,7 +505,8 @@ def ImportAffineTable(parent, leg, site):
 
 		if valid:
 			glb.OnShowMessage("Information", "Successfully imported", 1)
-			return model.AffineData(file=path, origSource=origPath)
+			affineTable = model.AffineData(file=path, origSource=origPath)
+			return affineTable
 		elif siteflag:
 			glb.OnShowMessage("Error", "File doesn't match expected affine format", 1)
 		else:
@@ -619,6 +633,65 @@ def ImportELDTable(parent, leg, site):
 			glb.OnShowMessage("Error", "File doesn't match expected ELD format", 1)
 		else :
 			glb.OnShowMessage("Error", "File isn't for " + leg + "-" + site, 1)
+		return None
+	
+def ImportCullTable(parent, holeSet):
+	result, origPath, filename = ImportFile(parent, "Select a cull table file")
+	if result == wx.ID_OK :
+		leg, site = holeSet.site.GetLegAndSite()
+		valid = False
+		siteflag = False 
+		path = origPath
+		last = path.find(".xml", 0)
+		if last < 0 :
+			f = open(path, 'r+')
+			for line in f :
+				if line[0] == "#" :
+					continue
+				modifiedLine = line[0:-1].split(' \t')
+				max = len(modifiedLine)
+				if max <= 1 :
+					modifiedLine = line[0:-1].split()
+					if modifiedLine[0] == 'null' :
+						continue
+					max = len(modifiedLine)
+
+				if max == 9 or max == 12 or max == 6 or max == 8 :
+					#print "[DEBUG] " + modifiedLine[0] + " " + modifiedLine[1]
+					if leg == modifiedLine[0] and modifiedLine[1].find(site, 0) >= 0 :
+						siteflag = True
+						valid = True 
+					else :
+						valid = False 
+				break
+			f.close()
+			typeflag = True 
+		else :
+			tmpFile = "\\.tmp_table" if sys.platform == 'win32' else "/.tmp_table"
+			path = xml_handler.ConvertFromXML(path, glb.LastDir + tmpFile)
+			handler = xml_handler.GetHandler()
+			if handler.type == "cull table":
+				valid = True
+			if handler.site == site and handler.leg == leg:
+				siteflag = True
+			else:
+				valid = False 
+
+		if valid:
+			cullFilename = MakeCullFilename(holeSet.site.name, holeSet.type)
+			cullPath = GetSiteFilePath(holeSet.site.name, cullFilename)
+			MoveFile(path, cullPath)
+
+			s = "Import Cull Table: " + filename + "\n\n"
+			glb.MainFrame.logFileptr.write(s)
+			glb.OnShowMessage("Information", "Successfully imported", 1)
+			
+			cullTable = model.CullTable(file=cullFilename, origSource=origPath)
+			return cullTable
+		elif siteflag == True: # site matches but something else is wrong(?)
+			glb.OnShowMessage("Error", "File doesn't match expected cull format", 1)
+		else :
+			glb.OnShowMessage("Error", "File isn't for " + leg + '-' + site, 1)
 		return None
 
 # add header information to file, convert space or tab delimiters to
