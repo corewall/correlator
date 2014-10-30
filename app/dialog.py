@@ -1768,8 +1768,6 @@ class ImportHoleDataDialog(ImportDialog):
 		return list(holes)
 	
 	def DoImport(self):
-		# brgtodo - logs and datafile editing cases
-		
 		datasort = self.GetDatasort()
 		if datasort == []:
 			return False
@@ -1785,12 +1783,12 @@ class ImportHoleDataDialog(ImportDialog):
 		site = self.sheet.GetCellValue(3, datasort[1] + 1)
 		lsPair = leg + "-" + site
 
-		# brgtodo: confirm hole/datatype pair doesn't already exist
 		holesToImport = self.GetImportHoles(datasort[2] + 1)
 		for h in holesToImport:
-			if self.siteDict[lsPair].HasHole(typeStr, h):
-				glb.OnShowMessage("Error", "Site {} already contains hole {} of type {}".format(lsPair, h, typeStr), 1)
-				return False
+			if lsPair in self.siteDict:
+				if self.siteDict[lsPair].HasHole(typeStr, h):
+					glb.OnShowMessage("Error", "Site {} already contains hole {} of type {}".format(lsPair, h, typeStr), 1)
+					return False
 		
 		glb.MainFrame.OnNewData(None)
 		

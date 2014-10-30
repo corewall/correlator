@@ -241,6 +241,8 @@ class SiteData:
 		self.eldGui.SyncToData()
 		for log in self.logTables:
 			log.gui.SyncToData()
+		for at in self.ageTables:
+			at.gui.SyncToData()
 
 	def AddHoleSet(self, type):
 		if type not in self.holeSets:
@@ -312,6 +314,18 @@ class SiteData:
 			if lt.file == filename:
 				self.logTables.remove(lt)
 				return
+		for at in self.ageTables:
+			if at.file == filename:
+				self.ageTables.remove(at)
+				return
+		for st in self.seriesTables:
+			if st.file == filename:
+				self.seriesTables.remove(st)
+				return
+		for it in self.imageTables:
+			if it.file == filename:
+				self.imageTables.remove(it)
+				return 
 
 	""" return currently enabled table of specified type, if one exists """
 	def GetTableByType(self, type):
@@ -495,16 +509,18 @@ class StratTable(TableData):
 		return "Stratigraphy" # brgtodo - correct
 
 class AgeTable(TableData):
-	def __init__(self):
-		TableData.__init__(self)
+	def __init__(self, file="", origSource=""):
+		TableData.__init__(self, file, origSource)
+		self.gui = None
 	def __repr__(self):
 		return "AgeTable " + TableData.__repr__(self)
 	def GetName(self):
 		return "Age/Depth"
 
 class SeriesTable(TableData):
-	def __init__(self):
-		TableData.__init__(self)
+	def __init__(self, file="", origSource=""):
+		TableData.__init__(self, file, origSource)
+		self.gui = None
 	def __repr__(self):
 		return "SeriesTable " + TableData.__repr__(self)
 	def GetName(self):
@@ -550,6 +566,9 @@ class DBController:
 		self.siteDict = siteDict
 		self.view = DBView(parent, dataFrame, parentPanel, siteDict)
 	
+	def ImportHoleData(self, event):
+		self.view.DoImportHoleData()
+	
 	# import affine, splice, or ELD data
 	def ImportSavedTable(self, type):
 		curSite = self.view.GetCurrentSite()
@@ -578,6 +597,23 @@ class DBController:
 		curSite = self.view.GetCurrentSite()
 		if dbu.ImportDownholeLog(self.parentPanel, curSite):
 			self.view.UpdateView(curSite)
+			
+	def ImportStratFile(self, event):
+		curSite = self.view.GetCurrentSite()
+		dbu.ImportStratFile(self.parentPanel, curSite.GetLeg(), curSite.GetSite())
+		
+	def ImportAgeDepthTable(self, event):
+		curSite = self.view.GetCurrentSite()
+		adTable = dbu.ImportAgeDepthTable(self.parentPanel, curSite)
+		if adTable is not None:
+			curSite.ageTables.append(adTable)
+			self.view.UpdateView(curSite)
+	
+	def ImportTimeSeriesTable(self, event):
+		pass
+	
+	def ImportImageTable(self, event):
+		pass
 	
 
 class DBView:
@@ -611,13 +647,13 @@ class DBView:
 		siteLabel.SetFont(slFont)
 		self.currentSite = wx.Choice(self.sitePanel, -1)
 		self.loadButton = wx.Button(self.sitePanel, -1, "Load")
-		self.importButton = wx.Button(self.sitePanel, -1, "Import Data...")
+		#self.importButton = wx.Button(self.sitePanel, -1, "Import Data...")
 		self.writeButton = wx.Button(self.sitePanel, -1, "Write DB")
 
 		self.sitePanel.GetSizer().Add(siteLabel, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.currentSite, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.loadButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
-		self.sitePanel.GetSizer().Add(self.importButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+		#self.sitePanel.GetSizer().Add(self.importButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.writeButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.parentPanel.GetSizer().Add(self.sitePanel, 0, border=10, flag=wx.BOTTOM | wx.LEFT)
 
@@ -629,7 +665,7 @@ class DBView:
 		self.UpdateSites()
 		self.parentPanel.Bind(wx.EVT_CHOICE, self.SiteChanged, self.currentSite)
 		self.parentPanel.Bind(wx.EVT_BUTTON, self.LoadPressed, self.loadButton)
-		self.parentPanel.Bind(wx.EVT_BUTTON, self.ImportPressed, self.importButton)
+		#self.parentPanel.Bind(wx.EVT_BUTTON, self.ImportPressed, self.importButton)
 		self.parentPanel.Bind(wx.EVT_BUTTON, self.WritePressed, self.writeButton)
 
 	def WritePressed(self, event):
@@ -651,6 +687,7 @@ class DBView:
 		self.holeSetMenuItems = ['Load', 'Export', 'Enable All', 'Disable All', 'Import Cull Table']
 		self.savedTableMenuItems = ['View', 'Export', 'Delete']
 		self.logTableMenuItems = ['View', 'Delete']
+		self.tableMenuItems = ['View', 'Delete']
 
 	def BuildMenu(self, itemList):
 		self.menu = wx.Menu()
@@ -732,18 +769,22 @@ class DBView:
 		return gui
 
 	# for classes derived from TableData
-	def AddTableRow(self, toPanel, table):
+	def AddTableRow(self, toPanel, site, table):
 		panel, sizer = self.NewPanel(toPanel)
+		
+		table.gui = TableGUI(site, table, panel)
 		
 		sizer.Add(wx.StaticText(panel, -1, table.GetName(), size=(90,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
 		button = wx.Button(panel, -1, "Actions...")
 		sizer.Add(button, 0, border=5, flag=wx.BOTTOM)
-		cb = wx.CheckBox(panel, -1, "Enabled", size=(80,-1))
-		sizer.Add(cb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		sizer.Add(table.gui.enabledCb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "File: " + table.file), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "Last updated: " + table.updatedTime), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "By: " + table.byWhom), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "Source: " + table.origSource), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+		
+		panel.Bind(wx.EVT_BUTTON, lambda event, args=table.gui: self.PopActionsMenu(event, args), button)
+		panel.Bind(wx.EVT_MENU, lambda event, args=table.gui: self.HandleTableMenu(event, args))
 
 		toPanel.GetSizer().Add(panel)
 
@@ -814,9 +855,9 @@ class DBView:
 		self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, amPane)
 		self.panes.append(amPane)
 		for at in site.ageTables:
-			self.AddTableRow(amPane.GetPane(), at)
+			self.AddTableRow(amPane.GetPane(), site, at)
 		for st in site.seriesTables:
-			self.AddTableRow(amPane.GetPane(), st)
+			self.AddTableRow(amPane.GetPane(), site, st)
 
 		# Forward mousewheel events to parent - seems like there ought to be an easier way...
 		for pane in self.panes:
@@ -890,6 +931,8 @@ class DBView:
 			self.BuildMenu(self.savedTableMenuItems)
 		elif isinstance(obj, LogTableGUI):
 			self.BuildMenu(self.logTableMenuItems)
+		elif isinstance(obj, TableGUI):
+			self.BuildMenu(self.tableMenuItems)
 			
 		evt.GetEventObject().PopupMenu(self.menu)
 
@@ -940,11 +983,20 @@ class DBView:
 		gui.site.SyncToGui()
 		if evt.GetId() == self.menuIds['View']:
 			self.ViewFile(gui.logTable.file)
-		if evt.GetId() == self.menuIds['Delete']:
+		elif evt.GetId() == self.menuIds['Delete']:
 			self.DeleteFile(gui.logTable.file)
 			gui.site.SyncToData()
 			self.refreshTimer.Start(200)
 
+	def HandleTableMenu(self, evt, gui):
+		gui.SyncToGui()
+		if evt.GetId() == self.menuIds['View']:
+			self.ViewFile(gui.table.file)
+		elif evt.GetId() == self.menuIds['Delete']:
+			self.DeleteFile(gui.table.file)
+			gui.site.SyncToData()
+			self.refreshTimer.Start(200)
+	
 	def LoadHoles(self, holeList):
 		# pre stuff
 		self.parent.INIT_CHANGES()
@@ -1138,7 +1190,7 @@ class DBView:
 
 		return header
 
-	def ImportPressed(self, evt):
+	def DoImportHoleData(self):
 		opendlg = wx.FileDialog(self.parent, "Select core data files", glb.LastDir, "", "*.*", style=wx.MULTIPLE)
 		if opendlg.ShowModal() == wx.ID_OK:
 			glb.LastDir = opendlg.GetDirectory()
@@ -1301,6 +1353,19 @@ class DBView:
 			siteIndex = self.currentSite.GetSelection()
 			return self.currentSite.GetClientData(siteIndex)
 		return None
+
+class TableGUI:
+	def __init__(self, site, table, panel):
+		self.site = site
+		self.table = table
+		self.enabledCb = wx.CheckBox(panel, -1, "Enabled", size=(80,-1))
+		self.SyncToData()
+		
+	def SyncToData(self):
+		self.enabledCb.SetValue(self.table.IsEnabled())
+		
+	def SyncToGui(self):
+		self.table.enable = self.enabledCb.GetValue()
 
 class HoleGUI:
 	def __init__(self, hole, panel):

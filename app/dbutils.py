@@ -436,13 +436,25 @@ def LoadSessionReports():
 	return reportList
 
 def ImportFile(parent, caption):
-	dlg = wx.FileDialog(parent, caption, glb.LastDir, "", "*.*")
+	dlg = wx.FileDialog(parent, caption, glb.LastDir, "")
 	result = dlg.ShowModal()
 	path = dlg.GetPath() # full file path
 	filename = dlg.GetFilename(); # filename only
 	glb.LastDir = dlg.GetDirectory()
 	dlg.Destroy()
 	return result, path, filename
+
+def ImportFileWithFilter(parent, caption, filter, initFilterIndex):
+	dlg = wx.FileDialog(parent, caption, glb.LastDir, "", wildcard=filter)
+	dlg.SetFilterIndex(initFilterIndex)
+	result = dlg.ShowModal()
+	path = dlg.GetPath() # full file path
+	filename = dlg.GetFilename(); # filename only
+	selectedFilter = dlg.GetFilterIndex()
+	glb.LastDir = dlg.GetDirectory()
+	dlg.Destroy()
+	return result, path, filename, selectedFilter
+
 
 def ImportDownholeLog(parent, curSite):
 	result, logPath, filename = ImportFile(parent, "Select a downhole log data file")
@@ -693,6 +705,112 @@ def ImportCullTable(parent, holeSet):
 		else :
 			glb.OnShowMessage("Error", "File isn't for " + leg + '-' + site, 1)
 		return None
+
+def ImportTimeSeriesTable(parent, leg, site):
+	pass
+
+# adapted from dbmanager IMPORT_AGE_MODEL()
+def ImportAgeDepthTable(parent, destSite):
+	result, origPath, filename = ImportFile(parent, "Select an age model file")
+	if result == wx.ID_OK:
+		validFile = True
+		tableNum = GetNewTableNum(destSite.ageTables)
+		filename = destSite.name + '.' + tableNum + '.age-depth.dat'
+		fullname = GetSiteFilePath(destSite.name, filename) 
+		path = origPath
+		if path.find(".xml") >= 0:
+			tmpFile = "/.tmp_table"
+			path = xml_handler.ConvertFromXML(path, glb.LastDir + tmpFile)
+			if xml_handler.GetHandler().type != "age depth":
+				validFile = False
+				glb.OnShowMessage("Error", "File doesn't match expected age/depth format", 1)
+
+		if validFile:
+			print "copying age/depth: {} -> {}".format(path, fullname)
+			MoveFile(path, fullname)
+			adTable = model.AgeTable(file=filename, origSource=origPath)
+			glb.OnShowMessage("Information", "Successfully imported", 1)
+			return adTable
+	
+	return None
+		
+
+def ImportStratFile(parent, leg, site):
+	result, origPath, filename, filterindex = ImportFileWithFilter(parent, "Select a stratigraphy data file", "Diatoms|*.*|Radioloria|*.*|Foraminifera|*.*|Nannofossils|*.*|Paleomag|*.*", 0)
+	if result == wx.ID_OK :
+		if not ValidateStratFile(origPath, leg, site):
+			return
+
+		type = "Diatoms" 
+		if filterindex == 1 : 
+			type =  "Radioloria"
+		elif filterindex == 2 : 
+			type = "Foraminifera"
+		elif filterindex == 3 : 
+			type = "Nannofossils"
+		elif filterindex == 4 : 
+			type = "Paleomag"
+		
+#		newline = self.tree.AppendItem(item, type)
+#		filename = self.Set_NAMING(type, title, 'strat')
+#		self.tree.SetItemText(newline,  filename, 8)
+#		self.tree.SetItemText(newline, "Enable", 2)
+#		self.tree.SetItemTextColour(newline, wx.BLUE)
+#		self.tree.SetItemText(newline, stamp, 6)
+#		self.tree.SetItemText(newline, glb.User, 7)
+#		self.tree.SetItemText(newline, path, 9)
+#		self.tree.SetItemText(newline, title + '/', 10)
+
+		fullname = glb.DBPath +'db/' + title + '/' + filename 
+		if sys.platform == 'win32' :
+			workingdir = os.getcwd()
+			os.chdir(glb.LastDir)
+			cmd = 'copy \"' + source_name + '\" \"' + fullname + '\"'
+			os.system(cmd)
+			os.chdir(workingdir)
+		else :
+			cmd = 'cp \"' + path + '\" \"' + fullname + '\"'
+			os.system(cmd)
+
+		self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
+
+		glb.OnShowMessage("Information", "Successfully imported", 1)
+		
+def ValidateStratFile(self, stratFile, leg, site):
+	valid = False
+
+	# account for off-chance user selects an app bundle on OSX
+	if not os.path.isfile(stratFile):
+		glb.OnShowMessage("Error", "Invalid file selected", 1)
+		return False
+
+	f = open(stratFile, 'r+')
+	for line in f :
+		max = len(line)
+		if max == 1 : 
+			continue
+			
+		modifiedLine = line[0:-1].split()
+		if modifiedLine[0] == 'null' :
+			continue
+		max = len(modifiedLine)
+		if max == 1 : 
+			modifiedLine = line[0:-1].split('\t')
+			max = len(modifiedLine)
+		if modifiedLine[max-1] == '\r' :
+			max =  max -1
+		if max >= 20 :
+			if modifiedLine[4] == leg and modifiedLine[5] == site :
+				valid = True
+			else:
+				glb.OnShowMessage("Error", "This stratigraphy data is not for " + leg + '-' + site, 1)
+				break
+		else :
+			glb.OnShowMessage("Error", "Invalid stratigraphy file", 1)
+			break
+
+	f.close()
+	return valid
 
 # add header information to file, convert space or tab delimiters to
 # Correlator's internal space+tab delimiter

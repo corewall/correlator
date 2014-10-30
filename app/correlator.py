@@ -322,7 +322,8 @@ class MainFrame(wx.Frame):
 		menuBar.Append(menuView, "&View")
 		
 		menuImport = wx.Menu()
-		self.miImportData = menuImport.Append(-1, "Hole Data...", "Import hole data (e.g. Natural Gamma)")
+		self.miImportHoleData = menuImport.Append(-1, "Hole Data...", "Import hole data (e.g. Natural Gamma)")
+		self.Bind(wx.EVT_MENU, self.dbcont.ImportHoleData, self.miImportHoleData)
 		menuImport.AppendSeparator()
 		self.miImportAffine = menuImport.Append(-1, "Affine Table...", "Import an affine table")
 		self.Bind(wx.EVT_MENU, self.dbcont.ImportAffineTable, self.miImportAffine)
@@ -333,6 +334,15 @@ class MainFrame(wx.Frame):
 		menuImport.AppendSeparator()
 		self.miImportLog = menuImport.Append(-1, "Downhole Log...", "Import downhole log data")
 		self.Bind(wx.EVT_MENU, self.dbcont.ImportDownholeLog, self.miImportLog)
+		self.miImportStrat = menuImport.Append(-1, "Stratigraphy...", "Import stratigraphy data")
+		self.Bind(wx.EVT_MENU, self.dbcont.ImportStratFile, self.miImportStrat)
+		self.miImportAgeDepth = menuImport.Append(-1, "Age/Depth Table...", "Import age/depth table")
+		self.Bind(wx.EVT_MENU, self.dbcont.ImportAgeDepthTable, self.miImportAgeDepth)
+		self.miImportTimeSeries = menuImport.Append(-1, "Age Model...", "Import age model time series")
+		self.Bind(wx.EVT_MENU, self.dbcont.ImportTimeSeriesTable, self.miImportTimeSeries)
+		menuImport.AppendSeparator()
+		self.miImportImageTable = menuImport.Append(-1, "Image Table...", "Import image data for use in Correlator/Corelyzer connection")
+		self.Bind(wx.EVT_MENU, self.dbcont.ImportImageTable, self.miImportImageTable)
 		menuBar.Append(menuImport, "&Import")
 
 		# Help 
