@@ -2963,6 +2963,11 @@ class CorrelatorApp(wx.App):
 		self.new = new_version
 		wx.App.__init__(self,0)
 		
+		# Ensure we display file filter/wildcard list in wx.FileDialog on Mac:
+		# it's disabled by default in Cocoa, but it's needed for Stratigraphy import
+		if sys.platform == 'darwin':
+			wx.SystemOptions.SetOptionInt("osx.openfiledialog.always-show-types", 1)
+		
 	def OnInit(self):
 		user = getpass.getuser()
 		#if platform_name[0] != "Windows" :
