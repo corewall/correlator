@@ -527,12 +527,12 @@ class SeriesTable(TableData):
 		return "Age"
 
 class ImageTable(TableData):
-	def __init__(self):
-		TableData.__init__(self)
+	def __init__(self, file="", origSource=""):
+		TableData.__init__(self, file, origSource)
 	def __repr__(self):
 		return "ImageTable " + TableData.__repr__(self)
 	def GetName(self):
-		return "Image Table"
+		return "Image"
 
 class DownholeLogTable(TableData):
 	def __init__(self, file="", origSource=""):
@@ -610,11 +610,19 @@ class DBController:
 			self.view.UpdateView(curSite)
 	
 	def ImportTimeSeriesTable(self, event):
-		pass
+		curSite = self.view.GetCurrentSite()
+		tsTable = dbu.ImportTimeSeriesTable(self.parentPanel, curSite)
+		if tsTable is not None:
+			curSite.seriesTables.append(tsTable)
+			self.view.UpdateView(curSite)
 	
 	def ImportImageTable(self, event):
-		pass
-	
+		curSite = self.view.GetCurrentSite()
+		imTable = dbu.ImportImageTable(self.parentPanel, curSite)
+		if imTable is not None:
+			curSite.imageTables.append(imTable)
+			self.view.UpdateView(curSite)
+
 
 class DBView:
 	def __init__(self, parent, dataFrame, parentPanel, siteDict):
@@ -647,13 +655,11 @@ class DBView:
 		siteLabel.SetFont(slFont)
 		self.currentSite = wx.Choice(self.sitePanel, -1)
 		self.loadButton = wx.Button(self.sitePanel, -1, "Load")
-		#self.importButton = wx.Button(self.sitePanel, -1, "Import Data...")
 		self.writeButton = wx.Button(self.sitePanel, -1, "Write DB")
 
 		self.sitePanel.GetSizer().Add(siteLabel, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.currentSite, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.loadButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
-		#self.sitePanel.GetSizer().Add(self.importButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.writeButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.parentPanel.GetSizer().Add(self.sitePanel, 0, border=10, flag=wx.BOTTOM | wx.LEFT)
 
@@ -665,7 +671,6 @@ class DBView:
 		self.UpdateSites()
 		self.parentPanel.Bind(wx.EVT_CHOICE, self.SiteChanged, self.currentSite)
 		self.parentPanel.Bind(wx.EVT_BUTTON, self.LoadPressed, self.loadButton)
-		#self.parentPanel.Bind(wx.EVT_BUTTON, self.ImportPressed, self.importButton)
 		self.parentPanel.Bind(wx.EVT_BUTTON, self.WritePressed, self.writeButton)
 
 	def WritePressed(self, event):
@@ -833,7 +838,7 @@ class DBView:
 		# Saved Tables (Affine, ELD, Splice)
 		stPane = wx.CollapsiblePane(self.dataPanel, -1, "Saved Tables", style=wx.CP_NO_TLW_RESIZE)
 		stPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
-		self.dataPanel.GetSizer().Add(stPane, 0, border=5, flag=wx.ALL) # brgtodo: expand necessary?
+		self.dataPanel.GetSizer().Add(stPane, 0, border=5, flag=wx.ALL)
 		self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, stPane)
 		self.panes.append(stPane)
 
@@ -843,7 +848,7 @@ class DBView:
 
 		ltPane = wx.CollapsiblePane(self.dataPanel, -1, "Downhole Logs", style=wx.CP_NO_TLW_RESIZE)
 		ltPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
-		self.dataPanel.GetSizer().Add(ltPane, 0, border=5, flag=wx.ALL) # brgtodo: expand necessary?
+		self.dataPanel.GetSizer().Add(ltPane, 0, border=5, flag=wx.ALL)
 		self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, ltPane)
 		self.panes.append(ltPane)
 		for lt in site.logTables:
@@ -851,13 +856,21 @@ class DBView:
 
 		amPane = wx.CollapsiblePane(self.dataPanel, -1, "Age Models", style=wx.CP_NO_TLW_RESIZE)
 		amPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
-		self.dataPanel.GetSizer().Add(amPane, 0, border=5, flag=wx.ALL) # brgtodo: expand necessary?
+		self.dataPanel.GetSizer().Add(amPane, 0, border=5, flag=wx.ALL)
 		self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, amPane)
 		self.panes.append(amPane)
 		for at in site.ageTables:
 			self.AddTableRow(amPane.GetPane(), site, at)
 		for st in site.seriesTables:
 			self.AddTableRow(amPane.GetPane(), site, st)
+			
+		imPane = wx.CollapsiblePane(self.dataPanel, -1, "Image Data", style=wx.CP_NO_TLW_RESIZE)
+		imPane.GetPane().SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.dataPanel.GetSizer().Add(imPane, 0, border=5, flag=wx.ALL)
+		self.dataPanel.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.PaneChanged, imPane)
+		self.panes.append(imPane)
+		for it in site.imageTables:
+			self.AddTableRow(imPane.GetPane(), site, it)
 
 		# Forward mousewheel events to parent - seems like there ought to be an easier way...
 		for pane in self.panes:

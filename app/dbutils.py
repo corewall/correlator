@@ -706,8 +706,28 @@ def ImportCullTable(parent, holeSet):
 			glb.OnShowMessage("Error", "File isn't for " + leg + '-' + site, 1)
 		return None
 
-def ImportTimeSeriesTable(parent, leg, site):
-	pass
+def ImportTimeSeriesTable(parent, destSite):
+	result, origPath, filename = ImportFile(parent, "Select a time series (age model) file")
+	if result == wx.ID_OK:
+		validFile = True
+		tableNum = GetNewTableNum(destSite.seriesTables)
+		filename = destSite.name + '.' + tableNum + '.age.model'
+		fullname = glb.DBPath +'db/' + destSite.name + '/' + filename 
+		path = origPath
+		if path.find(".xml") >= 0:
+			tmpFile = "/.tmp_table"
+			path = xml_handler.ConvertFromXML(path, glb.LastDir + tmpFile)
+			if xml_handler.GetHandler().type != "age model":
+				glb.OnShowMessage("Error", "File does not match expected time series (age model) format", 1)
+				validFile = False
+
+		if validFile:
+			MoveFile(path, fullname)
+			tsTable = model.SeriesTable(file=filename, origSource=origPath)
+			glb.OnShowMessage("Information", "Successfully imported", 1)
+			return tsTable
+			
+	return None
 
 # adapted from dbmanager IMPORT_AGE_MODEL()
 def ImportAgeDepthTable(parent, destSite):
@@ -722,18 +742,29 @@ def ImportAgeDepthTable(parent, destSite):
 			tmpFile = "/.tmp_table"
 			path = xml_handler.ConvertFromXML(path, glb.LastDir + tmpFile)
 			if xml_handler.GetHandler().type != "age depth":
-				validFile = False
 				glb.OnShowMessage("Error", "File doesn't match expected age/depth format", 1)
+				validFile = False
 
 		if validFile:
-			print "copying age/depth: {} -> {}".format(path, fullname)
 			MoveFile(path, fullname)
 			adTable = model.AgeTable(file=filename, origSource=origPath)
 			glb.OnShowMessage("Information", "Successfully imported", 1)
 			return adTable
 	
 	return None
-		
+
+# brgtodo:image file validation?
+def ImportImageTable(parent, destSite):
+	result, origPath, filename = ImportFile(parent, "Select an image table file")
+	if result == wx.ID_OK:
+		tableNum = GetNewTableNum(destSite.imageTables)
+		filename = destSite.name + '.' + tableNum + '.image.table'
+		fullname = glb.DBPath +'db/' + destSite.name + '/' + filename 
+		MoveFile(origPath, fullname)
+		tsTable = model.ImageTable(file=filename, origSource=origPath)
+		glb.OnShowMessage("Information", "Successfully imported", 1)
+		return tsTable
+	return None
 
 def ImportStratFile(parent, leg, site):
 	result, origPath, filename, filterindex = ImportFileWithFilter(parent, "Select a stratigraphy data file", "Diatoms|*.*|Radioloria|*.*|Foraminifera|*.*|Nannofossils|*.*|Paleomag|*.*", 0)
