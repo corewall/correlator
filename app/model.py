@@ -61,6 +61,9 @@ class TableData:
 
 	def UpdateTimestamp(self):
 		self.updatedTime = glb.GetTimestamp()
+		
+	def GetTooltipStr(self):
+		return "File: {}\nLast Updated: {}\nBy Whom: {}\nOriginal Source: {}".format(self.file, self.updatedTime, self.byWhom, self.origSource)
 
 class HoleData(TableData):
 	def __init__(self, name):
@@ -699,6 +702,10 @@ class DBView:
 		for key in itemList:
 			self.menu.Append(self.menuIds[key], key)
 
+	def MakeActionsButton(self, buttonParent):
+		#sprocketImage = wx.Bitmap("icons/sprocket.png")
+		return wx.Button(buttonParent, -1, "Actions...")
+	
 	def NewPanel(self, toPanel):
 		panel = wx.Panel(toPanel, -1)
 		sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -712,46 +719,57 @@ class DBView:
 		holeSet.gui = HoleSetGUI(holeSet, panel)
 
 		sizer.Add(wx.StaticText(panel, -1, "[All Holes]", size=(75,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
-		#button = wx.Button(panel, -1, "Actions...")
-		sizer.Add(holeSet.gui.actionButton, 0)
+		button = self.MakeActionsButton(panel)
+		sizer.Add(button, 0)
+		#sizer.Add(holeSet.gui.actionButton, 0)
 		sizer.AddSpacer((85,-1))
-		#sizer.Add(wx.StaticText(panel, -1, "Range: (" + holeSet.min + ", " + holeSet.max + ")"), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(holeSet.gui.rangeText, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.AddSpacer((5,-1))
 		sizer.Add(holeSet.gui.continuousChoice, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.AddSpacer((5,-1))
 		sizer.Add(holeSet.gui.decimateText, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
-		#sizer.Add(wx.StaticText(panel, -1, "Decimate: " + str(holeSet.decimate)), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.AddSpacer((5,-1))
 		sizer.Add(holeSet.gui.smoothText, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
-		#sizer.Add(wx.StaticText(panel, -1, holeSet.smooth), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.AddSpacer((5,-1))
 		
 		sizer.Add(holeSet.gui.cullEnabledCb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(holeSet.gui.cullInfo, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 
-		panel.Bind(wx.EVT_BUTTON, lambda event, args=holeSet: self.PopActionsMenu(event, args), holeSet.gui.actionButton)
+		panel.Bind(wx.EVT_BUTTON, lambda event, args=holeSet: self.PopActionsMenu(event, args), button)#holeSet.gui.actionButton)
 		panel.Bind(wx.EVT_MENU, lambda event, args=holeSet: self.HandleHoleSetMenu(event, args))
 
 		toPanel.GetSizer().Add(panel)
 
+	# brg 10/30/2014: On OSX, setting tooltip at panel creation time (e.g. in AddHoleRow())
+	# stops working as soon as the interface changes in any way. Changing the current Note's page,
+	# changing sites, even minimizing a CollapsiblePane causes tooltips to stop appearing.
+	# Setting tooltip on mouseover works consistently. 
+	def ShowTooltip(self, event, hole):
+		panel = event.GetEventObject()
+		panel.SetToolTip(wx.ToolTip(hole.GetTooltipStr()))
+	
 	def AddHoleRow(self, toPanel, hole):
 		panel, sizer = self.NewPanel(toPanel)
 
 		hole.gui = HoleGUI(hole, panel)
+		
+		#print "AddHoleRow: tooltip = {}".format(hole.GetTooltipStr())
+		#panel.SetToolTip(wx.ToolTip(hole.GetTooltipStr()))
 
 		sizer.Add(wx.StaticText(panel, -1, hole.name, size=(75,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
-		button = wx.Button(panel, -1, "Actions...")
+		#button = wx.Button(panel, -1, "Actions...")
+		button = self.MakeActionsButton(panel)
 		sizer.Add(button, 0, border=5, flag=wx.BOTTOM)
 		sizer.Add(hole.gui.enabledCb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "Range: (" + hole.min + ", " + hole.max + ")"), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
-		sizer.Add(wx.StaticText(panel, -1, "File: " + hole.file), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
-		sizer.Add(wx.StaticText(panel, -1, "Last updated: " + hole.updatedTime), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
-		sizer.Add(wx.StaticText(panel, -1, "By: " + hole.byWhom), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
-		sizer.Add(wx.StaticText(panel, -1, "Source: " + hole.origSource), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+#		sizer.Add(wx.StaticText(panel, -1, "File: " + hole.file), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+#		sizer.Add(wx.StaticText(panel, -1, "Last updated: " + hole.updatedTime), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+#		sizer.Add(wx.StaticText(panel, -1, "By: " + hole.byWhom), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
+#		sizer.Add(wx.StaticText(panel, -1, "Source: " + hole.origSource), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 
 		panel.Bind(wx.EVT_BUTTON, lambda event, args=hole: self.PopActionsMenu(event, args), button)
 		panel.Bind(wx.EVT_MENU, lambda event, args=hole: self.HandleHoleMenu(event, args))
+		panel.Bind(wx.EVT_ENTER_WINDOW, lambda event, args=hole: self.ShowTooltip(event, args))
 
 		toPanel.GetSizer().Add(panel)
 
@@ -761,7 +779,7 @@ class DBView:
 		gui = SavedTableGUI(site, name, panel)
 
 		sizer.Add(wx.StaticText(panel, -1, name, size=(90,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
-		button = wx.Button(panel, -1, "Actions...")
+		button = self.MakeActionsButton(panel)#wx.Button(panel, -1, "Actions...")
 		sizer.Add(button, 0, border=5, flag=wx.BOTTOM|wx.LEFT)
 		sizer.Add(gui.tableChoice, 0, border=5, flag=wx.BOTTOM|wx.LEFT)
 		sizer.Add(gui.enabledCb, 0, border=5, flag=wx.BOTTOM|wx.LEFT)
@@ -780,7 +798,7 @@ class DBView:
 		table.gui = TableGUI(site, table, panel)
 		
 		sizer.Add(wx.StaticText(panel, -1, table.GetName(), size=(90,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
-		button = wx.Button(panel, -1, "Actions...")
+		button = self.MakeActionsButton(panel) #wx.Button(panel, -1, "Actions...")
 		sizer.Add(button, 0, border=5, flag=wx.BOTTOM)
 		sizer.Add(table.gui.enabledCb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "File: " + table.file), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
@@ -799,7 +817,7 @@ class DBView:
 		table.gui = LogTableGUI(site, table, panel)
 
 		sizer.Add(wx.StaticText(panel, -1, table.GetName(), size=(90,-1), style=wx.ALIGN_CENTRE), 0, border=10, flag=wx.RIGHT|wx.LEFT|wx.BOTTOM)
-		button = wx.Button(panel, -1, "Actions...")
+		button = self.MakeActionsButton(panel) #wx.Button(panel, -1, "Actions...")
 		sizer.Add(button, 0, border=5, flag=wx.BOTTOM)
 		sizer.Add(table.gui.enabledCb, 0, border=5, flag=wx.LEFT|wx.BOTTOM)
 		sizer.Add(wx.StaticText(panel, -1, "File: " + table.file), 0, border=5, flag=wx.LEFT|wx.BOTTOM)
@@ -1371,7 +1389,7 @@ class TableGUI:
 	def __init__(self, site, table, panel):
 		self.site = site
 		self.table = table
-		self.enabledCb = wx.CheckBox(panel, -1, "Enabled", size=(80,-1))
+		self.enabledCb = wx.CheckBox(panel, -1, "Enable", size=(80,-1))
 		self.SyncToData()
 		
 	def SyncToData(self):
@@ -1383,7 +1401,7 @@ class TableGUI:
 class HoleGUI:
 	def __init__(self, hole, panel):
 		self.hole = hole
-		self.enabledCb = wx.CheckBox(panel, -1, "Enabled", size=(80,-1))
+		self.enabledCb = wx.CheckBox(panel, -1, "Enable", size=(80,-1))
 		self.SyncToData()
 
 	def SyncToData(self):
@@ -1395,7 +1413,6 @@ class HoleGUI:
 class HoleSetGUI:
 	def __init__(self, holeSet, panel):
 		self.holeSet = holeSet
-		self.actionButton = wx.Button(panel, -1, "Actions...")
 		self.rangeText = wx.StaticText(panel, -1, "")
 		self.continuousChoice = wx.Choice(panel, -1, choices=['Continuous','Discrete'])
 		self.decimateText = wx.StaticText(panel,  -1, "")
