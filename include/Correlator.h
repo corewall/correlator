@@ -58,7 +58,7 @@ public:
 	int compositeBelow( char* holeA, int coreidA, double offset, int coretype, char* annot, char* comment );
 
 	double project(char *hole, int core, int datatype, char* annot, float offset, char *comment);
-	double projectAll(char *hole, int datatype, char* annot, const float rate, char *comment);
+	double projectAll(char *hole, int datatype, char* annot, const float shiftValue, char *comment, const bool isRate);
 
 	int splice( char* hole, int coreid, int type, char* annot, bool append = false );
 	int splice( Core* source, bool append = false );

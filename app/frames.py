@@ -584,6 +584,8 @@ class CompositePanel():
 		commentSizer.Add(self.comment, 1)
 		sizer31.Add(commentSizer, 0, wx.EXPAND | wx.TOP, 10)
 		
+		self.comment.Bind(wx.EVT_CHAR, self.ProhibitCommas)
+		
 		btnSizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.adjustButton = wx.Button(panel3, -1, "Shift to Tie")
 		self.clearButton = wx.Button(panel3, -1, "Clear Tie")
@@ -752,7 +754,9 @@ class CompositePanel():
 		result = dlg.ShowModal()
 		if result == wx.ID_OK:
 			if dlg.outCore == "All":
-				py_correlator.projectAll(dlg.outHole, dlg.outType, dlg.outRate, dlg.outComment)
+				isRate = dlg.outRate is not None
+				value = dlg.outRate if isRate else dlg.outOffset
+				py_correlator.projectAll(dlg.outHole, dlg.outType, value, dlg.outComment, isRate)
 			else:
 				py_correlator.project(dlg.outHole, int(dlg.outCore), dlg.outType, dlg.outOffset, dlg.outComment)
 
@@ -839,6 +843,10 @@ class CompositePanel():
 		gc = plot.PlotGraphics(self.polyline_list, 'Evaluation Graph', 'depth Axis', 'coef Axis')
 		self.corrPlotCanvas.Draw(gc, xAxis = (-self.parent.leadLag , self.parent.leadLag), yAxis = (-1, 1))
 		self.polyline_list = []
+		
+	def ProhibitCommas(self, evt):
+		if chr(evt.GetKeyCode()) != ',':
+			evt.Skip()
 
 class SplicePanel():
 	def __init__(self, parent, mainPanel):

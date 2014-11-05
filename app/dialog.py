@@ -1026,17 +1026,18 @@ class ProjectDialog(wx.Dialog):
 		# vars for output
 		self.outHole = ""
 		self.outCore = ""
-		self.outType = None
+		self.outType = None # datatype
+		self.outRate = None
 		self.outOffset = 0
 		self.outComment = ""
 
-		wx.Dialog.__init__(self, parent, -1, "SET", size=(300,330), style=wx.DEFAULT_DIALOG_STYLE |
+		wx.Dialog.__init__(self, parent, -1, "SET", size=(300,360), style=wx.DEFAULT_DIALOG_STYLE |
 						   wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
 		self.SetBackgroundColour(wx.WHITE)
 		
 		dlgSizer = wx.BoxSizer(wx.VERTICAL)
 		
-		methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Suggest Shift Based On:"), orient=wx.VERTICAL)
+		methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Shift Based On:"), orient=wx.VERTICAL)
 		hsz = wx.BoxSizer(wx.HORIZONTAL)
 		self.growthRadio = wx.RadioButton(self, -1, "Growth Rate:")
 		self.growthRadio.SetValue(True)
@@ -1049,8 +1050,15 @@ class ProjectDialog(wx.Dialog):
 		hsz2.Add(self.percentRadio, 0, wx.RIGHT, 5)
 		hsz2.Add(self.percentField)
 		hsz2.Add(wx.StaticText(self, -1, "%"), 0, wx.LEFT, 3)
+		hsz3 = wx.BoxSizer(wx.HORIZONTAL)
+		self.fixedRadio = wx.RadioButton(self, -1, "Fixed distance:")
+		self.fixedField = wx.TextCtrl(self, -1, "0.0", size=(70,-1))
+		hsz3.Add(self.fixedRadio, 0, wx.RIGHT, 5)
+		hsz3.Add(self.fixedField)
+		hsz3.Add(wx.StaticText(self, -1, "m"), 0, wx.LEFT, 3)
 		methodSizer.Add(hsz, 0, wx.EXPAND | wx.BOTTOM, 5)
-		methodSizer.Add(hsz2)
+		methodSizer.Add(hsz2, 0, wx.BOTTOM, 5)
+		methodSizer.Add(hsz3, 0)
 
 		coreSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Apply to Core(s)"), orient=wx.VERTICAL)
 		hsz = wx.BoxSizer(wx.HORIZONTAL)
@@ -1100,8 +1108,17 @@ class ProjectDialog(wx.Dialog):
 		self.Bind(wx.EVT_BUTTON, self.OnApply, self.applyButton)
 		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.growthRadio)
 		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.percentRadio)
+		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.fixedRadio)
 		self.Bind(wx.EVT_TEXT, self.UpdateData, self.percentField)
+		self.Bind(wx.EVT_TEXT, self.UpdateData, self.fixedField)
 		self.Bind(wx.EVT_TEXT, self.OnSuggShiftChange, self.shiftField)
+
+		# for unambiguous CSV output, don't allow commas in comment field
+		self.commentField.Bind(wx.EVT_CHAR, self.ProhibitCommas)
+
+	def ProhibitCommas(self, evt):
+		if chr(evt.GetKeyCode()) != ',':
+			evt.Skip()
 
 	def OnApply(self, evt):
 		self.outHole = self.holeChoice.GetStringSelection()
@@ -1109,12 +1126,17 @@ class ProjectDialog(wx.Dialog):
 		try:
 			self.outOffset = float(self.shiftField.GetValue())
 		except ValueError:
-			self.outOffset = 0.0
+			try:
+				self.outOffset = float(self.fixedField.GetValue())
+			except ValueError:
+				self.outOffset = 0.0
 		self.outComment = self.commentField.GetValue()
 		if self.growthRadio.GetValue():
 			self.outRate = self.growthRate
-		else:
+		elif self.percentRadio.GetValue():
 			self.outRate = float(self.percentField.GetValue())/100.0 + 1.0
+		else:
+			self.outRate = None
 		# self.outType already set
 		self.EndModal(wx.ID_OK)
 
@@ -1201,10 +1223,16 @@ class ProjectDialog(wx.Dialog):
 					self.suggShift = round(curCore[1] * self.growthRate - curCore[1], 3)
 				else:
 					self.suggShift = None
-			else:
+			elif self.percentRadio.GetValue():
 				try:
 					pct = float(self.percentField.GetValue())/100.0 + 1.0 
 					self.suggShift = round(curCore[1] * pct, 3) - curCore[1]
+				except ValueError:
+					self.suggShift = None
+			else: # fixed distance
+				try:
+					dist = float(self.fixedField.GetValue())
+					self.suggShift = dist
 				except ValueError:
 					self.suggShift = None
 

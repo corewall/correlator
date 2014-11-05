@@ -1324,17 +1324,18 @@ static PyObject* projectAll(PyObject *self, PyObject *args)
 {
 	char *hole = NULL;
 	char *datatypeStr = NULL;
-	float rate = 0.0f;
+	float shiftValue = 0.0f;
 	char *comment = NULL;
+	bool isRate = false;
 
-	if (!PyArg_ParseTuple(args, "ssfs", &hole, &datatypeStr, &rate, &comment))
+	if (!PyArg_ParseTuple(args, "ssfsi", &hole, &datatypeStr, &shiftValue, &comment, &isRate))
 		return NULL;
 
 	char* annotation = NULL;
 	int datatype = USERDEFINEDTYPE;
 	getTypeAndAnnot(datatypeStr, datatype, &annotation);
 
-	float ret = (float) correlator.projectAll(hole, datatype, annotation, rate, comment);
+	float ret = (float) correlator.projectAll(hole, datatype, annotation, shiftValue, comment, isRate);
 
 	return Py_BuildValue("f", ret);
 }
