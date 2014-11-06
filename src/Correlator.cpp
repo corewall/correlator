@@ -673,37 +673,19 @@ double Correlator::compositeBelow(char* holeA, int coreidA, double posA, char* h
 			for(int j=0; j <= numCores; j++)
 			{
 				coreptr = holeptr->getCore(j);
-				if(coreptr == NULL) continue;
-
-
-				//if(coreptr->getNumOfTies(COMPOSITED_TIE) > 0)
-				//	cout << coreptr->getNumOfTies(COMPOSITED_TIE)  << endl;
-				
-				coreptr->setAffineDatatype(typeStr);
-				coreptr->setComment(comment);
-				if(coreptr->getNumber() > coreidA)
+				if (coreptr == NULL) continue;
+				if (coreptr->getNumber() > coreidA || (diff_type_flag == true && coreptr->getNumber() == coreidA))
 				{
 					value = coreptr->getValue(0);
-					if(value == NULL) 
+					if (value == NULL)
 					{
 						coreptr->setOffsetByAboveTie(offset, 'X');
 						continue;
 					}
 					coreptr->disableTies();
-					//coreptr->setDepthOffset(offset, value->getType(), true);
 					coreptr->setOffsetByAboveTie(offset, value->getType());
-				}
-				if((diff_type_flag == true) && (coreptr->getNumber() == coreidA))
-				{
-					value = coreptr->getValue(0);
-					if(value == NULL) 
-					{
-						coreptr->setOffsetByAboveTie(offset, 'X');
-						continue;
-					}
-					coreptr->disableTies();
-					//coreptr->setDepthOffset(offset, value->getType(), true);
-					coreptr->setOffsetByAboveTie(offset, value->getType());	
+					coreptr->setAffineDatatype(typeStr);
+					coreptr->setComment(comment);
 				}
 			}
 		}
@@ -830,25 +812,17 @@ int Correlator::compositeBelow(char* holeA, int coreidA, double offset, int core
 					diff_type_flag = true;
 			}				
 			numCores =  holeptr->getNumOfCores();
-			for(int j=0; j <= numCores; j++)
+			for (int j=0; j <= numCores; j++)
 			{
 				coreptr = holeptr->getCore(j);
 				if(coreptr == NULL) continue;
-				coreptr->setAffineDatatype(typeStr);
-				coreptr->setComment(comment);
-				if(coreptr->getNumber() > coreidA)
+				if (coreptr->getNumber() > coreidA || (diff_type_flag == true && coreptr->getNumber() == coreidA))
 				{
 					value = coreptr->getValue(0);
 					if(value == NULL) continue;
-					//coreptr->setDepthOffset(offset, value->getType(), true);
 					coreptr->setOffsetByAboveTie(offset, value->getType());
-				}
-				if((diff_type_flag == true) && (coreptr->getNumber() == coreidA))
-				{
-					value = coreptr->getValue(0);
-					if(value == NULL) continue;
-					//coreptr->setDepthOffset(offset, value->getType(), true);
-					coreptr->setOffsetByAboveTie(offset, value->getType());				
+					coreptr->setAffineDatatype(typeStr);
+					coreptr->setComment(comment);
 				}
 			}
 		}

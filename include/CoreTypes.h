@@ -90,7 +90,9 @@
 #define AFFINE_N					0
 #define AFFINE_Y					1
 
-// IODP Affine/Composite types
+// IODP Affine/Composite types - note that "APPEND" is not an internal type,
+// but a cosmetic type written on output for IODP's benefit.
+// As far as Correlator is concerned, all APPENDs are just TIEs.
 #define AFFINE_NONE					0
 #define AFFINE_TIE					1
 #define AFFINE_SET					2
@@ -100,6 +102,7 @@
 #define AFFINE_TIE_STR				"TIE"
 #define AFFINE_SET_STR				"SET"
 #define AFFINE_ANCHOR_STR			"ANCHOR"
+#define AFFINE_APPEND_STR			"APPEND"
 
 // Strat types
 #define DIATOMS						0
