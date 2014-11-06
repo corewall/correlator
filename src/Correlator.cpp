@@ -927,7 +927,7 @@ double Correlator::projectAll(char *hole, int datatype, char *annot, const float
 			Core *c = h->getCore(coreIdx);
 			if (c == NULL) continue;
 			//cout << hole << c->getNumber() << " ";
-			Value *firstVal = c->getFirst();
+			Value *firstVal = c->getFirstValue();
 			if (firstVal == NULL) continue;
 			const double mbsf = firstVal->getDepth();
 			const double offset = isRate ? (mbsf * shiftValue - mbsf) : shiftValue;

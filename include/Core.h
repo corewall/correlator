@@ -94,6 +94,8 @@ public:
 
 	Value*	getValue( int index );
 	Value*	getValue( int section_id, double top );
+	Value*  getFirstValue(void);
+	Value*	getLastValue(void);
 	int		getNumOfValues( void );
 
 	Section* getSection( int index );
@@ -104,8 +106,6 @@ public:
 	
 	char	getCoreType( void );
 	
-	Value*	getLast(void);
-	Value*  getFirst(void);
 		
 	void	setDepthOffset( double offset, bool applied = false, bool fromfile = false );
 	void	setDepthOffset( double offset, char valuetype, bool applied = false, bool fromfile = false );

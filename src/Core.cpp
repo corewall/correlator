@@ -1176,13 +1176,13 @@ Value* Core::getValue( int section_id, double top )
 	return NULL;
 }
 	
-Value* Core::getLast(void)
+Value* Core::getLastValue(void)
 {
 	int index = m_values.size() -1;
 	return m_values[index];
 }
 
-Value* Core::getFirst(void)
+Value* Core::getFirstValue(void)
 {
 	if (m_values.size() == 0) return NULL;
 	
