@@ -493,36 +493,26 @@ Core* Hole::getCore( int index )
 {
 	// check validation with index
 	vector<Core*>::iterator iter;
-	Core* coreptr= NULL;
 	int ncount = 0;
-	for(iter = m_cores.begin(); iter != m_cores.end(); iter++) 
+	for (iter = m_cores.begin(); iter != m_cores.end(); iter++, ncount++)
 	{
-		coreptr = (Core*) *iter;
-		//if(coreptr->getNumber()  == index) 
 		if (ncount == index)
-		{
 			return (Core*) *iter;
-		}
-		ncount++;
 	}
 	
 	return NULL;
 }
 
-Core* Hole::getCoreByNo( int index )
+Core* Hole::getCoreByNo( int coreNum )
 {
 	// check validation with index
 	vector<Core*>::iterator iter;
-	Core* coreptr= NULL;
 	int ncount = 0;
-	for(iter = m_cores.begin(); iter != m_cores.end(); iter++) 
+	for (iter = m_cores.begin(); iter != m_cores.end(); iter++, ncount++)
 	{
-		coreptr = (Core*) *iter;
-		if(coreptr->getNumber()  == index) 
-		{
+		Core *coreptr = (Core*) *iter;
+		if (coreptr->getNumber() == coreNum)
 			return (Core*) *iter;
-		}
-		ncount++;
 	}
 	
 	return NULL;

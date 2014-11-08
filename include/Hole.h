@@ -72,8 +72,8 @@ public:
 public:
 	int		getNumber( void );
 	
-	Core*	getCore( int index );
-	Core*	getCoreByNo( int index );	
+	Core*	getCore( int index ); // get by index in Hole's m_cores vector
+	Core*	getCoreByNo( int coreNum ); // get by matching core number
 	Core*	getCore( double basedepth, double offset );
 	int		getNumOfCores( void );
 	
