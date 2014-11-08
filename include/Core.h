@@ -103,6 +103,7 @@ public:
 	
 	void	setType( int type );
 	int		getType( void );
+	std::string	getTypeStr();
 	
 	char	getCoreType( void );
 	

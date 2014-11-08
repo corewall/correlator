@@ -28,6 +28,7 @@
 #include <math.h>
 
 #include <Core.h>
+#include <Hole.h>
 #include <GraValue.h>
 #include <PwaveValue.h>
 #include <NaturalGammaValue.h>
@@ -1232,6 +1233,12 @@ void Core::setType( int type )
 int	Core::getType( void )
 {
 	return m_type;
+}
+
+std::string Core::getTypeStr()
+{
+	Hole *hole = (Hole *)this->getParent();
+	return hole->getTypeStr();
 }
 
 void  Core::setOffsetByAboveTie(double offset, char valuetype)
