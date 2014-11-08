@@ -681,10 +681,8 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 	if(dataptr == NULL || filename == NULL) return -1;
 	string fullpath(filename);
 	FILE *fptr = fopen(filename,"w+");
+	FILE *iodpFile = NULL;
 
-	string filename2(filename);
-	filename2 += "_IODP";
-	FILE *fptr2 = fopen(filename2.c_str(), "w+");
 	if(fptr == NULL) 
 	{
 		return -1;
@@ -712,8 +710,13 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 				//ret = WriteAffineTableinXML(fptr, dataptr);
 			} else 
 			{
+				string iodpFilename(filename);
+				iodpFilename += "_IODP";
+				iodpFile = fopen(iodpFilename.c_str(), "w+");
+				if (!iodpFile) return -1;
+
 				ret = WriteAffineTable(fptr, dataptr);
-				WriteIODPAffineTable(fptr2, dataptr);
+				WriteIODPAffineTable(iodpFile, dataptr);
 			}
 		}
         break;
@@ -726,6 +729,11 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 			{
 				info = (DataInfo*) *m_dataList.begin();
 			}
+			string iodpFilename(filename);
+			iodpFilename += "_IODP";
+			iodpFile = fopen(iodpFilename.c_str(), "w+");
+			if (!iodpFile) return -1;
+
 			if(info == NULL)
 			{
 				if(pos != string::npos) 
@@ -734,6 +742,7 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 				} else 
 				{
 					ret = WriteSpliceTable(fptr, dataptr, NULL);
+					WriteSpliceIntervalTable(iodpFile, dataptr);
 				}
 			} else 
 			{
@@ -743,6 +752,7 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 				} else 
 				{
 					ret = WriteSpliceTable(fptr, dataptr, info->m_appliedAffineFilename.c_str());
+					WriteSpliceIntervalTable(iodpFile, dataptr);
 				}
 			}			
 			
@@ -788,7 +798,8 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 	}
 	
 	fclose(fptr);
-	fclose(fptr2);
+	if (iodpFile)
+		fclose(iodpFile);
 	return ret;
 }
 

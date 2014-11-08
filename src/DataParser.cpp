@@ -2877,16 +2877,15 @@ int CountSpliceTies(Data *dataptr)
     return count;
 }
 
+// write an IODP Splice Interval Table (SIT)
 int WriteSpliceIntervalTable(FILE *fptr, Data* dataptr)
 {
-	cout << "WriteSpliceIntervalTable" << endl;
-
 	if (dataptr == NULL) return 0;
 
 	const int tieCount = CountSpliceTies(dataptr);
 	if (tieCount == 0) return 0;
 
-	//fprintf (fptr, "# Site, Hole, Core, Type, Top section, Top offset, Top depth CSF-A, Top depth CCSF-A, Bottom section, Bottom offset, Bottom depth CSF-A, Bottom depth CCSF-A, Splice type, Data used, Comment\n");
+	fprintf (fptr, "# Site, Hole, Core, Type, Top section, Top offset, Top depth CSF-A, Top depth CCSF-A, Bottom section, Bottom offset, Bottom depth CSF-A, Bottom depth CCSF-A, Splice type, Data used, Comment\n");
 
 	const string siteName(dataptr->getSite());
 	string topSection("1");
@@ -2900,28 +2899,24 @@ int WriteSpliceIntervalTable(FILE *fptr, Data* dataptr)
 			if (!fromInfo || !fromInfo->m_coreptr) continue;
 			if (!tie->isAppend() && !fromInfo->m_valueptr) continue;
 
-			cout << "Tie " << tieIdx + 1 << ": " << (tie->isAppend() ? "Append" : "Normal") << endl;
-
 			Value *fromValue = fromInfo->m_valueptr;
 			string bottomSection(&fromInfo->m_section[0]);
 			if (tie->isAppend() && !fromValue)
 			{
-				cout << "Append and no fromValue, grabbing last core value" << endl;
 				fromValue = fromInfo->m_coreptr->getLastValue();
 				if (!fromValue) continue;
 				bottomSection = fromValue->getSection();
-				//cout << "APPEND fromValue section = " << fromValue->getSection() << ", fromInfo core section = " << fromInfo->m_section[0] << endl;
 			}
 
-			//cout << "fromValue topOffset = " << fromValue->getTop() << ", bottomOffset = " << fromValue->getBottom() << endl;
-
-			cout << "Interval " << tieIdx + 1 << ": " << siteName << " " << fromInfo->m_coreptr->getName() << fromInfo->m_coreptr->getNumber() <<
-					", section " << topSection << " offset = " << topOffset << " mbsf = " << topDepthMbsf << " mcd = " << topDepthMcd <<
-					", bottom section " << fromInfo->m_section[0] << ", offset = " << fromValue->getBottom() << ", mbsf = " << fromValue->getMbsf() << ", mcd = " << fromValue->getMcd() << endl;
-
-//
-//			cout << "Tie " << tieIdx + 1 << " from " << fromInfo->m_coreptr->getName() << fromInfo->m_coreptr->getNumber() <<
-//					", section " << fromInfo->m_section[0] << " at MCD = " << fromValue->getMcd() << " ";
+			string spliceType = tie->isAppend() ? "APPEND" : "TIE";
+			string dataUsed = fromInfo->m_coreptr->getTypeStr();
+			string comment;
+			string dataLine;
+			const string format("ssicsfffsfffsss");
+			makeDelimString(format, dataLine, siteName.c_str(), fromInfo->m_coreptr->getName(), fromInfo->m_coreptr->getNumber(), fromInfo->m_coreptr->getCoreType(),
+							topSection.c_str(), topOffset, topDepthMbsf, topDepthMcd, bottomSection.c_str(), fromValue->getBottom(),
+							fromValue->getMbsf(), fromValue->getMcd(), spliceType.c_str(), dataUsed.c_str(), comment.c_str());
+			fprintf(fptr, "%s\n", dataLine.c_str());
 
 			TieInfo *toInfo = tie->getInfoTieTo();
 			if (!toInfo || !toInfo->m_coreptr)
@@ -2937,11 +2932,10 @@ int WriteSpliceIntervalTable(FILE *fptr, Data* dataptr)
 			{
 				toValue = toInfo->m_coreptr->getFirstValue();
 				if (!toValue) continue;
-				// brgtodo? get section from value as well?
 				topSection = toValue->getSection();
-				cout << "Append toValue section = " << toValue->getSection() << ", toInfo core section = " << toInfo->m_section[0] << endl;
 			}
 
+			// top values for next interval come from "to" of current tie
 			topOffset = toValue->getTop();
 			topDepthMbsf = toValue->getMbsf();
 			topDepthMcd = toValue->getMcd();
@@ -2949,14 +2943,45 @@ int WriteSpliceIntervalTable(FILE *fptr, Data* dataptr)
 			if (tieIdx + 1 == tieCount) // last tie?
 			{
 				Value *bottomValue = toInfo->m_coreptr->getLastValue();
-				if (!bottomValue)
+				if (!bottomValue) continue;
+
+				dataUsed = toInfo->m_coreptr->getTypeStr();
+				dataLine.clear();
+				const string format2("ssicsfffsfffsss");
+				makeDelimString(format2, dataLine, siteName.c_str(), toInfo->m_coreptr->getName(), toInfo->m_coreptr->getNumber(), toInfo->m_coreptr->getCoreType(),
+								topSection.c_str(), topOffset, topDepthMbsf, topDepthMcd, bottomValue->getSection(),
+								bottomValue->getBottom(), bottomValue->getMbsf(), bottomValue->getMcd(), spliceType.c_str(), dataUsed.c_str(), comment.c_str());
+				fprintf(fptr, "%s\n", dataLine.c_str());
+
+				// if last tie is append all, add interval for all cores below toInfo->m_coreptr's Core
+				if (tie->isAppend() && tie->isAll())
 				{
-					cout << "No bottom value, sadness" << endl;
-					continue;
+					Hole *hole = (Hole *)toInfo->m_coreptr->getParent();
+					const int numCores = hole->getNumOfCores();
+					const int topAppendCore = toInfo->m_coreptr->getNumber();
+					for (int hidx = 0; hidx < numCores; hidx++)
+					{
+						Core *curCore = hole->getCore(hidx);
+						if (curCore->getNumber() > topAppendCore)
+						{
+							// add it to the file
+							Value *topValue = curCore->getValue(0);
+							bottomValue = curCore->getValue(curCore->getNumOfValues() - 1);
+							if (!topValue || !bottomValue)
+							{
+								cout << "Couldn't find top or bottom value for core " << curCore->getName() << curCore->getNumber() << endl;
+								continue;
+							}
+							dataUsed = toInfo->m_coreptr->getTypeStr();
+							dataLine.clear();
+							makeDelimString(format2, dataLine, siteName.c_str(), curCore->getName(), curCore->getNumber(), curCore->getCoreType(), topValue->getSection(),
+											topValue->getTop(), topValue->getMbsf(), topValue->getMcd(), bottomValue->getSection(),
+											bottomValue->getBottom(), bottomValue->getMbsf(), bottomValue->getMcd(), spliceType.c_str(),
+											dataUsed.c_str(), comment.c_str());
+							fprintf(fptr, "%s\n", dataLine.c_str());
+						}
+					}
 				}
-				cout << "Interval " << tieIdx + 2 << ": " << siteName << " " << toInfo->m_coreptr->getName() << toInfo->m_coreptr->getNumber() <<
-						", section " << topSection << " offset = " << topOffset << " mbsf = " << topDepthMbsf << " mcd = " << topDepthMcd <<
-						", bottom section " << bottomValue->getSection() << ", offset = " << bottomValue->getBottom() << ", mbsf = " << bottomValue->getMbsf() << ", mcd = " << bottomValue->getMcd() << endl;
 			}
 		}
 	}
@@ -3160,8 +3185,17 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 					}
 				} else // tieptr->isAll == true
 				{
+					cout << "tie pointer isAll!!!!" << endl;
 					temp_value = tieInfoptr->m_valueptr;
-					if(temp_value == NULL) continue;
+
+					// if previous tie is a single APPEND, there will be no value associated
+					// with the tie.  Instead, grab top value of core.
+					if (temp_value == NULL)
+					{
+						temp_value = tieInfoptr->m_coreptr->getValue(0);
+						if (!temp_value) continue;
+					}
+					cout << "writing all kindsa shit!" << endl;
 
 #ifdef NEWOUTPUT
 					string dataLine;
@@ -3185,7 +3219,11 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 					if(tieInfoptr == NULL) continue;
 					if(tieInfoptr->m_coreptr == NULL) continue;
 					temp_value = tieInfoptr->m_valueptr;
-					if(temp_value == NULL) continue;
+					if (temp_value == NULL)
+					{
+						temp_value = tieInfoptr->m_coreptr->getValue(0);
+						if (!temp_value) continue;
+					}
 					
 #ifdef NEWOUTPUT
 					dataLine.clear();

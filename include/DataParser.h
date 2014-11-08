@@ -68,6 +68,7 @@ int ReadCullTable( FILE *fptr, int coretype, Data* dataptr, char* annotation );
 int WriteAffineTable( FILE *fptr, Data* dataptr );
 int WriteIODPAffineTable( FILE *fptr, Data* dataptr );
 int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename= NULL);
+int WriteSpliceIntervalTable(FILE *fptr, Data* dataptr);
 int WriteEqLogDepthTable( FILE *fptr, Data* dataptr, const char* affinefilename );
 int WriteStratTable( FILE *fptr, Data* dataptr );
 int WriteSplice( FILE *fptr, Hole* dataptr, const char* leg, const char* site );
