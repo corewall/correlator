@@ -2991,10 +2991,6 @@ int WriteSpliceIntervalTable(FILE *fptr, Data* dataptr)
 
 int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 {
-	WriteSpliceIntervalTable(fptr, dataptr);
-
-	cout << "WriteSpliceTable!" << endl;
-
 	if(dataptr == NULL) return 0;
 
 	// 926	B	1	H	4	25.6	25.6	4.76	4.76	tie	

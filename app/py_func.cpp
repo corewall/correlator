@@ -67,6 +67,7 @@ static PyObject* loadAltSpliceFile(PyObject *self, PyObject *args);
 static PyObject* initAltSplice(PyObject *self, PyObject *args);
 static PyObject* saveAttributeFile(PyObject *self, PyObject *args);
 static PyObject* saveSpliceFile(PyObject *self, PyObject *args);
+static PyObject* exportSpliceFile(PyObject *self, PyObject *args);
 static PyObject* cleanData(PyObject *self, PyObject *args);
 static PyObject* cleanDataType(PyObject *self, PyObject *args);
 static PyObject* decimate(PyObject *self, PyObject *args);
@@ -207,6 +208,9 @@ static PyMethodDef PyCoreMethods[] = {
 
     {"saveAttributeFile", saveAttributeFile, METH_VARARGS,
      "Save Affine data file."},
+
+    {"exportSpliceFile", exportSpliceFile, METH_VARARGS,
+     "Export Splice data file."},
 
     {"saveSpliceFile", saveSpliceFile, METH_VARARGS,
      "Save Splice data file."},
@@ -2071,6 +2075,22 @@ static PyObject* saveAttributeFile(PyObject *self, PyObject *args)
 	{
 		manager.save( fileName, correlator.getSpliceHole(), dataptr->getLeg(), dataptr->getSite(), true );
 	}
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject* exportSpliceFile(PyObject *self, PyObject *args)
+{
+	char *filename;
+	int isIntervalTable;
+
+	if (!PyArg_ParseTuple(args, "si", &filename, &isIntervalTable))
+		return NULL;
+
+	cout << "isIntervalTable = " << isIntervalTable << endl;
+
+	manager.exportSplice(filename, dataptr, isIntervalTable);
 
 	Py_INCREF(Py_None);
 	return Py_None;

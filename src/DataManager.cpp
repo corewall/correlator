@@ -803,6 +803,25 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 	return ret;
 }
 
+int DataManager::exportSplice(const char *filename, Data *dataptr, const bool intervalTable)
+{
+	DataInfo* info = NULL;
+	if (m_dataList.size() > 0)
+		info = (DataInfo*) *m_dataList.begin();
+
+	FILE *outFile = fopen(filename, "w+");
+	if (!outFile) return -1;
+
+	int ret = 0;
+	if (!info)
+		ret = intervalTable ? WriteSpliceIntervalTable(outFile, dataptr) : WriteSpliceTable(outFile, dataptr, NULL);
+	else
+		ret = intervalTable ? WriteSpliceIntervalTable(outFile, dataptr) : WriteSpliceTable(outFile, dataptr, info->m_appliedAffineFilename.c_str());
+
+	fclose(outFile);
+	return ret;
+}
+
 int DataManager::changeFormat(const char* infilename, const char* outfilename)
 {
 	return ChangeFormat(infilename, outfilename);

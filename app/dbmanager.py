@@ -460,8 +460,8 @@ class DataFrame(wx.Panel):
 					popupMenu.Append(16, "&Export")
 					wx.EVT_MENU(popupMenu, 16, self.OnPOPMENU)
 
-					popupMenu.Append(22, "&Export in XML")
-					wx.EVT_MENU(popupMenu, 22, self.OnPOPMENU)
+					#popupMenu.Append(22, "&Export in XML")
+					#wx.EVT_MENU(popupMenu, 22, self.OnPOPMENU)
 
 				elif self.tree.GetItemText(parentItem, 0) == "Downhole Log Data" :
 					popupMenu.Append(2, "&View")
@@ -1859,7 +1859,8 @@ class DataFrame(wx.Panel):
 				outFile += '.' + formatStr.lower()
 				py_correlator.openSpliceFile(spliceFile)
 				py_correlator.setDelimiter(FormatDict[formatStr])
-				py_correlator.saveAttributeFile(outFile, 2)
+				#py_correlator.saveAttributeFile(outFile, 2)
+				py_correlator.exportSpliceFile(outFile, spliceDlg.GetExportSIT())
 				py_correlator.setDelimiter(FormatDict["Text"])
 				
 		return doExport
@@ -1946,16 +1947,17 @@ class DataFrame(wx.Panel):
 					if temp_title == "-Cull Table" :
 						outfile = filename + ".cull.table"
 
-				if sys.platform == 'win32' :
-					workingdir = os.getcwd()
-					# ------------------------
-					os.chdir(self.parent.DBPath + 'db\\' + title)
-					cmd = 'copy ' + self.tree.GetItemText(self.selectedIdx, 8)  + ' \"' + path + '\\' + str(outfile) + "_ORIG" + '\"'
-					os.system(cmd)
-					os.chdir(workingdir)
-				else:
-					cmd = 'cp \"' +  source  + '\" \"' + path + '/' + outfile + "_ORIG" + '\"'
-					os.system(cmd)
+				if selParentTitle != "Saved Tables":
+					if sys.platform == 'win32' :
+						workingdir = os.getcwd()
+						# ------------------------
+						os.chdir(self.parent.DBPath + 'db\\' + title)
+						cmd = 'copy ' + self.tree.GetItemText(self.selectedIdx, 8)  + ' \"' + path + '\\' + str(outfile) + '\"'
+						os.system(cmd)
+						os.chdir(workingdir)
+					else:
+						cmd = 'cp \"' +  source  + '\" \"' + path + '/' + outfile + '\"'
+						os.system(cmd)
 				self.parent.OnShowMessage("Information", "Successfully exported", 1)
 
 

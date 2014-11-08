@@ -368,11 +368,12 @@ class OkButtonPanel(wx.Panel):
 		self.SetSizer(sz)
 
 class FormatListPanel(wx.Panel):
-	def __init__(self, parent):
+	def __init__(self, parent, formatChoices=None):
 		wx.Panel.__init__(self, parent, -1)
 		sz = wx.BoxSizer(wx.HORIZONTAL)
 		sz.Add(wx.StaticText(self, -1, "Export Format:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
-		self.formatList = wx.Choice(self, -1, choices=["CSV", "XML", "Text"])
+		formats = formatChoices if formatChoices is not None else ["CSV", "XML", "Text"] 
+		self.formatList = wx.Choice(self, -1, choices=formats)
 		sz.Add(self.formatList, 1, wx.EXPAND | wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
 		self.SetSizer(sz)
 
@@ -431,18 +432,24 @@ class ExportFormatDialog(wx.Dialog):
 
 class ExportSpliceDialog(wx.Dialog):
 	def __init__(self, parent, affineItems, initialSelection=None):
-		wx.Dialog.__init__(self, parent, -1, "Export Splice", size=(300, 150),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER)
+		wx.Dialog.__init__(self, parent, -1, "Export Splice", style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER)
 
 		sz = wx.BoxSizer(wx.VERTICAL)
-		formatPanel = FormatListPanel(self)
+		formatPanel = FormatListPanel(self, formatChoices=["CSV", "Text"])
 		self.formatList = formatPanel.formatList
-		sz.Add(formatPanel, 0, wx.EXPAND | wx.ALL, 10)
+		sz.Add(formatPanel, 0, wx.EXPAND | wx.ALL, 5)
+		hsz = wx.BoxSizer(wx.HORIZONTAL)
+		hsz.Add(wx.StaticText(self, -1, "Splice Format:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
+		self.spliceFormatChoice = wx.Choice(self, -1, choices=["Interval Table", "Tie Table"])
+		self.spliceFormatChoice.SetSelection(0)
+		hsz.Add(self.spliceFormatChoice, 1,  wx.EXPAND | wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+		sz.Add(hsz, 0, wx.EXPAND | wx.RIGHT | wx.LEFT | wx.BOTTOM, 5)
 		affinePanel = AffineListPanel(self, affineItems)
 		self.affineList = affinePanel.affineList
 		sz.Add(affinePanel, 0, wx.EXPAND | wx.RIGHT | wx.LEFT | wx.BOTTOM, 10)
 		self.buttonPanel = OkButtonPanel(self, okName="Export")
 		sz.Add(self.buttonPanel, 0, wx.ALIGN_RIGHT | wx.ALIGN_BOTTOM | wx.RIGHT, 10)
-		self.SetSizer(sz)
+		self.SetSizerAndFit(sz)
 		
 		self.buttonPanel.ok.SetDefault()
 		self.Bind(wx.EVT_BUTTON, self.ButtonPressed, self.buttonPanel.ok)
@@ -456,6 +463,9 @@ class ExportSpliceDialog(wx.Dialog):
 	
 	def GetSelectedFormat(self):
 		return self.formatList.GetStringSelection()
+	
+	def GetExportSIT(self):
+		return self.spliceFormatChoice.GetStringSelection() == "Interval Table"
 		
 	def ButtonPressed(self, evt):
 		if evt.GetEventObject() == self.buttonPanel.ok:
