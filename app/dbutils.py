@@ -829,16 +829,6 @@ def ImportStratFile(parent, leg, site):
 		elif filterindex == 4 : 
 			type = "Paleomag"
 		
-#		newline = self.tree.AppendItem(item, type)
-#		filename = self.Set_NAMING(type, title, 'strat')
-#		self.tree.SetItemText(newline,  filename, 8)
-#		self.tree.SetItemText(newline, "Enable", 2)
-#		self.tree.SetItemTextColour(newline, wx.BLUE)
-#		self.tree.SetItemText(newline, stamp, 6)
-#		self.tree.SetItemText(newline, glb.User, 7)
-#		self.tree.SetItemText(newline, path, 9)
-#		self.tree.SetItemText(newline, title + '/', 10)
-
 		fullname = glb.DBPath +'db/' + title + '/' + filename 
 		if sys.platform == 'win32' :
 			workingdir = os.getcwd()

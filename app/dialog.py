@@ -1594,14 +1594,6 @@ class ImportHoleDataDialog(ImportDialog):
 		self.selectedCol = event.GetCol()
 		pos = event.GetPosition()
 
-		# brgtodo
-# 		if self.importType == "LOG" :
-# 			popupMenu = wx.Menu()
-# 			for i in [13, 0, 12]:
-# 				popupMenu.Append(i + 1, self.colLabels[i])
-# 			self.PopupMenu(popupMenu, pos)
-# 			return
-
 		if self.selectedCol == 0: # Data Type
 			popupMenu = wx.Menu()
 			for i in range(5):
