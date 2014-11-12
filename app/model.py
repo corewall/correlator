@@ -840,6 +840,8 @@ class DBView:
 		self.dataPanel.GetSizer().Clear(True)
 
 		if site is None:
+			msg = "No sites found. Use the Import > Hole Data... menu item to import hole data and create a site."
+			self.dataPanel.GetSizer().Add(wx.StaticText(self.dataPanel, -1, msg))
 			return
 		
 		# Add Holes
@@ -919,6 +921,8 @@ class DBView:
 			else:
 				self.currentSite.SetSelection(0)
 			self.SiteChanged()
+		else: # no sites
+			self.UpdateView(None) # clear deleted site's GUI if present
 
 	def SiteChanged(self, evt=None):
 		if self.refreshTimer.IsRunning():
@@ -1251,7 +1255,7 @@ class DBView:
 		dlg = dialog.ImportHoleDataDialog(self.dataFrame, -1, paths, header, self.siteDict)
 		if dlg.ShowModal() == wx.ID_OK:
 			curSite = self.GetCurrentSite()
-			if dlg.importedSite == curSite.name:
+			if curSite is not None and dlg.importedSite == curSite.name:
 				self.UpdateView(curSite) # update to show just-imported data
 			elif dlg.importedSite not in self.currentSite.GetStrings():
 				self.UpdateSites(dlg.importedSite) # add new site to "Current Site" Choice
@@ -1264,9 +1268,6 @@ class DBView:
 		dbu.DeleteFile(filepath)
 		curSite.DeleteTable(filename)
 		
-	def DeleteSite(self):
-		pass
-	
 	def ViewFile(self, filename):
 		holefile = glb.DBPath + "db/" + self.GetCurrentSite().GetDir() + filename
 		self.dataFrame.fileText.Clear()
