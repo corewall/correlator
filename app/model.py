@@ -905,15 +905,17 @@ class DBView:
 		self.parentPanel.GetEventHandler().ProcessEvent(event)
 		event.Skip()
 
-	def UpdateSites(self):
+	def UpdateSites(self, selectSite=None):
 		self.currentSite.Clear()
 		for siteKey in sorted(self.siteDict):
 			site = self.siteDict[siteKey]
 			self.currentSite.Append(site.name, clientData=site)
-		
-		# brg 4/10/2014: Must explicitly set a current selection on Windows 
 		if self.currentSite.GetCount() > 0:
-			self.currentSite.SetSelection(0)
+			if selectSite is not None:
+				self.currentSite.SetStringSelection(selectSite)
+			else:
+				self.currentSite.SetSelection(0)
+			self.SiteChanged()
 
 	def SiteChanged(self, evt=None):
 		if self.refreshTimer.IsRunning():
@@ -1234,12 +1236,13 @@ class DBView:
 		opendlg.Destroy()
 
 	def ImportHoleData(self, paths, header):
-		# create import spreadsheet dialog
 		dlg = dialog.ImportHoleDataDialog(self.dataFrame, -1, paths, header, self.siteDict)
 		if dlg.ShowModal() == wx.ID_OK:
 			curSite = self.GetCurrentSite()
 			if dlg.importedSite == curSite.name:
 				self.UpdateView(curSite) # update to show just-imported data
+			elif dlg.importedSite not in self.currentSite.GetStrings():
+				self.UpdateSites(dlg.importedSite) # add new site to "Current Site" Choice
 				
 	def DeleteFile(self, filename):
 		if glb.OnShowMessage("About", "Are you sure you want to delete {}?".format(filename), 2) != wx.ID_OK:
