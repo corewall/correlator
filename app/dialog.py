@@ -1792,13 +1792,7 @@ class ImportHoleDataDialog(ImportDialog):
 		
 		glb.MainFrame.OnNewData(None)
 		
-		# create site dir if needed # brgtodo dbutils?
-		siteDirPath = glb.DBPath + "db/" + lsPair	
-		if os.access(siteDirPath, os.F_OK) == False:
-			os.mkdir(siteDirPath)
-			siteDb = open(glb.DBPath + "db/datalist.db", "a+")
-			siteDb.write("\n" + lsPair)
-			siteDb.close()
+		siteDirPath = dbu.CreateSiteDir(lsPair)
 		
 		# write datasort to file for unknown reasons (C++ side?)
 		colSortFile = siteDirPath + "/." + typeAbbv

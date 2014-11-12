@@ -87,6 +87,27 @@ def LoadSiteNames():
 			siteNames.append(site)
 	return sorted(siteNames)
 
+def CreateSiteDir(siteName):
+	# create site dir if needed # brgtodo dbutils?
+	siteDirPath = glb.DBPath + "db/" + siteName	
+	if os.access(siteDirPath, os.F_OK) == False:
+		os.mkdir(siteDirPath)
+		siteDb = open(glb.DBPath + "db/datalist.db", "a+")
+		siteDb.write("\n" + siteName)
+		siteDb.close()
+	return siteDirPath
+
+def DeleteSiteDbEntry(siteName):
+	siteDb = open(glb.DBPath + "db/datalist.db", "r")
+	siteLines = siteDb.readlines()
+	siteDb.close()
+	siteDb = open(glb.DBPath + "db/datalist.db", "w")
+	for line in siteLines:
+		line = line.strip()
+		if len(line) > 0 and line != siteName:
+			siteDb.write(line + "\n")
+	siteDb.close()
+
 def SaveDatabase(siteDict):
 	pass
 
@@ -112,6 +133,32 @@ def SaveSite(site):
 	for log in site.logTables:
 		WriteDownholeLog(log, siteFile)
 	siteFile.close()
+	
+def DeleteSite(site):
+	for hs in site.holeSets.values():
+		for hole in hs.holes.values():
+			DeleteFile(GetSiteFilePath(site.name, hole.file))
+		if hs.HasCull():
+			DeleteFile(GetSiteFilePath(site.name, hs.cullTable.file))
+	for affine in site.affineTables:
+		DeleteFile(GetSiteFilePath(site.name, affine.file))
+	for splice in site.spliceTables:
+		DeleteFile(GetSiteFilePath(site.name, splice.file))
+	for eld in site.eldTables:
+		DeleteFile(GetSiteFilePath(site.name, eld.file))
+	for strat in site.stratTables:
+		DeleteFile(GetSiteFilePath(site.name, strat.file))
+	for age in site.ageTables:
+		DeleteFile(GetSiteFilePath(site.name, age.file))
+	for series in site.seriesTables:
+		DeleteFile(GetSiteFilePath(site.name, series.file))
+	for image in site.imageTables:
+		DeleteFile(GetSiteFilePath(site.name, image.file))
+	for log in site.logTables:
+		DeleteFile(GetSiteFilePath(site.name, log.file))
+	DeleteFile(GetDBFilePath(site.name))
+	DeleteDir(GetSitePath(site.name))
+	DeleteSiteDbEntry(site.name)
 		
 def GetDBFilePath(siteName):
 	return glb.DBPath + "db/" + siteName + "/datalist.db"
@@ -886,13 +933,13 @@ def ReformatFile(source, dest, tableType):
 	
 def MoveFile(src, dest, copy=True):
 	if sys.platform == 'win32':
-		workingdir = os.getcwd()
+#		workingdir = os.getcwd()
 		cmd = 'copy ' + src + ' ' + dest
 		os.system(cmd)
 		if not copy:
 			cmd = 'del \"' + src + '\"'
 			os.system(cmd)
-		os.chdir(workingdir)
+#		os.chdir(workingdir)
 	else:
 		cmd = 'cp \"' + src + '\" \"' + dest + '\"'
 		os.system(cmd)
@@ -900,6 +947,17 @@ def MoveFile(src, dest, copy=True):
 			cmd = 'rm \"' + src + '\"'
 			os.system(cmd)
 			
+def DeleteDir(dirpath):
+	if sys.platform == 'win32' :
+#		workingdir = os.getcwd()
+#		os.chdir(glb.DBPath + 'db/')
+		os.system('rd /s /q ' + dirpath)
+#		os.chdir(workingdir)
+		#self.parent.logFileptr.write("Delete " + dirpath + "\n\n")
+	else :
+		os.system('rm -rf ' + dirpath)
+		#self.parent.logFileptr.write("Delete " + dirpath + "\n\n")	
+
 def DeleteFile(filepath):
 	if sys.platform == 'win32' :
 		workingdir = os.getcwd()

@@ -658,11 +658,13 @@ class DBView:
 		siteLabel.SetFont(slFont)
 		self.currentSite = wx.Choice(self.sitePanel, -1)
 		self.loadButton = wx.Button(self.sitePanel, -1, "Load")
+		self.deleteButton = wx.Button(self.sitePanel, -1, "Delete")
 		self.writeButton = wx.Button(self.sitePanel, -1, "Write DB")
 
 		self.sitePanel.GetSizer().Add(siteLabel, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.currentSite, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.loadButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+		self.sitePanel.GetSizer().Add(self.deleteButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.sitePanel.GetSizer().Add(self.writeButton, 0, border=5, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
 		self.parentPanel.GetSizer().Add(self.sitePanel, 0, border=10, flag=wx.BOTTOM | wx.LEFT)
 
@@ -674,6 +676,7 @@ class DBView:
 		self.UpdateSites()
 		self.parentPanel.Bind(wx.EVT_CHOICE, self.SiteChanged, self.currentSite)
 		self.parentPanel.Bind(wx.EVT_BUTTON, self.LoadPressed, self.loadButton)
+		self.parentPanel.Bind(wx.EVT_BUTTON, self.DeletePressed, self.deleteButton)
 		self.parentPanel.Bind(wx.EVT_BUTTON, self.WritePressed, self.writeButton)
 
 	def WritePressed(self, event):
@@ -937,6 +940,15 @@ class DBView:
 					holesToLoad.append(hole)
 		if len(holesToLoad) > 0:
 			self.LoadHoles(holesToLoad)
+			
+	""" Delete current site """
+	def DeletePressed(self, evt):
+		site = self.GetCurrentSite()
+		result = glb.OnShowMessage("About", "Are you sure you want to delete {}, including all data and saved tables?".format(site.name), 2)
+		if result == wx.ID_OK:
+			dbu.DeleteSite(site)
+			del self.siteDict[site.name]
+			self.UpdateSites()
 
 	""" Ensure only one log Enabled checkbox is checked at a time """
 	def LogCheckboxChanged(self, evt):
@@ -1251,6 +1263,9 @@ class DBView:
 		filepath = dbu.GetSiteFilePath(curSite.name, filename)
 		dbu.DeleteFile(filepath)
 		curSite.DeleteTable(filename)
+		
+	def DeleteSite(self):
+		pass
 	
 	def ViewFile(self, filename):
 		holefile = glb.DBPath + "db/" + self.GetCurrentSite().GetDir() + filename
