@@ -1155,10 +1155,11 @@ class ImportDialog(wx.Dialog):
 		buttonPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
 		self.importButton = wx.Button(buttonPanel, wx.ID_OK, "Import")
 		self.cancelButton = wx.Button(buttonPanel, wx.ID_CANCEL, "Cancel")
-		buttonPanel.GetSizer().Add(wx.StaticText(buttonPanel, -1, "[help text/instructions here?]"), 1, wx.ALL, 5)
-		buttonPanel.GetSizer().Add(self.importButton, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-		buttonPanel.GetSizer().Add(self.cancelButton, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-		sz.Add(buttonPanel, 0, wx.RIGHT | wx.ALIGN_RIGHT, 10)
+		self.helpText = wx.StaticText(buttonPanel, -1, "[help text/instructions here]")
+		buttonPanel.GetSizer().Add(self.helpText, 1, wx.ALL | wx.ALIGN_LEFT, 5)
+		buttonPanel.GetSizer().Add(self.importButton, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+		buttonPanel.GetSizer().Add(self.cancelButton, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+		sz.Add(buttonPanel, 0, wx.EXPAND | wx.RIGHT | wx.ALIGN_RIGHT, 10)
 		
 	def HasCol(self, colName):
 		result = False
@@ -1188,6 +1189,7 @@ class ImportLogDialog(ImportDialog):
 			self.sheet.SetColLabelValue(i, "?")
 
 		self.valid = self.PopulateCells()
+		self.UpdateHelpText()
 		
 		# events
 		self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.ColHeaderSelected, self.sheet)
@@ -1220,8 +1222,17 @@ class ImportLogDialog(ImportDialog):
 			label = "Depth" if opId == 14 else "Data"
 			self.sheet.SetColLabelValue(self.selectedCol, label)
 
+		self.UpdateHelpText()
 		self.selectedCol = -1
 		
+	def UpdateHelpText(self):
+		if not self.HasCol("Depth"):
+			self.helpText.SetLabel("Select the Depth column by clicking its header and selecting 'Depth'.")
+		elif not self.HasCol("Data"):
+			self.helpText.SetLabel("Select one or more Data columns by clicking their headers and selecting 'Data'.")
+		else:
+			self.helpText.SetLabel("Click the Import button to complete the import process.")
+	
 	def OnOK(self, event):
 		if self.DoImport():
 			self.EndModal(wx.ID_OK)
@@ -1545,6 +1556,7 @@ class ImportHoleDataDialog(ImportDialog):
 			self.sheet.SetColLabelValue(i, "?")
 		self.UpdateColHeaders(header)
 		self.PopulateCells(paths)
+		self.UpdateHelpText()
 
 	def PopulateCells(self, paths):
 		expectedTokenCount = -1
@@ -1668,24 +1680,27 @@ class ImportHoleDataDialog(ImportDialog):
 
 		for ridx in range(self.sheet.GetNumberRows()):
 			self.sheet.SetCellValue(ridx, 0, datatype)
+			
+		self.UpdateHelpText()
 
 	def OnLabelChanged(self, event):
-		# Unselect - a log editing thing? Resetting label to original val?
 		opId = event.GetId()
 		if opId < 13 or opId == 14:
 			self.sheet.SetColLabelValue(self.selectedCol, self.colLabels[opId - 1])
-		elif opId == 13: # Unselect - a log editing thing? Resetting label to original val?
-			origin_label = ""
-			ith = 0 
-			for label in self.importLabel:
-				if ith == self.selectedCol:
-					origin_label = label
-					break
-				ith = ith + 1
-			self.sheet.SetColLabelValue(self.selectedCol, origin_label)
-
 		self.selectedCol = -1
+		self.UpdateHelpText()
 
+	def UpdateHelpText(self):
+		typeStr = self.sheet.GetCellValue(3, 0) # first cell in Data Type column
+		if len(typeStr) == 0:
+			self.helpText.SetLabel("Click the first column's header and select a data type.")
+		elif not self.HasCol("Depth"):
+			self.helpText.SetLabel("Select the Depth column by clicking the appropriate column header and selecting 'Depth'.")
+		elif not self.HasCol("Data"):
+			self.helpText.SetLabel("Select the Data column by clicking the appropriate column header and selecting 'Data'.")
+		else:
+			self.helpText.SetLabel("Click the Import button to complete the import process.")
+	
 	def UpdateColHeaders(self, header):
 		if header != "":
 			# attempt to determine the file's delimiter
@@ -1786,7 +1801,7 @@ class ImportHoleDataDialog(ImportDialog):
 		
 		siteDirPath = dbu.CreateSiteDir(lsPair)
 		
-		# write datasort to file for unknown reasons (C++ side?)
+		# write datasort to file (C++ side requires this to identify columns for parsing)
 		colSortFile = siteDirPath + "/." + typeAbbv
 		fout = open(colSortFile, 'w+')
 		for r in datasort:
