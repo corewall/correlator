@@ -338,7 +338,7 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 		self.hoverData = []
 		self.minMcd = 99999.9
 		self.maxMcd = -99999.9
-		self.maxMbsfDepth = -99999.9
+		self.maxMbsf = -99999.9
 		self.statusText = statusText
 		
 		self.plotMin = 99999.9
@@ -386,7 +386,7 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 		gc = plot.PlotGraphics(self.growthPlotData, 'Growth Rate', 'CSF', 'CCSF')
 		
 		xmin = self.plotMin
-		xmax = endDepth
+		xmax = min(endDepth, self.maxMbsf + 5)
 		if xmax > scrollMax:
 			xmax = scrollMax
 		if xmin > xmax:
@@ -395,11 +395,12 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 
 		yax = (round(self.minMcd, 0) - 5, round(self.maxMcd, 0) + 5)
 		self.Draw(gc, xAxis = xax, yAxis = yax)
-		self.growthPlotData = []	
+		self.growthPlotData = []
 
 	def _updateData(self, holeData, startDepth, endDepth):
 		minMcd = 10000.0
 		maxMcd = -10000.0
+		maxMbsf = -10000.0
 		self.growthRateLines = []
 		self.hoverData = []
 		self.plotMin = 99999.9
@@ -430,28 +431,23 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 					coreEnd = topSectionMcd + coreLength
 					coreName = hole[0][core + 1][0]
 
-					# determine min/max for plotting purposes
+					# determine ranges for plotting purposes
+					if mbsfDepth > maxMbsf:
+						maxMbsf = mbsfDepth
+					
 					inRange = False
-					#print "Core {}{} mbsf = {}, end = {}".format(holeName, coreName, mbsfDepth, coreEnd),
 					if mbsfDepth >= startDepth and mbsfDepth <= endDepth:
 						inRange = True
-						#print "mbsf in range [{}-{}]".format(startDepth, endDepth),
 						if topSectionMcd < minMcd:
-							#print " mcd = {}, new minMcd".format(topSectionMcd)
 							minMcd = topSectionMcd
 						if topSectionMcd > maxMcd:
-							#print " mcd = {}, new maxMcd".format(topSectionMcd)
 							maxMcd = topSectionMcd
 					
-					if not inRange and (coreEnd >= startDepth and coreEnd < endDepth):
-						#print "coreEnd in range [{}-{}]".format(startDepth, self.plotMin),
+					if not inRange and (coreEnd >= startDepth and coreEnd <= endDepth) or (mbsfDepth < startDepth and coreEnd >= endDepth):
 						self.plotMin = min(self.plotMin, mbsfDepth)
-						#print " new plotMin = {} ".format(self.plotMin),
-						if topSectionMcd < minMcd: # brgtodo dup
-							#print " mcd = {}, new minMcd".format(topSectionMcd)
+						if topSectionMcd < minMcd:
 							minMcd = topSectionMcd
 						if topSectionMcd > maxMcd:
-							#print " mcd = {}, new maxMcd".format(topSectionMcd)
 							maxMcd = topSectionMcd
 					
 					offsetMbsfPair = (mbsfDepth, topSectionMcd)
@@ -473,8 +469,12 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 				self.growthRateLines.append(plot.PolyLine(growthRatePoints, colour=holeColor[holeNum], width=1))
 				holeNum = (holeNum + 1) % len(holeMarker) # make sure we don't overrun marker/color lists
 
+		if minMcd > maxMcd:
+			minMcd = startDepth
+			maxMcd = endDepth
 		self.minMcd = minMcd
 		self.maxMcd = maxMcd
+		self.maxMbsf = maxMbsf
 
 
 class CompositePanel():
