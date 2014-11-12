@@ -1,3 +1,4 @@
+import sys
 import wx
 from datetime import datetime
 
@@ -233,6 +234,12 @@ class SiteData:
 		self.eldGui.SyncToGui()
 		for log in self.logTables:
 			log.gui.SyncToGui()
+		for at in self.ageTables:
+			at.gui.SyncToGui()
+		for st in self.seriesTables:
+			st.gui.SyncToGui()
+		for it in self.imageTables:
+			it.gui.SyncToGui()
 
 	def SyncToData(self):
 		for hs in self.holeSets.values():
@@ -794,7 +801,7 @@ class DBView:
 
 		return gui
 
-	# for classes derived from TableData
+	# for age/depth, age model, strat and image
 	def AddTableRow(self, toPanel, site, table):
 		panel, sizer = self.NewPanel(toPanel)
 		
@@ -1045,6 +1052,169 @@ class DBView:
 			self.DeleteFile(gui.table.file)
 			gui.site.SyncToData()
 			self.refreshTimer.Start(200)
+
+	# dbmanager OnLOAD_AGEFILE()
+	def LoadAgeDepthFile(self, filename):
+		print "LoadAgeDepthFile"
+		agesFile = open(filename, "r")
+
+		for line in agesFile :
+			if len(line) == 0 :
+				continue	
+			if line[0] != "#" :
+				tokens = line.split()
+				if len(tokens) == 1 :
+					tokens = line.split(",")
+				max = len(tokens)
+				if max > 0 : 
+					temp_line = tokens[0]
+					last = temp_line.find(",", 0)
+					if last >= 0 :
+						out_i = 0
+						while out_i < max :
+							temp_line = tokens[out_i]
+							out_i += 1
+							temp_line = temp_line.split(",")
+							in_max = len(temp_line)
+							i = 0
+							while i < in_max :
+								depth = float(temp_line[i])
+								i += 1
+								rate = py_correlator.getMcdRate(depth)
+								mcd = depth * rate
+								mcd = int(100.0 * float(mcd)) / 100.0;
+								age = float(temp_line[i])
+								i += 1
+								name = temp_line[i]
+								i += 1
+								comment = temp_line[i]
+								i += 1
+
+								ret = self.parent.Window.CHECK_AGE(name, depth, age)
+								if ret == False :
+									self.parent.Window.AddUserdefAge(name, depth, mcd, age, comment)
+								if self.parent.Window.maxAgeRange < age :
+									self.parent.Window.maxAgeRange = int(age) + 2
+									self.parent.agePanel.max_age.SetValue(str(self.parent.Window.maxAgeRange))
+						continue
+						
+				i = 0
+				while i < max :
+					depth = float(tokens[i])
+					i += 1
+					rate = py_correlator.getMcdRate(depth)
+					mcd = depth * rate
+					mcd = int(100.0 * float(mcd)) / 100.0;
+					age = float(tokens[i])
+					i += 1
+					name = tokens[i]
+					i += 1
+					comment = tokens[i]
+					i += 1
+
+					ret = self.parent.Window.CHECK_AGE(name, depth, age)
+					if ret == False :
+						self.parent.Window.AddUserdefAge(name, depth, mcd, age, comment)
+
+					if self.parent.Window.maxAgeRange < age :
+						self.parent.Window.maxAgeRange = int(age) + 2
+						self.parent.agePanel.max_age.SetValue(str(self.parent.Window.maxAgeRange))
+		agesFile.close()
+
+		s = "Age Model: " + filename + "\n"
+		self.parent.logFileptr.write(s)
+
+	# OnLOAD_TIMESERIES()
+	def LoadAgeModelFile(self, filename):
+		print "LoadAgeModelFile!"
+		agesFile = open(filename, "r")
+		#count = len(self.parent.Window.UserdefStratData) + 1
+		idx = 0
+		while True :
+			#name = "X" + str(count)
+			line = agesFile.readline()
+			if len(line) == 0 :
+				break
+			if line[0] != "#" :
+				# Leg, Site, Mbsf, Mcd, Eld, Age, Sediment Rate, Age Datum, Comment, Type
+				tokens = line.split()
+				if tokens[0] == 'null' :
+					conitnue
+				depth = float(tokens[2])
+				mcd = float(tokens[3])
+				eld = float(tokens[4])
+				age = float(tokens[5])
+
+				name = ""
+				type = ""
+				if idx == 0 :
+					name = "X" 
+					type = "handpick" 
+				else :
+					ret = self.parent.Window.GetAGENAME(depth, age)
+					if ret == None :
+						continue
+					name = ret[0]
+					type = ret[1]
+
+				strItem = ""
+				bm0 = int(100.00 * float(depth)) / 100.00;
+				str_ba = str(bm0)
+				max_ba = len(str_ba)
+				start_ba = str_ba.find('.', 0)
+				str_ba = str_ba[start_ba:max_ba]
+				max_ba = len(str_ba)
+				
+				# brgtodo 11/12/2014: why space+tab for Windows and tab for others? 
+				delim = ' \t' if sys.platform == 'win32' else '\t'
+				if max_ba < 3:
+					strItem = str(bm0) + "0 \t"
+				else:
+					strItem = str(bm0) + delim
+
+				bm0 = int(100.00 * float(mcd)) / 100.00;
+				str_ba = str(bm0)
+				max_ba = len(str_ba)
+				start_ba = str_ba.find('.', 0)
+				str_ba = str_ba[start_ba:max_ba]
+				max_ba = len(str_ba)
+				if max_ba < 3 :
+					strItem = strItem + str(bm0) + "0 \t" + str(bm0) + "0 \t"
+				else :
+					strItem = strItem + str(bm0) + delim + str(bm0) + delim
+
+				str_ba = str(age)
+				max_ba = len(str_ba)
+				start_ba = str_ba.find('.', 0)
+				str_ba = str_ba[start_ba:max_ba]
+				max_ba = len(str_ba)
+				if max_ba < 3 :
+					strItem += str(age) + "0 \t" + name
+				else :
+					strItem += str(age) + delim + name
+				if type == "handpick" :
+					strItem += " *handpick"
+
+				if idx == 0:
+					self.parent.Window.firstPntAge = age
+					self.parent.Window.firstPntDepth = depth 
+					self.parent.agePanel.ageList.Delete(0)
+					self.parent.agePanel.ageList.InsertItems([strItem], 0)
+					idx = 1
+					continue
+
+				order = self.parent.agePanel.OnAddAgeToList(strItem)
+				self.parent.Window.AddToAgeList(name, depth, mcd, age, order, type)
+
+				if self.parent.Window.maxAgeRange < age :
+					self.parent.Window.maxAgeRange = int(age) + 2
+					self.parent.agePanel.max_age.SetValue(str(self.parent.Window.maxAgeRange))
+
+				#count = count + 1
+		agesFile.close()
+
+		s = "Age Series: " + filename + "\n"
+		self.parent.logFileptr.write(s)
 	
 	def LoadHoles(self, holeList):
 		# pre stuff
@@ -1162,6 +1332,13 @@ class DBView:
 						self.parent.autoPanel.OnButtonEnable(0, False)
 					retdata = "" 
 				break
+			
+		for at in site.ageTables: # age/depth table
+			if at.enable:
+				self.LoadAgeDepthFile(dbu.GetSiteFilePath(site.name, at.file))
+		for st in site.seriesTables: # age model table
+			if st.enable:
+				self.LoadAgeModelFile(dbu.GetSiteFilePath(site.name, st.file))
 
 		# 1/21/2014 brgtodo: Try to consolidate all the parent.Window changes, GUI changes
 		# and such into their own routines.
