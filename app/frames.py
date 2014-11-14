@@ -2374,17 +2374,17 @@ class AgeDepthPanel():
 
 	def OnSAVE(self, evt):
 		if len(self.parent.Window.UserdefStratData) == 0:
-			glb.OnShowMessage("Error", "There is no userdefined age datum", 1)
+			glb.OnShowMessage("Error", "There are no user-defined age data", 1)
 			return
 
-		dlg = dialog.Message3Button(self.parent, "Do you want to create new age/depth?")
+		dlg = dialog.Message3Button(self.parent, "Do you want to create a new age/depth file?")
 		ret = dlg.ShowModal()
 		dlg.Destroy()
-		if ret == wx.ID_OK or ret == wx.ID_YES :
-			flag = True
-			if ret == wx.ID_YES :
-				flag = False
-			filename = self.parent.dataFrame.OnSAVE_AGES(flag, False)
+		if ret == wx.ID_OK or ret == wx.ID_YES:
+			createNew = (ret == wx.ID_YES)
+			
+			# BRGTODO: Save Dialog version
+			filename = self.parent.dbcont.SaveAgeDepthTable(createNew, self.parent.Window.UserdefStratData)
 			s = "Save Age Model: " + filename + "\n"
 			self.parent.logFileptr.write(s)
 			glb.OnShowMessage("Information", "Successfully Saved", 1)

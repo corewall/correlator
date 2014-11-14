@@ -299,6 +299,22 @@ class SiteData:
 			filePath = dbu.GetSiteFilePath(self.name, curTab.file)
 		return filePath
 	
+	def CreateAgeDepthFile(self, enable=True):
+		tableNum = dbu.GetNewTableNum(self.ageTables)
+		adTable = AgeTable()
+		adTable.file = self.name + '.' + tableNum + '.age-depth.dat'
+		adTable.enable = enable
+		self.ageTables.append(adTable)
+		return dbu.GetSiteFilePath(self.name, adTable.file)
+	
+	def SaveAgeDepthTable(self, createNew):
+		enabledADTable = self.GetEnabledTable(self.ageTables)
+		if createNew or enabledADTable is None:
+			filePath = self.CreateAgeDepthFile(True)
+		else: # update current
+			filePath = dbu.GetSiteFilePath(self.name, enabledADTable.file)
+		return filePath
+	
 	""" remove item from site based on filename, which is unique per site """
 	def DeleteTable(self, filename):
 		for hskey, hs in self.holeSets.items():
@@ -632,6 +648,13 @@ class DBController:
 		if imTable is not None:
 			curSite.imageTables.append(imTable)
 			self.view.UpdateView(curSite)
+			
+	def SaveAgeDepthTable(self, createNew, stratData):
+		curSite = self.view.GetCurrentSite()
+		adFilePath = curSite.SaveAgeDepthTable(createNew)
+		dbu.SaveAgeDepthFile(adFilePath, stratData)
+		self.view.UpdateView(curSite)
+		return adFilePath
 
 
 class DBView:
