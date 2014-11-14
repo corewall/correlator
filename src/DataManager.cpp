@@ -722,40 +722,19 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
         break;
 	case SPLICE_TABLE:
 		{
-			int pos = fullpath.find(".xml"); // brgtodo unused
 			DataInfo* info = NULL;
-			//cout << " m_dataList = " << m_dataList.size() << endl;
-			if(m_dataList.size() > 0)
-			{
+			if (m_dataList.size() > 0)
 				info = (DataInfo*) *m_dataList.begin();
-			}
+
+			const char *affineFile = info ? info->m_appliedAffineFilename.c_str() : NULL;
+			ret = WriteSpliceTable(fptr, dataptr, affineFile);
+
+			// write SIT table
 			string iodpFilename(filename);
 			iodpFilename += "_IODP";
 			iodpFile = fopen(iodpFilename.c_str(), "w+");
 			if (!iodpFile) return -1;
-
-			if(info == NULL)
-			{
-				if(pos != string::npos) 
-				{
-					//ret = WriteSpliceTableinXML(fptr, dataptr, NULL);
-				} else 
-				{
-					ret = WriteSpliceTable(fptr, dataptr, NULL);
-					WriteSpliceIntervalTable(iodpFile, dataptr);
-				}
-			} else 
-			{
-				if(pos != string::npos) 
-				{
-					//ret = WriteSpliceTableinXML(fptr, dataptr, info->m_appliedAffineFilename.c_str());
-				} else 
-				{
-					ret = WriteSpliceTable(fptr, dataptr, info->m_appliedAffineFilename.c_str());
-					WriteSpliceIntervalTable(iodpFile, dataptr);
-				}
-			}			
-			
+			WriteSpliceIntervalTable(iodpFile, dataptr);
 		}
 		break;
 	case EQLOGDEPTH_TABLE:

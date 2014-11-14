@@ -169,8 +169,7 @@ class TopMenuFrame(wx.Frame):
 		if splice_flag == True :
 			if self.parent.Window.SpliceData != [] :
 				filename = self.parent.dataFrame.Add_TABLE("SPLICE" , "splice", savedialog.spliceUpdate.GetValue(), False, "")
-				#py_correlator.saveAttributeFile(filename, 2, affine_filename)
-				py_correlator.saveSpliceFile(filename, affine_filename)
+				py_correlator.saveAttributeFile(filename, 2)
 
 				self.parent.autoPanel.SetCoreList(1, [])
 
