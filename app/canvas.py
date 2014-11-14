@@ -4748,37 +4748,45 @@ class DataCanvas(wxBufferedWindow):
 			dragCoreLines = []
 			coreInfo = self.findCoreInfoByIndex(self.grabCore)
 			
-			foundMatch = False
- 			for hole in self.HoleData:
-				if foundMatch:
+			holeData = None
+			holeInfo = None
+			smoothHoleData = None
+			smoothHoleInfo = None
+			for hole in self.HoleData:
+				curHoleInfo = hole[0][0]
+				if curHoleInfo[7] == coreInfo.hole and curHoleInfo[2] == coreInfo.type:
+					holeInfo = curHoleInfo
+					holeData = hole[0]
+			for hole in self.SmoothData:
+				curHoleInfo = hole[0][0]
+				if curHoleInfo[7] == coreInfo.hole and curHoleInfo[2] == coreInfo.type:
+					smoothHoleInfo = curHoleInfo
+					smoothHoleData = hole[0]
+			
+			drawSmooth = False
+			for r in self.range:
+				# find matching type (account for space mismatch in "Natural Gamma" types)
+				if r[0] == holeInfo[2] or r[0] == holeInfo[2].replace(' ', ''):
+					typeMin = r[1]
+					typeMax = r[2]
+					if r[3] != 0.0:
+						typeCoefRange = self.holeWidth / r[3]
+					else :
+						self.coefRange = 0
+					drawSmooth = (r[4] > 0) # type 0 = Unsmoothed, 1 = SmoothedOnly 2 = Smoothed&Unsmoothed
 					break
-
-				holeData = hole[0]
-				holeInfo = holeData[0]
-				if holeInfo[7] == coreInfo.hole and holeInfo[2] == coreInfo.type:
-					for r in self.range:
-						# find matching type (account for space mismatch in "Natural Gamma" types)
-						if r[0] == holeInfo[2] or r[0] == holeInfo[2].replace(' ', ''):
-							typeMin = r[1]
-							typeMax = r[2]
-							if r[3] != 0.0:
-								typeCoefRange = self.holeWidth / r[3]
-							else :
-								self.coefRange = 0 
-							break
-					for coredata in holeData[1:]: # every item after index 0 is a core in that hole
-						if coredata[0] == coreInfo.holeCore:
-							valuelist = coredata[10]
-							for v in valuelist:
-								depth, datum = v
-								screenx = (datum - typeMin) * typeCoefRange
-								x = screenx + xoffset - (self.holeWidth / 2)
-								screeny = self.getCoord(depth)
-								y = screeny + yoffset
-								dragCoreLines.append((x, y))
-
-							foundMatch = True
-							break
+				
+			holeData = smoothHoleData if drawSmooth else holeData
+			for coredata in holeData[1:]: # every item after index 0 is a core in that hole
+				if coredata[0] == coreInfo.holeCore:
+					valuelist = coredata[10]
+					for v in valuelist:
+						depth, datum = v
+						screenx = (datum - typeMin) * typeCoefRange
+						x = screenx + xoffset - (self.holeWidth / 2)
+						screeny = self.getCoord(depth)
+						y = screeny + yoffset
+						dragCoreLines.append((x, y))
 
 			# now draw the lines
 			dclen = len(dragCoreLines)

@@ -3006,7 +3006,7 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 	int tiesize =0;
 	TieInfo* tieInfoptr = NULL;
 
-	fprintf (fptr, "# Site, Hole, Core No, Section Type, Section No, Top, Bottom, Mbsf, Mcd, TIE/APPEND, Site, Hole, Core No, Section Type, Section No, Top, Bottom, Mbsf, Mcd\n");
+	fprintf (fptr, "# Site, Hole, Core No, Section Type, Section No, Top, Bottom, CSF-A, CCSF-A, TIE/APPEND, Site, Hole, Core No, Section Type, Section No, Top, Bottom, CSF-A, CCSF-A\n");
 	if(affinefilename == NULL)
 		fprintf (fptr, "# AffineTable None\n");
 	else 
@@ -3026,7 +3026,7 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
   	{
   		tieptr = findTie(dataptr, i);
 
-		if(tieptr->getSharedFlag() == false)
+		if (tieptr && tieptr->getSharedFlag() == false)
 		{
 			tieInfoptr = tieptr->getInfoTied();
 			if(tieInfoptr == NULL) continue;
