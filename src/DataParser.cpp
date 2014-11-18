@@ -2908,7 +2908,10 @@ int WriteSpliceIntervalTable(FILE *fptr, Data* dataptr)
 				bottomSection = fromValue->getSection();
 			}
 
-			string spliceType = tie->isAppend() ? "APPEND" : "TIE";
+			string spliceType = "TIE";
+			Tie *prevTie = findTie(dataptr, tieIdx - 1);
+			if (prevTie)
+				spliceType = prevTie->isAppend() ? "APPEND" : "TIE";
 			string dataUsed = fromInfo->m_coreptr->getTypeStr();
 			string comment;
 			string dataLine;
@@ -2945,12 +2948,23 @@ int WriteSpliceIntervalTable(FILE *fptr, Data* dataptr)
 				Value *bottomValue = toInfo->m_coreptr->getLastValue();
 				if (!bottomValue) continue;
 
+				// 11/17/2014 brg: When an APPEND ALL tie is created, if the previous tie is a TIE,
+				// it will be replaced with an APPEND ALL tie.  Otherwise the previous tie is
+				// an APPEND tie, in which case the new APPEND ALL tie is added immediately after.
+				// We can identify a TIE that was changed to APPEND by checking the value type,
+				// which will be 'x' for an APPEND and non-'x' for a TIE. Very, very kludgy.
+				string lastSpliceType = tie->isAppend() ? "APPEND" : "TIE";
+				if (tie->isAppend() && tie->isAll())
+				{
+					if (tie->getInfoTied() && tie->getInfoTied()->m_valuetype != 'x')
+						lastSpliceType = "TIE";
+				}
 				dataUsed = toInfo->m_coreptr->getTypeStr();
 				dataLine.clear();
 				const string format2("ssicsfffsfffsss");
 				makeDelimString(format2, dataLine, siteName.c_str(), toInfo->m_coreptr->getName(), toInfo->m_coreptr->getNumber(), toInfo->m_coreptr->getCoreType(),
 								topSection.c_str(), topOffset, topDepthMbsf, topDepthMcd, bottomValue->getSection(),
-								bottomValue->getBottom(), bottomValue->getMbsf(), bottomValue->getMcd(), spliceType.c_str(), dataUsed.c_str(), comment.c_str());
+								bottomValue->getBottom(), bottomValue->getMbsf(), bottomValue->getMcd(), lastSpliceType.c_str(), dataUsed.c_str(), comment.c_str());
 				fprintf(fptr, "%s\n", dataLine.c_str());
 
 				// if last tie is append all, add interval for all cores below toInfo->m_coreptr's Core
@@ -2976,7 +2990,7 @@ int WriteSpliceIntervalTable(FILE *fptr, Data* dataptr)
 							dataLine.clear();
 							makeDelimString(format2, dataLine, siteName.c_str(), curCore->getName(), curCore->getNumber(), curCore->getCoreType(), topValue->getSection(),
 											topValue->getTop(), topValue->getMbsf(), topValue->getMcd(), bottomValue->getSection(),
-											bottomValue->getBottom(), bottomValue->getMbsf(), bottomValue->getMcd(), spliceType.c_str(),
+											bottomValue->getBottom(), bottomValue->getMbsf(), bottomValue->getMcd(), "APPEND",
 											dataUsed.c_str(), comment.c_str());
 							fprintf(fptr, "%s\n", dataLine.c_str());
 						}
@@ -3181,7 +3195,6 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 					}
 				} else // tieptr->isAll == true
 				{
-					cout << "tie pointer isAll!!!!" << endl;
 					temp_value = tieInfoptr->m_valueptr;
 
 					// if previous tie is a single APPEND, there will be no value associated
@@ -3191,7 +3204,6 @@ int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename)
 						temp_value = tieInfoptr->m_coreptr->getValue(0);
 						if (!temp_value) continue;
 					}
-					cout << "writing all kindsa shit!" << endl;
 
 #ifdef NEWOUTPUT
 					string dataLine;
