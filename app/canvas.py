@@ -2361,17 +2361,17 @@ class DataCanvas(wxBufferedWindow):
 
 			y = self.Height - self.ScrollSize
 			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("CSF", start, y)
+			dc.DrawText("CSF-A", start, y)
 			start = start + paintgap
 			dc.SetPen(wx.Pen(self.colorDict['mcd'], 1))
 			dc.SetBrush(wx.Brush(self.colorDict['mcd']))
 			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("CCSF", start, y)
+			dc.DrawText("CCSF-A", start, y)
 			start = start + paintgap
 			dc.SetPen(wx.Pen(self.colorDict['eld'], 1))
 			dc.SetBrush(wx.Brush(self.colorDict['eld']))
 			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("eld", start, y)
+			dc.DrawText("ELD", start, y)
 
 			if self.spliceWindowOn == 1 :
 				dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
@@ -2388,7 +2388,7 @@ class DataCanvas(wxBufferedWindow):
 				dc.SetBrush(wx.Brush(self.colorDict['log']))
 				paintgap = paintgap + paintgap / 2
 				dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-				dc.DrawText("eld + log", start, y)
+				dc.DrawText("ELD + log", start, y)
 				start = start + paintgap
 				paintgap = paintgap * 2 
 				dc.SetPen(wx.Pen(self.colorDict['mudlineAdjust'], 1))
