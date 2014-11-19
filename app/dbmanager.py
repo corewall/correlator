@@ -5069,6 +5069,8 @@ class DataFrame(wx.Panel):
 		# self.loadedSites - list of sites loaded from root datalist.db
 		#self.dbview = DBView(self.parent, self, self.dbPanel, self.loadedSites)
 
+		self.ValidateDatabase()
+
 		root_f = open(self.parent.DBPath + 'db/datalist.db', 'r+')
 		hole = "" 
 		loaded_item_list = []
