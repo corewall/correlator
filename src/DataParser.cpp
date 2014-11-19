@@ -1154,13 +1154,12 @@ int ReadSpliceTable(FILE *fptr, Data* dataptr, bool alternative, int core_type, 
 	memset(token, 0, TOKEN_LEN);
 	
 	Hole* newHole = NULL;
-	if(core_type == -1)
+	if (core_type == -1)
 	{
 		newHole = dataptr->getHole(0);
 		core_type = newHole->getType();
 		if (core_type == USERDEFINEDTYPE)
 			annotation = (char*) newHole->getAnnotation();
-			
 	}
 		
 	Core* newCore = NULL;
@@ -1222,14 +1221,20 @@ int ReadSpliceTable(FILE *fptr, Data* dataptr, bool alternative, int core_type, 
 		toupper(&token[0]);
 		temp_hole_name = &token[0];
 		newHole = dataptr->getHole(temp_hole_name, core_type, annotation);
-		if(newHole == NULL)
+		if (newHole == NULL)
 		{
-#ifdef DEBUG		
-			cout << "1 could not find hole " << endl;
+			// can't find hole in given datatype (typically first loaded hole's type),
+			// try to find hole in any datatype
+			newHole = dataptr->getHole(temp_hole_name);
+			if (!newHole)
+			{
+#ifdef DEBUG
+				cout << "1 could not find hole " << endl;
 #endif
-			token_num = 0;
-			dataptr->init(tie_type);
-			return 0;
+				token_num = 0;
+				dataptr->init(tie_type);
+				return 0;
+			}
 		}
 
 		// check core number
@@ -1316,11 +1321,17 @@ int ReadSpliceTable(FILE *fptr, Data* dataptr, bool alternative, int core_type, 
 		newHole = dataptr->getHole(temp_hole_name, core_type, annotation);		
 		if(newHole == NULL)  
 		{
+			// can't find hole in given datatype (typically first loaded hole's type),
+			// try to find hole in any datatype
+			newHole = dataptr->getHole(temp_hole_name);
+			if (!newHole)
+			{
 #ifdef DEBUG		
-			cout << "2 could not find hole " << endl;
+				cout << "2 could not find hole " << endl;
 #endif
-			token_num = 0;
-			continue;
+				token_num = 0;
+				continue;
+			}
 		}
 
 		// check core number
