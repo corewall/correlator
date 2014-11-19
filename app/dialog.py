@@ -1375,7 +1375,7 @@ class DepthRangeDialog(wx.Dialog):
 
 class AboutDialog(wx.Dialog):
 	def __init__(self, parent, version) :
-		wx.Dialog.__init__(self, parent, -1, "About Correlator " + version, size=(500, 300), style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, -1, "About Correlator " + version, size=(500, 330), style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
 
 		desctext = "Correlator facilitates the adjustment of core depth data drilled in a multi-hole scenario by usually correlating measured whole-core (GRA, MSLP, PWC, #NGR) or half-core (RSC) sensor data across holes using an optimized cross-correlation approach."
 
@@ -1384,16 +1384,17 @@ class AboutDialog(wx.Dialog):
 
 		wx.HyperlinkCtrl(self, -1, 'For more detailed information, please visit the Correlator Website', 'http://www.corewall.org', (15,95))
 
-		wx.StaticText(self, -1, 'Developer:  Sean Higgins(shiggins@oceanleadership.org)', (20, 130))
-		wx.StaticText(self, -1, 'Hyejung Hur(hhur2@uic.edu)', (95, 150))
+		wx.StaticText(self, -1, 'Developers:  Sean Higgins (sean@ldeo.columbia.edu)', (20, 130))
+		wx.StaticText(self, -1, 'Brian Grivna (brian.grivna@gmail.com)', (103, 150))
+		wx.StaticText(self, -1, 'Hyejung Hur (hhur2@uic.edu)', (103, 170))
 
-		wx.StaticText(self, -1, 'Organization: ', (20, 180))
-		wx.HyperlinkCtrl(self, -1, 'EVL', 'http://www.evl.uic.edu', (25, 200))
-		wx.HyperlinkCtrl(self, -1, 'NSF', 'http://www.nsf.gov/', (25, 220))
-		wx.HyperlinkCtrl(self, -1, 'LacCore', 'http://lrc.geo.umn.edu/LacCore/laccore.html', (120, 200))
-		wx.HyperlinkCtrl(self, -1, 'Lamont Doherty', 'http://www.ldeo.columbia.edu/', (120, 220))
+		wx.StaticText(self, -1, 'Organizations:', (20, 210))
+		wx.HyperlinkCtrl(self, -1, 'EVL (University of Illinois)', 'http://www.evl.uic.edu', (25, 230))
+		wx.HyperlinkCtrl(self, -1, 'National Science Foundation', 'http://www.nsf.gov/', (25, 250))
+		wx.HyperlinkCtrl(self, -1, 'LacCore (University of Minnesota)', 'http://lrc.geo.umn.edu/LacCore/laccore.html', (230, 230))
+		wx.HyperlinkCtrl(self, -1, 'Lamont-Doherty Earth Observatory', 'http://www.ldeo.columbia.edu/', (230, 250))
 
-		okBtn = wx.Button(self, wx.ID_OK, "Close", ((230, 240)))
+		okBtn = wx.Button(self, wx.ID_OK, "Close", ((230, 270)))
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
 	def OnCharUp(self,event):
