@@ -881,7 +881,7 @@ int ReadIODPAffineTable(FILE *fptr, Data* dataptr)
 		// ensure file site matches loaded holes' site (IODP format excludes leg)
 		if (strcmp(dataptr->getSite(), token.c_str()) != 0)
 		{
-			cout << "site name [" << token << "] does not match loaded site [" << dataptr->getSite() << "], bailing" << endl;
+			cout << "site name [" << token << "] does not match loaded site [" << dataptr->getSite() << "]" << endl;
 			continue;
 		}
 
@@ -890,7 +890,7 @@ int ReadIODPAffineTable(FILE *fptr, Data* dataptr)
 		Hole *newHole = dataptr->getHole((char *)token.c_str()); // finds first hole whose name matches, whatever its data type
 		if (newHole == NULL)
 		{
-			cout << "hole name [" << token << "] does not match loaded any holes in site [" << dataptr->getSite() << "], bailing" << endl;
+			cout << "hole name [" << token << "] does not match loaded any holes in site [" << dataptr->getSite() << "]" << endl;
 			token_num = 0;
 			continue;
 		}
@@ -902,7 +902,7 @@ int ReadIODPAffineTable(FILE *fptr, Data* dataptr)
 		Core *newCore = newHole->getCoreByNo(atoi(token.c_str()));
 		if (newCore == NULL)
 		{
-			cout << "core number [" << token << "] not found in hole [" << newHole->getName() << "], bailing" << endl;
+			cout << "core number [" << token << "] not found in hole [" << newHole->getName() << "]" << endl;
 			continue;
 		}
 		coreidA = newCore->getNumber();
