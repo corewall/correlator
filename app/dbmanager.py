@@ -1838,7 +1838,8 @@ class DataFrame(wx.Panel):
 			outFile += '.' + formatStr.lower()
 			py_correlator.openAttributeFile(affineFile, 0)
 			py_correlator.setDelimiter(FormatDict[formatStr])
-			py_correlator.saveAttributeFile(outFile, 1)
+			#py_correlator.saveAttributeFile(outFile, 1)
+			py_correlator.exportAffineFile(outFile)
 			py_correlator.setDelimiter(FormatDict["Text"]) # always reset to "internal" file format
 			
 	def ExportSpliceTable(self, spliceFile, outFile, siteItem):
@@ -1849,14 +1850,16 @@ class DataFrame(wx.Panel):
 			doExport = True
 			formatStr = spliceDlg.GetSelectedFormat() 
 			if formatStr == "XML":
-				self.SAVE_SPLICE_TO_XML(spliceFile, outFile)
+				suffix = ".splice.table"
+				self.SAVE_SPLICE_TO_XML(spliceFile, outFile + suffix)
 			else:
 				self.LoadAllHoles(siteItem)
 				for at in affineTables:
 					if at[0] == spliceDlg.GetSelectedAffine():
 						py_correlator.openAttributeFile(at[1], 0)
 						break
-				outFile += '.' + formatStr.lower()
+				suffix = "spliceinterval" if spliceDlg.GetExportSIT() else "splicetie" 
+				outFile += '.' + suffix + '.' + formatStr.lower()
 				py_correlator.openSpliceFile(spliceFile)
 				py_correlator.setDelimiter(FormatDict[formatStr])
 				#py_correlator.saveAttributeFile(outFile, 2)
@@ -1922,13 +1925,12 @@ class DataFrame(wx.Panel):
 						formatDlg = dialog.ExportFormatDialog(self)
 						if formatDlg.ShowModal() == wx.ID_OK:
 							self.LoadAllHoles(siteItem)
-							outAffineFile = filename + "affine.table"
+							outAffineFile = filename + ".affine.table"
 							self.ExportAffineTable(source, path + '/' + outAffineFile, formatDlg.GetSelectedFormat())
 						else:
 							return
 					elif tableType == "SPLICE":
-						outSpliceFile = filename + ".splice.table"
-						if not self.ExportSpliceTable(source, path + '/' + outSpliceFile, siteItem):
+						if not self.ExportSpliceTable(source, path + '/' + filename, siteItem):
 							return
 					elif tableType == "ELD" :
 						outELDFile = filename + ".eld.table"

@@ -82,6 +82,7 @@ public:
 	int		saveTimeSeriesHole( char* agefilename, char* filename, Hole* dataptr );
 			
 	int		save( char* filename, Hole* dataptr, const char* leg, const char* site, bool age = false );
+	int 	exportAffine(const char *filename, Data *dataptr);
 	int 	exportSplice(const char *filename, Data *dataptr, const bool intervalTable);
 	
 	void	setCoreFormat( int format );

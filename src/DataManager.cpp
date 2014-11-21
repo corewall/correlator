@@ -782,6 +782,17 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 	return ret;
 }
 
+int DataManager::exportAffine(const char *filename, Data *dataptr)
+{
+	FILE *outFile = fopen(filename, "w+");
+	if (!outFile) return -1;
+
+	const int ret = WriteIODPAffineTable(outFile, dataptr);
+
+	fclose(outFile);
+	return ret;
+}
+
 int DataManager::exportSplice(const char *filename, Data *dataptr, const bool intervalTable)
 {
 	DataInfo* info = NULL;

@@ -67,6 +67,7 @@ static PyObject* loadAltSpliceFile(PyObject *self, PyObject *args);
 static PyObject* initAltSplice(PyObject *self, PyObject *args);
 static PyObject* saveAttributeFile(PyObject *self, PyObject *args);
 static PyObject* saveSpliceFile(PyObject *self, PyObject *args);
+static PyObject* exportAffineFile(PyObject *self, PyObject *args);
 static PyObject* exportSpliceFile(PyObject *self, PyObject *args);
 static PyObject* cleanData(PyObject *self, PyObject *args);
 static PyObject* cleanDataType(PyObject *self, PyObject *args);
@@ -208,6 +209,9 @@ static PyMethodDef PyCoreMethods[] = {
 
     {"saveAttributeFile", saveAttributeFile, METH_VARARGS,
      "Save Affine data file."},
+
+    {"exportAffineFile", exportAffineFile, METH_VARARGS,
+      "Export Affine data file."},
 
     {"exportSpliceFile", exportSpliceFile, METH_VARARGS,
      "Export Splice data file."},
@@ -2075,6 +2079,18 @@ static PyObject* saveAttributeFile(PyObject *self, PyObject *args)
 	{
 		manager.save( fileName, correlator.getSpliceHole(), dataptr->getLeg(), dataptr->getSite(), true );
 	}
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject* exportAffineFile(PyObject *self, PyObject *args)
+{
+	char *filename;
+	if (!PyArg_ParseTuple(args, "s", &filename))
+		return NULL;
+
+	manager.exportAffine(filename, dataptr);
 
 	Py_INCREF(Py_None);
 	return Py_None;
