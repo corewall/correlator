@@ -49,10 +49,8 @@ def opj(path):
 
 class MainFrame(wx.Frame):
 	def __init__(self, winsize, user):
-		wx.Frame.__init__(self, None, -1, "Correlator (" + vers.ShortVersion + ") - Display" ,
-						 wx.Point(0,100),
-						 winsize)
-		# style=wxSYSTEM_MENU | wxCAPTION | wxCLOSE_BOX | wxNO_FULL_REPAINT_ON_RESIZE)
+		wx.Frame.__init__(self, None, -1, "Correlator " + vers.ShortVersion,
+						 wx.Point(0,100), winsize)
 
 		self.statusBar = self.CreateStatusBar()
 
