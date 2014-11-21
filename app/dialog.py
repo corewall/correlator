@@ -374,6 +374,7 @@ class FormatListPanel(wx.Panel):
 		sz.Add(wx.StaticText(self, -1, "Export Format:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
 		formats = formatChoices if formatChoices is not None else ["CSV", "XML", "Text"] 
 		self.formatList = wx.Choice(self, -1, choices=formats)
+		self.formatList.SetSelection(0)
 		sz.Add(self.formatList, 1, wx.EXPAND | wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
 		self.SetSizer(sz)
 
@@ -404,15 +405,15 @@ class SpliceListPanel(wx.Panel):
 
 class ExportFormatDialog(wx.Dialog):
 	def __init__(self, parent, title="Select Export Format"):
-		wx.Dialog.__init__(self, parent, -1, title, size=(300, 110),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER)
+		wx.Dialog.__init__(self, parent, -1, title, style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER)
 
 		sz = wx.BoxSizer(wx.VERTICAL)
 		formatPanel = FormatListPanel(self)
 		self.formatList = formatPanel.formatList
 		sz.Add(formatPanel, 0, wx.EXPAND | wx.ALL, 10)
 		self.buttonPanel = OkButtonPanel(self, okName="Export")
-		sz.Add(self.buttonPanel, 0, wx.ALIGN_RIGHT | wx.ALIGN_BOTTOM | wx.RIGHT, 10)
-		self.SetSizer(sz)
+		sz.Add(self.buttonPanel, 0, wx.ALIGN_RIGHT | wx.ALIGN_BOTTOM | wx.RIGHT | wx.LEFT, 10)
+		self.SetSizerAndFit(sz)
 		
 		self.buttonPanel.ok.SetDefault()
 		self.Bind(wx.EVT_BUTTON, self.ButtonPressed, self.buttonPanel.ok)
