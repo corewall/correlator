@@ -1,4 +1,4 @@
-BaseVersion = "2.0"
+BaseVersion = "2.0.1"
 VersionSuffix = ""
 LongVersionSuffix = ""
 
