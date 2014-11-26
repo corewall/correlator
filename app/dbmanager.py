@@ -5514,71 +5514,47 @@ class DataFrame(wx.Panel):
 		self.sideNote.SetSelection(1)
 
 
-	def UpdateDATAHEADER(self, header):
-		if header == '' :
-			self.dataPanel.SetColLabelValue(1, "Leg")
-			self.dataPanel.SetColLabelValue(2, "Site")
-			self.dataPanel.SetColLabelValue(3, "Hole")
-			self.dataPanel.SetColLabelValue(4, "Core")
-			self.dataPanel.SetColLabelValue(5, "CoreType")
-			self.dataPanel.SetColLabelValue(6, "Section")
-			self.dataPanel.SetColLabelValue(7, "TopOffset")
-		else :
-			modifiedLine = header[0:-1].split()
-			max = len(modifiedLine) -1
-			data_flag = False
-			newline_flag = False
-			ith = 0
-			for i in range(max) :
-				length = len(modifiedLine[i])
-				title= modifiedLine[i][0:1].capitalize() + modifiedLine[i][1:length]
-				if title == 'Data' :
-					data_flag = True 
-					self.dataPanel.SetColLabelValue(ith+1, title)
-					ith = ith + 1 
-				elif title != '\n' :
-					self.dataPanel.SetColLabelValue(ith+1, title)
-					ith = ith + 1 
+	def UpdateDATAHEADER(self, header, delim=' '):
+		header = header.strip() # remove line endings
+		if len(header) > 0:
+			colNames = header.split(delim)
+			if len(colNames) >= 2:
+				colNames = [c.strip() for c in colNames] # remove any leading/trailing spaces
+	
+				dataFound = False
+				colIdx = 1
+				for c in colNames:
+					if c[0].islower(): c = c.capitalize() 
+					self.dataPanel.SetColLabelValue(colIdx, c)
+					if c == 'Data':
+						dataFound = True
+					colIdx += 1
+				if not dataFound:
+					self.dataPanel.SetColLabelValue(colIdx - 1, "Data")
+	
+				# try to auto-fill data type based on last column's text
+				type = ""
+				typeDict = {"GRA":"Bulk Density(GRA)", "PWAVE":"Pwave", "SUSCEPTIBILITY":"Susceptibility",
+							"REFLECTANCE":"Reflectance", "NATURAL":"NaturalGamma"}
+				possibleType = colNames[-1].upper()
+				for testStr,typeName in typeDict.items():
+					if possibleType.find(testStr) != -1:
+						type = typeName
+						break
+	                   
+				rows = self.dataPanel.GetNumberRows()
+				for i in range(rows):
+					self.dataPanel.SetCellValue(i, 0, type)
+				return 
 
-			if data_flag == False :
-				self.dataPanel.SetColLabelValue(ith+1, "Data")
-
-			type = modifiedLine[max]	
-			max = len(type)
-			CapType = ''
-			for i in range(max) :
-				CapType = CapType + type[i:i+1].capitalize()
-				
-			self.selectedDataType = CapType
-			end = len(self.selectedDataType) -1
-			if self.selectedDataType[end] == '\n' or self.selectedDataType[end] == 'r' :
-				self.selectedDataType = self.selectedDataType[0:end]
-			self.selectedDataType = self.RemoveBACK(self.selectedDataType)
-                   
-			start = CapType.find("GRA", 0)
-			if start >= 0 :
-				type = "Bulk Density(GRA)"
-			else :
-				start = CapType.find("PWAVE", 0)
-				if start >= 0 :
-					type = "Pwave"
-				else :
-					start = CapType.find("SUSCEPTIBILITY", 0)
-					if start >= 0 :
-						type = "Susceptibility"
-					else :
-						start = CapType.find("REFLECTANCE", 0)
-						if start >= 0 :
-							type = "Reflectance"
-						else :
-							start = CapType.find("NATURAL", 0)
-							if start >= 0 :
-								type = "NaturalGamma"
-
-			rows = self.dataPanel.GetNumberRows()
-			for i in range(rows):
-				self.dataPanel.SetCellValue(i, 0, type)
-
+		# couldn't parse header properly, use default columns
+		self.dataPanel.SetColLabelValue(1, "Exp")
+		self.dataPanel.SetColLabelValue(2, "Site")
+		self.dataPanel.SetColLabelValue(3, "Hole")
+		self.dataPanel.SetColLabelValue(4, "Core")
+		self.dataPanel.SetColLabelValue(5, "CoreType")
+		self.dataPanel.SetColLabelValue(6, "Section")
+		self.dataPanel.SetColLabelValue(7, "TopOffset")
 
 
 	def OnIMPORT_CULLTABLE(self, isUniversal):
@@ -6364,21 +6340,20 @@ class DataFrame(wx.Panel):
 					self.handler.closeFile()
 					path = self.parent.Directory + "/.tmp" 
 
-				f = open(path, 'r+')
+				f = open(path, 'rU')
 				for line in f :
-					if line[0].capitalize() == 'L' :
+					if line[0].capitalize() in ['L', 'E']: # Leg or Exp(edition)
 						header = line
 					break
 				if prevHeader != "" and header != prevHeader :
 					f.close()
-					self.parent.OnShowMessage("Error", "Not support multiple type loading", 1)
+					self.parent.OnShowMessage("Error", "Column names must match exactly to import multiple files", 1)
 					self.importbtn.Enable(False)
 					self.OnINITGENERICSHEET()
 					self.dataPanel.ClearGrid()
 					return
 				prevHeader = header
 				f.close()
-
 
 			for i in range(len(self.paths)) :
 				path = self.paths[i]
@@ -6390,21 +6365,16 @@ class DataFrame(wx.Panel):
 					self.handler.closeFile()
 					path = self.parent.Directory + "/.tmp" 
 
+				header = ""
 				if ith == 0 :
-					f = open(path, 'r+')
-					linecount = 0
-					for line in f :
-						if line[0].capitalize() == 'L' :
-							header = line 
+					f = open(path, 'rU')
+					for line in f:
+						if line[0].capitalize() in ['L', 'E'] :
+							header = line
 							break
-						elif line[0].capitalize() == '#':
-							max = len(line)
-							if linecount == 0 :
-								header = line[2:max] 
-								linecount = linecount + 1
-							else : 
-								header = header + ' ' + line[12:max]  
-								break
+						elif line[0] == '#':
+							header = line[1:].lstrip()
+							break
 						else :
 							break
 					f.close()
@@ -6428,7 +6398,7 @@ class DataFrame(wx.Panel):
 					if prevMax == -1 :
 						prevMax = max
 					elif prevMax != max :
-						self.parent.OnShowMessage("Error", "Not support multiple type loading", 1)
+						self.parent.OnShowMessage("Error", "Column names must match exactly to import multiple files", 1)
 						self.importbtn.Enable(False)
 						self.OnINITGENERICSHEET()
 						self.dataPanel.ClearGrid()
@@ -6445,7 +6415,14 @@ class DataFrame(wx.Panel):
 						break
 				f.close()
 
-			self.UpdateDATAHEADER(header)
+			if path.endswith('.csv'):
+				delim = ','
+			elif path.endswith('.tsv'):
+				delim = '\t'
+			else:
+				delim = ' '
+			
+			self.UpdateDATAHEADER(header, delim)
 	 		self.sideNote.SetSelection(1)
 
 
@@ -6547,7 +6524,7 @@ class DataFrame(wx.Panel):
 		self.parent.logFileptr.write(s)
 
 		fout = open(filename, 'w+')
-		s = "# " + "Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo " + "\n"
+		s = "# " + "Exp Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo " + "\n"
 		fout.write(s)
 		s = "# " + "Data Type " + datatype + "\n"
 		fout.write(s)
@@ -6793,7 +6770,7 @@ class DataFrame(wx.Panel):
 
 	def ImportFORMAT(self, source, dest, type, ntype, annot, stamp, datasort, selectItem):
 		fout = open(self.parent.DBPath + "db/" + dest, 'w+')
-		s = "# " + "Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo " + "\n"
+		s = "# " + "Exp Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo " + "\n"
 
 		fout.write(s)
 		s = "# " + "Data Type " + type + "\n"
@@ -7382,7 +7359,7 @@ class DataFrame(wx.Panel):
 		type = 7
 		annot =""
 		if len(datatype) == 0 :
-			self.parent.OnShowMessage("Error", "You need to select data type", 1)
+			self.parent.OnShowMessage("Error", "Select a data type", 1)
 			return
 		if datatype == "NaturalGamma" :
 			datatype = "ngfix"
@@ -7410,7 +7387,7 @@ class DataFrame(wx.Panel):
 		datasort = [ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
 		cols = self.dataPanel.GetNumberCols()
 		for i in range(cols):
-			if self.dataPanel.GetColLabelValue(i) == "Leg" :
+			if self.dataPanel.GetColLabelValue(i) in ["Leg", "Exp"]:
 				datasort[0] = i -1 
 			elif self.dataPanel.GetColLabelValue(i) == "Site" :
 				datasort[1] = i -1
@@ -7437,14 +7414,16 @@ class DataFrame(wx.Panel):
 		if datasort[6] == -1 :
 			datasort[6] = datasort[8] 
 		if datasort[7] == -1 :
-			datasort[7] = datasort[8] 
+			datasort[7] = datasort[8]
+			
+		errText = {0:"Exp (Leg)", 1:"Site", 2:"Hole", 3:"Core", 5:"Section", 6:"Depth", 7:"Depth", 8:"Depth", 9:"Data"}
 
 		# CHECKING VALIDATION
-		for ith in range(10) :
-			if ith == 4 :
+		for ith in range(10):
+			if ith == 4: # CoreType isn't required
 				continue
-			if datasort[ith] == -1 :
-				self.parent.OnShowMessage("Error", "Please define data column", 1)
+			if datasort[ith] == -1:
+				self.parent.OnShowMessage("Error", "Specify a {} column".format(errText[ith]), 1)
 				return
 
 		idx = datasort[0] +1
@@ -7518,7 +7497,7 @@ class DataFrame(wx.Panel):
 				hole = hole[1:]
 			filename = prefilename + "-" + hole + "." + datatype + ".dat"
 			fout = open(filename, 'w+')
-			s = "# " + "Leg Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo " + "\n"
+			s = "# " + "Exp Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo " + "\n"
 			fout.write(s)
 			s = "# " + "Data Type " + strdatatype + "\n"
 			fout.write(s)
@@ -7581,7 +7560,7 @@ class DataFrame(wx.Panel):
 			ret = self.FindItem(child, hole)
 			if ret[0] == True :
 				# if there is same hole, then it's error
-				self.parent.OnShowMessage("Error", "It is already on the list", 1)
+				self.parent.OnShowMessage("Error", "{} already has {} data for Hole {}".format(leg + '-' + site, strdatatype, hole), 1)
 				break
 			else :
 				self.parent.LOCK = 0	
@@ -7661,7 +7640,7 @@ class DataFrame(wx.Panel):
 			popupMenu.Append(13, "&Unselect")
 			wx.EVT_MENU(popupMenu, 13, self.OnCHANGELABEL)
 			self.PopupMenu(popupMenu, pos)
-		elif self.selectedCol >= 3 : 
+		elif self.selectedCol >= 1 :
 			if self.importType != "LOG" :
 				popupMenu = wx.Menu()
 				popupMenu.Append(1, "&Data")
@@ -7670,7 +7649,7 @@ class DataFrame(wx.Panel):
 				wx.EVT_MENU(popupMenu, 2, self.OnCHANGELABEL)
 				popupMenu.Append(3, "&?")
 				wx.EVT_MENU(popupMenu, 3, self.OnCHANGELABEL)
-				popupMenu.Append(4, "&Leg")
+				popupMenu.Append(4, "&Exp")
 				wx.EVT_MENU(popupMenu, 4, self.OnCHANGELABEL)
 				popupMenu.Append(5, "&Site")
 				wx.EVT_MENU(popupMenu, 5, self.OnCHANGELABEL)
@@ -7688,22 +7667,33 @@ class DataFrame(wx.Panel):
 				wx.EVT_MENU(popupMenu, 11, self.OnCHANGELABEL)
 				popupMenu.Append(12, "&RunNo")
 				wx.EVT_MENU(popupMenu, 12, self.OnCHANGELABEL)
+				
+				if self.dataPanel.GetColLabelValue(self.selectedCol) in ["Leg", "Exp"]:
+					popupMenu.AppendSeparator()
+					popupMenu.Append(101, "&Edit Exp/Leg...")
+					wx.EVT_MENU(popupMenu, 101, self.OnCHANGENUMBER)
+					#self.PopupMenu(popupMenu, pos)
+				elif self.dataPanel.GetColLabelValue(self.selectedCol) == "Site":
+					popupMenu.AppendSeparator()
+					popupMenu.Append(102, "&Edit Site...")
+					wx.EVT_MENU(popupMenu, 102, self.OnCHANGENUMBER)
+					
 				self.PopupMenu(popupMenu, pos)
-		elif self.selectedCol == 1 and self.importType != "LOG" : 
-			popupMenu = wx.Menu()
-			popupMenu.Append(1, "&Edit Leg No")
-			wx.EVT_MENU(popupMenu, 1, self.OnCHANGENUMBER)
-			self.PopupMenu(popupMenu, pos)
-		elif self.selectedCol == 2 and self.importType != "LOG" : 
-			popupMenu = wx.Menu()
-			popupMenu.Append(2, "&Edit Site No")
-			wx.EVT_MENU(popupMenu, 2, self.OnCHANGENUMBER)
-			self.PopupMenu(popupMenu, pos)
-		else :
-			#if self.importbtn.GetLabel() == "Change" or self.importType == "LOG" :
-			if self.importType == "LOG" :
-				return
 
+#		elif self.selectedCol == 1 and self.importType != "LOG" : 
+#			popupMenu = wx.Menu()
+#			popupMenu.Append(1, "&Edit Leg No")
+#			wx.EVT_MENU(popupMenu, 1, self.OnCHANGENUMBER)
+#			self.PopupMenu(popupMenu, pos)
+#		elif self.selectedCol == 2 and self.importType != "LOG" : 
+#			popupMenu = wx.Menu()
+#			popupMenu.Append(2, "&Edit Site No")
+#			wx.EVT_MENU(popupMenu, 2, self.OnCHANGENUMBER)
+#			self.PopupMenu(popupMenu, pos)
+		else :
+#			#if self.importbtn.GetLabel() == "Change" or self.importType == "LOG" :
+#			if self.importType == "LOG" :
+#				return
 			popupMenu = wx.Menu()
 			popupMenu.Append(1, "&NaturalGamma")
 			wx.EVT_MENU(popupMenu, 1, self.OnCHANGETYPE)
@@ -7847,8 +7837,9 @@ class DataFrame(wx.Panel):
 
 	def OnCHANGENUMBER(self, event) :
 		opId = event.GetId()
+		col = self.selectedCol
 		flag = False
-		if opId == 1 :
+		if opId == 1 or opId == 101:
 			dlg = dialog.EditBoxDialog(self, "Leg Number")
 			ret = dlg.ShowModal()
 			if ret == wx.ID_OK :
@@ -7856,8 +7847,8 @@ class DataFrame(wx.Panel):
 				num = dlg.txt.GetValue()
 				rows = self.dataPanel.GetNumberRows()
 				for i in range(rows):
-					self.dataPanel.SetCellValue(i, 1, num)
-		else :
+					self.dataPanel.SetCellValue(i, col, num)
+		elif opId == 2 or opId == 102 :
 			dlg = dialog.EditBoxDialog(self, "Site Number")
 			ret = dlg.ShowModal()
 			if ret == wx.ID_OK :
@@ -7865,7 +7856,7 @@ class DataFrame(wx.Panel):
 				num = dlg.txt.GetValue()
 				rows = self.dataPanel.GetNumberRows()
 				for i in range(rows):
-					self.dataPanel.SetCellValue(i, 2, num)
+					self.dataPanel.SetCellValue(i, col, num)
 
 
 	def OnCHANGELABEL(self, event) :
@@ -7884,7 +7875,7 @@ class DataFrame(wx.Panel):
 		if opId == 1 :
 			self.selectedDataType = self.dataPanel.GetColLabelValue(self.selectedCol)
  			end = len(self.selectedDataType) -1
-			if self.selectedDataType[end] == '\n' or self.selectedDataType[end] == 'r' :
+			if self.selectedDataType[end] == '\n' or self.selectedDataType[end] == '\r' :
 				self.selectedDataType = self.selectedDataType[0:end]
 			self.selectedDataType = self.RemoveBACK(self.selectedDataType)
 
@@ -7892,14 +7883,14 @@ class DataFrame(wx.Panel):
 		elif opId == 2 :
 			self.selectedDepthType = self.dataPanel.GetColLabelValue(self.selectedCol)
  			end = len(self.selectedDepthType) -1
-			if self.selectedDepthType[end] == '\n' or self.selectedDepthType[end] == 'r' :
+			if self.selectedDepthType[end] == '\n' or self.selectedDepthType[end] == '\r' :
 				self.selectedDepthType = self.selectedDepthType[0:end]
 			self.selectedDepthType = self.RemoveBACK(self.selectedDepthType)
 			self.dataPanel.SetColLabelValue(self.selectedCol, "Depth")
 		elif opId == 3 :
 			self.dataPanel.SetColLabelValue(self.selectedCol, "?")
 		elif opId == 4 :
-			self.dataPanel.SetColLabelValue(self.selectedCol, "Leg")
+			self.dataPanel.SetColLabelValue(self.selectedCol, "Exp")
 		elif opId == 5 :
 			self.dataPanel.SetColLabelValue(self.selectedCol, "Site")
 		elif opId == 6 :
