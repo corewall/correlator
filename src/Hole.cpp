@@ -518,6 +518,21 @@ Core* Hole::getCoreByNo( int coreNum )
 	return NULL;
 }
 
+// return largest of hole's core numbers (presumably the deepest core)
+int Hole::getMaxCoreNo()
+{
+	int max = -1;
+	vector<Core *>::iterator iter;
+	for (iter = m_cores.begin(); iter != m_cores.end(); iter++)
+	{
+		Core *coreptr = (Core *) *iter;
+		if (coreptr->getNumber() > max)
+			max = coreptr->getNumber();
+	}
+
+	return max;
+}
+
 Core* Hole::getCore( double basedepth, double offset )
 {
 	vector<Core*>::iterator iter;
