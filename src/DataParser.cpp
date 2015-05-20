@@ -235,7 +235,7 @@ int getToken(char *str, char *token)
 #ifdef DEBUG			
 				std::cout << "getToken : token num overflow" << std::endl;
 #endif
-				_exit(0);
+				exit(0);
 			}
 		}
 		token_idx = 0;
