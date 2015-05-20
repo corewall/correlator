@@ -1550,36 +1550,23 @@ int Correlator::appendSplice( bool allflag )
 		if(holeptr != NULL)
 		{
 			int coreno = coreA->getNumber();
-			coreno++;
-			Core* coreptr= NULL;
-			coreptr = holeptr->getCoreByNo(coreno);
-			int holeno = holeptr->getNumOfCores();
-			while(coreno < holeno)
-			{ 
-				if(coreptr)
+
+			// find next core with at least one value
+			bool foundNext = false;
+			Core* coreptr = NULL;
+			const int maxCore = holeptr->getMaxCoreNo();
+			while (coreno <= maxCore)
+			{
+				coreno++;
+				coreptr = holeptr->getCoreByNo(coreno);
+				if (coreptr && coreptr->getNumOfValues() > 0)
 				{
-					if(coreptr->getNumOfValues() == 0)
-					{
-						coreno++;
-						if(coreno == holeno) 
-						{
-							coreptr = NULL;
-							break;
-						}
-						
-					} else 
-						break;
+					foundNext = true;
+					break;
 				}
 			}
-			if(coreno == holeno)
-			{
-#ifdef DEBUG			
-				cout << "[Splice] ERROR : could not find append one core " << endl;			
-#endif				
-				coreptr = NULL;
-			}
 
-			if(coreptr)
+			if (foundNext)
 			{
 				tieptrNew = new Tie(REAL_TIE);
 				if(tieptrNew == NULL) return -1;
@@ -1599,8 +1586,13 @@ int Correlator::appendSplice( bool allflag )
 				cout << "[Splice] append one core below : " << coreptr->getName() << coreptr->getNumber()  << endl;
 #endif						
 			}
+			else
+			{
+#ifdef DEBUG
+				cout << "[Splice] append one core: couldn't find a core below " << coreA->getNumber() << " in hole " << holeA->getName() << endl;
+#endif
+			}
 		}
-		
 	}
 
 	return 1;
@@ -2312,14 +2304,19 @@ void Correlator::generateSpliceHole(Hole* newSpliceHole) {
 		{
 			//cout << "end part " << coreA1->getName()  << coreA1->getNumber() << endl;
 			holeptr = m_dataptr->getHole((char*)coreA1->getName());
-			if(holeptr != NULL)
+			if (holeptr != NULL)
 			{
 				int coreno = coreA1->getNumber();
-				numCores = holeptr->getNumOfCores();
-				for(coreno; coreno < numCores ; coreno++, order++)
+				const int maxCoreNum = holeptr->getMaxCoreNo();
+
+				//cout << "adding append holes" << endl;
+				for (; coreno <= maxCoreNum ; coreno++, order++)
 				{
-					coreptr= holeptr->getCore(coreno);
-					if(coreptr == NULL) continue;
+					//cout << "getting core " << coreno << endl;
+					coreptr = holeptr->getCoreByNo(coreno);
+					if (coreptr == NULL) continue;
+					//cout << "got it, core number = " << coreptr->getNumber() << endl;
+
 					coreA2 = newSpliceHole->createCore(noCore);
 					if(coreA2 == NULL) continue;
 					noCore++;
