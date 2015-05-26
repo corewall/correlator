@@ -169,14 +169,9 @@ class DataCanvas(wxBufferedWindow):
 		## function.
 
 		self.bitmaps = {}
-		if platform_name[0] == "Windows" :
-			self.font1 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD)
-			self.font2 = wx.Font(9, wx.SWISS, wx.NORMAL, wx.NORMAL)
-			self.font3 = wx.Font(9, wx.SWISS, wx.NORMAL, wx.BOLD)
-		else :
-			self.font1 = wx.Font(14, wx.TELETYPE, wx.NORMAL, wx.BOLD)
-			self.font2 = wx.Font(10, wx.TELETYPE, wx.NORMAL, wx.BOLD)
-			self.font3 = wx.Font(9, wx.TELETYPE, wx.NORMAL, wx.BOLD)
+		self.font1 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD) # never used!
+		self.font2 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD)
+		self.font3 = wx.Font(9, wx.SWISS, wx.NORMAL, wx.BOLD) # used only once!
 					
 		self.parent = parent
 		self.DrawData = {}
