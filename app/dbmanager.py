@@ -6508,10 +6508,10 @@ class DataFrame(wx.Panel):
 		modifiedLine = data_line[0:-1].split()
 
 		datasort = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1 ]
-		datasort[6] = int(modifiedLine[0])
-		datasort[7] = int(modifiedLine[1])
-		datasort[8] = int(modifiedLine[2])
-		datasort[9] = int(modifiedLine[3])
+		datasort[6] = int(modifiedLine[0]) # topoffset
+		datasort[7] = int(modifiedLine[1]) # bottomoffset
+		datasort[8] = int(modifiedLine[2]) # depth
+		datasort[9] = int(modifiedLine[3]) # data
 
 		tempstamp = str(datetime.today())
 		last = tempstamp.find(":", 0)
