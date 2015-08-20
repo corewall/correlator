@@ -138,6 +138,9 @@ class DataFrame(wx.Panel):
 		self.fileText = wx.TextCtrl(self.filePanel, -1, "", style=wx.TE_MULTILINE|wx.TE_READONLY|wx.VSCROLL|wx.TE_WORDWRAP)
 		self.fileText.SetEditable(False)
 		self.fileText.SetFont(wx.Font(14,wx.FONTFAMILY_TELETYPE,wx.FONTSTYLE_NORMAL,wx.FONTWEIGHT_NORMAL)) # fixed-width font
+		fpsizer = wx.BoxSizer(wx.VERTICAL)
+		fpsizer.Add(self.fileText, 1, wx.EXPAND)
+		self.filePanel.SetSizer(fpsizer)
 		self.sideNote.AddPage(self.filePanel, 'Data File')
 
 		self.dataPanel.SetColLabelValue(0, "Data Type")
