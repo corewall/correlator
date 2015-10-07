@@ -2,6 +2,7 @@
 Routines and classes for loading of tabular data and conversion to target formats
 '''
 
+import os
 import sys
 
 import pandas
@@ -10,6 +11,12 @@ import wx.grid
 
 import dialog
 
+class SectionSummary:
+    name = None
+    dataframe = None
+    def __init__(self, name, dataframe):
+        self.name = name
+        self.dataframe = dataframe
 
 """ bridge between imported tabular columns and destination format """ 
 class TabularFormat:
@@ -32,6 +39,7 @@ class ImportDialog(wx.Dialog):
         self.goalFormat = goalFormat
         self.reqColMap = None # populated when all required columns have been identified
         self.lastCol = None # index of last column label selected...can't easily pass in event handlers
+        self.path = None # source file path
         
         self._createUI()
         self._chooseFile()
@@ -43,9 +51,9 @@ class ImportDialog(wx.Dialog):
     def _chooseFile(self):
         dlg = wx.FileDialog(self, "Select Section Summary File", wildcard="CSV Files (*.csv)|*.csv", style=wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
-            path = dlg.GetPath()
+            self.path = dlg.GetPath()
             try:
-                self.dataframe = readFile(path) # brgtodo: try/catch exceptions here
+                self.dataframe = readFile(self.path) # brgtodo: try/catch exceptions here
             except:
                 self.errbox("Error reading file: {}".format(sys.exc_info()[1]))
                 return
@@ -65,7 +73,7 @@ class ImportDialog(wx.Dialog):
                 self.errbox("File contains fewer columns ({}) than the {} format requires ({})".format(fileColCount, self.goalFormat.name, formatColCount))
                 return
 
-            self._updateFileLabel(path)
+            self._updateFileLabel()
             self._updateFormatLabel()
             self._populateTable()
     
@@ -113,8 +121,8 @@ class ImportDialog(wx.Dialog):
             self.reqMenu.Append(menuIndex, mi)
             wx.EVT_MENU(self.reqMenu, menuIndex, self.OnReqMenu)
     
-    def _updateFileLabel(self, filepath):
-        self.fileLabel.SetLabel("File: {}".format(filepath))
+    def _updateFileLabel(self):
+        self.fileLabel.SetLabel("File: {}".format(self.path))
         
     def _updateFormatLabel(self):
         self.formatLabel.SetLabel("Required columns: {}".format(self.goalFormat.req))
@@ -191,11 +199,13 @@ class ImportDialog(wx.Dialog):
         
 
 def doImport(parent, goalFormat):
+    secSumm = None
     dlg = ImportDialog(parent, -1, goalFormat)
     if dlg.ShowModal() == wx.ID_OK:
-        df = reorderColumns(dlg.dataframe, dlg.reqColMap, goalFormat)
-        #print df
-        #df.to_csv("/Users/bgrivna/Desktop/foobar.csv", index=False)
+        dataframe = reorderColumns(dlg.dataframe, dlg.reqColMap, goalFormat)
+        name = os.path.basename(dlg.path)
+        secSumm = SectionSummary(name, dataframe)
+    return secSumm
 
 def validate(dataframe, goalFormat):
     valid = True
@@ -218,6 +228,9 @@ def readFile(filepath):
     dataframe = pandas.read_csv(srcfile, sep=None, skipinitialspace=True, engine='python')
     srcfile.close()
     return dataframe
+
+def writeToFile(dataframe, filepath):
+    dataframe.to_csv(filepath, index=False)
 
 """ find column names in dataframe matching those required by format """
 def findFormatColumns(dataframe, format):

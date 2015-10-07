@@ -16,6 +16,7 @@ import xml.sax
 from importManager import py_correlator
 
 import dialog
+import tabularImport
 import xml_handler
 from model import * # brgtodo 4/24/2014: Remove import *
 
@@ -156,6 +157,24 @@ class DataFrame(wx.Panel):
 	def OnHide(self,event):
 		self.Show(False)
 		self.parent.midata.Check(False)
+		
+	def OnSecSummMenu(self, event):
+		opId = event.GetId()
+		if opId == 1:
+			self.ImportSectionSummary()
+		elif opId == 2: # View File
+			filepath = self.parent.DBPath + 'db/' + self.GetSelectedSite() + '/' + self.tree.GetItemText(self.selectedIdx, 1)
+			self.fileText.Clear()
+			self.fileText.LoadFile(filepath)
+			self.sideNote.SetSelection(2)
+		elif opId == 3: # Delete
+			secsummname = self.tree.GetItemText(self.selectedIdx, 1)
+			ret = self.parent.OnShowMessage("Information", "Are you sure you want to delete {}".format(secsummname), 2)
+			if ret == wx.ID_OK:
+				filepath = self.parent.DBPath + 'db/' + self.GetSelectedSite() + '/' + secsummname
+				os.remove(filepath)
+				self.tree.SetItemText(self.selectedIdx, "", 1)
+				self.OnUPDATE_DB_FILE(self.GetSelectedSite(), self.tree.GetItemParent(self.selectedIdx))
 
 	# handles all of the many many many right-click commands in Data Manager
 	def OnPOPMENU(self, event):
@@ -433,6 +452,35 @@ class DataFrame(wx.Panel):
 
 		self.selectedIdx = None
 
+	def ImportSectionSummary(self):
+		secsumm = tabularImport.doImport(self, tabularImport.SectionSummaryFormat)
+		if secsumm is not None:
+			# udpate GUI
+			site = self.GetSelectedSite()
+			item = self.tree.GetSelection()
+			self.tree.SetItemText(item, secsumm.name, 1)
+			self.tree.SetItemText(item, secsumm.name, 10)
+			
+			# update site DB file
+			self.OnUPDATE_DB_FILE(site, self.tree.GetItemParent(item))
+			
+			# write file
+			sspath = self.parent.DBPath +'db/' + site + '/' + secsumm.name
+			tabularImport.writeToFile(secsumm.dataframe, sspath)
+
+	# get parent Site (child of Root node) for current selection in self.tree
+	def GetSelectedSite(self):
+		selsite = None
+		selitem = self.tree.GetSelection()
+		item = selitem
+		while item is not None:
+			parent = self.tree.GetItemParent(item)
+			if parent is not None:
+				if self.tree.GetItemText(parent, 0) == "Root":
+					selsite = self.tree.GetItemText(item, 0)
+					break
+			item = parent
+		return selsite
 
 	# build appropriate right-click menu based on selection type - rather than pulling
 	# text strings from the View to determine what's what, we should be asking the Model!
@@ -608,6 +656,17 @@ class DataFrame(wx.Panel):
 				elif str_name == "Image Data" :
 					popupMenu.Append(21, "&Import image data")
 					wx.EVT_MENU(popupMenu, 21, self.OnPOPMENU)
+				elif str_name == "Section Summary":
+					secsumm_name = self.tree.GetItemText(self.selectedIdx, 1)
+					if secsumm_name == "":
+						popupMenu.Append(1, "&Import Section Summary...")
+						wx.EVT_MENU(popupMenu, 1, self.OnSecSummMenu)
+					else:
+						popupMenu.Append(2, "&View")
+						path = self.parent.DBPath + 'db/' + self.GetSelectedSite() + '/' + secsumm_name
+						wx.EVT_MENU(popupMenu, 2, self.OnSecSummMenu)
+						popupMenu.Append(3, "&Delete")
+						wx.EVT_MENU(popupMenu, 3, self.OnSecSummMenu)
 				else :
 					popupMenu.Append(5, "&Add new data")
 					wx.EVT_MENU(popupMenu, 5, self.OnPOPMENU)
@@ -2948,6 +3007,10 @@ class DataFrame(wx.Panel):
 						child_item = self.tree.GetNextSibling(child_item)
 						s = '\nimage: ' + self.tree.GetItemText(child_item, 8) + ': ' + self.tree.GetItemText(child_item, 6) + ': ' + self.tree.GetItemText(child_item, 7) + ': ' + self.tree.GetItemText(child_item, 9) + ': ' + self.tree.GetItemText(child_item, 2) + '\n'
 						fout.write(s)
+			elif type == "Section Summary":
+				secsumm_name = self.tree.GetItemText(selectItem, 1)
+				if secsumm_name != "":
+					fout.write('\nsecsumm: ' + secsumm_name + '\n')
 			else :  
 				totalcount = self.tree.GetChildrenCount(selectItem, False)
 				culltable_item = None
@@ -3095,6 +3158,10 @@ class DataFrame(wx.Panel):
 							child_item = self.tree.GetNextSibling(child_item)
 							s = '\nimage: ' + self.tree.GetItemText(child_item, 8) + ': ' + self.tree.GetItemText(child_item, 6) + ': ' + self.tree.GetItemText(child_item, 7) + ': ' + self.tree.GetItemText(child_item, 9) + ': ' + self.tree.GetItemText(child_item, 2) + '\n'
 							fout.write(s)
+				elif type == "Section Summary":
+					secsumm_name = self.tree.GetItemText(selectItem, 1)
+					if secsumm_name != "":
+						fout.write('\nsecsumm: ' + secsumm_name + '\n')
 				else :
 					totalcount = self.tree.GetChildrenCount(selectItem, False)
 					culltable_item = None
@@ -5105,6 +5172,7 @@ class DataFrame(wx.Panel):
 				strat_child = self.tree.AppendItem(root, 'Stratigraphy')
 				age_child = self.tree.AppendItem(root, 'Age Models')
 				image_child = self.tree.AppendItem(root, 'Image Data')
+				secsumm_child = self.tree.AppendItem(root, 'Section Summary')
 				self.tree.SortChildren(root)
 				child = None
 				hole_child = None
@@ -5354,6 +5422,9 @@ class DataFrame(wx.Panel):
 									self.tree.SetItemTextColour(temp_child, wx.BLUE)
 								else :
 									self.tree.SetItemTextColour(temp_child, wx.RED)
+						elif token[0] == "secsumm":
+							if secsumm_child is not None:
+								self.tree.SetItemText(secsumm_child, token[1].strip(), 1)
 				sub_f.close()
 
 		loaded_item_list = []
