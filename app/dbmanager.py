@@ -169,7 +169,7 @@ class DataFrame(wx.Panel):
 			self.sideNote.SetSelection(2)
 		elif opId == 3: # Delete
 			secsummname = self.tree.GetItemText(self.selectedIdx, 1)
-			ret = self.parent.OnShowMessage("Information", "Are you sure you want to delete {}".format(secsummname), 2)
+			ret = self.parent.OnShowMessage("Information", "Are you sure you want to delete {}?".format(secsummname), 2)
 			if ret == wx.ID_OK:
 				filepath = self.parent.DBPath + 'db/' + self.GetSelectedSite() + '/' + secsummname
 				os.remove(filepath)

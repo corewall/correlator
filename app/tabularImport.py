@@ -32,50 +32,19 @@ SectionSummaryFormat = TabularFormat("Section Summary",
                                      ['Exp', 'Site', 'Hole', 'Core', 'CoreType', 'Section', 'TopDepth', 'BottomDepth'])
 
 class ImportDialog(wx.Dialog):
-    def __init__(self, parent, id, goalFormat):
+    def __init__(self, parent, id, path, dataframe, goalFormat):
         wx.Dialog.__init__(self, parent, id, size=(800,600), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
-        self.dataframe = None
+        self.path = path # source file path
+        self.dataframe = dataframe # pandas DataFrame read from self.path
         self.goalFormat = goalFormat
         self.reqColMap = None # populated when all required columns have been identified
         self.lastCol = None # index of last column label selected...can't easily pass in event handlers
-        self.path = None # source file path
         
         self._createUI()
-        self._chooseFile()
-        
-    def errbox(self, msg):
-        md = dialog.MessageDialog(self, "Error", msg, 1)
-        md.ShowModal()
-        
-    def _chooseFile(self):
-        dlg = wx.FileDialog(self, "Select Section Summary File", wildcard="CSV Files (*.csv)|*.csv", style=wx.OPEN)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.path = dlg.GetPath()
-            try:
-                self.dataframe = readFile(self.path) # brgtodo: try/catch exceptions here
-            except:
-                self.errbox("Error reading file: {}".format(sys.exc_info()[1]))
-                return
-
-            # do some validation
-            if self.dataframe is None:
-                self.errbox("Couldn't import file, unknown error")
-                return
-            
-            if hasEmptyCells(self.dataframe):
-                self.errbox("File contains one or more empty cells")
-                return
-            
-            fileColCount = len(self.dataframe.columns.tolist())
-            formatColCount = len(self.goalFormat.req) 
-            if fileColCount < formatColCount: 
-                self.errbox("File contains fewer columns ({}) than the {} format requires ({})".format(fileColCount, self.goalFormat.name, formatColCount))
-                return
-
-            self._updateFileLabel()
-            self._updateFormatLabel()
-            self._populateTable()
+        self._populateTable()
+        self._updateFileLabel()
+        self._updateFormatLabel()
     
     def _populateTable(self):
         # init: adjust table's column count to match dataframe, column/row labels
@@ -200,11 +169,16 @@ class ImportDialog(wx.Dialog):
 
 def doImport(parent, goalFormat):
     secSumm = None
-    dlg = ImportDialog(parent, -1, goalFormat)
-    if dlg.ShowModal() == wx.ID_OK:
-        dataframe = reorderColumns(dlg.dataframe, dlg.reqColMap, goalFormat)
-        name = os.path.basename(dlg.path)
-        secSumm = SectionSummary(name, dataframe)
+    path = selectFile(parent, goalFormat)
+    if path is not None:
+        dataframe = parseFile(parent, path, goalFormat, checkcols=True)
+        if dataframe is not None:
+            dlg = ImportDialog(parent, -1, path, dataframe, goalFormat)
+            if dlg.ShowModal() == wx.ID_OK:
+                dataframe = reorderColumns(dlg.dataframe, dlg.reqColMap, goalFormat)
+                name = os.path.basename(dlg.path)
+                secSumm = SectionSummary(name, dataframe)
+            
     return secSumm
 
 def validate(dataframe, goalFormat):
@@ -249,6 +223,37 @@ def reorderColumns(dataframe, colmap, format):
             newmap[colName] = dataframe.icol(index)
     df = pandas.DataFrame(newmap, columns=format.req)
     return df
+
+def errbox(parent, msg):
+    md = dialog.MessageDialog(parent, "Error", msg, 1)
+    md.ShowModal()
+
+def selectFile(parent, goalFormat):
+    path = None
+    dlg = wx.FileDialog(parent, "Select {} File".format(goalFormat.name), wildcard="CSV Files (*.csv)|*.csv", style=wx.OPEN)
+    if dlg.ShowModal() == wx.ID_OK:
+        path = dlg.GetPath()
+    return path
+
+def parseFile(parent, path, goalFormat, checkcols=False):
+    dataframe = None
+    try:
+        dataframe = readFile(path)
+    except:
+        errbox(parent, "Error reading file: {}".format(sys.exc_info()[1]))
+        return None
+
+    if dataframe is None:
+        errbox(parent, "Couldn't import file, unknown error")
+    elif checkcols:
+        fileColCount = len(dataframe.columns.tolist())
+        formatColCount = len(goalFormat.req) 
+        if fileColCount < formatColCount: 
+            errbox(parent, "File contains fewer columns ({}) than the {} format requires ({})".format(fileColCount, goalFormat.name, formatColCount))
+            return None
+
+    return dataframe
+
 
 class FooApp(wx.App):
     def __init__(self):
