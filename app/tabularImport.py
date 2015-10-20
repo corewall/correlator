@@ -40,6 +40,7 @@ class ImportDialog(wx.Dialog):
         self.goalFormat = goalFormat
         self.reqColMap = None # populated when all required columns have been identified
         self.lastCol = None # index of last column label selected...can't easily pass in event handlers
+        self.NA = "N/A"
         
         self._createUI()
         self._populateTable()
@@ -48,9 +49,10 @@ class ImportDialog(wx.Dialog):
     
     def _populateTable(self):
         # init: adjust table's column count to match dataframe, column/row labels
-        self.table.CreateGrid(101, len(self.dataframe.columns.tolist())) # extra row for source headers
+        rowcount = min(len(self.dataframe), 100) + 1 # extra row for source file headers
+        self.table.CreateGrid(rowcount, len(self.dataframe.columns.tolist()))
         for col in range(len(self.dataframe.columns.tolist())):
-            self.table.SetColLabelValue(col, "N/A")
+            self.table.SetColLabelValue(col, self.NA)
         self.table.SetRowLabelValue(0, "Headers")
 
         # populate required headers based on matches
@@ -61,18 +63,16 @@ class ImportDialog(wx.Dialog):
         
         # read source file headers into row 1
         font = self.table.GetCellFont(0, 0)
-        #font.SetWeight(wx.FONTWEIGHT_BOLD)
         for col, name in enumerate(self.dataframe.columns.tolist()):
             self.table.SetCellValue(0, col, name)
             self.table.SetCellBackgroundColour(0, col, wx.Colour(192, 192, 192))
             self.table.SetCellFont(0, col, font)
         
-        # fill table with first 100 rows of data
+        # fill table
         for c in range(len(self.dataframe.columns)):
             col = self.dataframe.icol(c)
-            rowmax = min(len(self.dataframe), 100)
-            for r in range(1, rowmax + 1):
-                self.table.SetCellValue(r, c, str(col[r]))
+            for r in range(1, rowcount):
+                self.table.SetCellValue(r, c, str(col[r - 1]))
                 self.table.SetReadOnly(r, c)
                 self.table.SetRowLabelValue(r, str(r))
                 
@@ -84,7 +84,7 @@ class ImportDialog(wx.Dialog):
     def _createReqMenu(self):
         # setup required column menu
         self.reqMenu = wx.Menu()
-        menuItems = self.goalFormat.req + ["N/A"]
+        menuItems = self.goalFormat.req + [self.NA]
         for index, mi in enumerate(menuItems):
             menuIndex = index + 1 # start from 1, no zero menu index on Mac
             self.reqMenu.Append(menuIndex, mi)
@@ -98,6 +98,9 @@ class ImportDialog(wx.Dialog):
         
     def _updateHelpLabel(self, helptext):
         self.helpText.SetLabel(helptext)
+        
+    def _updateWarnLabel(self, warntext):
+        self.warnText.SetLabel(warntext)
     
     def _createUI(self):
         self.SetTitle("Import {}".format(self.goalFormat.name))
@@ -105,23 +108,35 @@ class ImportDialog(wx.Dialog):
         sz = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(sz)
         
-        self.fileLabel = wx.StaticText(self, -1, "File: N/A")
+        self.fileLabel = wx.StaticText(self, -1, "File: {}".format(self.NA))
         sz.Add(self.fileLabel, 0, wx.EXPAND | wx.ALL, 10)
         
-        self.formatLabel = wx.StaticText(self, -1, "[Format]: N/A")
+        self.formatLabel = wx.StaticText(self, -1, "[Format]: {}".format(self.NA))
         sz.Add(self.formatLabel, 0, wx.EXPAND | wx.ALL, 10)
         
         self.table = wx.grid.Grid(self, -1)
         self.table.DisableDragRowSize()
         sz.Add(self.table, 1, wx.EXPAND)
-        
+
         panel = wx.Panel(self, -1)
+        
+        # Help/warn text subpanel
+        textpanel = wx.Panel(panel, -1)
+        tpsz = wx.BoxSizer(wx.VERTICAL)
+        self.helpText = wx.StaticText(textpanel, -1, "I am some helpful text.")
+        self.warnText = wx.StaticText(textpanel, -1, "I am warning text")
+        self.warnText.SetForegroundColour(wx.RED)
+        tpsz.Add(self.helpText, 0, wx.EXPAND)
+        tpsz.Add(self.warnText, 0, wx.EXPAND)
+        textpanel.SetSizer(tpsz)
+
+        # bottom text/button panel        
         bpsz = wx.BoxSizer(wx.HORIZONTAL)
-        self.helpText = wx.StaticText(panel, -1, "I am some helpful text.")
-        self.importButton = wx.Button(panel, wx.ID_OK, "Import")
+        self.importButton = wx.Button(panel, -1, "Import")
         self.importButton.Enable(False)
+        self.Bind(wx.EVT_BUTTON, self.OnImport, self.importButton)
         self.cancelButton = wx.Button(panel, wx.ID_CANCEL, "Cancel")
-        bpsz.Add(self.helpText, 1)
+        bpsz.Add(textpanel, 1, wx.EXPAND)
         bpsz.Add(self.importButton, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         bpsz.Add(self.cancelButton, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         panel.SetSizer(bpsz)
@@ -153,6 +168,31 @@ class ImportDialog(wx.Dialog):
             self.importButton.Enable(False)
             self._updateHelpLabel("Click column labels to identify required columns {}".format(str(missing)))
             self.reqColMap = None
+            
+        # warnings
+        nonNANames = [n for n in curNames if n != self.NA]
+        if len(set(nonNANames)) < len(nonNANames):
+            mulsels = list(set([n for n in nonNANames if nonNANames.count(n) > 1]))
+            msstr = ', '.join(mulsels)
+            self._updateWarnLabel("Warning: Multiple columns selected for {}".format(msstr))
+        else:
+            self._updateWarnLabel("")
+
+    # check user-selected columns for empty cells
+    def _hasEmptyCells(self):
+        goaldf = reorderColumns(self.dataframe, self.reqColMap, self.goalFormat)
+        empty = False
+        for col in goaldf.columns.tolist():
+            if goaldf[col].isnull().sum() > 0: # count NaN cells
+                empty = True
+                break
+        return empty
+
+    def OnImport(self, event):
+        if self._hasEmptyCells():
+            errbox(self, "One or more columns selected for import contain empty cells")
+        else:
+            self.EndModal(wx.ID_OK)
         
     def OnSelectLabel(self, event):
         selCol = event.GetCol()
@@ -166,7 +206,7 @@ class ImportDialog(wx.Dialog):
         #print "Source column: {}, item {}".format(self.lastCol, event.GetId())
         self._checkReq()
         
-
+# with GUI, select and import a file, returning a SectionSummary (to be generalized)
 def doImport(parent, goalFormat):
     secSumm = None
     path = selectFile(parent, goalFormat)
@@ -178,7 +218,6 @@ def doImport(parent, goalFormat):
                 dataframe = reorderColumns(dlg.dataframe, dlg.reqColMap, goalFormat)
                 name = os.path.basename(dlg.path)
                 secSumm = SectionSummary(name, dataframe)
-            
     return secSumm
 
 def validate(dataframe, goalFormat):
