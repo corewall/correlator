@@ -94,7 +94,7 @@ class ImportDialog(wx.Dialog):
         self.fileLabel.SetLabel("File: {}".format(self.path))
         
     def _updateFormatLabel(self):
-        self.formatLabel.SetLabel("Required columns: {}".format(self.goalFormat.req))
+        self.formatLabel.SetLabel("Required columns for {}: {}".format(self.goalFormat.name, ', '.join(self.goalFormat.req)))
         
     def _updateHelpLabel(self, helptext):
         self.helpText.SetLabel(helptext)
@@ -111,18 +111,17 @@ class ImportDialog(wx.Dialog):
         self.fileLabel = wx.StaticText(self, -1, "File: {}".format(self.NA))
         sz.Add(self.fileLabel, 0, wx.EXPAND | wx.ALL, 10)
         
-        self.formatLabel = wx.StaticText(self, -1, "[Format]: {}".format(self.NA))
-        sz.Add(self.formatLabel, 0, wx.EXPAND | wx.ALL, 10)
-        
         self.table = wx.grid.Grid(self, -1)
         self.table.DisableDragRowSize()
         sz.Add(self.table, 1, wx.EXPAND)
 
         panel = wx.Panel(self, -1)
         
-        # Help/warn text subpanel
+        # required columns + help/warn text subpanel
         textpanel = wx.Panel(panel, -1)
         tpsz = wx.BoxSizer(wx.VERTICAL)
+        self.formatLabel = wx.StaticText(textpanel, -1, "[Format]: {}".format(self.NA))
+        tpsz.Add(self.formatLabel, 0, wx.EXPAND | wx.BOTTOM, 10)
         self.helpText = wx.StaticText(textpanel, -1, "I am some helpful text.")
         self.warnText = wx.StaticText(textpanel, -1, "I am warning text")
         self.warnText.SetForegroundColour(wx.RED)
@@ -162,11 +161,11 @@ class ImportDialog(wx.Dialog):
                 
         if len(missing) == 0:
             self.importButton.Enable(True)
-            self._updateHelpLabel("All required columns identified, click Import")
+            self._updateHelpLabel("All required columns identified, click Import!")
             self.reqColMap = colmap
         else:
             self.importButton.Enable(False)
-            self._updateHelpLabel("Click column labels to identify required columns {}".format(str(missing)))
+            self._updateHelpLabel("Click column labels to identify required columns: {}".format(', '.join(missing)))
             self.reqColMap = None
             
         # warnings
@@ -207,9 +206,10 @@ class ImportDialog(wx.Dialog):
         self._checkReq()
         
 # with GUI, select and import a file, returning a SectionSummary (to be generalized)
-def doImport(parent, goalFormat):
+def doImport(parent, goalFormat, path=None):
     secSumm = None
-    path = selectFile(parent, goalFormat)
+    if path is None:
+        path = selectFile(parent, goalFormat)
     if path is not None:
         dataframe = parseFile(parent, path, goalFormat, checkcols=True)
         if dataframe is not None:
@@ -220,21 +220,6 @@ def doImport(parent, goalFormat):
                 secSumm = SectionSummary(name, dataframe)
     return secSumm
 
-def validate(dataframe, goalFormat):
-    valid = True
-    if hasEmptyCells(dataframe):
-        valid = False
-    if len(dataframe.columns().tolist) < len(goalFormat.req):
-        valid = False
-    return valid
-
-def hasEmptyCells(dataframe):
-    empty = False
-    for col in dataframe.columns.tolist():
-        if dataframe[col].isnull().sum() > 0: # count NaN cells
-            empty = True
-            break
-    return empty
 
 def readFile(filepath):
     srcfile = open(filepath, 'rU')
@@ -302,6 +287,6 @@ class FooApp(wx.App):
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         app = FooApp()
-        doImport(None, SectionSummaryFormat)
+        doImport(None, SectionSummaryFormat, sys.argv[1])
     else:
         print "specify a CSV file to load"
