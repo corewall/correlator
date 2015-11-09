@@ -2750,12 +2750,10 @@ class FilterPanel():
 		if platform_name[0] == "Windows" :
 			buttonsize = 280
 			
-		self.all = wx.ComboBox(self.mainPanel, -1, "", (0,0), (buttonsize,-1), (""), wx.CB_DROPDOWN)
-
+		self.all = wx.Choice(self.mainPanel, -1, (0,0), (buttonsize,-1))
 		self.all.SetForegroundColour(wx.BLACK)
-		self.all.SetEditable(False)
 		vbox_top.Add(self.all, 0, wx.LEFT | wx.TOP, 9)
-		self.mainPanel.Bind(wx.EVT_COMBOBOX, self.SetTYPE, self.all)
+		self.mainPanel.Bind(wx.EVT_CHOICE, self.SetTYPE, self.all)
 
 		panel1 = wx.Panel (self.mainPanel, -1)
 		sizer1 = wx.StaticBoxSizer(wx.StaticBox(panel1, -1, 'Decimate'), orient=wx.HORIZONTAL)
@@ -2793,57 +2791,47 @@ class FilterPanel():
 
 		panel2 = wx.Panel (self.mainPanel, -1)
 		sizer2 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'Smooth'), orient=wx.VERTICAL)
-		grid2 = wx.FlexGridSizer(4, 2)
+		grid2 = wx.GridBagSizer(3, 3)
 		
 		if platform_name[0] == "Windows" :			
-			grid2.Add(wx.StaticText(panel2, -1, "Type            "), 0, wx.LEFT | wx.RIGHT, 5)
+			grid2.Add(wx.StaticText(panel2, -1, "Type"), (0,0), flag=wx.LEFT | wx.RIGHT, border=5)
 		else :
-			grid2.Add(wx.StaticText(panel2, -1, "Type            "), 0, wx.RIGHT, 5)
+			grid2.Add(wx.StaticText(panel2, -1, "Type"), (0,0), flag=wx.RIGHT, border=5)
 				
-		self.smoothcmd = wx.ComboBox(panel2, -1, "Gaussian", (0,0), (180, -1), \
-				("None", "Gaussian"), wx.CB_DROPDOWN)
+		self.smoothcmd = wx.Choice(panel2, -1, (0,0), (180, -1), ("None", "Gaussian"))
 		self.smoothcmd.SetForegroundColour(wx.BLACK)
-		self.smoothcmd.SetEditable(False)
 		if platform_name[0] == "Windows" :		
-			grid2.Add(self.smoothcmd, 0, wx.RIGHT, 5)
+			grid2.Add(self.smoothcmd, (0,1), span=(1,2), flag=wx.RIGHT, border=5)
 		else :
-			grid2.Add(self.smoothcmd)		
+			grid2.Add(self.smoothcmd, (0,1), span=(1,2))
+					
 		if platform_name[0] == "Windows" :		
-			grid2.Add(wx.StaticText(panel2, -1, "Width	    "), 0, wx.LEFT | wx.RIGHT, 5)
+			grid2.Add(wx.StaticText(panel2, -1, "Width"), (1,0), flag=wx.LEFT | wx.RIGHT, border=5)
 		else :
-			grid2.Add(wx.StaticText(panel2, -1, "Width	 "), 0, wx.RIGHT, 5)
+			grid2.Add(wx.StaticText(panel2, -1, "Width"), (1,0), flag=wx.RIGHT, border=5)
 		
-		self.width = wx.TextCtrl(panel2, -1, "9", size=(60, 25), style=wx.SUNKEN_BORDER )
-		grid2.Add(self.width, 0, wx.BOTTOM, 3)
+		self.width = wx.TextCtrl(panel2, -1, "9", size=(60, 25), style=wx.SUNKEN_BORDER)
+		grid2.Add(self.width, (1,1), flag=wx.BOTTOM, border=3)
 
-		if platform_name[0] == "Windows" :
-			self.unitscmd = wx.ComboBox(panel2, -1, "Points", (167, 50), (110, -1), \
-					("Points", "Depth(cm)"), wx.CB_DROPDOWN)
-		else :
-			self.unitscmd = wx.ComboBox(panel2, -1, "Points", (167, 55), (110, -1), \
-					("Points", "Depth(cm)"), wx.CB_DROPDOWN)
-				
+		self.unitscmd = wx.Choice(panel2, -1, choices=["Points", "Depth(cm)"])
 		self.unitscmd.SetForegroundColour(wx.BLACK)
-		self.unitscmd.SetEditable(False)
-		self.mainPanel.Bind(wx.EVT_COMBOBOX, self.SetUNIT, self.unitscmd)
-		#grid2.Add(self.unitscmd)
+		self.mainPanel.Bind(wx.EVT_CHOICE, self.SetUNIT, self.unitscmd)
+		grid2.Add(self.unitscmd, (1,2), flag=wx.ALIGN_CENTER_VERTICAL)
 
 		if platform_name[0] == "Windows" :	
 			grid2.Add(wx.StaticText(panel2, -1, "Display	         "), 0, wx.RIGHT | wx.LEFT, 5)
 		else :
-			grid2.Add(wx.StaticText(panel2, -1, "Display	      "), 0, wx.RIGHT, 5)
-		self.plotcmd = wx.ComboBox(panel2, -1, "Smoothed&Unsmoothed", (0,0), (180, -1), \
-				("UnsmoothedOnly", "SmoothedOnly", "Smoothed&Unsmoothed"), wx.CB_DROPDOWN)
+			grid2.Add(wx.StaticText(panel2, -1, "Display"), (2,0), flag=wx.RIGHT, border=5)
+		self.plotcmd = wx.Choice(panel2, -1, (0,0), (180, -1), ("UnsmoothedOnly", "SmoothedOnly", "Smoothed&Unsmoothed"))
 		self.plotcmd.SetForegroundColour(wx.BLACK)
-		self.plotcmd.SetEditable(False)
 		if platform_name[0] == "Windows" :			
 			grid2.Add(self.plotcmd, 0, wx.RIGHT, 10)
 		else :
-			grid2.Add(self.plotcmd)
+			grid2.Add(self.plotcmd, (2,1), span=(1,2))
 
 		sizer2.Add(grid2)
 		panel2.SetSizer(sizer2)
-		vbox_top.Add(panel2, 0, wx.BOTTOM | wx.TOP | wx.LEFT, 9)
+		vbox_top.Add(panel2, 0, wx.BOTTOM | wx.TOP | wx.LEFT | wx.EXPAND, 9)
 
 		gridApply2 = wx.GridSizer(1, 2)
 		smBtn = wx.Button(self.mainPanel, -1, "Apply", size=(120, 30))
@@ -2884,9 +2872,8 @@ class FilterPanel():
 
 		grid31 = wx.FlexGridSizer(2, 4)
 		grid31.Add(wx.StaticText(panel3, -1, ""), 0, wx.RIGHT, 3)
-		self.cmd = wx.ComboBox(panel3, -1, ">", (0,0), (50,-1), ("<", ">"), wx.CB_DROPDOWN)
+		self.cmd = wx.Choice(panel3, -1, (0,0), (50,-1), ("<", ">"))
 		self.cmd.SetForegroundColour(wx.BLACK)
-		self.cmd.SetEditable(False)
 
 		grid31.Add(self.cmd, 0, wx.RIGHT, 9)
 		self.valueA = wx.TextCtrl(panel3, -1, "9999.99", size=(80, 25), style=wx.SUNKEN_BORDER )
@@ -2898,9 +2885,8 @@ class FilterPanel():
 		grid31.Add(self.onlyCheck, 0, wx.BOTTOM, 9)
 
 		grid31.Add(wx.StaticText(panel3, -1, "                     "), 0, wx.RIGHT, 3)
-		self.signcmd = wx.ComboBox(panel3, -1, "<", (0,0), (50,-1), ("<", ">"), wx.CB_DROPDOWN) 
+		self.signcmd = wx.Choice(panel3, -1, (0,0), (50,-1), ("<", ">")) 
 		self.signcmd.SetForegroundColour(wx.BLACK)
-		self.signcmd.SetEditable(False)
 		grid31.Add(self.signcmd, 0, wx.RIGHT, 9)
 		self.valueB = wx.TextCtrl(panel3, -1, "-9999.99", size=(80, 25), style=wx.SUNKEN_BORDER )
 		grid31.Add(self.valueB, 0, wx.RIGHT, 9)
@@ -2918,9 +2904,7 @@ class FilterPanel():
 			buttonsize = 140
 			
 		grid32 = wx.FlexGridSizer(1, 2)
-		self.optcmd = wx.ComboBox(panel3, -1, "Use all cores", (0,0), (buttonsize, -1), \
-				("Use all cores", "Use cores numbered <="), wx.CB_DROPDOWN)
-		self.optcmd.SetEditable(False)	
+		self.optcmd = wx.Choice(panel3, -1, (0,0), (buttonsize, -1), ("Use all cores", "Use cores numbered <="))
 		grid32.Add(self.optcmd, 0, wx.RIGHT, 5)
 		self.valueE = wx.TextCtrl(panel3, -1, "999", size=(80, 25), style=wx.SUNKEN_BORDER )
 		grid32.Add(self.valueE, 0, wx.BOTTOM, 9)
@@ -2979,7 +2963,7 @@ class FilterPanel():
 
 	def SetUNIT(self, event):
 	 	self.width.Clear()
-		if self.unitscmd.GetValue() == "Depth(cm)" :
+		if self.unitscmd.GetStringSelection() == "Depth(cm)" :
 			self.width.SetValue("40")
 		else :
 			self.width.SetValue("9")
@@ -3072,18 +3056,14 @@ class FilterPanel():
 
 
 	def SetTYPE(self, event):
-		if self.parent.GetLoadedSite() != None:
-			self.TypeChoiceChanged(event)
+		type = self.all.GetStringSelection()
+		if type == 'All Holes':
 			return
-
-		type = self.all.GetValue()
-		if type  == 'All Holes' :
+		elif type == 'Log':
 			return
-		elif type == 'Log' :
+		elif type == 'Spliced Records':
 			return
-		elif type == 'Spliced Records' :
-			return
-		else :
+		else:
 			size = len(type)
 			type = type[4:size] # strip off 'All '
 
@@ -3092,11 +3072,6 @@ class FilterPanel():
 			type = "NaturalGamma"
 		data = self.parent.dataFrame.GetDECIMATE(type)
 		
-		# this will never, ever, ever happen because we pull the space from "Natural Gamma" directly above
-#		if data == None and type == "Natural Gamma" :
-#			type = "NaturalGamma"
-#			data = self.parent.dataFrame.GetDECIMATE(type)
-
 		if data != None :
 			self.decimate.SetValue(data[0])
 			if data[1] != "" :
@@ -3109,18 +3084,13 @@ class FilterPanel():
 				self.smoothcmd.SetStringSelection("None")
 		else :
 			self.smoothcmd.SetStringSelection("None")
-		self.smBackup = [ self.all.GetValue(), self.smoothcmd.GetValue(), self.width.GetValue(), self.unitscmd.GetValue(), self.plotcmd.GetValue()]
+		self.smBackup = [ self.all.GetStringSelection(), self.smoothcmd.GetStringSelection(), self.width.GetValue(), self.unitscmd.GetStringSelection(), self.plotcmd.GetStringSelection()]
 
 		# Update cull
 		cullData = self.parent.dataFrame.GetCULL(type)
-		if cullData == None :
-			# this will never happen because we already pulled space from "Natural Gamma"
-#			if type == "Natural Gamma" :
-#				type = "NaturalGamma"
-#				cullData = self.parent.dataFrame.GetCULL(type)
-			if type == "NaturalGamma" :
-				type = "Natural Gamma"
-				cullData = self.parent.dataFrame.GetCULL(type)
+		if cullData == None and type == "NaturalGamma":
+			type = "Natural Gamma"
+			cullData = self.parent.dataFrame.GetCULL(type)
 
 		self.nocull.SetValue(True)
 		self.valueD.SetValue("5.0")
@@ -3180,7 +3150,7 @@ class FilterPanel():
 	def OnUNDODecimate(self, event):
 		opt = self.deciUndo[0]
 		deci = self.deciUndo[1]
-		self.deciUndo = [ self.all.GetValue(), self.decimate.GetValue() ]
+		self.deciUndo = [ self.all.GetStringSelection(), self.decimate.GetValue() ]
 
 		self.decimate.SetValue(deci)
 		self.all.SetStringSelection(opt)
@@ -3189,7 +3159,7 @@ class FilterPanel():
 
 	# brg 1/29/2014: Ignore undo for now - seems pointless for decimate
 	def OnDecimate(self, event):
-		type = self.all.GetValue()
+		type = self.all.GetStringSelection()
 		if type == 'Spliced Records' :
 			self.parent.OnShowMessage("Error", "Splice Records can not be decimated", 1)
 			return
@@ -3211,7 +3181,7 @@ class FilterPanel():
 			py_correlator.decimate(type, deciValue)
 			#site.SetDecimate(type[4:], deciValue)
 
-		self.deciBackup = [ self.all.GetValue(), self.decimate.GetValue() ]
+		self.deciBackup = [ self.all.GetStringSelection(), self.decimate.GetValue() ]
 
 		if type != "Log" :
 			self.parent.LOCK = 0 
@@ -3231,27 +3201,27 @@ class FilterPanel():
 	""" Return integer smooth style (unsmoothed, smoothed, or combo) based on current smooth combobox selection """
 	def GetSmoothStyle(self):
 		smoothStyle = 0 # no smooth - should really define constant, named values
-		if self.plotcmd.GetValue() == "SmoothedOnly":
+		if self.plotcmd.GetStringSelection() == "SmoothedOnly":
 			smoothStyle = 1
-		elif self.plotcmd.GetValue() == "Smoothed&Unsmoothed":
+		elif self.plotcmd.GetStringSelection() == "Smoothed&Unsmoothed":
 			smoothStyle = 2
 		return smoothStyle
 
 	""" Return integer width or -1 if "None" smooth type is selected """
 	def GetSmoothWidth(self):
 		smoothWidth = -1
-		if self.smoothcmd.GetValue() == "Gaussian":
+		if self.smoothcmd.GetStringSelection() == "Gaussian":
 			smoothWidth = int(self.width.GetValue())
 		return smoothWidth
 
 	""" Return current smooth unit """
 	def GetSmoothUnit(self):
-		smoothUnit = 2 if self.unitscmd.GetValue() == "Depth(cm)" else 1
+		smoothUnit = 2 if self.unitscmd.GetStringSelection() == "Depth(cm)" else 1
 		return smoothUnit
 
 	""" Return True if smooth is enabled ("Gaussian" type is selected) else False """
 	def GetSmoothEnable(self):
-		return False if self.smoothcmd.GetValue() == "None" else True
+		return False if self.smoothcmd.GetStringSelection() == "None" else True
 
 	def OnUNDOSmooth(self, event):
 		if self.smUndo == [] :
@@ -3281,16 +3251,16 @@ class FilterPanel():
 		smoothEnable = self.GetSmoothEnable()
 		smoothWidth = self.GetSmoothWidth()
 		smoothUnit = self.GetSmoothUnit()
-		smoothUnitStr = self.unitscmd.GetValue()
+		smoothUnitStr = self.unitscmd.GetStringSelection()
 		smoothStyle = self.GetSmoothStyle()
-		smoothStyleStr = self.plotcmd.GetValue()
+		smoothStyleStr = self.plotcmd.GetStringSelection()
 
 		site = self.parent.GetLoadedSite()
-		type = self.all.GetValue()
+		type = self.all.GetStringSelection()
 
 		# 1/29/2014 brg: Looks like this takes effect when only smoothStyle has changed.
 		if self.smBackup != [] : 
-			if type == self.smBackup[0] and self.smoothcmd.GetValue() == self.smBackup[1] and self.width.GetValue() == self.smBackup[2] and self.unitscmd.GetValue() == self.smBackup[3] :
+			if type == self.smBackup[0] and self.smoothcmd.GetStringSelection() == self.smBackup[1] and self.width.GetValue() == self.smBackup[2] and self.unitscmd.GetStringSelection() == self.smBackup[3] :
 				if type  != 'All Holes' and type != 'Log' and type != 'Spliced Records' :
 					size = len(type)
 					type = type[4:size]
@@ -3302,7 +3272,7 @@ class FilterPanel():
 				elif type == 'Log' :
 					self.parent.Window.UpdateSMOOTH('log', smoothStyle)
 				else :
-					self.parent.dataFrame.OnUPDATE_SMOOTH(type, self.smoothcmd.GetValue(), str(self.width.GetValue()), self.unitscmd.GetValue(), self.plotcmd.GetValue() )
+					self.parent.dataFrame.OnUPDATE_SMOOTH(type, self.smoothcmd.GetStringSelection(), str(self.width.GetValue()), self.unitscmd.GetStringSelection(), self.plotcmd.GetStringSelection() )
 					if type == 'All Holes' :
 						self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
 						
@@ -3363,7 +3333,7 @@ class FilterPanel():
 				self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
 		###
 
-		self.smBackup = [ self.all.GetValue(), self.smoothcmd.GetValue(), self.width.GetValue(), self.unitscmd.GetValue(), self.plotcmd.GetValue()]
+		self.smBackup = [ self.all.GetStringSelection(), self.smoothcmd.GetStringSelection(), self.width.GetValue(), self.unitscmd.GetStringSelection(), self.plotcmd.GetStringSelection()]
 
 		if type  != 'All Holes' and type != 'Log' and type != 'Spliced Records' :
 			size = len(type)
@@ -3372,7 +3342,7 @@ class FilterPanel():
 		if type == "Natural Gamma" :
 			type = "NaturalGamma"
 
-		self.parent.dataFrame.OnUPDATE_SMOOTH(type, self.smoothcmd.GetValue(), str(self.width.GetValue()), self.unitscmd.GetValue(), self.plotcmd.GetValue() )
+		self.parent.dataFrame.OnUPDATE_SMOOTH(type, self.smoothcmd.GetStringSelection(), str(self.width.GetValue()), self.unitscmd.GetStringSelection(), self.plotcmd.GetStringSelection())
 
 		self.parent.Window.UpdateDrawing()
 
@@ -3391,7 +3361,7 @@ class FilterPanel():
 		coreno = self.cullUndo[10]
 
 		# [ "All Holes", "False", "5.0", ">", "999.99", True, "<", "-999.99", False, "Use all cores", "999" ]
-		self.cullUndo = [ self.all.GetValue(), self.nocull.GetValue(), self.valueD.GetValue(), self.cmd.GetValue(), self.valueA.GetValue(), self.onlyCheck.GetValue(), self.signcmd.GetValue(), self.valueB.GetValue(), self.orCheck.GetValue(), self.optcmd.GetValue(), self.valueE.GetValue()]
+		self.cullUndo = [ self.all.GetStringSelection(), self.nocull.GetValue(), self.valueD.GetValue(), self.cmd.GetStringSelection(), self.valueA.GetValue(), self.onlyCheck.GetValue(), self.signcmd.GetValue(), self.valueB.GetValue(), self.orCheck.GetValue(), self.optcmd.GetStringSelection(), self.valueE.GetValue()]
 
 		self.all.SetStringSelection(opt)
 		self.nocull.SetValue(cull)
@@ -3413,7 +3383,7 @@ class FilterPanel():
 
 
 	def OnCull(self, event):
-		type = self.all.GetValue()
+		type = self.all.GetStringSelection()
 		if type == 'Spliced Records' :
 			self.parent.OnShowMessage("Error", "Splice Records can not be culled", 1)
 			return
@@ -3445,10 +3415,10 @@ class FilterPanel():
 			self.valueB.SetValue("-999.99")
 
 		sign1 = 1
-		if self.cmd.GetValue() == "<" :
+		if self.cmd.GetStringSelection() == "<" :
 			sign1 = 2
 		sign2 = 1
-		if self.signcmd.GetValue() == "<" :
+		if self.signcmd.GetStringSelection() == "<" :
 			sign2 = 2
 
 		join = 1
@@ -3456,7 +3426,7 @@ class FilterPanel():
 			join = 2
 
 		cullNumber = -1
-		if self.optcmd.GetValue() != "Use all cores" :
+		if self.optcmd.GetStringSelection() != "Use all cores" :
 			if self.valueE.GetValue() != "" :
 				cullNumber = int(self.valueE.GetValue())
 			else :
@@ -3493,7 +3463,7 @@ class FilterPanel():
 		else :
 			self.parent.UpdateLogData()
 
-		self.cullBackup = [ self.all.GetValue(), self.nocull.GetValue(), self.valueD.GetValue(), self.cmd.GetValue(), self.valueA.GetValue(), self.onlyCheck.GetValue(), self.signcmd.GetValue(), self.valueB.GetValue(), self.orCheck.GetValue(), self.optcmd.GetValue(), self.valueE.GetValue()]
+		self.cullBackup = [ self.all.GetStringSelection(), self.nocull.GetValue(), self.valueD.GetValue(), self.cmd.GetStringSelection(), self.valueA.GetValue(), self.onlyCheck.GetValue(), self.signcmd.GetStringSelection(), self.valueB.GetValue(), self.orCheck.GetValue(), self.optcmd.GetStringSelection(), self.valueE.GetValue()]
 
 
 		if type  != 'All Holes' and type != 'Log' and type != 'Spliced Records' :
@@ -3562,7 +3532,7 @@ class PreferencesPanel():
 
 
 	def OnUPDATEWidth(self):
-		type = self.all.GetValue()
+		type = self.all.GetStringSelection()
 		idx = self.slider1.GetValue() - 10
 		holeWidth = 300 + (idx * 10)
 		self.parent.Window.holeWidth = holeWidth 
@@ -3571,7 +3541,7 @@ class PreferencesPanel():
 
 
 	def SetTYPE(self, event):
-		type = self.all.GetValue()
+		type = self.all.GetStringSelection()
 
 		if type  == 'All Holes' :
 			print "[DEBUG] SET All Holes"
@@ -3624,7 +3594,7 @@ class PreferencesPanel():
 		return result
 	
 	def OnChangeMinMax(self, event):
-		type = self.all.GetValue()
+		type = self.all.GetStringSelection()
 		minRange = float(self.min.GetValue())
 		maxRange = float(self.max.GetValue())
 
@@ -3639,7 +3609,6 @@ class PreferencesPanel():
 		self.parent.Window.UpdateDrawing()
 
 	def OnChangeWidth(self, event):
-		#type = self.all.GetValue()
 		idx = self.slider1.GetValue() - 10
 		holeWidth = 300 + (idx * 10)
 
@@ -3772,11 +3741,10 @@ class PreferencesPanel():
 		panel1 = wx.Panel(self.mainPanel, -1)
 		sizer1 = wx.StaticBoxSizer(wx.StaticBox(panel1, -1, 'Display Range'), orient=wx.VERTICAL)
 
-		self.all = wx.ComboBox(panel1, -1, "", (0,0), (270,-1), (""), wx.CB_DROPDOWN)
-		panel1.Bind(wx.EVT_COMBOBOX, self.SetTYPE, self.all)
+		self.all = wx.Choice(panel1, -1, (0,0), (270,-1), (""))
+		panel1.Bind(wx.EVT_CHOICE, self.SetTYPE, self.all)
 
 		self.all.SetForegroundColour(wx.BLACK)
-		self.all.SetEditable(False)
 		sizer1.Add(self.all, 0, wx.TOP, 5)
 
 		grid1range = wx.FlexGridSizer(4, 2)
