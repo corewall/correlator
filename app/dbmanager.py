@@ -27,6 +27,9 @@ def opj(path):
 
 FormatDict = {"Text":0, "CSV":1, "XML":2}
 
+# list of a site node's immediate non-measurement children 
+STD_SITE_NODES = ["Saved Tables", "Downhole Log Data", "Stratigraphy", "Age Models", "Image Data", "Section Summary"]
+
 class DataFrame(wx.Panel):
 	def __init__(self, parent):
 		wx.Panel.__init__(self, parent, -1)
@@ -1828,7 +1831,7 @@ class DataFrame(wx.Panel):
 		for k in kids:
 			nodeName = self.tree.GetItemText(k, 0)
 			typeInt, annot = self.parent.TypeStrToInt(nodeName)
-			if nodeName not in ["Age Models", "Downhole Log Data", "Image Data", "Saved Tables", "Stratigraphy"]:
+			if nodeName not in STD_SITE_NODES:
 				#print "found type {}".format(nodeName)
 				subkids = self.GetChildren(k)
 				for sk in subkids:
@@ -4082,7 +4085,7 @@ class DataFrame(wx.Panel):
 							selectItem = child[0]
 							str_txt = self.tree.GetItemText(selectItem, 0)
 
-							if str_txt != "Saved Tables" and str_txt != "Downhole Log Data" and str_txt != "Stratigraphy" and str_txt != "Age Models" and str_txt != "Image Data" : 
+							if str_txt not in STD_SITE_NODES:
 								totalcount = self.tree.GetChildrenCount(selectItem, False)
 								if totalcount > 0 :
 									child = self.tree.GetFirstChild(selectItem)
@@ -4137,7 +4140,7 @@ class DataFrame(wx.Panel):
 							for k in range(1, total) :
 								selectItem = self.tree.GetNextSibling(selectItem)
 								str_txt = self.tree.GetItemText(selectItem, 0)
-								if str_txt != "Saved Tables"  and str_txt != "Downhole Log Data" and str_txt != "Stratigraphy" and str_txt != "Age Models" and str_txt != "Image Data" : 
+								if str_txt not in STD_SITE_NODES: 
 									totalcount = self.tree.GetChildrenCount(selectItem, False)
 									if totalcount > 0 :
 										child = self.tree.GetFirstChild(selectItem)
@@ -4611,7 +4614,7 @@ class DataFrame(wx.Panel):
 						child = self.tree.GetFirstChild(parentItem)
 						child_item = child[0]
 						type = self.tree.GetItemText(child_item , 0)
-						if type != "Saved Tables" and type != "Downhole Log Data" and type != "Stratigraphy" and type != "Age Models" and type != "Image Data" :
+						if type not in STD_SITE_NODES:
 							if cullType == "All Holes" or cullType == type :
 								ret = py_correlator.getRange(type)
 								if ret != None :
@@ -4624,7 +4627,7 @@ class DataFrame(wx.Panel):
 						for k in range(1, total) :
 							child_item = self.tree.GetNextSibling(child_item)
 							type = self.tree.GetItemText(child_item, 0)
-							if type != "Saved Tables" and type != "Downhole Log Data" and type != "Stratigraphy" and type != "Age Models" and type != "Image Data" :
+							if type not in STD_SITE_NODES:
 								if cullType == "All Holes" or cullType == type :
 									ret = py_correlator.getRange(type)
 									if ret != None :
@@ -4874,7 +4877,7 @@ class DataFrame(wx.Panel):
 						selectItem = child[0]
 						# HYEJUNG
 						str_txt = self.tree.GetItemText(selectItem, 0)
-						if str_txt != "Saved Tables" and str_txt != "Downhole Log Data" and str_txt != "Stratigraphy" and str_txt != "Age Models" and str_txt != "Image Data" :
+						if str_txt not in STD_SITE_NODES:
 							type = "All " + str_txt
 							if deciType == "All Holes" or deciType == type :
 								self.tree.SetItemText(selectItem, str(deciValue), 3)
@@ -4892,7 +4895,7 @@ class DataFrame(wx.Panel):
 						for k in range(1, total) :
 							selectItem = self.tree.GetNextSibling(selectItem)
 							str_txt = self.tree.GetItemText(selectItem, 0)
-							if str_txt != "Saved Tables" and str_txt != "Downhole Log Data" and str_txt != "Stratigraphy" and str_txt != "Age Models" and str_txt != "Image Data" :
+							if str_txt not in STD_SITE_NODES:
 								type = "All " + str_txt
 								if deciType == "All Holes" or deciType == type :
 									self.tree.SetItemText(selectItem, str(deciValue), 3)
@@ -6779,7 +6782,7 @@ class DataFrame(wx.Panel):
 					child = self.tree.GetFirstChild(selectItem)
 					child_item = child[0]
 					type = self.tree.GetItemText(child_item, 0)
-					if type != "Saved Tables"  and type != "Downhole Log Data" and type != "Stratigraphy" and type != "Age Models" and type != "Image Data" :
+					if type not in STD_SITE_NODES:
 						sub_totalcount = self.tree.GetChildrenCount(child_item, False)
 						if sub_totalcount > 0 :
 							child = self.tree.GetFirstChild(child_item)
@@ -6794,7 +6797,7 @@ class DataFrame(wx.Panel):
 					for k in range(1, totalcount) :
 						child_item = self.tree.GetNextSibling(child_item)
 						type = self.tree.GetItemText(child_item, 0)
-						if type != "Saved Tables"  and type != "Downhole Log Data" and type != "Stratigraphy" and type != "Age Models" and type != "Image Data" :
+						if type not in STD_SITE_NODES:
 							sub_totalcount = self.tree.GetChildrenCount(child_item, False)
 							if sub_totalcount > 0 :
 								child = self.tree.GetFirstChild(child_item)
@@ -7530,11 +7533,8 @@ class DataFrame(wx.Panel):
 			subroot = self.tree.AppendItem(self.root,  leg + "-" + site )
 			self.tree.SetItemBold(subroot, True)
 			self.tree.Expand(subroot)
-			self.tree.AppendItem(subroot, 'Downhole Log Data')
-			self.tree.AppendItem(subroot, 'Saved Tables')
-			self.tree.AppendItem(subroot, 'Stratigraphy')
-			self.tree.AppendItem(subroot, 'Age Models')
-			self.tree.AppendItem(subroot, 'Image Data')
+			for nodeName in STD_SITE_NODES:
+				self.tree.AppendItem(subroot, nodeName)
 			child = self.tree.AppendItem(subroot, strdatatype)
 			self.tree.SetItemText(child, "Continuous", 1)
 			self.tree.SortChildren(subroot)
