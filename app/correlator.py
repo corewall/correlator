@@ -28,6 +28,7 @@ import frames
 import dbmanager
 import version as vers
 import model
+import splice
 
 app = None 
 User_Dir = os.path.expanduser("~")
@@ -62,6 +63,9 @@ class MainFrame(wx.Frame):
 		self.half = (self.Width / 2) - 32 
 		# make the menu
 		self.SetMenuBar( self.CreateMenu() )
+		
+		self.spliceManager = splice.SpliceManager()
+
 		self.RawData = ""
 		self.SmoothData = ""
 		self.CoreStart =0
@@ -662,6 +666,9 @@ class MainFrame(wx.Frame):
 
 	def OnSplice(self):
 		self.Window.OnSpliceCore()
+		
+	def AddSpliceCore(self, coreinfo):
+		self.spliceManager.add(coreinfo)
 
 	def OnUndoSplice(self):
 		self.Window.OnUndoSplice()
