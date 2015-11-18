@@ -11,7 +11,7 @@ import unittest
 class Interval:
     def __init__(self, top, bot):
         if top >= bot:
-            raise ValueError("Cannot create Interval, top must be < bot")
+            raise ValueError("Cannot create Interval: top must be < bot")
         self.top = top
         self.bot = bot
         
@@ -35,6 +35,9 @@ class Interval:
     
     def touches(self, interval):
         return touches(self, interval)
+    
+    def encompasses(self, interval):
+        return self.top <= interval.top and self.bot >= interval.bot
 
 # "Touching" intervals have a common edge but no overlap...this means
 # that an Interval does *not* touch itself.
@@ -86,13 +89,26 @@ def union(intervals):
     return result
 
 # Return list of Intervals of any gaps within overall range of passed Intervals
-def gaps(intervals):
+def gaps(intervals, mindepth, maxdepth):
     result = []
-    intervals = union(intervals)
-    if len(intervals) > 1:
-        for i in range(len(intervals) - 1):
-            gap = Interval(intervals[i].bot, intervals[i+1].top)
-            result.append(gap)
+    if len(intervals) == 0:
+        result.append(Interval(mindepth, maxdepth))
+    else:
+        intervals = union(intervals)
+        
+        # gaps between min/max and start/end of intervals range
+        intmin = min([i.top for i in intervals])
+        intmax = max([i.bot for i in intervals])
+        if mindepth < intmin:
+            result.append(Interval(mindepth, intmin))
+        if maxdepth > intmax:
+            result.append(Interval(intmax, maxdepth))
+    
+        # gaps within intervals
+        if len(intervals) > 1:
+            for i in range(len(intervals) - 1):
+                gap = Interval(intervals[i].bot, intervals[i+1].top)
+                result.append(gap)
     return result
 
 
@@ -191,42 +207,51 @@ class TestIntervals(unittest.TestCase):
         self.assertTrue(u5[0].bot == 4)
 
 class SpliceInterval:
-    def __init__(self, coreinfo, top, base, comment=""):
+    def __init__(self, coreinfo, top, bot, comment=""):
         self.coreinfo = coreinfo # CoreInfo for core used in this interval
-        self.top = top
-        self.base = base
+        self.interval = Interval(top, bot)
         self.comment = comment
+        
+    def top(self):
+        return self.interval.top
+    
+    def bot(self):
+        return self.interval.bot
+    
+    def overlaps(self, interval):
+        return self.interval.overlaps(interval)
+    
+    def contains(self, value):
+        return self.interval.contains(value)
+    
+    def __repr__(self):
+        return str(self.interval)
+
 
 class SpliceManager:
     def __init__(self):
         self.ints = [] # list of SpliceIntervals (ordered by depth?)
         
     def add(self, coreinfo):
-        # TODO: use SectionSummary values instead of coreinfo.min/maxDepth?
-        # TODO: modify min/maxDepth based on existing intervals using findTop/Base
-        top = self.findTop(coreinfo)
-        base = self.findBase(coreinfo)
-        self.ints.append(SpliceInterval(coreinfo, top, base))
-        print "Added core to splice: {}".format(coreinfo.getName())
+        interval = Interval(coreinfo.minDepth, coreinfo.maxDepth)
+        if self.canAdd(interval):
+            for gap in gaps(self.overs(interval), interval.top, interval.bot):
+                self.ints.append(SpliceInterval(coreinfo, gap.top, gap.bot))
+                self.ints = sorted(self.ints, key=lambda i: i.top())
+                print "Added {}, now = {}".format(interval, self.ints)
+        else:
+            print "couldn't add interval {}".format(interval)
         
-    def findTop(self, coreinfo):
-        #o = self.overlapping(coreinfo.minDepth, coreinfo.maxDepth)
-        depths = [i.base for i in self.ints if i.base >= coreinfo.minDepth and i.base <= coreinfo.maxDepth]
-        depths.append(coreinfo.minDepth)
-        print "top = {}, max of {}".format(max(depths), depths)
-        return max(depths)
-    
-    def findBase(self, coreinfo):
-        #o = self.overlapping(coreinfo.minDepth, coreinfo.maxDepth)
-        depths = [i.top for i in self.ints if i.top <= coreinfo.maxDepth and i.top >= coreinfo.minDepth]
-        depths.append(coreinfo.maxDepth)
-        print "base = {}, min of {}".format(min(depths), depths)
-        return min(depths)
-    
-    # return list of intervals that overlap interval between top and base
-    def overlapping(self, top, base):
-        o = [i for i in self.ints if (i.base >= top and i.base <= base) or (i.top <= base and i.top >= top) or (i.top <= top and i.base >= base)]
-        return o
+    def canAdd(self, interval):
+        u = union([i.interval for i in self.ints])
+        e = [i for i in u if i.encompasses(interval)]
+        if len(e) > 0:
+            print "Interval {} encompassed by {}".format(interval, e)
+        return len(e) == 0
+
+    # return union of all overlapping Intervals in self.ints    
+    def overs(self, interval):
+        return union([i.interval for i in self.ints if i.interval.overlaps(interval)])
     
     
 # run unit tests on main for now
