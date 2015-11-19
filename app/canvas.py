@@ -1311,7 +1311,10 @@ class DataCanvas(wxBufferedWindow):
 				x = (pt[1] - self.minRange) * self.coefRangeSplice + startX
 				screenpoints.append((x,y))
 		if len(screenpoints) > 1:
-			dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
+			if interval == self.parent.spliceManager.getSelected():
+				dc.SetPen(wx.Pen(wx.GREEN, 3))
+			else:
+				dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
 			dc.DrawLines(screenpoints)
 		else:
 			print "Can't draw {}: contains {} points".format(interval.coreinfo.getName(), len(screenpoints))
@@ -5241,6 +5244,9 @@ class DataCanvas(wxBufferedWindow):
 				self.grabCore = -1
 				self.UpdateDrawing()
 				return
+			else: # no grabCore, select splice interval at current depth if present
+				depth = self.getSpliceDepth(pos[1])
+				self.parent.spliceManager.select(depth)
 		else :
 			self.grabCore = -1
 

@@ -234,6 +234,7 @@ class SpliceInterval:
 class SpliceManager:
     def __init__(self):
         self.ints = [] # list of SpliceIntervals (ordered by depth?)
+        self.selected = None
         
     def count(self):
         return len(self.ints)
@@ -255,7 +256,13 @@ class SpliceManager:
                 result = interval
                 break
         return result
-        
+    
+    def getSelected(self):
+        return self.selected
+    
+    def select(self, depth):
+        self.selected = self.getIntervalAtDepth(depth)
+    
     def add(self, coreinfo):
         interval = Interval(coreinfo.minDepth, coreinfo.maxDepth)
         if self._canAdd(interval):
