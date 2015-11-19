@@ -2063,6 +2063,8 @@ class MainFrame(wx.Frame):
 		if type == "GRA" :
 			type = "Bulk Density(GRA)"
 
+		# brg 11/18/2015: top and bottom are actually min/max section offset for the hole,
+		# NOT min/max depths of hole. Those values are parsed out in ParseData() if needed...
 		# top, bottom, min, max, 
 		# 4 times
 		temp =[]
@@ -2200,11 +2202,11 @@ class MainFrame(wx.Frame):
 			start =0
 			last =0
 			last = data.find(",", start)
-			# min
+			# brg 11/18/2015: Minimum depth of hole...apparently we just toss this value
 			value = float(data[start:last]) 
 			start = last +1
 			last = data.find(",", start)
-			# max
+			# brg 11/18/2015: Maximum depth of hole...used only for self.ScrollMax
 			value = float(data[start:last]) 
 			self.ScrollMax = value
 			start = last +1

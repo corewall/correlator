@@ -4323,6 +4323,8 @@ class DataFrame(wx.Panel):
 			self.parent.autoPanel.saveButton.Enable(True)
 			self.parent.splicePanel.altButton.Enable(False)
 			self.parent.splicePanel.newButton.Enable(False)
+			
+		self.parent.Window.PrintHoleSummary()
 
 		return True
 		

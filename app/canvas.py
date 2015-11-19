@@ -132,7 +132,7 @@ def DefaultSpliceTie():
 
 class CoreInfo:
 	def __init__(self, core, leg, site, hole, holeCore, minData, maxData, minDepth, maxDepth,
-				 stretch, type, quality, holeCount):
+				 stretch, type, quality, holeCount, coredata):
 		self.core = core # core index in currently loaded set of holes
 		self.leg = leg # parent hole leg
 		self.site = site # parent hole site
@@ -146,10 +146,14 @@ class CoreInfo:
 		self.type = type # hole data type
 		self.quality = quality # core quality
 		self.holeCount = holeCount # hole's index in currently loaded set of holes
+		self.coredata = coredata # data points comprising core, list of (depth,data) pairs 
 
 	def __repr__(self):
 		return str((self.core, self.leg, self.site, self.hole, self.holeCore, self.minData, self.maxData,
 					self.minDepth, self.maxDepth, self.stretch, self.type, self.quality, self.holeCount))
+		
+	def getName(self):
+		return "{}-{}-{}-{} {} Range: {}-{}".format(self.site, self.leg, self.hole, self.holeCore, self.type, self.minDepth, self.maxDepth)
 
 
 class DragCoreData:
@@ -1219,8 +1223,10 @@ class DataCanvas(wxBufferedWindow):
 			datamax = len(coreData) - 1
 			depthmax, temp = coreData[datamax]
 
+			# 	(core, leg, site, hole, holeCore, minData, maxData, minDepth, maxDepth,
+			#	 stretch, type, quality, holeCount):
 			if smoothed == 0 or smoothed == 5 or smoothed == 6: 
-				coreInfo = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], holedata[0], holedata[3], holedata[4], depthmin, depthmax, holedata[6], holeInfo[2], holedata[8], self.HoleCount)
+				coreInfo = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], holedata[0], holedata[3], holedata[4], depthmin, depthmax, holedata[6], holeInfo[2], holedata[8], self.HoleCount, holedata[10])
 				self.DrawData["CoreInfo"].append(coreInfo)
 
 			self.coreCount = self.coreCount + 1
@@ -1241,115 +1247,77 @@ class DataCanvas(wxBufferedWindow):
 
 		return type
 
+	def PrintHoleSummary(self):
+		print "{} holes in self.HoleData".format(len(self.HoleData))
+		for h in self.HoleData:
+			hole = h[0] # hole data is added to a silly list where it's the only member, pull it out now
+			# brg 11/18/2015: 
+			# holeinfo: site, exp, type, ??minSecDepth, ??maxSecDepth, dataMin, dataMax, hole name (e.g. 'A'), core count
+			# min/maxSecDepth appear to be the minimum and maximum top/bottom offset in the hole: not sure why we'd
+			# want to track this in the context of a hole. May be a bug, but I don't think that data is used much if at all.
+			# True hole min/max depths are available in the data returned from C++ side.
+			hi = hole[0]
+			print "hole: {}-{} {} type = {}, contains {} cores".format(hi[1], hi[0], hi[7], hi[2], hi[8])
+			for core in hole[1:]:
+				ci = self.findCoreInfoByHoleCoreType(hi[7], core[0], hi[2])
+				print ci
+			print "##########################################\n\n"
 
-	def DrawSplice(self, dc, hole, smoothed):
-		dc.SetTextForeground(self.colorDict['foreground'])
-		dc.SetFont(self.font2)
-		self.FirstDepth = 999.99
-
-		holeInfo = hole[0]
-		forcount = holeInfo[8] 
-		gap = (holeInfo[6] - holeInfo[5]) / 5 
-
+	def _SetSpliceRangeCoef(self, smoothed):
 		modifiedType = "splice"
-		if smoothed == 7 :
+		if smoothed == 7:
 			modifiedType = "altsplice"
-
-		for r in self.range :
-			if r[0] == modifiedType :
+		for r in self.range:
+			if r[0] == modifiedType:
 				self.minRange = r[1]
 				self.maxRange = r[2]
-				if r[3] != 0.0 :
+				if r[3] != 0.0:
 					self.coefRangeSplice = self.holeWidth / r[3]
-				else :
-					self.coefRangeSplice = 0 
+				else:
+					self.coefRangeSplice = 0
 				self.smooth_id = r[4]
 				break
-
-		if smoothed != 6 : 
-			self.smooth_id = -1 
-
-		type = self.selectedType
-		if self.multipleType == True :
-			type = "Multiple data type"
-
-		# 0 : unsmoothed, 1 : smoothed, 2 : both
-		if smoothed == 0 or smoothed == 1 :
-			rangeMax = self.splicerX + 50
-			if self.LogClue == True and self.LogTieList != [] :
-				for logtie_data in self.LogTieList : 
-					points_list = logtie_data[1]
-					if logtie_data[0] == 0 :
-						i = 0
-						dc.SetPen(wx.Pen(self.colorDict['mbsf'], 1))
-						for point in points_list : 
-							if i == 0 : 
-								depth = point
-								y = self.startDepth + (depth - self.rulerStartDepth) * (self.length / self.gap)
-								dc.DrawLines(((rangeMax, y), (rangeMax + 15, y)))
-								i = 1
-							else : 
-								i = 0 
-
-			dc.DrawText("Leg: " + holeInfo[1] + " Site: " + holeInfo[0] + " Hole: " + "Splice", rangeMax, 5) 
-			dc.DrawText(type, rangeMax, 25)
-			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-			dc.DrawLines(((rangeMax, self.startDepth - 20), (rangeMax, self.Height)))
-
-		elif smoothed == 3 :
-			rangeMax = self.splicerX + self.holeWidth + 100
-			dc.DrawText("Leg: " + holeInfo[1] + " Site: " + holeInfo[0] + " Hole: " + "ELD", rangeMax, 5) 
-			dc.DrawText(type, rangeMax, 25)
-			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-			dc.DrawLines(((rangeMax, self.startDepth - 20), (rangeMax, self.Height)))
-		elif smoothed == 7 : # draw alternate splice
-			type = self.altType
-			if self.altMultipleType == True :
-				type = "Multiple data type"
-
-			rangeMax = self.splicerX + self.holeWidth * 2 + 150
-			dc.DrawText("Leg: " + holeInfo[1] + " Site: " + holeInfo[0] + " Hole: " + "Splice", rangeMax, 5) 
-			dc.DrawText(type, rangeMax, 25)
-
-			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-			dc.DrawLines(((rangeMax, self.startDepth - 20), (rangeMax, self.Height)))
-
-			hole_core = holeInfo[7]
-			len_hole = len(hole) - 1;	
-			if len_hole == 0:
-				return
-			if self.MainViewMode == True :
-				for i in range(len_hole) : 
-					holedata = hole[i + 1]
-					self.DrawSpliceCore(dc, -1, holedata, 7, hole_core + holedata[0])
-			return
+			
+	def _UpdateSpliceRange(self, datamin, datamax):
+		for r in self.range:
+			if r[0] == "splice":
+				self.range.remove(r)
+				break
+		self.range.append(("splice", datamin, datamax, datamax - datamin, 0, False))
 		
-		len_hole = len(hole) - 1
-		if len_hole == 0:
-			return
+	def DrawIntervalEdges(self, dc, interval, drawing_start, startX):
+		dc.SetPen(wx.Pen(wx.WHITE, 2))
+		liney = self.startDepth + (interval.top() - self.SPrulerStartDepth) * (self.length / self.gap)
+		dc.DrawLine(startX, liney, startX + 50, liney)
+		liney = self.startDepth + (interval.bot() - self.SPrulerStartDepth) * (self.length / self.gap)
+		dc.DrawLine(startX, liney, startX + 50, liney)
+		
+	def DrawSpliceInterval(self, dc, interval, drawing_start, startX):
+		self.DrawIntervalEdges(dc, interval, drawing_start, startX)
+		
+		intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.top() and pt[0] <= interval.bot()]
+		screenpoints = []
+		for pt in intdata:
+			if pt[0] >= drawing_start and pt[0] <= self.SPrulerEndDepth:
+				y = self.startDepth + (pt[0] - self.SPrulerStartDepth) * (self.length / self.gap)
+				x = (pt[1] - self.minRange) * self.coefRangeSplice + startX
+				screenpoints.append((x,y))
+		if len(screenpoints) > 1:
+			dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
+			dc.DrawLines(screenpoints)
+		else:
+			print "Can't draw {}: contains {} points".format(interval.coreinfo.getName(), len(screenpoints))
 
-		hole_core = holeInfo[7]
-		index = 0 
-		ret = 0
-		#self.lastSpliceX = -999.99 
-		splicesize = len(self.SpliceCore) 
-		if self.MainViewMode == True : # draw splice
-			for i in range(len_hole) : 
-				holedata = hole[i + 1]
-				if index < splicesize :
-					self.DrawSpliceCore(dc, self.SpliceCore[index], holedata, smoothed, hole_core + holedata[0])
-					index = index + 1 
-		else :
-			self.AgeOffset = 0.0
-			self.prevDepth = 0.0
-			for i in range(len_hole) :                             
-				holedata = hole[i + 1]
-				if index < splicesize :
-					ret = self.DrawAgeSpliceCore(dc, self.SpliceCore[index], holedata[10], smoothed, holedata[7])
-					index = index + 1 
-					if ret == False :
-						break
-
+	def DrawSplice(self, dc, hole, smoothed):
+		if self.parent.spliceManager.count() > 0:
+			datamin, datamax = self.parent.spliceManager.datarange()
+			self._UpdateSpliceRange(datamin, datamax)
+			self._SetSpliceRangeCoef(smoothed)
+			
+			drawing_start = self.SPrulerStartDepth - 5.0
+			startX = self.splicerX + 50
+			for si in self.parent.spliceManager.ints:
+				self.DrawSpliceInterval(dc, si, drawing_start, startX)
 
 	def SaveAge(self, file):
 		splicesize = len(self.SpliceCore) 
@@ -2873,9 +2841,8 @@ class DataCanvas(wxBufferedWindow):
 		dc.DrawRectangle(0, 0, self.compositeX, self.Height)
 
 		if self.spliceWindowOn == 1 :
-			dc.DrawRectangle(self.splicerX - 45, 0, 45, self.Height)
-			#dc.DrawRectangle(self.splicerX-45, 0, self.Width, self.Height)
-			dc.DrawRectangle(self.splicerX - 45, 0, self.Width, self.startDepth)
+			dc.DrawRectangle(self.splicerX - 45, 0, 45, self.Height) # ruler column
+			dc.DrawRectangle(self.splicerX - 45, 0, self.Width, self.startDepth) # header
 
 			for data in self.AltSpliceData:
 				for r in data:
@@ -2895,10 +2862,11 @@ class DataCanvas(wxBufferedWindow):
 				splice_data = self.SpliceData
 			smooth_flag = 0 
 			if self.ShowSplice == True :
-				for data in splice_data:
-					for r in data:
-						hole = r 
-						self.DrawSplice(dc, hole, smooth_flag)
+				self.DrawSplice(dc, None, None)
+# 				for data in splice_data:
+# 					for r in data:
+# 						hole = r 
+# 						self.DrawSplice(dc, hole, smooth_flag)
 
 				if self.ShowLog == True and self.LogData != [] and self.LogSpliceData == [] :
 					for data in splice_data:
@@ -5102,7 +5070,6 @@ class DataCanvas(wxBufferedWindow):
 		self.grabScrollC = 0
 		self.selectScroll = 0
 
-
 	def OnMainMouseUp(self, event):
 		pos = event.GetPositionTuple()
 
@@ -5260,92 +5227,10 @@ class DataCanvas(wxBufferedWindow):
 					self.UpdateDrawing()
 					return
 
-				if len(self.SpliceCore) == 0: # add first splice core
-					ret = self.GetDataInfo(self.grabCore)
-					if ret[3] == '0': 
-						#type = self.GetTypeID(ret[2])
-						type = ret[2]
-						splice_data = py_correlator.first_splice(ret[0], ret[1], self.parent.smoothDisplay, 0, type)
-						self.parent.splicePanel.OnButtonEnable(4, True)
-						self.autocoreNo = []
-						type = self.GetTypeID(ret[2])
+				# otherwise, something was added to splice, deal with that.
+				coreinfo = self.findCoreInfoByIndex(self.grabCore)
+				self.parent.AddSpliceCore(coreinfo)
 
-						s = "Splice(First): hole " + str(ret[0]) + " core " + str(ret[1]) + ", " + str(type) + "\n\n"
-						self.parent.logFileptr.write(s)
-
-						self.parent.filterPanel.OnRegisterSplice()
-						new_r = None
-						splice_range = None
-						type_temp = ret[2]
-						if type_temp == "Natural Gamma" :
-							type_temp = "NaturalGamma"
-						for r in self.range :
-							if r[0] == type_temp :
-								new_r = r 
-							elif r[0] == "splice" :
-								splice_range = r
-
-						newrange = "splice", new_r[1], new_r[2], new_r[3], 0, new_r[5] 
-						if splice_range != None :
-							self.range.remove(splice_range)
-						self.range.append(newrange)
-
-						self.multipleType = False 
-
-						py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.splice.table'  , 2)
-						self.parent.SpliceChange = True
-						self.parent.SpliceSectionSend(ret[0], str(ret[1]), -1, "first", -1)
-						self.selectedType = ret[2]
-						self.PreviewFirstNo = 0
-						
-						self.SpliceCore.append(self.grabCore)
-
-						self.Lock = True
-						self.parent.UpdateSPLICE(False)
-						self.parent.UpdateSMOOTH_SPLICE(False)
-						if self.ShowLog == True :
-							self.parent.UpdateLOGSPLICE(False)
-							self.parent.UpdateSMOOTH_LOGSPLICE(False)
-						self.Lock = False
-					else :
-						self.parent.OnShowMessage("Error", "Please choose a core of Good quality.", 1)
-
-				#  >= 1 splice core
-				elif len(self.SpliceCore) >= 1 and self.isLogMode == 0:
-					ret = self.GetDataInfo(self.grabCore)
-					if ret[3] == '0': # ret[3] is core quality: '0' == Good
-						if len(self.SpliceCore) >= 1:
-							if self.CanSpliceCore(self.SpliceCore[-1], self.grabCore):
-								self.CurrentSpliceCore = self.grabCore
-							else:
-								errStr = "The previously spliced core is from Hole %s, please select a core from a different hole." % ret[0]
-								self.parent.OnShowMessage("Error", errStr, 1)
-
-						# UPDATE SETTYPE FOR SPLICE
-						type = ret[2]
-						if type == "Natural Gamma" :
-							type = "NaturalGamma"
-						rangePrev = 0.0
-						rangeNew = 0.0
-						min = 0.0
-						max = 0.0
-						if self.selectedType != type :
-							for r in self.range :
-								if r[0] == type :
-									rangeNew = r[3]
-									min = r[1]
-									max = r[2]
-								elif r[0] == self.selectedType :
-									rangePrev = r[3]
-
-						if rangeNew > rangePrev :
-							self.selectedType = type 
-							self.UpdateRANGE("splice", min, max)
-						if type != self.selectedType :
-							#print "[DEBUG] splice type is changed : " + str(self.selectedType)
-							self.multipleType = True
-					else :
-						self.parent.OnShowMessage("Error", "Please choose a core of Good quality.", 1)
 				self.grabCore = -1
 				self.UpdateDrawing()
 				return

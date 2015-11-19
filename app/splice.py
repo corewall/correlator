@@ -232,17 +232,26 @@ class SpliceManager:
     def __init__(self):
         self.ints = [] # list of SpliceIntervals (ordered by depth?)
         
+    def count(self):
+        return len(self.ints)
+
+    def datarange(self):
+        if len(self.ints) > 0:
+            datamin = min([i.coreinfo.minData for i in self.ints])
+            datamax = max([i.coreinfo.maxData for i in self.ints])
+            return datamin, datamax
+        
     def add(self, coreinfo):
         interval = Interval(coreinfo.minDepth, coreinfo.maxDepth)
-        if self.canAdd(interval):
-            for gap in gaps(self.overs(interval), interval.top, interval.bot):
+        if self._canAdd(interval):
+            for gap in gaps(self._overs(interval), interval.top, interval.bot):
                 self.ints.append(SpliceInterval(coreinfo, gap.top, gap.bot))
                 self.ints = sorted(self.ints, key=lambda i: i.top())
                 print "Added {}, now = {}".format(interval, self.ints)
         else:
             print "couldn't add interval {}".format(interval)
         
-    def canAdd(self, interval):
+    def _canAdd(self, interval):
         u = union([i.interval for i in self.ints])
         e = [i for i in u if i.encompasses(interval)]
         if len(e) > 0:
@@ -250,8 +259,9 @@ class SpliceManager:
         return len(e) == 0
 
     # return union of all overlapping Intervals in self.ints    
-    def overs(self, interval):
+    def _overs(self, interval):
         return union([i.interval for i in self.ints if i.interval.overlaps(interval)])
+    
     
     
 # run unit tests on main for now
