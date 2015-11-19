@@ -247,6 +247,14 @@ class SpliceManager:
     def getIntervalsInRange(self, mindepth, maxdepth):
         testInterval = Interval(mindepth, maxdepth)
         return [i for i in self.ints if i.overlaps(testInterval)]
+    
+    def getIntervalAtDepth(self, depth):
+        result = None
+        for interval in self.ints:
+            if interval.contains(depth):
+                result = interval
+                break
+        return result
         
     def add(self, coreinfo):
         interval = Interval(coreinfo.minDepth, coreinfo.maxDepth)

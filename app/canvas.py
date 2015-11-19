@@ -696,6 +696,14 @@ class DataCanvas(wxBufferedWindow):
 	# convert depth to y coordinate - for composite area
 	def getCoord(self, depth):
 		return self.startDepth + (depth - self.rulerStartDepth) * (self.length / self.gap)
+	
+	# convert depth to y coordinate in splice area
+	def getSpliceDepth(self, ycoord):
+		return (ycoord - self.startDepth) / (self.length / self.gap) + self.SPrulerStartDepth
+	
+	# convert y-coordinate to depth in splice area
+	def getSpliceCoord(self, depth):
+		return self.startDepth + (depth - self.SPrulerStartDepth) * (self.length / self.gap)
 
 	def GetMINMAX(self, type):
 		for r in self.range :
@@ -1272,7 +1280,7 @@ class DataCanvas(wxBufferedWindow):
 				self.minRange = r[1]
 				self.maxRange = r[2]
 				if r[3] != 0.0:
-					self.coefRangeSplice = self.holeWidth / r[3]
+					self.coefRangeSplice = self.spliceHoleWidth / r[3]
 				else:
 					self.coefRangeSplice = 0
 				self.smooth_id = r[4]
@@ -2211,8 +2219,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetTextForeground(self.colorDict['foreground'])
 		dc.SetFont(self.font2)
 
-		ycoord = y
-		ycoord = (ycoord - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
+		ycoord = self.getDepth(y) if x < self.splicerX else self.getSpliceDepth(y)
 		unroundedYcoord = ycoord
 		ycoord = round(ycoord, 3)
 		#if flag == 1 :
@@ -2434,7 +2441,7 @@ class DataCanvas(wxBufferedWindow):
 				for r in data:
 					coreIndex, x, y, startx, flag = r
 					coreInfo = self.findCoreInfoByIndex(coreIndex)
-					if coreInfo != None:
+					if coreInfo is not None:
 						type, holeth = self.DrawGraphInfo(dc, coreInfo, flag)
 						self.selectedHoleType = type
 						self.DrawMouseInfo(dc, coreInfo, x, y, startx, flag, type)
@@ -2445,14 +2452,14 @@ class DataCanvas(wxBufferedWindow):
 
 		self.selectedHoleType = type
 
-		if self.MousePos != None :
+		if self.MousePos is not None :
 			dc.SetBrush(wx.TRANSPARENT_BRUSH)
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 			dc.SetTextBackground(self.colorDict['background'])
 			dc.SetTextForeground(self.colorDict['foreground'])
 			#dc.SetFont( self.font2 )
-			ycoord = self.MousePos[1] 
-			ycoord = (ycoord - self.startDepth) / (self.length / self.gap) + self.rulerStartDepth
+			ycoord = self.MousePos[1]
+			ycoord = self.getDepth(ycoord) if self.MousePos[0] < self.splicerX else self.getSpliceDepth(ycoord)
 			ycoord = ycoord * self.GetRulerUnitsFactor()
 			ycoord = round(ycoord, 3)
 			if self.MousePos[0] < self.splicerX :
@@ -5852,18 +5859,16 @@ class DataCanvas(wxBufferedWindow):
 							l.append((n, pos[0], pos[1], x, 1))
 							self.DrawData["MouseInfo"] = l
 							self.DrawData["HighlightCore"] = (x, y, w, h)
-			elif key == "SpliceArea":
-				for s in data :
-					area = s 
-					for r in area:
-						n, x, y, w, h, min, max = r
-						reg = wx.Rect(min, y, max, h)
-						if reg.Inside(wx.Point(pos[0], pos[1])):
-							got = 1
-							l = []
-							self.selectedCore = n
-							l.append((n, pos[0], pos[1], x, 2))
-							self.DrawData["MouseInfo"] = l
+			elif key == "SpliceArea" and self.MousePos[0] > self.splicerX:
+				ydepth = self.getSpliceDepth(pos[1])
+				#print "Mouse at depth {}".format(ydepth)
+				interval = self.parent.spliceManager.getIntervalAtDepth(ydepth)
+				if interval is not None:
+					# BRGTODO 11/18/2015: Splice range and mouseover "data" value
+					# don't match what's displayed in core area, splice seems to have extra stretch...
+					miTuple = (interval.coreinfo.core, pos[0], pos[1], self.splicerX + 50, 0)
+					self.DrawData["MouseInfo"] = [miTuple]
+					got = 1 # must set or DrawData["MouseInfo"] will be cleared
 
 		if self.drag == 1 :
 			got = 1 
