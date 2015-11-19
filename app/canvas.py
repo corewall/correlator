@@ -1287,15 +1287,15 @@ class DataCanvas(wxBufferedWindow):
 		
 	def DrawIntervalEdges(self, dc, interval, drawing_start, startX):
 		dc.SetPen(wx.Pen(wx.WHITE, 2))
-		liney = self.startDepth + (interval.top() - self.SPrulerStartDepth) * (self.length / self.gap)
+		liney = self.startDepth + (interval.getTop() - self.SPrulerStartDepth) * (self.length / self.gap)
 		dc.DrawLine(startX, liney, startX + 50, liney)
-		liney = self.startDepth + (interval.bot() - self.SPrulerStartDepth) * (self.length / self.gap)
+		liney = self.startDepth + (interval.getBot() - self.SPrulerStartDepth) * (self.length / self.gap)
 		dc.DrawLine(startX, liney, startX + 50, liney)
 		
 	def DrawSpliceInterval(self, dc, interval, drawing_start, startX):
 		self.DrawIntervalEdges(dc, interval, drawing_start, startX)
 		
-		intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.top() and pt[0] <= interval.bot()]
+		intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
 		screenpoints = []
 		for pt in intdata:
 			if pt[0] >= drawing_start and pt[0] <= self.SPrulerEndDepth:
@@ -1316,7 +1316,7 @@ class DataCanvas(wxBufferedWindow):
 			
 			drawing_start = self.SPrulerStartDepth - 5.0
 			startX = self.splicerX + 50
-			for si in self.parent.spliceManager.ints:
+			for si in self.parent.spliceManager.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
 				self.DrawSpliceInterval(dc, si, drawing_start, startX)
 
 	def SaveAge(self, file):

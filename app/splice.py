@@ -212,10 +212,13 @@ class SpliceInterval:
         self.interval = Interval(top, bot)
         self.comment = comment
         
-    def top(self):
+    # 11/18/2015 brg: name getTop/Bot() to avoid Python's silence when one
+    # mistakenly uses SpliceInterval.top instead of top(). Confusing since
+    # Interval.top/bot is legitimate. 
+    def getTop(self):
         return self.interval.top
     
-    def bot(self):
+    def getBot(self):
         return self.interval.bot
     
     def overlaps(self, interval):
@@ -241,12 +244,16 @@ class SpliceManager:
             datamax = max([i.coreinfo.maxData for i in self.ints])
             return datamin, datamax
         
+    def getIntervalsInRange(self, mindepth, maxdepth):
+        testInterval = Interval(mindepth, maxdepth)
+        return [i for i in self.ints if i.overlaps(testInterval)]
+        
     def add(self, coreinfo):
         interval = Interval(coreinfo.minDepth, coreinfo.maxDepth)
         if self._canAdd(interval):
             for gap in gaps(self._overs(interval), interval.top, interval.bot):
                 self.ints.append(SpliceInterval(coreinfo, gap.top, gap.bot))
-                self.ints = sorted(self.ints, key=lambda i: i.top())
+                self.ints = sorted(self.ints, key=lambda i: i.getTop())
                 print "Added {}, now = {}".format(interval, self.ints)
         else:
             print "couldn't add interval {}".format(interval)
