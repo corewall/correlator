@@ -105,7 +105,8 @@ class MainFrame(wx.Frame):
 		self.fulls =0
 		self.selectedColumn = 0
 		self.compositePanel = "" 
-		self.splicePanel = "" 
+		self.splicePanel = ""
+		self.spliceIntervalPanel = "" 
 		self.eldPanel = "" 
 		self.filterPanel = ""
 		self.autoPanel = ""

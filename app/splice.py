@@ -265,6 +265,11 @@ class SpliceManager:
     def getSelected(self):
         return self.selected
     
+    def deleteSelected(self):
+        if self.selected in self.ints:
+            self.ints.remove(self.selected)
+            self.selected = None
+    
     def select(self, depth):
         self.selected = self.getIntervalAtDepth(depth)
     

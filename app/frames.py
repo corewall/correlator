@@ -17,6 +17,7 @@ import warnings
 warnings.simplefilter('ignore', numpy.RankWarning) # stifle RankWarnings when computing growth rate
 
 import wx 
+import wx.grid
 from wx.lib import plot
 
 from importManager import py_correlator
@@ -1282,6 +1283,39 @@ class SplicePanel():
 		self.corrPlotCanvas.Draw(gc, xAxis = (-self.leadLagValue , self.leadLagValue), yAxis = (-1, 1))	
 		self.polyline_list = []
 
+
+class SpliceIntervalPanel():
+	def __init__(self, parent, mainPanel):
+		self.mainPanel = mainPanel
+		self.parent = parent
+		self._setupUI()
+		
+	def _setupUI(self):
+		panel = wx.Panel(self.mainPanel, -1)#, style=wx.SIMPLE_BORDER)
+		psz = wx.BoxSizer(wx.VERTICAL)
+		panel.SetSizer(psz)
+
+		self.table = wx.grid.Grid(panel, -1)
+		self.table.SetRowLabelSize(0) # hide row headers
+		self.table.DisableDragRowSize()
+		self.table.CreateGrid(numRows=5, numCols=3)
+		for colidx, label in enumerate(["ID", "Top", "Bot"]):
+			self.table.SetColLabelValue(colidx, label)
+		psz.Add(self.table, 1, wx.EXPAND)
+
+		self.delButton = wx.Button(panel, -1, "Delete Interval")
+		panel.Bind(wx.EVT_BUTTON, self.OnDelete, self.delButton)
+		psz.Add(self.delButton, 0, wx.EXPAND)
+				
+		vbox = wx.BoxSizer(wx.VERTICAL)
+		vbox.Add(panel, 1, wx.EXPAND)
+		self.mainPanel.SetSizer(vbox)
+		
+		#self.table.AutoSize()
+		
+	def OnDelete(self, event):
+		self.parent.spliceManager.deleteSelected()
+		self.parent.Window.UpdateDrawing()
 
 class AutoPanel():
 	def __init__(self, parent, mainPanel):

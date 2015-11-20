@@ -459,6 +459,10 @@ class DataCanvas(wxBufferedWindow):
 		self.splicePanel = wx.Panel(self.sideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
 		self.parent.splicePanel = frames.SplicePanel(self.parent, self.splicePanel)
 		self.splicePanel.Hide()
+		
+		self.spliceIntervalPanel = wx.Panel(self.sideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
+		self.parent.spliceIntervalPanel = frames.SpliceIntervalPanel(self.parent, self.spliceIntervalPanel)
+		self.spliceIntervalPanel.Hide()
 
 		start_pos = 50
 		if platform_name[0] == "Windows" :
@@ -518,6 +522,7 @@ class DataCanvas(wxBufferedWindow):
 
 		self.sideNote.AddPage(self.filterPanel, 'Filter')
 		self.sideNote.AddPage(self.optPanel, 'Preferences')
+		self.sideNote.AddPage(self.spliceIntervalPanel, "Splice Interval")
 		#self.sideNote.AddPage(self.logPanel, 'Report')
 
 		#self.sideNote.AddPage(self.helpPanel, 'Help')
@@ -858,7 +863,13 @@ class DataCanvas(wxBufferedWindow):
 			#self.parent.optPanel.updateItem()
 			self.parent.showSplicePanel = 0 
 			self.parent.showCompositePanel = 0 
-			self.parent.showELDPanel = 0 
+			self.parent.showELDPanel = 0
+		elif note_id == 7:
+			self.spliceIntervalPanel.Show()
+			self.parent.showSplicePanel = 0 
+			self.parent.showCompositePanel = 0 
+			self.parent.showELDPanel = 0
+			
 		#elif note_id == 7 :
 		#	self.logPanel.Show()
 		#	self.parent.showReportPanel = 1
