@@ -2850,10 +2850,9 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetPen(wx.Pen(self.colorDict['background'], 1))
 		dc.DrawRectangle(0, 0, self.compositeX, self.Height)
 
-		if self.spliceWindowOn == 1 :
-			dc.DrawRectangle(self.splicerX - 45, 0, 45, self.Height) # ruler column
-			dc.DrawRectangle(self.splicerX - 45, 0, self.Width, self.startDepth) # header
+		self.DrawRuler(dc)
 
+		if self.spliceWindowOn == 1 :
 			for data in self.AltSpliceData:
 				for r in data:
 					hole = r 
@@ -2970,8 +2969,6 @@ class DataCanvas(wxBufferedWindow):
 			self.DrawStratCore(dc, False)
 			if len(self.SpliceData) > 0 :
 				self.DrawStratCore(dc, True)
-
-		self.DrawRuler(dc)
 
 		if self.grabCore != -1:
 			self.DrawDragCore(dc)

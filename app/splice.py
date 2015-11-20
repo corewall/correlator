@@ -246,8 +246,13 @@ class SpliceManager:
             return datamin, datamax
         
     def getIntervalsInRange(self, mindepth, maxdepth):
-        testInterval = Interval(mindepth, maxdepth)
-        return [i for i in self.ints if i.overlaps(testInterval)]
+        result = []
+        if mindepth < maxdepth:
+            testInterval = Interval(mindepth, maxdepth)
+            result = [i for i in self.ints if i.overlaps(testInterval)]
+        else:
+            print "Bogus search range: mindepth = {}, maxdepth = {}".format(mindepth, maxdepth)
+        return result
     
     def getIntervalAtDepth(self, depth):
         result = None
