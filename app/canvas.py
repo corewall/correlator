@@ -17,6 +17,7 @@ import random, sys, os, re, time, ConfigParser, string
 from importManager import py_correlator
 
 import frames
+import splice
 
 # brg 4/9/2014: Why are we defining our own wxBufferedWindow when
 # wx.BufferedWindow already exists (same interface 'n all) in wx?
@@ -1311,9 +1312,15 @@ class DataCanvas(wxBufferedWindow):
 		liney = self.startDepth + (interval.getBot() - self.SPrulerStartDepth) * (self.length / self.gap)
 		dc.DrawLine(startX, liney, startX + 50, liney)
 		
-	def DrawSpliceInterval(self, dc, interval, drawing_start, startX):
-		self.DrawIntervalEdges(dc, interval, drawing_start, startX)
+	def DrawSpliceIntervalTies(self, dc, interval):
+		dc.SetPen(wx.Pen(wx.Colour(255, 165, 0), 1, style=wx.DOT))
+		dc.SetBrush(wx.Brush(wx.Colour(255, 165, 0)))
+		for depth in [interval.getTop(), interval.getBot()]:
+			ycoord = self.getSpliceCoord(depth)
+			dc.DrawLine(self.splicerX + 50, ycoord, self.splicerX + 50 + self.spliceHoleWidth, ycoord)
+			dc.DrawCircle(self.splicerX + 50 + self.spliceHoleWidth, ycoord, splice.TIE_CIRCLE_RADIUS)
 		
+	def DrawSpliceInterval(self, dc, interval, drawing_start, startX):
 		intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
 		screenpoints = []
 		for pt in intdata:
@@ -1321,14 +1328,15 @@ class DataCanvas(wxBufferedWindow):
 				y = self.startDepth + (pt[0] - self.SPrulerStartDepth) * (self.length / self.gap)
 				x = (pt[1] - self.minRange) * self.coefRangeSplice + startX
 				screenpoints.append((x,y))
-		if len(screenpoints) > 1:
-			if interval == self.parent.spliceManager.getSelected():
-				dc.SetPen(wx.Pen(wx.GREEN, 3))
-			else:
-				dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
-			dc.DrawLines(screenpoints)
+
+		selected = (interval == self.parent.spliceManager.getSelected())
+		if selected:
+			self.DrawSpliceIntervalTies(dc, interval) 
+		if len(screenpoints) >= 1:
+			dc.SetPen(wx.Pen(wx.GREEN, 3)) if selected else	dc.SetPen(wx.Pen(self.colorDict['splice'], 1)) 
+			dc.DrawLines(screenpoints) if (len(screenpoints) > 1) else dc.DrawPoint(screenpoints[0][0], screenpoints[0][1])	
 		else:
-			print "Can't draw {}: contains {} points".format(interval.coreinfo.getName(), len(screenpoints))
+			print "Can't draw {}, it contains 0 points".format(interval.coreinfo.getName())
 
 	def DrawSplice(self, dc, hole, smoothed):
 		if self.parent.spliceManager.count() > 0:
@@ -2223,7 +2231,7 @@ class DataCanvas(wxBufferedWindow):
 		if "HighlightCore" in self.DrawData:
 			tuple = self.DrawData["HighlightCore"]
 			x, y, wid, hit = tuple
-			dc.SetPen(wx.Pen(wx.Colour(128, 128, 128), 1, wx.DOT))
+			dc.SetPen(wx.Pen(wx.Colour(192, 192, 192), 1, wx.DOT))
 			dc.DrawLines(((x - 2, y - 2), (x + wid + 2, y - 2), (x + wid + 2, y + hit + 2), (x - 2, y + hit + 2), (x - 2, y - 2)))
 	
 	def DrawMouseInfo(self, dc, coreInfo, x, y, startx, flag, type):
@@ -4513,18 +4521,21 @@ class DataCanvas(wxBufferedWindow):
 					return
 			count = count + 1
 
-		count = 0
-		for spliceTie in self.SpliceTieData:
-			if (count % 2) == 1:
-				y = self.startDepth + (spliceTie.depth - self.SPrulerStartDepth) * (self.length / self.gap)
-				x = self.splicerX + self.holeWidth + 100
-				reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
-				if reg.Inside(wx.Point(pos[0], pos[1])):
-					if spliceTie.fixed == 0:
-						self.SPselectedTie = count
-						self.activeSPTie = count
-						return
-			count = count + 1
+		# check for click on SpliceIntervalTie - is user starting to drag?
+		for siTie in self.parent.spliceManager.getTies():
+			basex = self.splicerX + 50 + self.spliceHoleWidth
+			basey = self.getSpliceCoord(siTie.depth())
+			rect = wx.Rect(basex - 8, basey - 8, 16, 16)
+			if rect.Inside(wx.Point(pos[0], pos[1])):
+				self.parent.spliceManager.selectTie(siTie)
+				return
+		
+		# select SpliceInterval at click depth
+		if pos[0] >= self.splicerX and pos[0] < self.splicerX + 50 + self.spliceHoleWidth:
+			depth = self.getSpliceDepth(pos[1])
+			if not self.parent.spliceManager.select(depth):
+				self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)
+			return
 
 		count = 0
 		for data in self.LogTieData:
@@ -5252,9 +5263,6 @@ class DataCanvas(wxBufferedWindow):
 				self.grabCore = -1
 				self.UpdateDrawing()
 				return
-			else: # no grabCore, select splice interval at current depth if present
-				depth = self.getSpliceDepth(pos[1])
-				self.parent.spliceManager.select(depth)
 		else :
 			self.grabCore = -1
 
@@ -5315,6 +5323,12 @@ class DataCanvas(wxBufferedWindow):
 			# draw guide 
 			self.OnDrawGuide()
 			self.selectedTie = -1 
+
+		selectedIntervalTie = self.parent.spliceManager.getSelectedTie()
+		if selectedIntervalTie is not None:
+			newdepth = self.getSpliceDepth(currentY)
+			selectedIntervalTie.moveToDepth(newdepth)
+			self.parent.spliceManager.selectTie(None)
 
 		if self.SPselectedTie >= 0 :
 			spliceTie = self.SpliceTieData[self.SPselectedTie]
@@ -5886,6 +5900,14 @@ class DataCanvas(wxBufferedWindow):
 
 		if self.drag == 1 :
 			got = 1 
+			
+		# adjust SpliceIntervalTie's depth if one is selected
+		selectedIntervalTie = self.parent.spliceManager.getSelectedTie()
+		if selectedIntervalTie is not None:
+			depth = self.getSpliceDepth(pos[1])
+			selectedIntervalTie.moveToDepth(depth)
+			self.UpdateDrawing()
+			return
 
 		if self.selectedTie >= 0 :
 			movableTie = self.TieData[self.selectedTie]

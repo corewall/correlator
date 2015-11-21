@@ -8,6 +8,11 @@ Support for the creation and editing of Splice Interval Tables.
 
 import unittest
 
+# drawing constants
+TIE_CIRCLE_RADIUS = 8
+
+
+
 class Interval:
     def __init__(self, top, bot):
         if top >= bot:
@@ -17,6 +22,9 @@ class Interval:
         
     def __repr__(self):
         return "[{} - {}]".format(self.top, self.bot)
+    
+    def valid(self):
+        return self.top < self.bot
     
     def contains(self, val):
         return contains(self, val)
@@ -206,20 +214,36 @@ class TestIntervals(unittest.TestCase):
         self.assertTrue(u5[0].top == 1)
         self.assertTrue(u5[0].bot == 4)
 
+
 class SpliceInterval:
     def __init__(self, coreinfo, top, bot, comment=""):
         self.coreinfo = coreinfo # CoreInfo for core used in this interval
         self.interval = Interval(top, bot)
         self.comment = comment
         
+    def valid(self):
+        return self.interval.valid()
+
     # 11/18/2015 brg: name getTop/Bot() to avoid Python's silence when one
     # mistakenly uses SpliceInterval.top instead of top(). Confusing since
     # Interval.top/bot is legitimate. 
-    def getTop(self):
+    def getTop(self): # depth of top
         return self.interval.top
     
-    def getBot(self):
+    def getBot(self): # depth of bot
         return self.interval.bot
+    
+    def setTop(self, depth):
+        self.interval.top = depth
+        
+    def setBot(self, depth):
+        self.interval.bot = depth
+        
+    def coreTop(self): # minimum depth of core
+        return self.coreinfo.minDepth
+    
+    def coreBot(self): # maximum depth of core
+        return self.coreinfo.maxDepth
     
     def overlaps(self, interval):
         return self.interval.overlaps(interval)
@@ -231,10 +255,48 @@ class SpliceInterval:
         return str(self.interval)
 
 
+def clampBot(spliceInterval, depth):
+    if depth > spliceInterval.coreBot():
+        depth = spliceInterval.coreBot()
+    if depth < spliceInterval.getTop() or depth < spliceInterval.coreTop():
+        depth = max([spliceInterval.getBot(), spliceInterval.coreTop()])
+    return depth
+
+def clampTop(spliceInterval, depth):
+    if depth < spliceInterval.coreTop():
+        depth = spliceInterval.coreTop()
+    if depth > spliceInterval.getBot() or depth > spliceInterval.coreBot():
+        depth = min([spliceInterval.getBot(), spliceInterval.coreBot()])
+    return depth 
+    
+
+# Not sure this is quite right design-wise: I wanted a way for a tie
+# to update its interval's top/bot without needing to know which it's updating.
+# Probably a more elegant way to do this, but it works!
+class SpliceIntervalTie:
+    def __init__(self, interval, clampFunc, depthFunc, moveFunc):
+        self.interval = interval
+        self.clampFunc = clampFunc
+        self.depthFunc = depthFunc
+        self.moveFunc = moveFunc
+        
+    def depth(self):
+        return self.depthFunc(self.interval)
+    
+    def moveToDepth(self, depth):
+        depth = self.clampFunc(self.interval, depth)
+        self.moveFunc(self.interval, depth)
+
+
 class SpliceManager:
     def __init__(self):
-        self.ints = [] # list of SpliceIntervals (ordered by depth?)
-        self.selected = None
+        self.ints = [] # list of SpliceIntervals ordered by top member
+        self.selected = None # currently selected SpliceInterval
+        self.topTie = None
+        self.botTie = None
+        self.selectedTie = None
+        
+        self.errorMsg = "Init State: No errors here, everything is peachy!"
         
     def count(self):
         return len(self.ints)
@@ -261,6 +323,30 @@ class SpliceManager:
                 result = interval
                 break
         return result
+
+    def _canDeselect(self):
+        result = True
+        if self.selected is not None:
+            result = self.selected.valid()
+        return result
+
+    def select(self, depth):
+        good = False
+        if self._canDeselect():
+            good = True
+            selInt = self.getIntervalAtDepth(depth)
+            if (selInt != self.selected):
+                self.selected = selInt
+                self._updateTies()
+        else:
+            self._setErrorMsg("Can't deselect current interval, it has zero length. You may delete.")
+        return good
+    
+    def _setErrorMsg(self, str):
+        self.errorMsg = str
+        
+    def getErrorMsg(self):
+        return self.errorMsg
     
     def getSelected(self):
         return self.selected
@@ -269,9 +355,22 @@ class SpliceManager:
         if self.selected in self.ints:
             self.ints.remove(self.selected)
             self.selected = None
-    
-    def select(self, depth):
-        self.selected = self.getIntervalAtDepth(depth)
+            self.selectTie(None)
+            
+    def selectTie(self, siTie):
+        if siTie in self.getTies():
+            self.selectedTie = siTie
+        elif siTie is None:
+            self.selectedTie = None
+            
+    def getSelectedTie(self):
+        return self.selectedTie
+        
+    def getTies(self):
+        result = []
+        if self.topTie is not None and self.botTie is not None:
+            result = [self.topTie, self.botTie]
+        return result
     
     def add(self, coreinfo):
         interval = Interval(coreinfo.minDepth, coreinfo.maxDepth)
@@ -279,9 +378,16 @@ class SpliceManager:
             for gap in gaps(self._overs(interval), interval.top, interval.bot):
                 self.ints.append(SpliceInterval(coreinfo, gap.top, gap.bot))
                 self.ints = sorted(self.ints, key=lambda i: i.getTop())
-                print "Added {}, now = {}".format(interval, self.ints)
+                print "Added {}, have {} splice intervals: = {}".format(interval, len(self.ints), self.ints)
         else:
             print "couldn't add interval {}".format(interval)
+
+    def _updateTies(self):
+        if self.selected is not None:
+            self.topTie = SpliceIntervalTie(self.selected, clampTop, depthFunc=lambda si:si.getTop(), moveFunc=lambda si,d:si.setTop(d))
+            self.botTie = SpliceIntervalTie(self.selected, clampBot, depthFunc=lambda si:si.getBot(), moveFunc=lambda si,d:si.setBot(d))
+        else:
+            self.topTie = self.botTie = None
         
     def _canAdd(self, interval):
         u = union([i.interval for i in self.ints])
