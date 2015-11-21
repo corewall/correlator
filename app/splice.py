@@ -267,8 +267,7 @@ def clampTop(spliceInterval, depth):
         depth = spliceInterval.coreTop()
     if depth > spliceInterval.getBot() or depth > spliceInterval.coreBot():
         depth = min([spliceInterval.getBot(), spliceInterval.coreBot()])
-    return depth 
-    
+    return depth
 
 # Not sure this is quite right design-wise: I wanted a way for a tie
 # to update its interval's top/bot without needing to know which it's updating.
@@ -284,8 +283,9 @@ class SpliceIntervalTie:
         return self.depthFunc(self.interval)
     
     def moveToDepth(self, depth):
-        depth = self.clampFunc(self.interval, depth)
-        self.moveFunc(self.interval, depth)
+        if self.clampFunc is not None:
+            depth = self.clampFunc(self.interval, depth)
+        self.moveFunc(depth)
 
 
 class SpliceManager:
@@ -365,6 +365,42 @@ class SpliceManager:
             
     def getSelectedTie(self):
         return self.selectedTie
+    
+    def getIntervalAbove(self, interval):
+        result = None
+        idx = self.ints.index(interval)
+        if idx != -1 and idx > 0:
+            result = self.ints[idx - 1]
+        return result
+    
+    def getIntervalBelow(self, interval):
+        result = None
+        idx = self.ints.index(interval)
+        if idx != -1 and idx < len(self.ints) - 1:
+            result = self.ints[idx + 1]
+        return result
+    
+    def moveTopTie(self, depth):
+        intAbove = self.getIntervalAbove(self.selected)
+        if intAbove is not None:
+            if intAbove.getBot() == self.selected.getTop():
+                depth = clampBot(intAbove, depth)
+                intAbove.setBot(depth)
+            else:
+                if depth < intAbove.getBot():
+                    depth = intAbove.getBot() + 0.001 # one mm to prevent equality
+        self.selected.setTop(depth)
+        
+    def moveBotTie(self, depth):
+        intBelow = self.getIntervalBelow(self.selected)
+        if intBelow is not None:
+            if intBelow.getTop() == self.selected.getBot(): # tied, move together
+                depth = clampTop(intBelow, depth)
+                intBelow.setTop(depth)
+            else: # ensure we don't go beyond interval below
+                if depth > intBelow.getTop():
+                    depth = intBelow.getTop() - 0.001 # 1 mm
+        self.selected.setBot(depth)
         
     def getTies(self):
         result = []
@@ -384,8 +420,8 @@ class SpliceManager:
 
     def _updateTies(self):
         if self.selected is not None:
-            self.topTie = SpliceIntervalTie(self.selected, clampTop, depthFunc=lambda si:si.getTop(), moveFunc=lambda si,d:si.setTop(d))
-            self.botTie = SpliceIntervalTie(self.selected, clampBot, depthFunc=lambda si:si.getBot(), moveFunc=lambda si,d:si.setBot(d))
+            self.topTie = SpliceIntervalTie(self.selected, clampTop, depthFunc=lambda si:si.getTop(), moveFunc=lambda d:self.moveTopTie(d))
+            self.botTie = SpliceIntervalTie(self.selected, clampBot, depthFunc=lambda si:si.getBot(), moveFunc=lambda d:self.moveBotTie(d))
         else:
             self.topTie = self.botTie = None
         
