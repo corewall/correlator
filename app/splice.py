@@ -323,6 +323,16 @@ class SpliceManager:
                 result = interval
                 break
         return result
+    
+    def getIntervalAtIndex(self, index):
+        if index < len(self.ints):
+            return self.ints[index]
+        
+    def getDataTypes(self):
+        types = set()
+        for interval in self.ints:
+            types.add(interval.coreinfo.type)
+        return types
 
     def _canDeselect(self):
         result = True

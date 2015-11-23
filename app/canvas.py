@@ -1305,12 +1305,14 @@ class DataCanvas(wxBufferedWindow):
 				break
 		self.range.append(("splice", datamin, datamax, datamax - datamin, 0, False))
 		
-	def DrawIntervalEdges(self, dc, interval, drawing_start, startX):
+	def DrawIntervalEdgeAndName(self, dc, interval, drawing_start, startX):
 		dc.SetPen(wx.Pen(wx.WHITE, 2))
-		liney = self.startDepth + (interval.getTop() - self.SPrulerStartDepth) * (self.length / self.gap)
-		dc.DrawLine(startX, liney, startX + 50, liney)
 		liney = self.startDepth + (interval.getBot() - self.SPrulerStartDepth) * (self.length / self.gap)
-		dc.DrawLine(startX, liney, startX + 50, liney)
+		dc.DrawLine(startX - 20, liney, startX, liney)
+		
+		dc.SetTextForeground(wx.WHITE)
+		coreName = "{}{}".format(interval.coreinfo.hole, interval.coreinfo.holeCore)
+		dc.DrawText(coreName, startX - (dc.GetTextExtent(coreName)[0] + 2), liney - (dc.GetCharHeight() + 2))
 		
 	def DrawSpliceIntervalTies(self, dc, interval):
 		dc.SetPen(wx.Pen(wx.Colour(255, 165, 0), 1, style=wx.DOT))
@@ -1337,12 +1339,25 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawLines(screenpoints) if (len(screenpoints) > 1) else dc.DrawPoint(screenpoints[0][0], screenpoints[0][1])	
 		else:
 			print "Can't draw {}, it contains 0 points".format(interval.coreinfo.getName())
+			
+		self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX)
+			
+	def DrawSpliceInfo(self, dc):
+		firstint = self.parent.spliceManager.getIntervalAtIndex(0)
+		rangeMax = self.splicerX + 50
+		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+		dc.DrawLines(((rangeMax, self.startDepth - 20), (rangeMax, self.Height)))
+		dc.DrawText("Leg: " + firstint.coreinfo.leg + " Site: " + firstint.coreinfo.site + " Hole: Splice", rangeMax, 5)
+		dc.DrawText("Datatypes: " + ','.join(self.parent.spliceManager.getDataTypes()), rangeMax, 25)
+		
+		dc.DrawLines(((rangeMax, self.startDepth - 20), (rangeMax, self.Height))) # dotted line indicating minimum datarange
 
 	def DrawSplice(self, dc, hole, smoothed):
 		if self.parent.spliceManager.count() > 0:
 			datamin, datamax = self.parent.spliceManager.datarange()
 			self._UpdateSpliceRange(datamin, datamax)
 			self._SetSpliceRangeCoef(smoothed)
+			self.DrawSpliceInfo(dc)
 			
 			drawing_start = self.SPrulerStartDepth - 5.0
 			startX = self.splicerX + 50
