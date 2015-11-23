@@ -1354,8 +1354,14 @@ class DataCanvas(wxBufferedWindow):
 
 	def DrawSplice(self, dc, hole, smoothed):
 		if self.parent.spliceManager.count() > 0:
-			datamin, datamax = self.parent.spliceManager.datarange()
-			self._UpdateSpliceRange(datamin, datamax)
+			rangemin, rangemax = None, None
+			for type in self.parent.spliceManager.getDataTypes():
+				datamin, datamax = self.GetMINMAX(type)
+				if datamin < rangemin or rangemin is None:
+					rangemin = datamin
+				if datamax > rangemax or rangemax is None:
+					rangemax = datamax
+			self._UpdateSpliceRange(rangemin, rangemax)
 			self._SetSpliceRangeCoef(smoothed)
 			self.DrawSpliceInfo(dc)
 			
