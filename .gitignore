@@ -4,6 +4,7 @@
 *.[ao]
 
 # ignored directories
+app/.eggs/
 app/build/
 app/dist/
 
