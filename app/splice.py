@@ -12,7 +12,6 @@ import unittest
 TIE_CIRCLE_RADIUS = 8
 
 
-
 class Interval:
     def __init__(self, top, bot):
         if top >= bot:
@@ -269,23 +268,83 @@ def clampTop(spliceInterval, depth):
         depth = min([spliceInterval.getBot(), spliceInterval.coreBot()])
     return depth
 
-# Not sure this is quite right design-wise: I wanted a way for a tie
-# to update its interval's top/bot without needing to know which it's updating.
-# Probably a more elegant way to do this, but it works!
-class SpliceIntervalTie:
-    def __init__(self, interval, clampFunc, depthFunc, moveFunc):
+class SpliceIntervalTopTie:
+    def __init__(self, interval, adjInterval):
         self.interval = interval
-        self.clampFunc = clampFunc
-        self.depthFunc = depthFunc
-        self.moveFunc = moveFunc
+        self.adjInterval = adjInterval # the interval above
         
-    def depth(self):
-        return self.depthFunc(self.interval)
+    def isTied(self):
+        return self.adjInterval is not None and self.interval.getTop() == self.adjInterval.getBot()
     
-    def moveToDepth(self, depth):
-        if self.clampFunc is not None:
-            depth = self.clampFunc(self.interval, depth)
-        self.moveFunc(depth)
+    def depth(self):
+        return self.interval.getTop()
+    
+    def getName(self): # text to display on tie
+        name = ""
+        if self.isTied(): # list topmost core first
+            name = "TIE: {} & {}".format(self.adjInterval.coreinfo.getHoleCoreStr(), self.interval.coreinfo.getHoleCoreStr())
+        else:
+            name = self.interval.coreinfo.getHoleCoreStr() + " top"
+        return name
+    
+    def move(self, depth):
+        depth = self.clampTieTop(depth)
+        # isTied() is based on equality of interval top/bot and adjInterval bot/top, check before changing depth!
+        if self.isTied():
+            self._moveAdj(depth)
+        self.interval.setTop(depth)
+        
+    def _moveAdj(self, depth):
+        self.adjInterval.setBot(depth)
+    
+    def clampTieTop(self, depth):
+        depth = clampTop(self.interval, depth)
+        if self.adjInterval is not None:
+            if self.interval.getTop() == self.adjInterval.getBot():
+                depth = clampBot(self.adjInterval, depth)
+            else:
+                if depth < self.adjInterval.getBot():
+                    depth = self.adjInterval.getBot() + 0.001 # one mm to prevent equality
+        return depth
+    
+class SpliceIntervalBotTie:
+    def __init__(self, interval, adjInterval):
+        self.interval = interval
+        self.adjInterval = adjInterval # the interval above
+        
+    def isTied(self):
+        return self.adjInterval is not None and self.interval.getBot() == self.adjInterval.getTop()
+    
+    def depth(self):
+        return self.interval.getBot()
+    
+    def getName(self): # text to display on tie
+        name = ""
+        if self.isTied(): # list topmost core first
+            name = "TIE: {} & {}".format(self.interval.coreinfo.getHoleCoreStr(), self.adjInterval.coreinfo.getHoleCoreStr())
+        else:
+            name = self.interval.coreinfo.getHoleCoreStr() + " bottom"
+        return name
+    
+    def move(self, depth):
+        depth = self.clampTieBot(depth)
+        # isTied() is based on equality of interval top/bot and adjInterval bot/top, check before changing depth!
+        if self.isTied():
+            self._moveAdj(depth)
+        self.interval.setBot(depth)
+        
+    def _moveAdj(self, depth):
+        self.adjInterval.setTop(depth)
+    
+    def clampTieBot(self, depth):
+        depth = clampBot(self.interval, depth)
+        if self.adjInterval is not None:
+            if self.interval.getBot() == self.adjInterval.getTop():
+                depth = clampTop(self.adjInterval, depth)
+            else:
+                if depth > self.adjInterval.getTop():
+                    depth = self.adjInterval.getTop() - 0.001 # one mm to prevent equality
+        return depth
 
 
 class SpliceManager:
@@ -394,28 +453,6 @@ class SpliceManager:
             result = self.ints[idx + 1]
         return result
     
-    def moveTopTie(self, depth):
-        intAbove = self.getIntervalAbove(self.selected)
-        if intAbove is not None:
-            if intAbove.getBot() == self.selected.getTop():
-                depth = clampBot(intAbove, depth)
-                intAbove.setBot(depth)
-            else:
-                if depth < intAbove.getBot():
-                    depth = intAbove.getBot() + 0.001 # one mm to prevent equality
-        self.selected.setTop(depth)
-        
-    def moveBotTie(self, depth):
-        intBelow = self.getIntervalBelow(self.selected)
-        if intBelow is not None:
-            if intBelow.getTop() == self.selected.getBot(): # tied, move together
-                depth = clampTop(intBelow, depth)
-                intBelow.setTop(depth)
-            else: # ensure we don't go beyond interval below
-                if depth > intBelow.getTop():
-                    depth = intBelow.getTop() - 0.001 # 1 mm
-        self.selected.setBot(depth)
-        
     def getTies(self):
         result = []
         if self.topTie is not None and self.botTie is not None:
@@ -442,8 +479,8 @@ class SpliceManager:
 
     def _updateTies(self):
         if self.selected is not None:
-            self.topTie = SpliceIntervalTie(self.selected, clampTop, depthFunc=lambda si:si.getTop(), moveFunc=lambda d:self.moveTopTie(d))
-            self.botTie = SpliceIntervalTie(self.selected, clampBot, depthFunc=lambda si:si.getBot(), moveFunc=lambda d:self.moveBotTie(d))
+            self.topTie = SpliceIntervalTopTie(self.selected, self.getIntervalAbove(self.selected))
+            self.botTie = SpliceIntervalBotTie(self.selected, self.getIntervalBelow(self.selected))
         else:
             self.topTie = self.botTie = None
         

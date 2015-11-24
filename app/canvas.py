@@ -155,6 +155,9 @@ class CoreInfo:
 		
 	def getName(self):
 		return "{}-{}-{}-{} {} Range: {}-{}".format(self.site, self.leg, self.hole, self.holeCore, self.type, self.minDepth, self.maxDepth)
+	
+	def getHoleCoreStr(self):
+		return "{}{}".format(self.hole, self.holeCore)
 
 
 class DragCoreData:
@@ -1314,13 +1317,18 @@ class DataCanvas(wxBufferedWindow):
 		coreName = "{}{}".format(interval.coreinfo.hole, interval.coreinfo.holeCore)
 		dc.DrawText(coreName, startX - (dc.GetTextExtent(coreName)[0] + 2), liney - (dc.GetCharHeight() + 2))
 		
-	def DrawSpliceIntervalTies(self, dc, interval):
-		dc.SetPen(wx.Pen(wx.Colour(255, 165, 0), 1, style=wx.DOT))
-		dc.SetBrush(wx.Brush(wx.Colour(255, 165, 0)))
-		for depth in [interval.getTop(), interval.getBot()]:
-			ycoord = self.getSpliceCoord(depth)
-			dc.DrawLine(self.splicerX + 50, ycoord, self.splicerX + 50 + self.spliceHoleWidth, ycoord)
-			dc.DrawCircle(self.splicerX + 50 + self.spliceHoleWidth, ycoord, splice.TIE_CIRCLE_RADIUS)
+	def DrawSpliceIntervalTie(self, dc, tie):#interval):
+		dc.SetPen(wx.Pen(wx.WHITE, 1, style=wx.DOT))
+		dc.SetBrush(wx.Brush(wx.WHITE))
+		startx = self.splicerX + 50 # beginning of splice plot area
+		endx = self.splicerX + 100 + self.spliceHoleWidth * 2 # right end of splice guide area
+		ycoord = self.getSpliceCoord(tie.depth())
+		dc.DrawLine(startx, ycoord, endx, ycoord)
+		circlex = startx + self.spliceHoleWidth
+		dc.DrawCircle(circlex, ycoord, splice.TIE_CIRCLE_RADIUS)
+		namestr = tie.getName()
+		namex = circlex - (dc.GetTextExtent(namestr)[0] / 2)
+		dc.DrawText(namestr, namex, ycoord - (splice.TIE_CIRCLE_RADIUS + 12))
 		
 	def DrawSpliceInterval(self, dc, interval, drawing_start, startX):
 		intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
@@ -1333,9 +1341,10 @@ class DataCanvas(wxBufferedWindow):
 
 		selected = (interval == self.parent.spliceManager.getSelected())
 		if selected:
-			self.DrawSpliceIntervalTies(dc, interval) 
+			for tie in self.parent.spliceManager.getTies():
+				self.DrawSpliceIntervalTie(dc, tie) 
 		if len(screenpoints) >= 1:
-			dc.SetPen(wx.Pen(wx.GREEN, 3)) if selected else	dc.SetPen(wx.Pen(self.colorDict['splice'], 1)) 
+			dc.SetPen(wx.Pen(wx.GREEN, 2)) if selected else	dc.SetPen(wx.Pen(self.colorDict['splice'], 1)) 
 			dc.DrawLines(screenpoints) if (len(screenpoints) > 1) else dc.DrawPoint(screenpoints[0][0], screenpoints[0][1])	
 		else:
 			print "Can't draw {}, it contains 0 points".format(interval.coreinfo.getName())
@@ -1370,7 +1379,6 @@ class DataCanvas(wxBufferedWindow):
 			for si in self.parent.spliceManager.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
 				self.DrawSpliceInterval(dc, si, drawing_start, startX)
 				if si == self.parent.spliceManager.getSelected():
-					self.DrawSpliceIntervalTies(dc, si) 
 					self.DrawSelectedSpliceGuide(dc, si, drawing_start, startX + self.holeWidth)
 			
 	# draw current interval's core in its entirety to the right of the splice
@@ -5368,7 +5376,7 @@ class DataCanvas(wxBufferedWindow):
 		selectedIntervalTie = self.parent.spliceManager.getSelectedTie()
 		if selectedIntervalTie is not None:
 			newdepth = self.getSpliceDepth(currentY)
-			selectedIntervalTie.moveToDepth(newdepth)
+			selectedIntervalTie.move(newdepth)
 			self.parent.spliceManager.selectTie(None)
 
 		if self.SPselectedTie >= 0 :
@@ -5946,7 +5954,7 @@ class DataCanvas(wxBufferedWindow):
 		selectedIntervalTie = self.parent.spliceManager.getSelectedTie()
 		if selectedIntervalTie is not None:
 			depth = self.getSpliceDepth(pos[1])
-			selectedIntervalTie.moveToDepth(depth)
+			selectedIntervalTie.move(depth)
 			self.UpdateDrawing()
 			return
 
