@@ -298,6 +298,8 @@ class SpliceManager:
         
         self.errorMsg = "Init State: No errors here, everything is peachy!"
         
+        self.selChangeListeners = []
+        
     def count(self):
         return len(self.ints)
 
@@ -348,12 +350,13 @@ class SpliceManager:
             if (selInt != self.selected):
                 self.selected = selInt
                 self._updateTies()
+                self._onSelChange()
         else:
             self._setErrorMsg("Can't deselect current interval, it has zero length. You may delete.")
         return good
     
-    def _setErrorMsg(self, str):
-        self.errorMsg = str
+    def _setErrorMsg(self, msg):
+        self.errorMsg = msg
         
     def getErrorMsg(self):
         return self.errorMsg
@@ -366,6 +369,7 @@ class SpliceManager:
             self.ints.remove(self.selected)
             self.selected = None
             self.selectTie(None)
+            self._onSelChange()
             
     def selectTie(self, siTie):
         if siTie in self.getTies():
@@ -427,6 +431,14 @@ class SpliceManager:
                 print "Added {}, have {} splice intervals: = {}".format(interval, len(self.ints), self.ints)
         else:
             print "couldn't add interval {}".format(interval)
+            
+    def addSelChangeListener(self, listener):
+        if listener not in self.selChangeListeners:
+            self.selChangeListeners.append(listener)
+            
+    def removeSelChangeListener(self, listener):
+        if listener in self.selChangeListeners:
+            self.selChangeListeners.remove(listener)
 
     def _updateTies(self):
         if self.selected is not None:
@@ -441,6 +453,10 @@ class SpliceManager:
         if len(e) > 0:
             print "Interval {} encompassed by {}".format(interval, e)
         return len(e) == 0
+    
+    def _onSelChange(self):
+        for listener in self.selChangeListeners:
+            listener()
 
     # return union of all overlapping Intervals in self.ints    
     def _overs(self, interval):
