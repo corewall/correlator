@@ -1369,6 +1369,26 @@ class DataCanvas(wxBufferedWindow):
 			startX = self.splicerX + 50
 			for si in self.parent.spliceManager.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
 				self.DrawSpliceInterval(dc, si, drawing_start, startX)
+				if si == self.parent.spliceManager.getSelected():
+					self.DrawSpliceIntervalTies(dc, si) 
+					self.DrawSelectedSpliceGuide(dc, si, drawing_start, startX + self.holeWidth)
+			
+	# draw current interval's core in its entirety to the right of the splice
+	def DrawSelectedSpliceGuide(self, dc, interval, drawing_start, startX):
+		# vertical dotted line separating splice from next splice hole (or core to be spliced)
+		spliceholewidth = self.splicerX + self.holeWidth + 100
+		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+		dc.DrawLines(((spliceholewidth, self.startDepth - 20), (spliceholewidth, self.Height)))
+
+		screenpoints = []
+		for pt in interval.coreinfo.coredata:
+			if pt[0] >= drawing_start and pt[0] <= self.SPrulerEndDepth:
+				y = self.startDepth + (pt[0] - self.SPrulerStartDepth) * (self.length / self.gap)
+				x = (pt[1] - self.minRange) * self.coefRangeSplice + spliceholewidth
+				screenpoints.append((x,y))
+		if len(screenpoints) >= 1:
+			dc.SetPen(wx.Pen(wx.RED, 1))
+			dc.DrawLines(screenpoints) if (len(screenpoints) > 1) else dc.DrawPoint(screenpoints[0][0], screenpoints[0][1])	
 
 	def SaveAge(self, file):
 		splicesize = len(self.SpliceCore) 
