@@ -548,6 +548,7 @@ class SpliceManager:
         return len(e) == 0
     
     def _onAdd(self):
+        self._updateTies()
         for listener in self.addIntervalListeners:
             listener()
     

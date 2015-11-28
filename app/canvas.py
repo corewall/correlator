@@ -5382,6 +5382,7 @@ class DataCanvas(wxBufferedWindow):
 			newdepth = self.getSpliceDepth(currentY)
 			selectedIntervalTie.move(newdepth)
 			self.parent.spliceManager.selectTie(None)
+			self.parent.spliceIntervalPanel.UpdateUI()
 
 		if self.SPselectedTie >= 0 :
 			spliceTie = self.SpliceTieData[self.SPselectedTie]

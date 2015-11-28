@@ -1365,6 +1365,7 @@ class SpliceIntervalPanel():
 		self._adjustTableRows(rows)
 		for row, si in enumerate(self.parent.spliceManager.ints):
 			self._makeTableRow(row, si)
+		self._updateTableSelection()
 			
 	def _updateTableSelection(self):
 		cursel = self.parent.spliceManager.getSelectedIndex()
@@ -1394,6 +1395,9 @@ class SpliceIntervalPanel():
 			enableBot = botTie.canTie() or botTie.isTied()
 			self.botTieButton.Enable(enableBot)
 			self.botTieButton.SetLabel(self._getButtonLabel(botTie))
+		else:
+			self.topTieButton.Enable(False)
+			self.botTieButton.Enable(False)
 
 	def OnSelectionChange(self):
 		self._updateButtons()
