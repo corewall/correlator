@@ -1302,28 +1302,44 @@ class SpliceIntervalPanel():
 		psz = wx.BoxSizer(wx.VERTICAL)
 		panel.SetSizer(psz)
 
-		self.table = wx.grid.Grid(panel, -1)
+		# interval grid and delete button
+		gridPanel = wx.Panel(panel, -1)
+		gpsz = wx.BoxSizer(wx.VERTICAL)
+		self.table = wx.grid.Grid(gridPanel, -1)
 		self.table.SetRowLabelSize(0) # hide row headers
 		self.table.DisableDragRowSize()
 		self.table.CreateGrid(numRows=0, numCols=3)
 		for colidx, label in enumerate(["ID", "Top", "Bot"]):
 			self.table.SetColLabelValue(colidx, label)
-		panel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectCell)
-		psz.Add(self.table, 3, wx.EXPAND)
+		gridPanel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectCell)
+		gpsz.Add(self.table, 1, wx.EXPAND)
 
-		self.topTieButton = wx.Button(panel, -1, "Edit Top Tie")
-		self.botTieButton = wx.Button(panel, -1, "Edit Bot Tie")
-		self.delButton = wx.Button(panel, -1, "Delete Interval")
-		panel.Bind(wx.EVT_BUTTON, self.OnDelete, self.delButton)
-		psz.Add(self.topTieButton, 1, wx.EXPAND)
-		psz.Add(self.botTieButton, 1, wx.EXPAND)
-		psz.Add(self.delButton, 1, wx.EXPAND)
+		self.delButton = wx.Button(gridPanel, -1, "Delete Interval")
+		gridPanel.Bind(wx.EVT_BUTTON, self.OnDelete, self.delButton)
+		gpsz.Add(self.delButton, 0, wx.EXPAND | wx.ALL, 5)
+		gridPanel.SetSizer(gpsz)
+		psz.Add(gridPanel, 1, wx.EXPAND)
+
+		# tie option buttons (split/tie)
+		tsbox = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Tie Options"), orient=wx.VERTICAL)	
+		tieSplitPanel = wx.Panel(panel, -1)
+		self.topTieButton = wx.Button(tieSplitPanel, -1, "Edit Top Tie")
+		tieSplitPanel.Bind(wx.EVT_BUTTON, self.OnTopTieButton, self.topTieButton)
+		self.botTieButton = wx.Button(tieSplitPanel, -1, "Edit Bot Tie")
+		tieSplitPanel.Bind(wx.EVT_BUTTON, self.OnBotTieButton, self.botTieButton)
+		tspsz = wx.FlexGridSizer(rows=2, cols=2, vgap=10)
+		tspsz.AddGrowableCol(1, proportion=1)
+		tspsz.Add(wx.StaticText(tieSplitPanel, -1, "Top: "), 1, wx.ALIGN_CENTER_VERTICAL)
+		tspsz.Add(self.topTieButton, 1, wx.EXPAND | wx.RIGHT, 10)
+		tspsz.Add(wx.StaticText(tieSplitPanel, -1, "Bottom: "), 1, wx.ALIGN_CENTER_VERTICAL)
+		tspsz.Add(self.botTieButton, 1, wx.EXPAND | wx.RIGHT, 10)
+		tieSplitPanel.SetSizer(tspsz)
+		tsbox.Add(tieSplitPanel, 1, wx.EXPAND)
+		psz.Add(tsbox, 1, wx.EXPAND | wx.TOP, 10)
 				
 		vbox = wx.BoxSizer(wx.VERTICAL)
 		vbox.Add(panel, 1, wx.EXPAND)
 		self.mainPanel.SetSizer(vbox)
-		
-		#self.table.AutoSize()
 	
 	def UpdateUI(self):
 		self._updateTable()
@@ -1355,12 +1371,30 @@ class SpliceIntervalPanel():
 		if cursel == -1:
 			self.table.ClearSelection()
 		else:
-			self.table.SelectRow(cursel) 
+			self.table.SelectRow(cursel)
+			
+	def _getButtonLabel(self, tie):
+		label = "No Action"
+		if tie.canTie():
+			label = "Tie {}".format(tie.getButtonName())
+		elif tie.isTied():
+			label = "Split {}".format(tie.getButtonName())
+		return label
 
 	def _updateButtons(self):
 		hasSel = self.parent.spliceManager.hasSelection() 
 		self.delButton.Enable(hasSel)
-		
+		if hasSel:
+			topTie = self.parent.spliceManager.topTie
+			enableTop = topTie.canTie() or topTie.isTied()
+			self.topTieButton.Enable(enableTop)
+			self.topTieButton.SetLabel(self._getButtonLabel(topTie))
+			
+			botTie = self.parent.spliceManager.botTie
+			enableBot = botTie.canTie() or botTie.isTied()
+			self.botTieButton.Enable(enableBot)
+			self.botTieButton.SetLabel(self._getButtonLabel(botTie))
+
 	def OnSelectionChange(self):
 		self._updateButtons()
 		self._updateTableSelection()
@@ -1371,6 +1405,22 @@ class SpliceIntervalPanel():
 	def OnDelete(self, event):
 		self.parent.spliceManager.deleteSelected()
 		self.UpdateUI()
+		self.parent.Window.UpdateDrawing()
+		
+	def OnTopTieButton(self, event):
+		topTie = self.parent.spliceManager.topTie
+		self.OnTieButton(topTie)
+
+	def OnBotTieButton(self, event):
+		botTie = self.parent.spliceManager.botTie
+		self.OnTieButton(botTie)
+		
+	def OnTieButton(self, tie):
+		if tie.isTied():
+			tie.split()
+		else:
+			tie.tie()
+		self._updateButtons()
 		self.parent.Window.UpdateDrawing()
 	
 	def OnSelectCell(self, event):

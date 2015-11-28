@@ -277,7 +277,11 @@ class SpliceIntervalTopTie:
         return self.adjInterval is not None and self.interval.getTop() == self.adjInterval.getBot()
     
     def canTie(self):
-        return self.adjInterval is not None and self.interval.getTop() == self.adjInterval.getBot() - 0.001 # 1 mm
+        result = False
+        if self.adjInterval is not None:
+            diff = self.interval.getTop() - self.adjInterval.getBot()
+            result = diff <= 0.001 and diff > 0
+        return result
 
     def tie(self):
         if self.canTie():
@@ -298,6 +302,9 @@ class SpliceIntervalTopTie:
             name = self.interval.coreinfo.getHoleCoreStr() + " top"
         return name
     
+    def getButtonName(self):
+        return "{} && {}".format(self.adjInterval.coreinfo.getHoleCoreStr(), self.interval.coreinfo.getHoleCoreStr())
+        
     def move(self, depth):
         depth = self.clampTieTop(depth)
         # isTied() is based on equality of interval top/bot and adjInterval bot/top, check before changing depth!
@@ -321,13 +328,17 @@ class SpliceIntervalTopTie:
 class SpliceIntervalBotTie:
     def __init__(self, interval, adjInterval):
         self.interval = interval
-        self.adjInterval = adjInterval # the interval above
+        self.adjInterval = adjInterval # the interval below
         
     def isTied(self):
         return self.adjInterval is not None and self.interval.getBot() == self.adjInterval.getTop()
 
     def canTie(self):
-        return self.adjInterval is not None and self.interval.getBot() == self.adjInterval.getTop() + 0.001 # 1 mm
+        result = False
+        if self.adjInterval is not None:
+            diff = self.adjInterval.getTop() - self.interval.getBot()
+            result = diff <= 0.001 and diff > 0
+        return result
     
     def tie(self):
         if self.canTie():
@@ -347,6 +358,9 @@ class SpliceIntervalBotTie:
         else:
             name = self.interval.coreinfo.getHoleCoreStr() + " bottom"
         return name
+    
+    def getButtonName(self):
+        return "{} && {}".format(self.interval.coreinfo.getHoleCoreStr(), self.adjInterval.coreinfo.getHoleCoreStr())
     
     def move(self, depth):
         depth = self.clampTieBot(depth)
