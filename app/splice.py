@@ -276,6 +276,17 @@ class SpliceIntervalTopTie:
     def isTied(self):
         return self.adjInterval is not None and self.interval.getTop() == self.adjInterval.getBot()
     
+    def canTie(self):
+        return self.adjInterval is not None and self.interval.getTop() == self.adjInterval.getBot() - 0.001 # 1 mm
+
+    def tie(self):
+        if self.canTie():
+            self.interval.setTop(self.adjInterval.getBot())
+            
+    def split(self):
+        if self.isTied():
+            self.interval.setTop(self.adjInterval.getBot() + 0.001)
+    
     def depth(self):
         return self.interval.getTop()
     
@@ -314,6 +325,17 @@ class SpliceIntervalBotTie:
         
     def isTied(self):
         return self.adjInterval is not None and self.interval.getBot() == self.adjInterval.getTop()
+
+    def canTie(self):
+        return self.adjInterval is not None and self.interval.getBot() == self.adjInterval.getTop() + 0.001 # 1 mm
+    
+    def tie(self):
+        if self.canTie():
+            self.interval.setBot(self.adjInterval.getTop())
+            
+    def split(self):
+        if self.isTied():
+            self.interval.setBot(self.adjInterval.getTop() - 0.001)
     
     def depth(self):
         return self.interval.getBot()
@@ -358,15 +380,10 @@ class SpliceManager:
         self.errorMsg = "Init State: No errors here, everything is peachy!"
         
         self.selChangeListeners = []
+        self.addIntervalListeners = []
         
     def count(self):
         return len(self.ints)
-
-    def datarange(self):
-        if len(self.ints) > 0:
-            datamin = min([i.coreinfo.minData for i in self.ints])
-            datamax = max([i.coreinfo.maxData for i in self.ints])
-            return datamin, datamax
         
     def getIntervalsInRange(self, mindepth, maxdepth):
         result = []
@@ -394,26 +411,39 @@ class SpliceManager:
         for interval in self.ints:
             types.add(interval.coreinfo.type)
         return types
+    
+    def hasSelection(self):
+        return self.selected is not None
 
     def _canDeselect(self):
         result = True
-        if self.selected is not None:
+        if self.hasSelection():
             result = self.selected.valid()
         return result
+    
+    def _updateSelection(self, interval):
+        if (interval != self.selected):
+            self.selected = interval
+            self._updateTies()
+            self._onSelChange()
 
     def select(self, depth):
         good = False
         if self._canDeselect():
             good = True
             selInt = self.getIntervalAtDepth(depth)
-            if (selInt != self.selected):
-                self.selected = selInt
-                self._updateTies()
-                self._onSelChange()
+            self._updateSelection(selInt)
         else:
             self._setErrorMsg("Can't deselect current interval, it has zero length. You may delete.")
         return good
     
+    def selectByIndex(self, index):
+        if self._canDeselect():
+            if len(self.ints) > index:
+                self._updateSelection(self.ints[index])
+        else:
+            self._setErrorMsg("Can't deselect current interval, it has zero length. You may delete.")
+
     def _setErrorMsg(self, msg):
         self.errorMsg = msg
         
@@ -422,6 +452,9 @@ class SpliceManager:
     
     def getSelected(self):
         return self.selected
+    
+    def getSelectedIndex(self):
+        return self.ints.index(self.selected) if self.hasSelection() else -1
     
     def deleteSelected(self):
         if self.selected in self.ints:
@@ -466,6 +499,7 @@ class SpliceManager:
                 self.ints.append(SpliceInterval(coreinfo, gap.top, gap.bot))
                 self.ints = sorted(self.ints, key=lambda i: i.getTop())
                 print "Added {}, have {} splice intervals: = {}".format(interval, len(self.ints), self.ints)
+            self._onAdd()
         else:
             print "couldn't add interval {}".format(interval)
             
@@ -476,9 +510,17 @@ class SpliceManager:
     def removeSelChangeListener(self, listener):
         if listener in self.selChangeListeners:
             self.selChangeListeners.remove(listener)
+            
+    def addAddIntervalListener(self, listener):
+        if listener not in self.addIntervalListeners:
+            self.addIntervalListeners.append(listener)
+            
+    def removeAddIntervalListener(self, listener):
+        if listener in self.addIntervalListeners:
+            self.addIntervalListeners.remove(listener)
 
     def _updateTies(self):
-        if self.selected is not None:
+        if self.hasSelection():
             self.topTie = SpliceIntervalTopTie(self.selected, self.getIntervalAbove(self.selected))
             self.botTie = SpliceIntervalBotTie(self.selected, self.getIntervalBelow(self.selected))
         else:
@@ -490,6 +532,10 @@ class SpliceManager:
         if len(e) > 0:
             print "Interval {} encompassed by {}".format(interval, e)
         return len(e) == 0
+    
+    def _onAdd(self):
+        for listener in self.addIntervalListeners:
+            listener()
     
     def _onSelChange(self):
         for listener in self.selChangeListeners:

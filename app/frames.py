@@ -1288,33 +1288,94 @@ class SpliceIntervalPanel():
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.parent = parent
+		
+		self.tieButton = None
+		self.splitButton = None
+		
 		self._setupUI()
 		
+		self.parent.spliceManager.addSelChangeListener(self.OnSelectionChange)
+		self.parent.spliceManager.addAddIntervalListener(self.OnAdd)
+		
 	def _setupUI(self):
-		panel = wx.Panel(self.mainPanel, -1)#, style=wx.SIMPLE_BORDER)
+		panel = wx.Panel(self.mainPanel, -1)
 		psz = wx.BoxSizer(wx.VERTICAL)
 		panel.SetSizer(psz)
 
 		self.table = wx.grid.Grid(panel, -1)
 		self.table.SetRowLabelSize(0) # hide row headers
 		self.table.DisableDragRowSize()
-		self.table.CreateGrid(numRows=5, numCols=3)
+		self.table.CreateGrid(numRows=0, numCols=3)
 		for colidx, label in enumerate(["ID", "Top", "Bot"]):
 			self.table.SetColLabelValue(colidx, label)
-		psz.Add(self.table, 1, wx.EXPAND)
+		panel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectCell)
+		psz.Add(self.table, 3, wx.EXPAND)
 
+		self.topTieButton = wx.Button(panel, -1, "Edit Top Tie")
+		self.botTieButton = wx.Button(panel, -1, "Edit Bot Tie")
 		self.delButton = wx.Button(panel, -1, "Delete Interval")
 		panel.Bind(wx.EVT_BUTTON, self.OnDelete, self.delButton)
-		psz.Add(self.delButton, 0, wx.EXPAND)
+		psz.Add(self.topTieButton, 1, wx.EXPAND)
+		psz.Add(self.botTieButton, 1, wx.EXPAND)
+		psz.Add(self.delButton, 1, wx.EXPAND)
 				
 		vbox = wx.BoxSizer(wx.VERTICAL)
 		vbox.Add(panel, 1, wx.EXPAND)
 		self.mainPanel.SetSizer(vbox)
 		
 		#self.table.AutoSize()
+	
+	def UpdateUI(self):
+		self._updateTable()
+		self._updateButtons()
+
+	# add cells for SpliceInterval si at specified row
+	def _makeTableRow(self, row, si):
+		self.table.SetCellValue(row, 0, str(si.coreinfo.getHoleCoreStr()))
+		self.table.SetCellValue(row, 1, str(round(si.getTop(), 3)))
+		self.table.SetCellValue(row, 2, str(round(si.getBot(), 3)))
 		
+	def _adjustTableRows(self, rows):
+		currows = self.table.GetNumberRows()
+		if currows > rows:
+			delcount = currows - rows
+			self.table.DeleteRows(pos=rows, numRows=delcount)
+		elif currows < rows:
+			addcount = rows - currows
+			self.table.InsertRows(pos=0, numRows=addcount)
+
+	def _updateTable(self):
+		rows = self.parent.spliceManager.count()
+		self._adjustTableRows(rows)
+		for row, si in enumerate(self.parent.spliceManager.ints):
+			self._makeTableRow(row, si)
+			
+	def _updateTableSelection(self):
+		cursel = self.parent.spliceManager.getSelectedIndex()
+		if cursel == -1:
+			self.table.ClearSelection()
+		else:
+			self.table.SelectRow(cursel) 
+
+	def _updateButtons(self):
+		hasSel = self.parent.spliceManager.hasSelection() 
+		self.delButton.Enable(hasSel)
+		
+	def OnSelectionChange(self):
+		self._updateButtons()
+		self._updateTableSelection()
+		
+	def OnAdd(self):
+		self._updateTable()
+	
 	def OnDelete(self, event):
 		self.parent.spliceManager.deleteSelected()
+		self.UpdateUI()
+		self.parent.Window.UpdateDrawing()
+	
+	def OnSelectCell(self, event):
+		self.parent.spliceManager.selectByIndex(event.GetRow())
+		self.table.SelectRow(event.GetRow()) # select full row
 		self.parent.Window.UpdateDrawing()
 
 class AutoPanel():
