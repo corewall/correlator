@@ -1308,6 +1308,16 @@ class DataCanvas(wxBufferedWindow):
 				break
 		self.range.append(("splice", datamin, datamax, datamax - datamin, 0, False))
 		
+	def _GetSpliceRange(self):
+		rangemin, rangemax = None, None
+		for datatype in self.parent.spliceManager.getDataTypes():
+			datamin, datamax = self.GetMINMAX(datatype)
+			if datamin < rangemin or rangemin is None:
+				rangemin = datamin
+			if datamax > rangemax or rangemax is None:
+				rangemax = datamax
+		return rangemin, rangemax
+		
 	def DrawIntervalEdgeAndName(self, dc, interval, drawing_start, startX):
 		dc.SetPen(wx.Pen(wx.WHITE, 2))
 		liney = self.startDepth + (interval.getBot() - self.SPrulerStartDepth) * (self.length / self.gap)
@@ -1363,13 +1373,7 @@ class DataCanvas(wxBufferedWindow):
 
 	def DrawSplice(self, dc, hole, smoothed):
 		if self.parent.spliceManager.count() > 0:
-			rangemin, rangemax = None, None
-			for type in self.parent.spliceManager.getDataTypes():
-				datamin, datamax = self.GetMINMAX(type)
-				if datamin < rangemin or rangemin is None:
-					rangemin = datamin
-				if datamax > rangemax or rangemax is None:
-					rangemax = datamax
+			rangemin, rangemax = self._GetSpliceRange()
 			self._UpdateSpliceRange(rangemin, rangemax)
 			self._SetSpliceRangeCoef(smoothed)
 			self.DrawSpliceInfo(dc)
@@ -5941,9 +5945,9 @@ class DataCanvas(wxBufferedWindow):
 				#print "Mouse at depth {}".format(ydepth)
 				interval = self.parent.spliceManager.getIntervalAtDepth(ydepth)
 				if interval is not None:
-					# BRGTODO 11/18/2015: Splice range and mouseover "data" value
-					# don't match what's displayed in core area, splice seems to have extra stretch...
-					miTuple = (interval.coreinfo.core, pos[0], pos[1], self.splicerX + 50, 0)
+					splicemin, dummymax = self._GetSpliceRange()
+					datamin = (interval.coreinfo.minData - splicemin) * self.coefRangeSplice + self.splicerX + 50
+					miTuple = (interval.coreinfo.core, pos[0], pos[1], datamin, 0)
 					self.DrawData["MouseInfo"] = [miTuple]
 					got = 1 # must set or DrawData["MouseInfo"] will be cleared
 
