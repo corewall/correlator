@@ -1289,9 +1289,12 @@ class SpliceIntervalPanel():
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.parent = parent
+		self.lastInterval = None # track last-selected row to save properly after selection change
 		
 		self.tieButton = None
 		self.splitButton = None
+		self.deleteButton = None
+		self.saveButton = None
 		
 		self._setupUI()
 		
@@ -1303,24 +1306,32 @@ class SpliceIntervalPanel():
 		psz = wx.BoxSizer(wx.VERTICAL)
 		panel.SetSizer(psz)
 
-		# interval grid and delete button
+		# interval grid, comments, and delete button
 		gridPanel = wx.Panel(panel, -1)
 		gpsz = wx.BoxSizer(wx.VERTICAL)
+		gridbox = wx.StaticBoxSizer(wx.StaticBox(gridPanel, -1, "Splice Intervals"))
 		self.table = wx.grid.Grid(gridPanel, -1)
 		self.table.SetRowLabelSize(0) # hide row headers
 		self.table.DisableDragRowSize()
+		self.table.EnableEditing(False)
 		self.table.CreateGrid(numRows=0, numCols=3)
-		for colidx, label in enumerate(["ID", "Top (m)", "Bot (m)"]):
+		for colidx, label in enumerate(["Core", "Top (m)", "Bot (m)"]):
 			self.table.SetColLabelValue(colidx, label)
 		self.table.SetSelectionMode(wx.grid.Grid.SelectRows)
+		gridbox.Add(self.table, 1, wx.EXPAND)
 		gridPanel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectRow)
-		gpsz.Add(self.table, 3, wx.EXPAND)
+		gpsz.Add(gridbox, 4, wx.EXPAND)
+		
+		cbox = wx.StaticBoxSizer(wx.StaticBox(gridPanel, -1, "Interval Comments"))
+		self.commentText = wx.TextCtrl(gridPanel, -1, "[interval comment]", style=wx.TE_MULTILINE)
+		cbox.Add(self.commentText, 1, wx.EXPAND)
+		gpsz.Add(cbox, 1, wx.EXPAND | wx.ALL, 5)
 
 		self.delButton = wx.Button(gridPanel, -1, "Delete Interval")
 		gridPanel.Bind(wx.EVT_BUTTON, self.OnDelete, self.delButton)
 		gpsz.Add(self.delButton, 0, wx.EXPAND | wx.ALL, 5)
 		gridPanel.SetSizer(gpsz)
-		psz.Add(gridPanel, 1, wx.EXPAND)
+		psz.Add(gridPanel, 2, wx.EXPAND)
 
 		# tie option buttons (split/tie)
 		tsbox = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Tie Options"), orient=wx.VERTICAL)	
@@ -1337,7 +1348,10 @@ class SpliceIntervalPanel():
 		tspsz.Add(self.botTieButton, 1, wx.EXPAND | wx.RIGHT, 10)
 		tieSplitPanel.SetSizer(tspsz)
 		tsbox.Add(tieSplitPanel, 1, wx.EXPAND)
-		psz.Add(tsbox, 2, wx.EXPAND | wx.TOP, 10)
+		psz.Add(tsbox, 1, wx.EXPAND | wx.TOP, 10)
+		
+		self.saveButton = wx.Button(panel, -1, "Save Splice")
+		psz.Add(self.saveButton, 0, wx.EXPAND | wx.ALL, 10)
 				
 		vbox = wx.BoxSizer(wx.VERTICAL)
 		vbox.Add(panel, 1, wx.EXPAND)
@@ -1371,11 +1385,16 @@ class SpliceIntervalPanel():
 			
 	def _updateTableSelection(self):
 		cursel = self.parent.spliceManager.getSelectedIndex()
+		self._saveComment()
 		if cursel == -1:
 			self.table.ClearSelection()
+			self.lastInterval = None
+			self._updateComment("")
 		else:
 			self.table.SelectRow(cursel)
 			self.table.MakeCellVisible(cursel, 0) # scroll to row if not visible
+			self.lastInterval = self.parent.spliceManager.getSelected()
+			self._updateComment(self.lastInterval.comment)
 			
 	def _getButtonLabel(self, tie):
 		label = "No Action"
@@ -1401,6 +1420,13 @@ class SpliceIntervalPanel():
 		else:
 			self.topTieButton.Enable(False)
 			self.botTieButton.Enable(False)
+	
+	def _updateComment(self, comment):
+		self.commentText.SetValue(comment)
+	
+	def _saveComment(self):
+		if self.lastInterval is not None and self.lastInterval.comment != self.commentText.GetValue():
+			self.lastInterval.comment = self.commentText.GetValue()
 
 	def OnSelectionChange(self): # selected SpliceInterval changed
 		self._updateButtons()
@@ -1431,7 +1457,9 @@ class SpliceIntervalPanel():
 		self.parent.Window.UpdateDrawing()
 	
 	def OnSelectRow(self, event):
+		self._saveComment()
 		self.parent.spliceManager.selectByIndex(event.GetRow())
+		self.lastInterval = self.parent.spliceManager.getIntervalAtIndex(event.GetRow())
 		
 		# adjust depth range to show selected interval if necessary
 		visibleMin = self.parent.Window.rulerStartDepth
