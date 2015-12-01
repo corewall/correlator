@@ -1291,11 +1291,6 @@ class SpliceIntervalPanel():
 		self.parent = parent
 		self.lastInterval = None # track last-selected row to save properly after selection change
 		
-		self.tieButton = None
-		self.splitButton = None
-		self.deleteButton = None
-		self.saveButton = None
-		
 		self._setupUI()
 		
 		self.parent.spliceManager.addSelChangeListener(self.OnSelectionChange)
@@ -1368,6 +1363,7 @@ class SpliceIntervalPanel():
 		self.table.SetCellValue(row, 1, str(round(si.getTop(), 3)))
 		self.table.SetCellValue(row, 2, str(round(si.getBot(), 3)))
 		
+	# add/delete rows to match current interval count
 	def _adjustTableRows(self, rows):
 		currows = self.table.GetNumberRows()
 		if currows > rows:
@@ -1377,6 +1373,7 @@ class SpliceIntervalPanel():
 			addcount = rows - currows
 			self.table.InsertRows(pos=0, numRows=addcount)
 
+	# update all row data and selection
 	def _updateTable(self):
 		rows = self.parent.spliceManager.count()
 		self._adjustTableRows(rows)
@@ -1384,6 +1381,7 @@ class SpliceIntervalPanel():
 			self._makeTableRow(row, si)
 		self._updateTableSelection()
 			
+	# update current selection, saving comments
 	def _updateTableSelection(self):
 		cursel = self.parent.spliceManager.getSelectedIndex()
 		self._saveComment()
@@ -1397,6 +1395,7 @@ class SpliceIntervalPanel():
 			self.lastInterval = self.parent.spliceManager.getSelected()
 			self._updateComment(self.lastInterval.comment)
 			
+	# create label for tie/split buttons
 	def _getButtonLabel(self, tie):
 		label = "No Action"
 		if tie.canTie():
@@ -1405,9 +1404,11 @@ class SpliceIntervalPanel():
 			label = "Split {}".format(tie.getButtonName())
 		return label
 
+	# update delete button, tie/split button label and enabled state
 	def _updateButtons(self):
 		hasSel = self.parent.spliceManager.hasSelection() 
 		self.delButton.Enable(hasSel)
+		self.saveButton.Enable(self.parent.spliceManager.count() > 0)
 		if hasSel:
 			topTie = self.parent.spliceManager.topTie
 			enableTop = topTie.canTie() or topTie.isTied()
@@ -1433,14 +1434,15 @@ class SpliceIntervalPanel():
 		if chr(evt.GetKeyCode()) != ',':
 			evt.Skip()
 
-	def OnSelectionChange(self): # selected SpliceInterval changed
+	# selected SpliceInterval changed through SpliceArea click, update GUI to reflect
+	def OnSelectionChange(self):
 		self._updateButtons()
 		self._updateTableSelection()
 		
 	def OnAdd(self): # SpliceInterval added
 		self._updateTable()
 	
-	def OnDelete(self, event): # Delete button
+	def OnDelete(self, event): # handle Delete button
 		self.parent.spliceManager.deleteSelected()
 		self.UpdateUI()
 		self.parent.Window.UpdateDrawing()
