@@ -1324,6 +1324,7 @@ class SpliceIntervalPanel():
 		
 		cbox = wx.StaticBoxSizer(wx.StaticBox(gridPanel, -1, "Interval Comments"))
 		self.commentText = wx.TextCtrl(gridPanel, -1, "[interval comment]", style=wx.TE_MULTILINE)
+		self.commentText.Bind(wx.EVT_CHAR, self._prohibitCommas)
 		cbox.Add(self.commentText, 1, wx.EXPAND)
 		gpsz.Add(cbox, 1, wx.EXPAND | wx.ALL, 5)
 
@@ -1427,6 +1428,10 @@ class SpliceIntervalPanel():
 	def _saveComment(self):
 		if self.lastInterval is not None and self.lastInterval.comment != self.commentText.GetValue():
 			self.lastInterval.comment = self.commentText.GetValue()
+			
+	def _prohibitCommas(self, evt):
+		if chr(evt.GetKeyCode()) != ',':
+			evt.Skip()
 
 	def OnSelectionChange(self): # selected SpliceInterval changed
 		self._updateButtons()
