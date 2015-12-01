@@ -24,6 +24,7 @@ from importManager import py_correlator
 
 import canvas
 import dialog
+import splice
 
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
@@ -1309,10 +1310,11 @@ class SpliceIntervalPanel():
 		self.table.SetRowLabelSize(0) # hide row headers
 		self.table.DisableDragRowSize()
 		self.table.CreateGrid(numRows=0, numCols=3)
-		for colidx, label in enumerate(["ID", "Top", "Bot"]):
+		for colidx, label in enumerate(["ID", "Top (m)", "Bot (m)"]):
 			self.table.SetColLabelValue(colidx, label)
-		gridPanel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectCell)
-		gpsz.Add(self.table, 1, wx.EXPAND)
+		self.table.SetSelectionMode(wx.grid.Grid.SelectRows)
+		gridPanel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectRow)
+		gpsz.Add(self.table, 3, wx.EXPAND)
 
 		self.delButton = wx.Button(gridPanel, -1, "Delete Interval")
 		gridPanel.Bind(wx.EVT_BUTTON, self.OnDelete, self.delButton)
@@ -1335,7 +1337,7 @@ class SpliceIntervalPanel():
 		tspsz.Add(self.botTieButton, 1, wx.EXPAND | wx.RIGHT, 10)
 		tieSplitPanel.SetSizer(tspsz)
 		tsbox.Add(tieSplitPanel, 1, wx.EXPAND)
-		psz.Add(tsbox, 1, wx.EXPAND | wx.TOP, 10)
+		psz.Add(tsbox, 2, wx.EXPAND | wx.TOP, 10)
 				
 		vbox = wx.BoxSizer(wx.VERTICAL)
 		vbox.Add(panel, 1, wx.EXPAND)
@@ -1373,6 +1375,7 @@ class SpliceIntervalPanel():
 			self.table.ClearSelection()
 		else:
 			self.table.SelectRow(cursel)
+			self.table.MakeCellVisible(cursel, 0) # scroll to row if not visible
 			
 	def _getButtonLabel(self, tie):
 		label = "No Action"
@@ -1399,14 +1402,14 @@ class SpliceIntervalPanel():
 			self.topTieButton.Enable(False)
 			self.botTieButton.Enable(False)
 
-	def OnSelectionChange(self):
+	def OnSelectionChange(self): # selected SpliceInterval changed
 		self._updateButtons()
 		self._updateTableSelection()
 		
-	def OnAdd(self):
+	def OnAdd(self): # SpliceInterval added
 		self._updateTable()
 	
-	def OnDelete(self, event):
+	def OnDelete(self, event): # Delete button
 		self.parent.spliceManager.deleteSelected()
 		self.UpdateUI()
 		self.parent.Window.UpdateDrawing()
@@ -1427,10 +1430,17 @@ class SpliceIntervalPanel():
 		self._updateButtons()
 		self.parent.Window.UpdateDrawing()
 	
-	def OnSelectCell(self, event):
+	def OnSelectRow(self, event):
 		self.parent.spliceManager.selectByIndex(event.GetRow())
-		self.table.SelectRow(event.GetRow()) # select full row
-		self.parent.Window.UpdateDrawing()
+		
+		# adjust depth range to show selected interval if necessary
+		visibleMin = self.parent.Window.rulerStartDepth
+		visibleMax = self.parent.Window.rulerEndDepth - 2.0
+		intervalTop = self.parent.spliceManager.getSelected()
+		if not intervalTop.overlaps(splice.Interval(visibleMin, visibleMax)):
+			self.parent.OnUpdateStartDepth(intervalTop.getTop()) # calls UpdateDrawing()
+		else:
+			self.parent.Window.UpdateDrawing()
 
 class AutoPanel():
 	def __init__(self, parent, mainPanel):

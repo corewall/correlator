@@ -643,6 +643,17 @@ class MainFrame(wx.Frame):
 			self.Window.UpdateScroll(2)
 		self.Window.UpdateDrawing()
 		self.Window.UpdateDrawing() # brgtodo 9/6/2014 core area doesn't update completely without, why?
+		
+	# update start depth of graph area
+	def OnUpdateStartDepth(self, startDepth, updateScroll=True):
+		self.Window.rulerStartDepth = startDepth
+		self.Window.SPrulerStartDepth = startDepth
+		# no need to mess with self.Window.length, keep it as is
+		if updateScroll:
+			self.Window.UpdateScroll(1)
+			self.Window.UpdateScroll(2)
+		self.Window.UpdateDrawing()
+		self.Window.UpdateDrawing() # brgtodo 9/6/2014 core area doesn't update completely without, why?
 
 	def OnUpdateDepthStep(self):
 		self.depthStep = py_correlator.getAveDepStep()
