@@ -697,6 +697,18 @@ class DataCanvas(wxBufferedWindow):
 		if result == None:
 			print "Can't find matching coreinfo for holeCount " + str(holeCount)
 		return result
+	
+	def findCoreAffineOffset(self, hole, core):
+		result = None
+		for h in self.HoleData:
+			curhole = h[0] # needless list
+			#print "curhole = {}".format(curhole)
+			if curhole[0][7] == hole:
+				for c in curhole[1:]:
+					#print "c = {}".format(c)
+					if c[0] == core:
+						result = c[5] # affine offset
+		return result
 
 	# convert y coordinate to depth - for composite area
 	def getDepth(self, ycoord):

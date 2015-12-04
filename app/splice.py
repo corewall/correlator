@@ -8,6 +8,10 @@ Support for the creation and editing of Splice Interval Tables.
 
 import unittest
 
+import pandas
+
+import tabularImport
+
 # drawing constants
 TIE_CIRCLE_RADIUS = 8
 
@@ -380,7 +384,8 @@ class SpliceIntervalBotTie:
 
 
 class SpliceManager:
-    def __init__(self):
+    def __init__(self, parent):
+        self.parent = parent
         self.ints = [] # list of SpliceIntervals ordered by top member
         self.selected = None # currently selected SpliceInterval
         self.topTie = None
@@ -436,6 +441,61 @@ class SpliceManager:
             self.selected = interval
             self._updateTies()
             self._onSelChange()
+            
+    def save(self): # better in Data Manager? creating a dependency on MainFrame is not desirable.
+        rows = []
+        
+        secsumm = self.parent.sectionSummary # gross        
+        print str(secsumm.dataframe)
+        print "\n##############################\n"
+        
+        for index, si in enumerate(self.ints):
+            site = si.coreinfo.leg # ugh...mixed up? this site-exp shit is so dumb.
+            hole = si.coreinfo.hole
+            core = si.coreinfo.holeCore
+            print "Saving Interval {}: {}".format(index, si.coreinfo.getHoleCoreStr())
+            
+            offset = self.parent.Window.findCoreAffineOffset(hole, core)
+            print "   affine offset = {}".format(si.coreinfo.getHoleCoreStr(), offset)
+         
+            # section summary is always in CSF-A, remove CCSF-A/MCD offset for calculations
+            mbsfTop = si.getTop() - offset
+            topSection = secsumm.getSectionAtDepth(site, hole, core, mbsfTop)
+            if topSection is not None:
+                topDepth = secsumm.getSectionTop(site, hole, core, topSection)
+                topOffset = round((mbsfTop - topDepth) * 100.0, 1) # section depth in cm
+            else:
+                print "Skipping, couldn't find top section at top CSF depth {}".format(mbsfTop)
+                continue
+            
+            mbsfBot = si.getBot() - offset
+            botSection = secsumm.getSectionAtDepth(site, hole, core, mbsfBot)
+            if botSection is not None:
+                # bottom offset is poorly named: from the interval's bottom depth, it is the
+                # offset from the top (not bottom) of the containing section
+                botDepth = secsumm.getSectionTop(site, hole, core, botSection)
+                botOffset = round((mbsfBot - botDepth) * 100.0, 1) # section depth in cm
+            else:
+                print "Skipping, couldn't find section at bottom CSF depth {}".format(mbsfBot)
+                continue
+            
+            # stub out for now: type for each of top and bottom? "CORE" type per Peter B's request?
+            spliceType = "APPEND"
+            if index < len(self.ints) - 1:
+                if self.ints[index+1].getTop() == si.getBot():
+                    spliceType = "TIE"
+                    
+            print "   topSection {}, offset {}, depth {}, mcdDepth {}\nbotSection {}, offset {}, depth {}, mcdDepth {}\ntype {}, data {}, comment {}".format(topSection, topOffset, mbsfTop, mbsfTop+offset, botSection, botOffset, mbsfBot, mbsfBot+offset, spliceType, si.coreinfo.type, si.comment)
+            
+            series = pandas.Series({'Exp':si.coreinfo.site, 'Site':site, 'Hole':hole, 'Core':core, 'CoreType':'X', \
+                                    'TopSection':topSection, 'TopOffset':topOffset, 'TopDepthCSF':mbsfTop, 'TopDepthCCSF':mbsfTop+offset, \
+                                    'BottomSection':botSection, 'BottomOffset':botOffset, 'BottomDepthCSF':mbsfBot, 'BottomDepthCCSF':mbsfBot+offset, \
+                                    'SpliceType':spliceType, 'DataUsed':si.coreinfo.type, 'Comment':si.comment})
+            rows.append(series)            
+        if len(rows) > 0:
+            df = pandas.DataFrame(columns=tabularImport.SITFormat.req)
+            df = df.append(rows, ignore_index=True)
+            print "{}".format(df)
 
     def select(self, depth):
         good = False
@@ -508,7 +568,7 @@ class SpliceManager:
             for gap in gaps(self._overs(interval), interval.top, interval.bot):
                 self.ints.append(SpliceInterval(coreinfo, gap.top, gap.bot))
                 self.ints = sorted(self.ints, key=lambda i: i.getTop())
-                print "Added {}, have {} splice intervals: = {}".format(interval, len(self.ints), self.ints)
+                #print "Added {}, have {} splice intervals: = {}".format(interval, len(self.ints), self.ints)
             self._onAdd()
         else:
             print "couldn't add interval {}".format(interval)

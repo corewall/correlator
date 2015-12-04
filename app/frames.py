@@ -1347,6 +1347,7 @@ class SpliceIntervalPanel():
 		psz.Add(tsbox, 1, wx.EXPAND | wx.TOP, 10)
 		
 		self.saveButton = wx.Button(panel, -1, "Save Splice")
+		self.saveButton.Bind(wx.EVT_BUTTON, self.OnSave)
 		psz.Add(self.saveButton, 0, wx.EXPAND | wx.ALL, 10)
 				
 		vbox = wx.BoxSizer(wx.VERTICAL)
@@ -1462,6 +1463,10 @@ class SpliceIntervalPanel():
 			tie.tie()
 		self._updateButtons()
 		self.parent.Window.UpdateDrawing()
+		
+	def OnSave(self, event):
+		# new/existing dialog?
+		self.parent.spliceManager.save() 
 	
 	def OnSelectRow(self, event):
 		self._saveComment()

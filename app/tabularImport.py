@@ -77,6 +77,12 @@ MeasurementFormat = TabularFormat("Measurement Data",
 SectionSummaryFormat = TabularFormat("Section Summary", 
                                      ['Exp', 'Site', 'Hole', 'Core', 'CoreType', 'Section', 'TopDepth', 'BottomDepth'])
 
+# Splice Interval Table
+SITFormat = TabularFormat("Splice Interval Table",
+                          ['Exp', 'Site', 'Hole', 'Core', 'CoreType', 'TopSection', 'TopOffset', \
+                           'TopDepthCSF', 'TopDepthCCSF', 'BottomSection', 'BottomOffset', 'BottomDepthCSF', \
+                           'BottomDepthCCSF', 'SpliceType', 'DataUsed', 'Comment'])
+
 class ImportDialog(wx.Dialog):
     def __init__(self, parent, id, path, dataframe, goalFormat):
         wx.Dialog.__init__(self, parent, id, size=(800,600), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
