@@ -517,7 +517,8 @@ class DataCanvas(wxBufferedWindow):
 
 		self.sideNote.AddPage(self.closePanel, 'Close')
 		self.sideNote.AddPage(self.compPanel, 'Composite')
-		self.sideNote.AddPage(self.splicePanel, 'Splice')
+		#self.sideNote.AddPage(self.splicePanel, 'Splice')
+		self.sideNote.AddPage(self.spliceIntervalPanel, "Splice Interval")
 		self.sideNote.AddPage(self.eldPanel, 'Core-Log Integration')
 		#self.sideNote.AddPage(self.eldPanel, 'Correlation')
 
@@ -526,7 +527,6 @@ class DataCanvas(wxBufferedWindow):
 
 		self.sideNote.AddPage(self.filterPanel, 'Filter')
 		self.sideNote.AddPage(self.optPanel, 'Preferences')
-		self.sideNote.AddPage(self.spliceIntervalPanel, "Splice Interval")
 		#self.sideNote.AddPage(self.logPanel, 'Report')
 
 		#self.sideNote.AddPage(self.helpPanel, 'Help')
@@ -834,14 +834,14 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.showELDPanel = 0 
 			self.parent.compositePanel.OnUpdatePlots()
 		elif note_id == 2 :
-			self.splicePanel.Show()
+			#self.splicePanel.Show()
 			self.parent.showSplicePanel = 1
 			self.mode = 2
 			if self.spliceWindowOn == 0 : 
 				self.parent.OnActivateWindow(1)
 			self.parent.showCompositePanel = 0 
 			self.parent.showELDPanel = 0 
-			self.parent.splicePanel.OnUpdate()
+			#self.parent.splicePanel.OnUpdate()
 		elif note_id == 3 :
 			self.mode = 3
 			#if self.ShowAutoPanel == False :

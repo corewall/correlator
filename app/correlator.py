@@ -1405,7 +1405,7 @@ class MainFrame(wx.Frame):
 		self.Window.OnInit()
 
 		self.compositePanel.OnInitUI()
-		self.splicePanel.OnInitUI()
+		#self.splicePanel.OnInitUI()
 		self.eldPanel.OnInitUI()
 		self.autoPanel.OnInitUI(True)
 		self.agePanel.OnInitUI()
