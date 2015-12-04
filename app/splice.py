@@ -518,6 +518,8 @@ class SpliceManager:
                 print "Skipping, couldn't find section at bottom CSF depth {}".format(mbsfBot)
                 continue
             
+            coreType = secsumm.getSectionCoreType(site, hole, core, botSection)
+            
             # stub out for now: type for each of top and bottom? "CORE" type per Peter B's request?
             spliceType = "APPEND"
             if index < len(self.ints) - 1:
@@ -526,7 +528,7 @@ class SpliceManager:
                     
             print "   topSection {}, offset {}, depth {}, mcdDepth {}\nbotSection {}, offset {}, depth {}, mcdDepth {}\ntype {}, data {}, comment {}".format(topSection, topOffset, mbsfTop, mbsfTop+offset, botSection, botOffset, mbsfBot, mbsfBot+offset, spliceType, si.coreinfo.type, si.comment)
             
-            series = pandas.Series({'Exp':si.coreinfo.site, 'Site':site, 'Hole':hole, 'Core':core, 'CoreType':'X', \
+            series = pandas.Series({'Exp':si.coreinfo.site, 'Site':site, 'Hole':hole, 'Core':core, 'CoreType':coreType, \
                                     'TopSection':topSection, 'TopOffset':topOffset, 'TopDepthCSF':mbsfTop, 'TopDepthCCSF':mbsfTop+offset, \
                                     'BottomSection':botSection, 'BottomOffset':botOffset, 'BottomDepthCSF':mbsfBot, 'BottomDepthCCSF':mbsfBot+offset, \
                                     'SpliceType':spliceType, 'DataUsed':si.coreinfo.type, 'Comment':si.comment})

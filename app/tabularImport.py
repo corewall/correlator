@@ -31,6 +31,9 @@ class SectionSummary:
     def getSectionBot(self, site, hole, core, section):
         return self._getSectionValue(site, hole, int(core), section, 'BottomDepth')
     
+    def getSectionCoreType(self, site, hole, core, section):
+        return self._getSectionValue(site, hole, int(core), section, 'CoreType')
+    
     def getSectionAtDepth(self, site, hole, core, depth):
         sec = self._findSectionAtDepth(site, hole, int(core), depth)
         return sec
@@ -51,9 +54,6 @@ class SectionSummary:
         return section
     
     def _findSectionAtDepth(self, site, hole, core, depth):
-        print "find at depth {}...".format(depth)
-#         cores = self._findCore(site, hole, core)
-#         print "found cores: {}".format(cores)
         df = self.dataframe
         section = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core) & (depth >= df.TopDepth) & (depth <= df.BottomDepth)]
         if not section.empty:
