@@ -254,6 +254,9 @@ class SpliceInterval:
     def contains(self, value):
         return self.interval.contains(value)
     
+    def getHoleCoreStr(self):
+        return self.coreinfo.getHoleCoreStr()
+    
     def __repr__(self):
         return str(self.interval)
 

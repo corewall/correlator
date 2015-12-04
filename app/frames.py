@@ -1411,6 +1411,8 @@ class SpliceIntervalPanel():
 		self.delButton.Enable(hasSel)
 		self.saveButton.Enable(self.parent.spliceManager.count() > 0)
 		if hasSel:
+			self.delButton.SetLabel("Delete Interval {}".format(self.parent.spliceManager.getSelected().getHoleCoreStr()))
+			
 			topTie = self.parent.spliceManager.topTie
 			enableTop = topTie.canTie() or topTie.isTied()
 			self.topTieButton.Enable(enableTop)
@@ -1421,6 +1423,7 @@ class SpliceIntervalPanel():
 			self.botTieButton.Enable(enableBot)
 			self.botTieButton.SetLabel(self._getButtonLabel(botTie))
 		else:
+			self.delButton.SetLabel("Delete Interval")
 			self.topTieButton.Enable(False)
 			self.botTieButton.Enable(False)
 	
@@ -1441,7 +1444,7 @@ class SpliceIntervalPanel():
 		self._updateTableSelection()
 		
 	def OnAdd(self): # SpliceInterval added
-		self._updateTable()
+		self.UpdateUI()
 	
 	def OnDelete(self, event): # handle Delete button
 		self.parent.spliceManager.deleteSelected()
