@@ -2814,8 +2814,10 @@ class MainFrame(wx.Frame):
 
 		if self.config.has_option("applications", "tab"):
 			str_temp = self.config.get("applications", "tab")
-			if len(str_temp) > 0 :
-				count = int( str_temp )
+			if len(str_temp) > 0:
+				count = int(str_temp)
+				if count >= self.Window.sideNote.GetPageCount():
+					count = 1
 				self.Window.sideNote.SetSelection(count)
 
 		if self.config.has_option("applications", "leadlag"):
