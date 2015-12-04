@@ -93,8 +93,8 @@ class MessageDialogOLD(wx.Dialog):
 			event.Skip()
 
 class Message3Button(wx.Dialog):
-	def __init__(self, parent, msg):
-		wx.Dialog.__init__(self, parent, -1, "About", size=(330, 130), style= wx.STAY_ON_TOP)
+	def __init__(self, parent, msg, yesLabel="Yes", okLabel="No", cancelLabel="Cancel"):
+		wx.Dialog.__init__(self, parent, -1, "About", style=wx.DEFAULT_DIALOG_STYLE)
 
 		self.Center()
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
@@ -106,17 +106,18 @@ class Message3Button(wx.Dialog):
 		panel1.SetSizer(sizer)
 		vbox_top.Add(panel1)
 
-		grid = wx.GridSizer(1,3)
-		okBtn = wx.Button(self, wx.ID_YES, "Yes")
+		grid = wx.BoxSizer(wx.HORIZONTAL)
+		okBtn = wx.Button(self, wx.ID_YES, yesLabel)
 		self.Bind(wx.EVT_BUTTON, self.OnYES, okBtn)
-		grid.Add(okBtn)
-		noBtn = wx.Button(self, wx.ID_OK, "No")
-		grid.Add(noBtn)
-		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Cancel")
-		grid.Add(cancelBtn, 0, wx.LEFT, 10)
-		vbox_top.Add(grid, 0, wx.LEFT, 40)
+		grid.Add(okBtn, 1, wx.LEFT | wx.RIGHT, 5)
+		noBtn = wx.Button(self, wx.ID_OK, okLabel)
+		grid.Add(noBtn, 1, wx.LEFT | wx.RIGHT, 5)
+		cancelBtn = wx.Button(self, wx.ID_CANCEL, cancelLabel)
+		grid.Add(cancelBtn, 1, wx.LEFT | wx.RIGHT, 5)
+		vbox_top.Add(grid, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
 
 		self.SetSizer(vbox_top)
+		self.GetSizer().Fit(self)
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
 	def OnYES(self, event):

@@ -5429,6 +5429,7 @@ class DataCanvas(wxBufferedWindow):
 			selectedIntervalTie.move(newdepth)
 			selectedIntervalTie._setClampMessage("")
 			self.parent.spliceManager.selectTie(None)
+			self.parent.spliceManager.setDirty()
 			self.parent.spliceIntervalPanel.UpdateUI()
 
 		if self.SPselectedTie >= 0 :

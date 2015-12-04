@@ -800,17 +800,16 @@ class MainFrame(wx.Frame):
 			self.client = None
 			print "[DEBUG] Close connection to Corelyzer"
 
-		if self.CurrentDir != '' :
-			if self.AffineChange == True or self.SpliceChange == True or self.EldChange == True or self.AgeChange == True or self.TimeChange == True :
-				ret = self.OnShowMessage("About", "Do you want to save changes?", 2)
-				if ret == wx.ID_OK :
-					self.topMenu.OnSAVE(event)
+		if self.CurrentDir != '' and self.CHECK_CHANGES():
+			ret = self.OnShowMessage("About", "Do you want to save changes?", 2)
+			if ret == wx.ID_OK :
+				self.topMenu.OnSAVE(event)
 
-					self.AffineChange = False 
-					self.SpliceChange = False 
-					self.EldChange = False 
-					self.AgeChange = False 
-					self.TimeChange = False 
+				self.AffineChange = False 
+				self.SpliceChange = False 
+				self.EldChange = False 
+				self.AgeChange = False 
+				self.TimeChange = False 
 
 		ret = self.OnShowMessage("About", "Do you want to Exit?", 2)
 		if ret == wx.ID_CANCEL :
@@ -837,10 +836,8 @@ class MainFrame(wx.Frame):
 
 
 	def CHECK_CHANGES(self):
-		if self.AffineChange == True or self.SpliceChange == True or self.EldChange == True or self.AgeChange == True or self.TimeChange == True:
-			return True
-		return False
-
+		spliceChange = self.spliceManager.isDirty()
+		return self.AffineChange or spliceChange or self.EldChange or self.AgeChange or self.TimeChange
 
 	def OnActivateWindow(self, event):
 		if self.Window.spliceWindowOn == 1 :

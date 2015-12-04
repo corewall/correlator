@@ -430,6 +430,7 @@ class SpliceManager:
         self.topTie = None
         self.botTie = None
         self.selectedTie = None
+        self.dirty = False # need save?
         
         self.errorMsg = "Init State: No errors here, everything is peachy!"
         
@@ -481,24 +482,28 @@ class SpliceManager:
             self._updateTies()
             self._onSelChange()
             
-    def save(self): # better in Data Manager? creating a dependency on MainFrame is not desirable.
+    def save(self, filepath): # better in Data Manager? creating a dependency on MainFrame is not desirable.
+        # better to create dependencies on SectionSummary and a non-existent "HoleDatabase" class, though
+        # HoleData will do...though we only need it for affine stuff, so possibly an AffineManager?
+        print "Saving splice to {}".format(filepath)
+        
         rows = []
         
-        secsumm = self.parent.sectionSummary # gross        
-        print str(secsumm.dataframe)
-        print "\n##############################\n"
+        secsumm = self.parent.sectionSummary
+        #print str(secsumm.dataframe)
+        #print "\n##############################\n"
         
         for index, si in enumerate(self.ints):
             site = si.coreinfo.leg # ugh...mixed up? this site-exp shit is so dumb.
             hole = si.coreinfo.hole
             core = si.coreinfo.holeCore
-            print "Saving Interval {}: {}".format(index, si.coreinfo.getHoleCoreStr())
+            #print "Saving Interval {}: {}".format(index, si.coreinfo.getHoleCoreStr())
             
             offset = self.parent.Window.findCoreAffineOffset(hole, core)
-            print "   affine offset = {}".format(si.coreinfo.getHoleCoreStr(), offset)
+            #print "   affine offset = {}".format(si.coreinfo.getHoleCoreStr(), offset)
          
             # section summary is always in CSF-A, remove CCSF-A/MCD offset for calculations
-            mbsfTop = si.getTop() - offset
+            mbsfTop = round(si.getTop(), 3) - offset
             topSection = secsumm.getSectionAtDepth(site, hole, core, mbsfTop)
             if topSection is not None:
                 topDepth = secsumm.getSectionTop(site, hole, core, topSection)
@@ -507,7 +512,7 @@ class SpliceManager:
                 print "Skipping, couldn't find top section at top CSF depth {}".format(mbsfTop)
                 continue
             
-            mbsfBot = si.getBot() - offset
+            mbsfBot = round(si.getBot(), 3) - offset
             botSection = secsumm.getSectionAtDepth(site, hole, core, mbsfBot)
             if botSection is not None:
                 # bottom offset is poorly named: from the interval's bottom depth, it is the
@@ -526,7 +531,7 @@ class SpliceManager:
                 if self.ints[index+1].getTop() == si.getBot():
                     spliceType = "TIE"
                     
-            print "   topSection {}, offset {}, depth {}, mcdDepth {}\nbotSection {}, offset {}, depth {}, mcdDepth {}\ntype {}, data {}, comment {}".format(topSection, topOffset, mbsfTop, mbsfTop+offset, botSection, botOffset, mbsfBot, mbsfBot+offset, spliceType, si.coreinfo.type, si.comment)
+            #print "   topSection {}, offset {}, depth {}, mcdDepth {}\nbotSection {}, offset {}, depth {}, mcdDepth {}\ntype {}, data {}, comment {}".format(topSection, topOffset, mbsfTop, mbsfTop+offset, botSection, botOffset, mbsfBot, mbsfBot+offset, spliceType, si.coreinfo.type, si.comment)
             
             series = pandas.Series({'Exp':si.coreinfo.site, 'Site':site, 'Hole':hole, 'Core':core, 'CoreType':coreType, \
                                     'TopSection':topSection, 'TopOffset':topOffset, 'TopDepthCSF':mbsfTop, 'TopDepthCCSF':mbsfTop+offset, \
@@ -536,7 +541,9 @@ class SpliceManager:
         if len(rows) > 0:
             df = pandas.DataFrame(columns=tabularImport.SITFormat.req)
             df = df.append(rows, ignore_index=True)
-            print "{}".format(df)
+            #print "{}".format(df)
+            tabularImport.writeToFile(df, filepath)
+            self.setDirty(False)
 
     def select(self, depth):
         good = False
@@ -561,6 +568,12 @@ class SpliceManager:
     def getErrorMsg(self):
         return self.errorMsg
     
+    def isDirty(self):
+        return self.dirty
+
+    def setDirty(self, dirty=True):
+        self.dirty = dirty
+
     def getSelected(self):
         return self.selected
     
@@ -572,6 +585,7 @@ class SpliceManager:
             self.ints.remove(self.selected)
             self.selected = None
             self.selectTie(None)
+            self.setDirty()
             self._onSelChange()
             
     def selectTie(self, siTie):
@@ -646,6 +660,7 @@ class SpliceManager:
     
     def _onAdd(self):
         self._updateTies()
+        self.setDirty()
         for listener in self.addIntervalListeners:
             listener()
     

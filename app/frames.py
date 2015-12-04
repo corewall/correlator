@@ -141,11 +141,7 @@ class TopMenuFrame(wx.Frame):
 			self.parent.OnShowMessage("Error", "There is no data loaded", 1)
 			return
 
-		splice_flag = self.parent.SpliceChange
-		if self.parent.DoesFineTune() == True :
-			splice_flag = True
-			self.parent.OnShowMessage("Information", "You need to save splice table too.", 1)
-
+		splice_flag = self.parent.spliceManager.isDirty()
 		savedialog = dialog.SaveTableDialog(None, -1, self.parent.AffineChange, splice_flag)
 		savedialog.Centre()
 		ret = savedialog.ShowModal()
@@ -168,12 +164,10 @@ class TopMenuFrame(wx.Frame):
 			self.parent.logFileptr.write(s)
 			self.parent.AffineChange = False  
 		# splice
-		if splice_flag == True :
-			if self.parent.Window.SpliceData != [] :
+		if savedialog.spliceCheck.GetValue():
+			if self.parent.spliceManager.count() > 0:
 				filename = self.parent.dataFrame.Add_TABLE("SPLICE" , "splice", savedialog.spliceUpdate.GetValue(), False, "")
-				py_correlator.saveAttributeFile(filename, 2)
-
-				self.parent.autoPanel.SetCoreList(1, [])
+				self.parent.spliceManager.save(filename)
 
 				s = "Save Splice Table: " + filename + "\n\n"
 				self.parent.logFileptr.write(s)
@@ -534,7 +528,7 @@ class CompositePanel():
 		self.growthPlotCanvas.Show(True)
 
 		self.grPanel.GetSizer().Add(self.growthPlotCanvas, 1, wx.EXPAND)
-        
+
 		grSubPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
 		grSubPanel.GetSizer().Add(self.grText, 1, wx.ALIGN_CENTER_VERTICAL)
 		grSubPanel.GetSizer().Add(gpSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
@@ -1468,8 +1462,19 @@ class SpliceIntervalPanel():
 		self.parent.Window.UpdateDrawing()
 		
 	def OnSave(self, event):
-		# new/existing dialog?
-		self.parent.spliceManager.save() 
+		dlg = dialog.Message3Button(self.parent, "Create new splice file?", yesLabel="Create New", okLabel="Update Existing", cancelLabel="Cancel")
+		ret = dlg.ShowModal()
+		dlg.Destroy()
+		if ret == wx.ID_OK or ret == wx.ID_YES :
+			updateExisting = ret == wx.ID_OK
+			filename = self.parent.dataFrame.Add_TABLE("SPLICE" , "splice", updateExisting, False, "")
+			print "Save: updateExisting = {}, filename = {}".format(updateExisting, filename)
+			self.parent.spliceManager.save(filename)
+
+			s = "Save Splice Table: " + filename + "\n"
+			self.parent.logFileptr.write(s)
+			self.parent.autoPanel.SetCoreList(1, [])
+			self.parent.OnShowMessage("Information", "Successfully Saved", 1)
 	
 	def OnSelectRow(self, event):
 		self.parent.spliceManager.selectByIndex(event.GetRow())

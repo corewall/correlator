@@ -178,6 +178,13 @@ class DataFrame(wx.Panel):
 				os.remove(filepath)
 				self.tree.SetItemText(self.selectedIdx, "", 1)
 				self.OnUPDATE_DB_FILE(self.GetSelectedSiteName(), self.tree.GetItemParent(self.selectedIdx))
+				
+	def EnableTreeItem(self, item, enable):
+		self.tree.SetItemText(item, 'Enable' if enable else 'Disable', 2)
+		self.tree.SetItemTextColour(item, wx.BLUE if enable else wx.RED)
+		item = self.tree.GetItemParent(item)
+		item = self.tree.GetItemParent(item)
+		self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
 
 	# handles all of the many many many right-click commands in Data Manager
 	def OnPOPMENU(self, event):
@@ -215,20 +222,10 @@ class DataFrame(wx.Panel):
 		elif opId == 9 :
 			# IMPORT CULL TABLE
 			self.OnIMPORT_CULLTABLE(False)
-		elif opId == 10 :
-			# DISABLE
-			self.tree.SetItemText(self.selectedIdx, 'Disable', 2)
-			self.tree.SetItemTextColour(self.selectedIdx, wx.RED)
-			item = self.tree.GetItemParent(self.selectedIdx)
-			item = self.tree.GetItemParent(item)
-			self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
-		elif opId == 11 :
-			# ENABLE
-			self.tree.SetItemText(self.selectedIdx, 'Enable', 2)
-			self.tree.SetItemTextColour(self.selectedIdx, wx.BLUE)
-			item = self.tree.GetItemParent(self.selectedIdx)
-			item = self.tree.GetItemParent(item)
-			self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
+		elif opId == 10: # Disable
+			self.EnableTreeItem(self.selectedIdx, False)
+		elif opId == 11: # Enable
+			self.EnableTreeItem(self.selectedIdx, True)
 		elif opId == 12 :
 			# IMPORT LOG 
 			self.importType = "LOG"
@@ -4365,15 +4362,9 @@ class DataFrame(wx.Panel):
 			items = self.tree.GetSelections()
 
 		self.Update_PROPERTY_ITEM(items)
-		property = self.propertyIdx
+		property = self.propertyIdx # property is the "Saved Tables" wxTreeItem for this site
 			
-		#property = self.propertyIdx
-		#if property == None :
-		#	property = self.tree.GetSelection()
-		#	parentItem = self.tree.GetItemParent(property)
-		#	self.title = self.tree.GetItemText(parentItem, 0)
-		#	self.parent.CurrentDir = self.parent.DBPath + 'db/' + self.title + '/'
-
+		# search property's children for type matching title, e.g. "AFFINE", "SPLICE", or "ELD"
 		title_flag = False
 		totalcount = self.tree.GetChildrenCount(property, False)
 		if totalcount > 0 :
@@ -4394,6 +4385,9 @@ class DataFrame(wx.Panel):
 		ith = 0
 		max_ith = 0
 		temp_filename = ""
+		
+		# if we need to create a new table, find lowest available number for filename: also
+		# Disable all elements since the newly-created table will be Enabled
 		if updateflag == False :
 			totalcount = self.tree.GetChildrenCount(property, False)
 			if totalcount > 0 :
@@ -4407,6 +4401,7 @@ class DataFrame(wx.Panel):
 					ith = int(temp_filename[start:last])
 					if max_ith < ith  :
 						max_ith = ith
+					self.EnableTreeItem(child_item, False)
 				for k in range(1, totalcount) :
 					child_item = self.tree.GetNextSibling(child_item)
 					if self.tree.GetItemText(child_item, 1) == title :
@@ -4417,6 +4412,7 @@ class DataFrame(wx.Panel):
 						ith = int(temp_filename[start:last])
 						if max_ith < ith  :
 							max_ith = ith
+						self.EnableTreeItem(child_item, False)
 		ith = max_ith + 1
 		#print "[DEBUG] file index number is " + str(ith)
 
@@ -4450,8 +4446,9 @@ class DataFrame(wx.Panel):
 
 			dblist_f = open(self.parent.DBPath + 'db/' + self.title + '/datalist.db', 'a+')
 			s = '\n' + sub_title + 'table: ' + filename + ': ' + stamp + ': ' + self.parent.user + ': Enable' + ': ' + source_filename +'\n'
-                        dblist_f.write(s)
+			dblist_f.write(s)
 			dblist_f.close()
+			fullname = self.parent.DBPath + 'db/' + self.title + '/' + filename
 		else :
 			subroot = child[1]
 
@@ -4468,11 +4465,11 @@ class DataFrame(wx.Panel):
 			filename = self.tree.GetItemText(subroot, 8) 
 			self.OnUPDATE_DB_FILE(self.title, parentItem)
 
-                fullname = ''
-                if sys.platform == 'win32' :
-                        fullname = self.parent.DBPath + 'db\\' + self.title + '\\' + filename
-                else :
-                        fullname = self.parent.DBPath + 'db/' + self.title + '/' + filename
+			fullname = ''
+			if sys.platform == 'win32':
+				fullname = self.parent.DBPath + 'db\\' + self.title + '\\' + filename
+			else:
+				fullname = self.parent.DBPath + 'db/' + self.title + '/' + filename
 		return fullname
 
 
@@ -6839,6 +6836,7 @@ class DataFrame(wx.Panel):
 		self.parent.OnShowMessage("Information", "Successfully updated", 1)
 			
 
+	# return first child of item that is Enabled and matches hole
 	def FindItemProperty(self, item, hole):
 		totalcount = self.tree.GetChildrenCount(item, False)
 		if totalcount > 0 :
