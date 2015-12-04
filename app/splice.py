@@ -280,7 +280,7 @@ class SpliceIntervalTopTie:
         result = False
         if self.adjInterval is not None:
             diff = self.interval.getTop() - self.adjInterval.getBot()
-            result = diff <= 0.001 and diff > 0
+            result = round(diff,3) <= 0.001 and diff > 0
         return result
 
     def tie(self):
@@ -317,12 +317,10 @@ class SpliceIntervalTopTie:
     
     def clampTieTop(self, depth):
         depth = clampTop(self.interval, depth)
-        if self.adjInterval is not None:
-            if self.interval.getTop() == self.adjInterval.getBot():
-                depth = clampBot(self.adjInterval, depth)
-            else:
-                if depth < self.adjInterval.getBot():
-                    depth = self.adjInterval.getBot() + 0.001 # one mm to prevent equality
+        if self.isTied():
+            depth = clampBot(self.adjInterval, depth)
+        elif self.adjInterval is not None and depth <= self.adjInterval.getBot():
+            depth = self.adjInterval.getBot() + 0.001 # one mm to prevent equality
         return depth
     
 class SpliceIntervalBotTie:
@@ -337,7 +335,7 @@ class SpliceIntervalBotTie:
         result = False
         if self.adjInterval is not None:
             diff = self.adjInterval.getTop() - self.interval.getBot()
-            result = diff <= 0.001 and diff > 0
+            result = round(diff, 3) <= 0.001 and diff > 0
         return result
     
     def tie(self):
@@ -374,12 +372,10 @@ class SpliceIntervalBotTie:
     
     def clampTieBot(self, depth):
         depth = clampBot(self.interval, depth)
-        if self.adjInterval is not None:
-            if self.interval.getBot() == self.adjInterval.getTop():
-                depth = clampTop(self.adjInterval, depth)
-            else:
-                if depth > self.adjInterval.getTop():
-                    depth = self.adjInterval.getTop() - 0.001 # one mm to prevent equality
+        if self.isTied():
+            depth = clampTop(self.adjInterval, depth)
+        elif self.adjInterval is not None and depth >= self.adjInterval.getTop():
+            depth = self.adjInterval.getTop() - 0.001 # one mm to prevent equality
         return depth
 
 
