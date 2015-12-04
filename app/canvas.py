@@ -1347,17 +1347,39 @@ class DataCanvas(wxBufferedWindow):
 		coreName = "{}{}".format(interval.coreinfo.hole, interval.coreinfo.holeCore)
 		dc.DrawText(coreName, startX - (dc.GetTextExtent(coreName)[0] + 2), liney - (dc.GetCharHeight() + 2))
 		
-	def DrawSpliceIntervalTie(self, dc, tie):#interval):
-		dc.SetPen(wx.Pen(wx.WHITE, 1, style=wx.DOT))
-		dc.SetBrush(wx.Brush(wx.WHITE))
+	def DrawSpliceIntervalTie(self, dc, tie):
+		whitePen = wx.Pen(wx.WHITE, 1, style=wx.DOT)
+		whiteBrush = wx.Brush(wx.WHITE)
+		dc.SetPen(whitePen)
+		dc.SetBrush(whiteBrush)
 		startx = self.splicerX + 50 # beginning of splice plot area
 		endx = self.splicerX + 100 + self.spliceHoleWidth * 2 # right end of splice guide area
 		ycoord = self.getSpliceCoord(tie.depth())
-		dc.DrawLine(startx, ycoord, endx, ycoord)
 		circlex = startx + self.spliceHoleWidth
-		dc.DrawCircle(circlex, ycoord, splice.TIE_CIRCLE_RADIUS)
 		namestr = tie.getName()
 		namex = circlex - (dc.GetTextExtent(namestr)[0] / 2)
+		
+		# message indicating why handle movement was restricted, draw handle/line in red
+		if len(tie.clampMessage) > 0:
+			dc.SetTextForeground(wx.RED)
+			dc.SetPen(wx.Pen(wx.RED, 1))
+			dc.SetBrush(wx.Brush(wx.BLACK))
+
+			msgWidth, msgHeight = dc.GetTextExtent(tie.clampMessage)
+			msgx = circlex - msgWidth / 2
+			msgy = ycoord - (splice.TIE_CIRCLE_RADIUS + 12 + 5 + msgHeight)
+			dc.DrawRectangle(msgx - 1,  msgy - 1, msgWidth + 2, msgHeight + 2)
+			dc.DrawText(tie.clampMessage, msgx, msgy)
+			dc.SetBrush(wx.Brush(wx.RED))
+			dc.DrawLine(startx, ycoord, endx, ycoord)
+			dc.DrawCircle(circlex, ycoord, splice.TIE_CIRCLE_RADIUS)
+			dc.SetTextForeground(self.colorDict['foreground'])
+			dc.SetPen(whitePen)
+			dc.SetBrush(whiteBrush)
+		else:
+			dc.DrawLine(startx, ycoord, endx, ycoord)
+			dc.DrawCircle(circlex, ycoord, splice.TIE_CIRCLE_RADIUS)
+		
 		dc.DrawText(namestr, namex, ycoord - (splice.TIE_CIRCLE_RADIUS + 12))
 		
 	def DrawSpliceInterval(self, dc, interval, drawing_start, startX):
@@ -5405,6 +5427,7 @@ class DataCanvas(wxBufferedWindow):
 		if selectedIntervalTie is not None:
 			newdepth = self.getSpliceDepth(currentY)
 			selectedIntervalTie.move(newdepth)
+			selectedIntervalTie._setClampMessage("")
 			self.parent.spliceManager.selectTie(None)
 			self.parent.spliceIntervalPanel.UpdateUI()
 

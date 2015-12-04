@@ -261,24 +261,66 @@ class SpliceInterval:
         return str(self.interval)
 
 
-def clampBot(spliceInterval, depth):
+def clampBot(spliceInterval, depth, returnMessage=False):
+    msg = ""
+    hcstr = spliceInterval.getHoleCoreStr()
     if depth > spliceInterval.coreBot():
+        msg = "Bottom of core {}".format(hcstr)
         depth = spliceInterval.coreBot()
     if depth < spliceInterval.getTop() or depth < spliceInterval.coreTop():
         depth = max([spliceInterval.getBot(), spliceInterval.coreTop()])
-    return depth
+        if spliceInterval.coreTop() >= spliceInterval.getTop():
+            msg = "Top of core {}".format(hcstr)
+        else:
+            msg = "Top of interval {}".format(hcstr)
+    if returnMessage:
+        return depth, msg
+    else:
+        return depth
 
-def clampTop(spliceInterval, depth):
+def clampTop(spliceInterval, depth, returnMessage=False):
+    msg =""
+    hcstr = spliceInterval.getHoleCoreStr()
     if depth < spliceInterval.coreTop():
+        msg = "Top of core {}".format(hcstr)
         depth = spliceInterval.coreTop()
     if depth > spliceInterval.getBot() or depth > spliceInterval.coreBot():
         depth = min([spliceInterval.getBot(), spliceInterval.coreBot()])
-    return depth
+        if spliceInterval.coreBot() <= spliceInterval.getBot():
+            msg = "Bottom of core {}".format(hcstr)
+        else:
+            msg = "Top of interval {}".format(hcstr)
+    if returnMessage:
+        return depth, msg
+    else:
+        return depth
 
-class SpliceIntervalTopTie:
+class SpliceIntervalTie():
     def __init__(self, interval, adjInterval):
         self.interval = interval
-        self.adjInterval = adjInterval # the interval above
+        self.adjInterval = adjInterval
+        self.clampMessage = ""
+
+    def _setClampMessage(self, message):
+        self.clampMessage = message
+        
+    def getButtonName(self):
+        cores = sorted([self.interval, self.adjInterval], key=lambda i:i.getTop())
+        return "{} && {}".format(cores[0].getHoleCoreStr(), cores[1].getHoleCoreStr())
+
+
+class SpliceIntervalTopTie(SpliceIntervalTie):
+    def __init__(self, interval, adjInterval):
+        SpliceIntervalTie.__init__(self, interval, adjInterval)
+        
+    def getName(self): # text to display on tie
+        name = ""
+        if self.isTied(): # list topmost core first
+            cores = sorted([self.interval, self.adjInterval], key=lambda i:i.getTop())
+            name = "Tie: {} & {}".format(cores[0].getHoleCoreStr(), cores[1].getHoleCoreStr())
+        else:
+            name = self.interval.coreinfo.getHoleCoreStr() + " top"
+        return name
         
     def isTied(self):
         return self.adjInterval is not None and self.interval.getTop() == self.adjInterval.getBot()
@@ -300,17 +342,6 @@ class SpliceIntervalTopTie:
     
     def depth(self):
         return self.interval.getTop()
-    
-    def getName(self): # text to display on tie
-        name = ""
-        if self.isTied(): # list topmost core first
-            name = "TIE: {} & {}".format(self.adjInterval.coreinfo.getHoleCoreStr(), self.interval.coreinfo.getHoleCoreStr())
-        else:
-            name = self.interval.coreinfo.getHoleCoreStr() + " top"
-        return name
-    
-    def getButtonName(self):
-        return "{} && {}".format(self.adjInterval.coreinfo.getHoleCoreStr(), self.interval.coreinfo.getHoleCoreStr())
         
     def move(self, depth):
         depth = self.clampTieTop(depth)
@@ -323,18 +354,30 @@ class SpliceIntervalTopTie:
         self.adjInterval.setBot(depth)
     
     def clampTieTop(self, depth):
-        depth = clampTop(self.interval, depth)
+        depth, msg = clampTop(self.interval, depth, True)
+        self._setClampMessage(msg)
         if self.isTied():
-            depth = clampBot(self.adjInterval, depth)
+            depth, msg = clampBot(self.adjInterval, depth, True)
+            if len(msg) > 0:
+                self._setClampMessage(msg)
         elif self.adjInterval is not None and depth <= self.adjInterval.getBot():
             depth = self.adjInterval.getBot() + 0.001 # one mm to prevent equality
+            self._setClampMessage("Bottom of interval {}".format(self.adjInterval.getHoleCoreStr()))
         return depth
     
-class SpliceIntervalBotTie:
+class SpliceIntervalBotTie(SpliceIntervalTie):
     def __init__(self, interval, adjInterval):
-        self.interval = interval
-        self.adjInterval = adjInterval # the interval below
+        SpliceIntervalTie.__init__(self, interval, adjInterval)
         
+    def getName(self): # text to display on tie
+        name = ""
+        if self.isTied(): # list topmost core first
+            cores = sorted([self.interval, self.adjInterval], key=lambda i:i.getTop())
+            name = "Tie: {} & {}".format(cores[0].getHoleCoreStr(), cores[1].getHoleCoreStr())
+        else:
+            name = self.interval.coreinfo.getHoleCoreStr() + " bottom"
+        return name
+    
     def isTied(self):
         return self.adjInterval is not None and self.interval.getBot() == self.adjInterval.getTop()
 
@@ -356,17 +399,6 @@ class SpliceIntervalBotTie:
     def depth(self):
         return self.interval.getBot()
     
-    def getName(self): # text to display on tie
-        name = ""
-        if self.isTied(): # list topmost core first
-            name = "TIE: {} & {}".format(self.interval.coreinfo.getHoleCoreStr(), self.adjInterval.coreinfo.getHoleCoreStr())
-        else:
-            name = self.interval.coreinfo.getHoleCoreStr() + " bottom"
-        return name
-    
-    def getButtonName(self):
-        return "{} && {}".format(self.interval.coreinfo.getHoleCoreStr(), self.adjInterval.coreinfo.getHoleCoreStr())
-    
     def move(self, depth):
         depth = self.clampTieBot(depth)
         # isTied() is based on equality of interval top/bot and adjInterval bot/top, check before changing depth!
@@ -378,11 +410,15 @@ class SpliceIntervalBotTie:
         self.adjInterval.setTop(depth)
     
     def clampTieBot(self, depth):
-        depth = clampBot(self.interval, depth)
+        depth, msg = clampBot(self.interval, depth, True)
+        self._setClampMessage(msg)
         if self.isTied():
-            depth = clampTop(self.adjInterval, depth)
+            depth, msg = clampTop(self.adjInterval, depth, True)
+            if len(msg) > 0:
+                self._setClampMessage(msg)
         elif self.adjInterval is not None and depth >= self.adjInterval.getTop():
             depth = self.adjInterval.getTop() - 0.001 # one mm to prevent equality
+            self._setClampMessage("Top of interval {}".format(self.adjInterval.getHoleCoreStr()))
         return depth
 
 
