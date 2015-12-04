@@ -65,6 +65,7 @@ class MainFrame(wx.Frame):
 		self.SetMenuBar( self.CreateMenu() )
 		
 		self.spliceManager = splice.SpliceManager()
+		self.sectionSummary = None
 
 		self.RawData = ""
 		self.SmoothData = ""

@@ -166,7 +166,7 @@ class DataFrame(wx.Panel):
 		if opId == 1:
 			self.ImportSectionSummary()
 		elif opId == 2: # View File
-			filepath = self.parent.DBPath + 'db/' + self.GetSelectedSite() + '/' + self.tree.GetItemText(self.selectedIdx, 1)
+			filepath = self.parent.DBPath + 'db/' + self.GetSelectedSiteName() + '/' + self.tree.GetItemText(self.selectedIdx, 1)
 			self.fileText.Clear()
 			self.fileText.LoadFile(filepath)
 			self.sideNote.SetSelection(2)
@@ -174,10 +174,10 @@ class DataFrame(wx.Panel):
 			secsummname = self.tree.GetItemText(self.selectedIdx, 1)
 			ret = self.parent.OnShowMessage("Information", "Are you sure you want to delete {}?".format(secsummname), 2)
 			if ret == wx.ID_OK:
-				filepath = self.parent.DBPath + 'db/' + self.GetSelectedSite() + '/' + secsummname
+				filepath = self.parent.DBPath + 'db/' + self.GetSelectedSiteName() + '/' + secsummname
 				os.remove(filepath)
 				self.tree.SetItemText(self.selectedIdx, "", 1)
-				self.OnUPDATE_DB_FILE(self.GetSelectedSite(), self.tree.GetItemParent(self.selectedIdx))
+				self.OnUPDATE_DB_FILE(self.GetSelectedSiteName(), self.tree.GetItemParent(self.selectedIdx))
 
 	# handles all of the many many many right-click commands in Data Manager
 	def OnPOPMENU(self, event):
@@ -458,8 +458,8 @@ class DataFrame(wx.Panel):
 	def ImportSectionSummary(self):
 		secsumm = tabularImport.doImport(self, tabularImport.SectionSummaryFormat)
 		if secsumm is not None:
-			# udpate GUI
-			site = self.GetSelectedSite()
+			# update GUI
+			site = self.GetSelectedSiteName()
 			item = self.tree.GetSelection()
 			self.tree.SetItemText(item, secsumm.name, 1)
 			self.tree.SetItemText(item, secsumm.name, 10)
@@ -471,19 +471,26 @@ class DataFrame(wx.Panel):
 			sspath = self.parent.DBPath +'db/' + site + '/' + secsumm.name
 			tabularImport.writeToFile(secsumm.dataframe, sspath)
 
-	# get parent Site (child of Root node) for current selection in self.tree
+	# get name of parent Site (child of Root node) for current selection in self.tree
+	def GetSelectedSiteName(self):
+		sitename = ""
+		selsite = self.GetSelectedSite()
+		if selsite is not None:
+			sitename = self.tree.GetItemText(selsite, 0) 
+		return sitename
+	
+	# get wxTreeItem Site for current selection in self.tree
 	def GetSelectedSite(self):
-		selsite = None
-		selitem = self.tree.GetSelection()
-		item = selitem
+		item = self.tree.GetSelection()
 		while item is not None:
 			parent = self.tree.GetItemParent(item)
 			if parent is not None:
 				if self.tree.GetItemText(parent, 0) == "Root":
-					selsite = self.tree.GetItemText(item, 0)
 					break
 			item = parent
-		return selsite
+		#print "Selected Site = {}".format(self.tree.GetItemText(item, 0))
+		return item
+
 
 	# build appropriate right-click menu based on selection type - rather than pulling
 	# text strings from the View to determine what's what, we should be asking the Model!
@@ -666,7 +673,7 @@ class DataFrame(wx.Panel):
 						wx.EVT_MENU(popupMenu, 1, self.OnSecSummMenu)
 					else:
 						popupMenu.Append(2, "&View")
-						path = self.parent.DBPath + 'db/' + self.GetSelectedSite() + '/' + secsumm_name
+						path = self.parent.DBPath + 'db/' + self.GetSelectedSiteName() + '/' + secsumm_name
 						wx.EVT_MENU(popupMenu, 2, self.OnSecSummMenu)
 						popupMenu.Append(3, "&Delete")
 						wx.EVT_MENU(popupMenu, 3, self.OnSecSummMenu)
@@ -3916,8 +3923,23 @@ class DataFrame(wx.Panel):
 									self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
 									break
 				self.parent.Window.UpdateDrawing()
-
-
+	
+	def LoadSectionSummary(self):
+		secSumm = None
+		siteItem = self.GetSelectedSite()
+		if siteItem is not None:
+			found, secSummItem = self.FindItem(siteItem, "Section Summary")
+			if found:
+				ssFilename = self.tree.GetItemText(secSummItem, 1)
+				if len(ssFilename) > 0:
+					ssFilepath = self.parent.DBPath +'db/' + self.title + '/' + ssFilename
+					secSumm = tabularImport.SectionSummary.createWithFile(ssFilepath)
+					self.parent.sectionSummary = secSumm
+					print "secSumm file [{}] found!".format(ssFilename)
+			else:
+				print "secSumm couldn't be loaded"
+		self.parent.sectionSummary = secSumm
+			
 	def OnLOAD(self):
 		self.propertyIdx = None
 		self.title = ""
@@ -4259,6 +4281,8 @@ class DataFrame(wx.Panel):
 
 		self.parent.logFileptr.write("\n")
 		self.parent.LOCK = 0 
+
+		self.LoadSectionSummary()
 
 		if tableLoaded != [] :
 			if tableLoaded[1] == True :
@@ -6831,17 +6855,17 @@ class DataFrame(wx.Panel):
 		return (False, None)
 
 
-	def FindItem(self, item, hole):
+	def FindItem(self, item, hole, col=0):
 		totalcount = self.tree.GetChildrenCount(item, False)
 		if totalcount > 0 :
 			child = self.tree.GetFirstChild(item)
 			test_child = child[0]
-			str_test = self.tree.GetItemText(test_child, 0)
+			str_test = self.tree.GetItemText(test_child, col)
 			if str_test == hole :
 				return (True, child[0])
 			for k in range(1, totalcount) :
 				test_child = self.tree.GetNextSibling(test_child)
-				str_test = self.tree.GetItemText(test_child, 0)
+				str_test = self.tree.GetItemText(test_child, col)
 				if str_test == hole :
 					return (True, test_child)
 		return (False, None)

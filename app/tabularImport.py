@@ -12,11 +12,57 @@ import wx.grid
 import dialog
 
 class SectionSummary:
-    name = None
-    dataframe = None
     def __init__(self, name, dataframe):
         self.name = name
         self.dataframe = dataframe
+        
+    @classmethod
+    def createWithFile(cls, filepath):
+        dataframe = readFile(filepath)
+        return cls(os.path.basename(filepath), dataframe)
+    
+    def containsCore(self, site, hole, core):
+        cores = self._findCore(site, hole, int(core))
+        return not cores.empty
+        
+    def getSectionTop(self, site, hole, core, section):
+        return self._getSectionValue(site, hole, int(core), section, 'TopDepth')
+    
+    def getSectionBot(self, site, hole, core, section):
+        return self._getSectionValue(site, hole, int(core), section, 'BottomDepth')
+    
+    def getSectionAtDepth(self, site, hole, core, depth):
+        sec = self._findSectionAtDepth(site, hole, int(core), depth)
+        return sec
+    
+    def _findCore(self, site, hole, core):
+        df = self.dataframe
+        cores = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core)]
+        if cores.empty:
+            print "SectionSummary: Could not find core {}-{}{}".format(site, hole, core)
+        return cores
+        
+
+    def _findSection(self, site, hole, core, section):
+        df = self.dataframe
+        section = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core) & (df.Section == section)]
+        if section.empty:
+            print "SectionSummary: Could not find {}-{}{}-{}".format(site, hole, core, section)
+        return section
+    
+    def _findSectionAtDepth(self, site, hole, core, depth):
+        print "find at depth {}...".format(depth)
+#         cores = self._findCore(site, hole, core)
+#         print "found cores: {}".format(cores)
+        df = self.dataframe
+        section = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core) & (depth >= df.TopDepth) & (depth <= df.BottomDepth)]
+        if not section.empty:
+            return section.iloc[0]['Section']
+        return None
+    
+    def _getSectionValue(self, site, hole, core, section, columnName):
+        section = self._findSection(site, hole, core, section)
+        return section.iloc[0][columnName]
 
 """ bridge between imported tabular columns and destination format """ 
 class TabularFormat:

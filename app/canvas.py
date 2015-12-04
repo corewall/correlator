@@ -1284,6 +1284,14 @@ class DataCanvas(wxBufferedWindow):
 			for core in hole[1:]:
 				ci = self.findCoreInfoByHoleCoreType(hi[7], core[0], hi[2])
 				print ci
+				print core[:10]
+				
+				if self.parent.sectionSummary is not None:
+					if self.parent.sectionSummary.containsCore(hi[0], hi[7], core[0]):
+						print "Found in section summary"
+					else:
+						print "Did NOT find in section summary"
+								
 			print "##########################################\n\n"
 
 	def _SetSpliceRangeCoef(self, smoothed):
@@ -5311,8 +5319,11 @@ class DataCanvas(wxBufferedWindow):
 					return
 
 				# otherwise, something was added to splice, deal with that.
-				coreinfo = self.findCoreInfoByIndex(self.grabCore)
-				self.parent.AddSpliceCore(coreinfo)
+				if self.parent.sectionSummary is not None:
+					coreinfo = self.findCoreInfoByIndex(self.grabCore)
+					self.parent.AddSpliceCore(coreinfo)
+				else:
+					self.parent.OnShowMessage("Error", "Section Summary is required to create a splice", 1)
 
 				self.grabCore = -1
 				self.UpdateDrawing()
