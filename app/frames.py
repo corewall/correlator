@@ -1320,6 +1320,7 @@ class SpliceIntervalPanel():
 		cbox = wx.StaticBoxSizer(wx.StaticBox(gridPanel, -1, "Interval Comments"))
 		self.commentText = wx.TextCtrl(gridPanel, -1, "[interval comment]", style=wx.TE_MULTILINE)
 		self.commentText.Bind(wx.EVT_CHAR, self._prohibitCommas)
+		self.commentText.Bind(wx.EVT_KILL_FOCUS, self._saveComment)
 		cbox.Add(self.commentText, 1, wx.EXPAND)
 		gpsz.Add(cbox, 1, wx.EXPAND | wx.ALL, 5)
 
@@ -1382,10 +1383,9 @@ class SpliceIntervalPanel():
 			self._makeTableRow(row, si)
 		self._updateTableSelection()
 			
-	# update current selection, saving comments
+	# update current selection
 	def _updateTableSelection(self):
 		cursel = self.parent.spliceManager.getSelectedIndex()
-		self._saveComment()
 		if cursel == -1:
 			self.table.ClearSelection()
 			self.lastInterval = None
@@ -1427,7 +1427,7 @@ class SpliceIntervalPanel():
 	def _updateComment(self, comment):
 		self.commentText.SetValue(comment)
 	
-	def _saveComment(self):
+	def _saveComment(self, event=None):
 		if self.lastInterval is not None and self.lastInterval.comment != self.commentText.GetValue():
 			self.lastInterval.comment = self.commentText.GetValue()
 			
@@ -1469,7 +1469,6 @@ class SpliceIntervalPanel():
 		self.parent.spliceManager.save() 
 	
 	def OnSelectRow(self, event):
-		self._saveComment()
 		self.parent.spliceManager.selectByIndex(event.GetRow())
 		self.lastInterval = self.parent.spliceManager.getIntervalAtIndex(event.GetRow())
 		
