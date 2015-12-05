@@ -63,6 +63,11 @@ class SectionSummary:
     def _getSectionValue(self, site, hole, core, section, columnName):
         section = self._findSection(site, hole, core, section)
         return section.iloc[0][columnName]
+    
+class SpliceIntervalTable:
+    def __init__(self, name, dataframe):
+        self.name = name
+        self.dataframe = dataframe
 
 """ bridge between imported tabular columns and destination format """ 
 class TabularFormat:
@@ -84,12 +89,13 @@ SITFormat = TabularFormat("Splice Interval Table",
                            'BottomDepthCCSF', 'SpliceType', 'DataUsed', 'Comment'])
 
 class ImportDialog(wx.Dialog):
-    def __init__(self, parent, id, path, dataframe, goalFormat):
+    def __init__(self, parent, id, path, dataframe, goalFormat, allowEmptyCells=True):
         wx.Dialog.__init__(self, parent, id, size=(800,600), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
         self.path = path # source file path
         self.dataframe = dataframe # pandas DataFrame read from self.path
         self.goalFormat = goalFormat
+        self.allowEmptyCells = allowEmptyCells
         self.reqColMap = None # populated when all required columns have been identified
         self.lastCol = None # index of last column label selected...can't easily pass in event handlers
         self.NA = "N/A"
@@ -240,7 +246,7 @@ class ImportDialog(wx.Dialog):
         return empty
 
     def OnImport(self, event):
-        if self._hasEmptyCells():
+        if not self.allowEmptyCells and self._hasEmptyCells():
             errbox(self, "One or more columns selected for import contain empty cells")
         else:
             self.EndModal(wx.ID_OK)
@@ -271,6 +277,20 @@ def doImport(parent, goalFormat, path=None):
                 name = os.path.basename(dlg.path)
                 secSumm = SectionSummary(name, dataframe)
     return secSumm
+
+def doSITImport(parent, goalFormat, path=None):
+    sit = None
+    if path is None:
+        path = selectFile(parent, goalFormat)
+    if path is not None:
+        dataframe = parseFile(parent, path, goalFormat, checkcols=True)
+        if dataframe is not None:
+            dlg = ImportDialog(parent, -1, path, dataframe, goalFormat)
+            if dlg.ShowModal() == wx.ID_OK:
+                dataframe = reorderColumns(dlg.dataframe, dlg.reqColMap, goalFormat)
+                name = os.path.basename(dlg.path)
+                sit = SpliceIntervalTable(name, dataframe)
+    return sit
 
 
 def readFile(filepath):
