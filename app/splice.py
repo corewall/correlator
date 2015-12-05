@@ -583,7 +583,8 @@ class SpliceManager:
             if bot + affineOffset != row.BottomDepthCCSF:
                 print "table has bottom CSF = {}, CCSF = {} for an offset of {}, current affine offset = {}".format(bot, row.BottomDepthCCSF, row.BottomDepthCCSF - top, affineOffset)
                 
-            spliceInterval = SpliceInterval(coreinfo, top + affineOffset, bot + affineOffset)
+            comment = "" if pandas.isnull(row.Comment) else str(row.Comment)
+            spliceInterval = SpliceInterval(coreinfo, top + affineOffset, bot + affineOffset, comment)
             self.ints.append(spliceInterval) # add to ints - should already be sorted properly
         
         self._onAdd(dirty=False) # notify listeners that intervals have been added
