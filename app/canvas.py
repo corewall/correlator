@@ -1408,7 +1408,7 @@ class DataCanvas(wxBufferedWindow):
 		rangeMax = self.splicerX + 50
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 		dc.DrawLines(((rangeMax, self.startDepth - 20), (rangeMax, self.Height)))
-		dc.DrawText("Leg: " + firstint.coreinfo.leg + " Site: " + firstint.coreinfo.site + " Hole: Splice", rangeMax, 5)
+		dc.DrawText("Leg: " + firstint.coreinfo.site + " Site: " + firstint.coreinfo.leg + " Hole: Splice", rangeMax, 5)
 		dc.DrawText("Datatypes: " + ','.join(self.parent.spliceManager.getDataTypes()), rangeMax, 25)
 		
 		dc.DrawLines(((rangeMax, self.startDepth - 20), (rangeMax, self.Height))) # dotted line indicating minimum datarange
