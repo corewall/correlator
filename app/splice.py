@@ -424,19 +424,23 @@ class SpliceIntervalBotTie(SpliceIntervalTie):
 
 class SpliceManager:
     def __init__(self, parent):
-        self.parent = parent
+        self.parent = parent # using to access sectionSummary and HoleData for now
+        self.selChangeListeners = []
+        self.addIntervalListeners = []
+        self.clear()
+        
+    def clear(self): # initialize data members
         self.ints = [] # list of SpliceIntervals ordered by top member
+        self.filepath = None
         self.selected = None # currently selected SpliceInterval
         self.topTie = None
         self.botTie = None
         self.selectedTie = None
         self.dirty = False # need save?
+        self.errorMsg = "Init State: No errors here, everything is peachy!"        
         
-        self.errorMsg = "Init State: No errors here, everything is peachy!"
-        
-        self.selChangeListeners = []
-        self.addIntervalListeners = []
-        
+        self._onAdd(False) # notify listeners so UI elements update
+    
     def count(self):
         return len(self.ints)
         
@@ -482,6 +486,7 @@ class SpliceManager:
             self._updateTies()
             self._onSelChange()
             
+    # SpliceController that serves as intermediary between SpliceManager model and client views?
     def save(self, filepath): # better in Data Manager? creating a dependency on MainFrame is not desirable.
         # better to create dependencies on SectionSummary and a non-existent "HoleDatabase" class, though
         # HoleData will do...though we only need it for affine stuff, so possibly an AffineManager?
@@ -544,6 +549,44 @@ class SpliceManager:
             #print "{}".format(df)
             tabularImport.writeToFile(df, filepath)
             self.setDirty(False)
+            
+    def load(self, filepath):
+        self.clear()
+        df = tabularImport.readFile(filepath)
+        for index, row in df.iterrows(): # itertuples() is faster if needed
+            #print "Loading row {}: {}".format(index, str(row))
+            # for each row, create CoreInfo
+            #exp = row.Exp
+            #site = row.Site
+            hole = row.Hole
+            core = str(row.Core)
+            datatype = row.DataUsed
+            coreinfo = self.parent.Window.findCoreInfoByHoleCoreType(hole, core, datatype)
+            if coreinfo is None:
+                #print "Couldn't find hole {} core {} of type {}".format(hole, core, datatype)
+                coreinfo = self.parent.Window.findCoreInfoByHoleCore(hole, core)
+                if coreinfo is None:
+                    continue
+            # todo: update with section summary values
+            
+            # set interval top and bottom (based on affine)
+            affineOffset = self.parent.Window.findCoreAffineOffset(hole, core)
+            coreinfo.minDepth += affineOffset
+            coreinfo.maxDepth += affineOffset
+            
+            #print "affineOffset = {}".format(affineOffset)
+            
+            top = row.TopDepthCSF
+            bot = row.BottomDepthCSF
+            if top + affineOffset != row.TopDepthCCSF:
+                print "table has top CSF = {}, CCSF = {} for an offset of {}, current affine offset = {}".format(top, row.TopDepthCCSF, row.TopDepthCCSF - top, affineOffset)
+            if bot + affineOffset != row.BottomDepthCCSF:
+                print "table has bottom CSF = {}, CCSF = {} for an offset of {}, current affine offset = {}".format(bot, row.BottomDepthCCSF, row.BottomDepthCCSF - top, affineOffset)
+                
+            spliceInterval = SpliceInterval(coreinfo, top + affineOffset, bot + affineOffset)
+            self.ints.append(spliceInterval) # add to ints - should already be sorted properly
+        
+        self._onAdd(dirty=False) # notify listeners that intervals have been added
 
     def select(self, depth):
         good = False
@@ -658,9 +701,10 @@ class SpliceManager:
             print "Interval {} encompassed by {}".format(interval, e)
         return len(e) == 0
     
-    def _onAdd(self):
+    def _onAdd(self, dirty=True):
         self._updateTies()
-        self.setDirty()
+        if dirty:
+            self.setDirty()
         for listener in self.addIntervalListeners:
             listener()
     

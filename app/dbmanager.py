@@ -17,6 +17,7 @@ from importManager import py_correlator
 
 import dialog
 import tabularImport
+import splice
 import xml_handler
 from model import * # brgtodo 4/24/2014: Remove import *
 
@@ -3290,66 +3291,55 @@ class DataFrame(wx.Panel):
 		return None
 
 
-	def OnLOAD_TABLE(self, parentItem):
-		child = self.FindItem(parentItem, 'Saved Tables')
-		ret = [] 
-		if child[0] == True :
-			selectItem = child[1]
-			totalcount = self.tree.GetChildrenCount(selectItem, False)
-			affine_item = None
-			splice_item = None
-			eld_item = None
-			if totalcount > 0 :
-				child = self.tree.GetFirstChild(selectItem)
-				child_item = child[0]
-				type = self.tree.GetItemText(child_item, 1)
-				flag = self.tree.GetItemText(child_item, 2)
-				if type == "AFFINE" and flag == "Enable" :
-					affine_item = child_item 
-				elif type == "SPLICE" and flag == "Enable" :
-					splice_item = child_item 
-				elif type == "ELD" and flag == "Enable" :
-					eld_item = child_item 
+	# Find first Enabled Affine, Splice or ELD table
+	def FindSavedTable(self, savedTablesItem, tableType):
+		tableItem = None
+		totalcount = self.tree.GetChildrenCount(savedTablesItem, False)
+		if totalcount > 0:
+			child = self.tree.GetFirstChild(savedTablesItem)
+			childItem = child[0]
+			type = self.tree.GetItemText(childItem, 1)
+			flag = self.tree.GetItemText(childItem, 2)
+			if type == tableType and flag == "Enable":
+				tableItem = childItem 
+			for k in range(1, totalcount) :
+				if tableItem is not None:
+					break
+				childItem = self.tree.GetNextSibling(childItem)
+				type = self.tree.GetItemText(childItem, 1)
+				flag = self.tree.GetItemText(childItem, 2)
+				if type == tableType and flag == "Enable":
+					tableItem = childItem
+		return tableItem
+		
 
-				for k in range(1, totalcount) :
-					child_item = self.tree.GetNextSibling(child_item)
-					type = self.tree.GetItemText(child_item, 1)
-					flag = self.tree.GetItemText(child_item, 2)
-					if affine_item == None and type == "AFFINE" and flag == "Enable" :
-						affine_item = child_item 
-					elif splice_item == None and type == "SPLICE" and flag == "Enable" :
-						splice_item = child_item 
-					elif eld_item == None and type == "ELD" and flag == "Enable" :
-						eld_item = child_item 
+	def OnLOAD_TABLE(self, parentItem):
+		ret = [] 
+		found, savedTablesItem = self.FindItem(parentItem, 'Saved Tables')
+		if found:
+			affineItem = self.FindSavedTable(savedTablesItem, "AFFINE")
+			spliceItem = self.FindSavedTable(savedTablesItem, "SPLICE")
+			eldItem = self.FindSavedTable(savedTablesItem, "ELD")
 
 			path = self.parent.DBPath + 'db/' + self.tree.GetItemText(parentItem, 0)  + '/'
-			if affine_item != None :
-				py_correlator.openAttributeFile(path +self.tree.GetItemText(affine_item, 8), 0)
-				s = "Affine Table: " + path + self.tree.GetItemText(affine_item, 8) + "\n"
+			if affineItem is not None:
+				py_correlator.openAttributeFile(path +self.tree.GetItemText(affineItem, 8), 0)
+				s = "Affine Table: " + path + self.tree.GetItemText(affineItem, 8) + "\n"
 				self.parent.logFileptr.write(s)
 				ret.append(True)
-			else :
+			else:
 				ret.append(False)
 
-			if splice_item != None :
-				#if affine_item == None :
-				#	self.parent.OnShowMessage("Error", "Splice table needs affine table enable", 1)
-				#	return False
-				ret_splice = py_correlator.openSpliceFile(path +self.tree.GetItemText(splice_item, 8))
-				if ret_splice == "error" : 
-					self.parent.OnShowMessage("Error", "Could not Make Splice Records", 1)
+			# 12/4/2015 brg: Need to delay loading of splice, return filepath if splice needs loading
+			if spliceItem is not None:
+				filepath = path + self.tree.GetItemText(spliceItem, 8)
+				ret.append(filepath)
+			else:
+				ret.append("")
 
-				s = "Splice Table: " + path + self.tree.GetItemText(splice_item, 8) + "\n"
-				self.parent.logFileptr.write(s)
-
-				#self.parent.splicedOpened = 1
-				ret.append(True)
-			else :
-				ret.append(False)
-
-			if eld_item != None :
-				py_correlator.openAttributeFile(path +self.tree.GetItemText(eld_item, 8), 1)
-				s = "ELD Table: " + path + self.tree.GetItemText(eld_item, 8) + "\n"
+			if eldItem is not None:
+				py_correlator.openAttributeFile(path +self.tree.GetItemText(eldItem, 8), 1)
+				s = "ELD Table: " + path + self.tree.GetItemText(eldItem, 8) + "\n"
 				self.parent.logFileptr.write(s)
 
 				if self.parent.Window.LogData != [] :
@@ -3364,7 +3354,7 @@ class DataFrame(wx.Panel):
 						self.parent.autoPanel.OnButtonEnable(0, False)
 					retdata = "" 
 				ret.append(True)
-			else :
+			else:
 				ret.append(False)
 
 		return ret 
@@ -4250,7 +4240,7 @@ class DataFrame(wx.Panel):
 		self.parent.OnUpdateDepthStep()
 		tableLoaded = [] 
 		logLoaded = False
-		if parentItem != None :
+		if parentItem is not None:
 			logLoaded = self.OnLOAD_LOG(parentItem)
 			self.parent.OnInitDataUpdate()
 			tableLoaded = self.OnLOAD_TABLE(parentItem)
@@ -4281,35 +4271,21 @@ class DataFrame(wx.Panel):
 
 		self.LoadSectionSummary()
 
+		# always load up core data before loading splice		
+		self.parent.UpdateCORE()
+		self.parent.UpdateSMOOTH_CORE()
+		self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
+
+		# now load splice and ELD if necessary
 		if tableLoaded != [] :
-			if tableLoaded[1] == True :
-				self.parent.OnInitDataUpdate()
-				self.parent.InitSPLICE()
-				self.parent.UpdateSPLICE(False)
-				#self.parent.UpdateSMOOTH_SPLICE(False)
-				if len(self.parent.Window.SpliceCore) > 0:
-					self.parent.splicePanel.OnButtonEnable(4, True) # enable Append button
-				self.parent.autoPanel.SetCoreList(1, [])
-				self.parent.filterPanel.OnRegisterHole("Spliced Records")
-				r = self.parent.Window.range[0]
-				firsttype = self.tree.GetItemText(self.firstIdx, 0)
-				for subr in self.parent.Window.range :
-					if subr[0] == firsttype :
-						r = subr
-				self.parent.Window.selectedType = r[0]
-				newrange = "splice", r[1], r[2], r[3], 0, r[5]
-				self.parent.Window.range.append(newrange)
-			else :
-				self.parent.UpdateCORE()
-				self.parent.UpdateSMOOTH_CORE()
-				self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
+			if len(tableLoaded[1]) > 0:
+				filepath = tableLoaded[1]
+				self.parent.spliceManager.load(filepath)
+			else:
+				self.parent.spliceManager.clear()
 
 			if tableLoaded[2] == True :
 				self.parent.UpdateELD(True)
-		else :
-			self.parent.UpdateCORE()
-			self.parent.UpdateSMOOTH_CORE()
-			self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
 
 		self.parent.Window.ShowLog = False 
 		if logLoaded == True :
@@ -4345,7 +4321,7 @@ class DataFrame(wx.Panel):
 			self.parent.splicePanel.altButton.Enable(False)
 			self.parent.splicePanel.newButton.Enable(False)
 			
-		self.parent.Window.PrintHoleSummary()
+		#self.parent.Window.PrintHoleSummary()
 
 		return True
 		

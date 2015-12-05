@@ -698,6 +698,16 @@ class DataCanvas(wxBufferedWindow):
 			print "Can't find matching coreinfo for holeCount " + str(holeCount)
 		return result
 	
+	def findCorePointData(self, hole, core, datatype):
+		for h in self.HoleData:
+			curhole = h[0]
+			if curhole[0][7] == hole and curhole[0][2] == datatype:
+				for curcore in curhole[1:]:
+					if curcore[0] == core:
+						result = curcore[10]
+						return result
+		return []
+	
 	def findCoreAffineOffset(self, hole, core):
 		result = None
 		for h in self.HoleData:
@@ -1383,7 +1393,12 @@ class DataCanvas(wxBufferedWindow):
 		dc.DrawText(namestr, namex, ycoord - (splice.TIE_CIRCLE_RADIUS + 12))
 		
 	def DrawSpliceInterval(self, dc, interval, drawing_start, startX):
+		interval.coreinfo.coredata = self.findCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type)
+		
+		# as loaded or created on the spot, intervals with affine shifts work well, but all hell breaks
+		# loose when a core with an interval in the splice is shifted...listener/update?
 		intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
+		#intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
 		screenpoints = []
 		for pt in intdata:
 			if pt[0] >= drawing_start and pt[0] <= self.SPrulerEndDepth:
