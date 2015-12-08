@@ -6,6 +6,7 @@ rm dialog.py
 rm frames.py
 rm importManager.py
 rm model.py
+rm splice.py
 rm tabularImport.py
 rm version.py
 rm xml_handler.py
@@ -26,6 +27,7 @@ cp dialog.py ../bin/static/
 cp frames.py ../bin/static/
 cp importManager.py ../bin/static/
 cp model.py ../bin/static/
+cp splice.py ../bin/static/
 cp tabularImport.py ../bin/static/
 cp version.py ../bin/static/
 cp xml_handler.py ../bin/static/
