@@ -797,6 +797,7 @@ class DataCanvas(wxBufferedWindow):
 
 		self.compPanel.Hide()
 		self.splicePanel.Hide()
+		self.spliceIntervalPanel.Hide()
 		self.eldPanel.Hide()
 		self.filterPanel.Hide()
 		self.agePanel.Hide()
@@ -843,15 +844,11 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.showSplicePanel = 0 
 			self.parent.showELDPanel = 0 
 			self.parent.compositePanel.OnUpdatePlots()
-		elif note_id == 2 :
-			#self.splicePanel.Show()
-			self.parent.showSplicePanel = 1
-			self.mode = 2
-			if self.spliceWindowOn == 0 : 
-				self.parent.OnActivateWindow(1)
+		elif note_id == 2:
+			self.spliceIntervalPanel.Show()
+			self.parent.showSplicePanel = 0 
 			self.parent.showCompositePanel = 0 
-			self.parent.showELDPanel = 0 
-			#self.parent.splicePanel.OnUpdate()
+			self.parent.showELDPanel = 0
 		elif note_id == 3 :
 			self.mode = 3
 			#if self.ShowAutoPanel == False :
@@ -890,31 +887,7 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.showSplicePanel = 0 
 			self.parent.showCompositePanel = 0 
 			self.parent.showELDPanel = 0
-		elif note_id == 7:
-			self.spliceIntervalPanel.Show()
-			self.parent.showSplicePanel = 0 
-			self.parent.showCompositePanel = 0 
-			self.parent.showELDPanel = 0
-			
-		#elif note_id == 7 :
-		#	self.logPanel.Show()
-		#	self.parent.showReportPanel = 1
-		#	self.parent.OnUpdateReport()
-		#	self.parent.showSplicePanel = 0 
-		#	self.parent.showCompositePanel = 0 
-		#	self.parent.showELDPanel = 0 
-		#elif note_id == 9 :
-		#	self.helpPanel.Show()
-		#	self.parent.OnUpdateHelp()
-		#	self.parent.showCompositePanel = 0 
-		#	self.parent.showSplicePanel = 0 
-		#	self.parent.showELDPanel = 0 
-		#	self.parent.showReportPanel = 0 
 
-		#if self.note_id == 0 and note_id != 0 :
-		#	self.closeFlag = True
-
-		#self.note_id = note_id
 		event.Skip()
 
 	def DrawAgeModelRuler(self, dc):
