@@ -279,6 +279,72 @@ class ClearDataDialog(wx.Dialog):
 		self.EndModal(wx.ID_OK) 
 
 
+# constant tracking last-used option (total depth or section depth)
+LAST_USE_TOTAL = True
+class SetDepthDialog(wx.Dialog):
+	def __init__(self, parent, totalDepth, sectionDepth, section):
+		wx.Dialog.__init__(self, parent, -1, "Set Depth", style=wx.DEFAULT_DIALOG_STYLE)
+		
+		global LAST_USE_TOTAL
+		self.useTotal = LAST_USE_TOTAL
+		
+		# total depth panel
+		tdPanel = wx.Panel(self, -1)
+		self.totalRadio = wx.RadioButton(tdPanel, -1, "Total Depth:")
+		self.totalRadio.Bind(wx.EVT_RADIOBUTTON, self.totalRadioClicked)
+		
+		self.totalDepth = wx.TextCtrl(tdPanel, -1, str(totalDepth))
+		tdsz = wx.BoxSizer(wx.HORIZONTAL)
+		tdsz.Add(self.totalRadio, 0, wx.ALIGN_CENTER_VERTICAL)
+		tdsz.Add(self.totalDepth, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+		tdsz.Add(wx.StaticText(tdPanel, -1, "m"), 0, wx.ALIGN_CENTER_VERTICAL)
+		tdPanel.SetSizer(tdsz)
+		
+		# section depth panel
+		sdPanel = wx.Panel(self, -1)
+		self.sectionRadio = wx.RadioButton(sdPanel, -1, "Section Depth:")
+		self.sectionRadio.Bind(wx.EVT_RADIOBUTTON, self.sectionRadioClicked)
+		self.sectionDepth = wx.TextCtrl(sdPanel, -1, str(sectionDepth))
+		self.sectionNumber = wx.TextCtrl(sdPanel, -1, str(section))
+		sdsz = wx.BoxSizer(wx.HORIZONTAL)
+		sdsz.Add(self.sectionRadio, 0, wx.ALIGN_CENTER_VERTICAL)
+		sdsz.Add(self.sectionDepth, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+		sdsz.Add(wx.StaticText(sdPanel, -1, "cm"), 0, wx.ALIGN_CENTER_VERTICAL)
+		sdsz.Add(wx.StaticText(sdPanel, -1, "Section:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 10)
+		sdsz.Add(self.sectionNumber, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
+		sdPanel.SetSizer(sdsz)
+		
+		# button panel
+		btnPanel = wx.Panel(self, -1)
+		bsz = wx.BoxSizer(wx.HORIZONTAL)
+		bsz.Add(wx.Button(btnPanel, wx.ID_OK, "Set Depth"), 1)
+		bsz.Add(wx.Button(btnPanel, wx.ID_CANCEL, "Cancel"), 1, wx.LEFT, 10)
+		btnPanel.SetSizer(bsz)
+		
+		sz = wx.BoxSizer(wx.VERTICAL)
+		sz.Add(tdPanel, 1, wx.EXPAND | wx.ALL, 10)
+		sz.Add(sdPanel, 1, wx.EXPAND | wx.ALL, 10)
+		sz.Add(btnPanel, 1, wx.ALIGN_RIGHT | wx.ALIGN_BOTTOM | wx.ALL, 10)
+		self.SetSizer(sz)
+		self.Fit()
+		
+		self._updateRadios() # set initial radio state
+		
+	def totalRadioClicked(self, event):
+		self.useTotal = True
+		self._updateRadios()
+		
+	def sectionRadioClicked(self, event):
+		self.useTotal = False
+		self._updateRadios()
+		
+	def _updateRadios(self):
+		self.totalRadio.SetValue(self.useTotal)
+		self.sectionRadio.SetValue(not self.useTotal)
+		global LAST_USE_TOTAL
+		LAST_USE_TOTAL = self.useTotal
+
+
 class AgeListDialog(wx.Dialog):
 	def __init__(self, parent, active_list):
 		wx.Dialog.__init__(self, parent, -1, "Selected Age List", size=(210, 200),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)

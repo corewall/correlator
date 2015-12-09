@@ -38,6 +38,12 @@ class SectionSummary:
         sec = self._findSectionAtDepth(site, hole, int(core), depth)
         return sec
     
+    def sectionDepthToTotal(self, site, hole, core, section, secDepth):
+        top = self.getSectionTop(site, hole, core, section)
+        result = top + secDepth / 100.0 # cm to m
+        #print "section depth {} in section {} = {} overall".format(secDepth, section, result)        
+        return result
+    
     def _findCore(self, site, hole, core):
         df = self.dataframe
         cores = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core)]

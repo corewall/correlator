@@ -1309,6 +1309,7 @@ class SpliceIntervalPanel():
 		self.table.SetSelectionMode(wx.grid.Grid.SelectRows)
 		gridbox.Add(self.table, 1, wx.EXPAND)
 		gridPanel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectRow)
+		gridPanel.Bind(wx.grid.EVT_GRID_CELL_LEFT_DCLICK, self.OnSetDepth)
 		gpsz.Add(gridbox, 4, wx.EXPAND)
 		
 		cbox = wx.StaticBoxSizer(wx.StaticBox(gridPanel, -1, "Interval Comments"))
@@ -1487,6 +1488,34 @@ class SpliceIntervalPanel():
 		if not intervalTop.overlaps(splice.Interval(visibleMin, visibleMax)):
 			self.parent.OnUpdateStartDepth(intervalTop.getTop()) # calls UpdateDrawing()
 		else:
+			self.parent.Window.UpdateDrawing()
+			
+	def OnSetDepth(self, event):
+		if event.GetCol() == 0: # do nothing on double-click of ID column
+			return
+		
+		curint = self.parent.spliceManager.getSelected()
+		totalDepth = curint.getTop() if event.GetCol() == 1 else curint.getBot()
+		site = curint.coreinfo.leg # argh
+		hole = curint.coreinfo.hole
+		core = curint.coreinfo.holeCore
+		mcdOffset = self.parent.Window.findCoreAffineOffset(hole, core)
+		section = self.parent.sectionSummary.getSectionAtDepth(site, hole, core, totalDepth - mcdOffset)
+		secDepth = round((totalDepth - (self.parent.sectionSummary.getSectionTop(site, hole, core, section) + mcdOffset)) * 100.0, 1)
+		setDepthDialog = dialog.SetDepthDialog(self.parent, totalDepth, secDepth, section)
+		setDepthDialog.SetPosition(event.GetEventObject().GetScreenPosition())
+		result = setDepthDialog.ShowModal()
+		if result == wx.ID_OK:
+			tie = self.parent.spliceManager.topTie if event.GetCol() == 1 else self.parent.spliceManager.botTie
+			if setDepthDialog.totalRadio.GetValue() == True: # total depth
+				depth = float(setDepthDialog.totalDepth.GetValue())
+			else: # section depth
+				section = setDepthDialog.sectionNumber.GetValue()
+				secDepth = float(setDepthDialog.sectionDepth.GetValue())
+				# section summary depths are all MBSF/CSF-A, add MCD/CCSF-A offset for true depth
+				depth = self.parent.sectionSummary.sectionDepthToTotal(site, hole, core, section, secDepth) + mcdOffset
+			tie.move(depth)
+			self.UpdateUI()
 			self.parent.Window.UpdateDrawing()
 
 class AutoPanel():
