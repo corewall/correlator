@@ -22,8 +22,18 @@ class SectionSummary:
         return cls(os.path.basename(filepath), dataframe)
     
     def containsCore(self, site, hole, core):
-        cores = self._findCore(site, hole, int(core))
+        cores = self._findCores(site, hole, int(core))
         return not cores.empty
+    
+    # return depth of top of top section, bottom of bottom section
+    def getCoreRange(self, site, hole, core):
+        cores = self._findCores(site, hole, int(core))
+        cores = cores[(cores.Section != "CC")] # omit CC section for time being
+        if not cores.empty:
+            coremin = cores['TopDepth'].min()
+            coremax = cores['BottomDepth'].max()
+            return coremin, coremax
+        return None
         
     def getSectionTop(self, site, hole, core, section):
         return self._getSectionValue(site, hole, int(core), section, 'TopDepth')
@@ -44,7 +54,7 @@ class SectionSummary:
         #print "section depth {} in section {} = {} overall".format(secDepth, section, result)        
         return result
     
-    def _findCore(self, site, hole, core):
+    def _findCores(self, site, hole, core):
         df = self.dataframe
         cores = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core)]
         if cores.empty:

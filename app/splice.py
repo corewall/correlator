@@ -567,14 +567,11 @@ class SpliceManager:
                 coreinfo = self.parent.Window.findCoreInfoByHoleCore(hole, core)
                 if coreinfo is None:
                     continue
-            # todo: update with section summary values
-            
-            # set interval top and bottom (based on affine)
-            affineOffset = self.parent.Window.findCoreAffineOffset(hole, core)
-            coreinfo.minDepth += affineOffset
-            coreinfo.maxDepth += affineOffset
-            
-            #print "affineOffset = {}".format(affineOffset)
+                
+            affineOffset = self.parent.Window.findCoreAffineOffset(coreinfo.hole, coreinfo.holeCore)
+            coremin, coremax = self.getCoreRange(coreinfo)
+            coreinfo.minDepth = coremin + affineOffset
+            coreinfo.maxDepth = coremax + affineOffset
             
             top = row.TopDepthCSF
             bot = row.BottomDepthCSF
@@ -588,6 +585,13 @@ class SpliceManager:
             self.ints.append(spliceInterval) # add to ints - should already be sorted properly
         
         self._onAdd(dirty=False) # notify listeners that intervals have been added
+        
+    def getCoreRange(self, coreinfo):
+        # use section summary to get core's min and max values
+        secsumm = self.parent.sectionSummary
+        coremin, coremax = secsumm.getCoreRange(coreinfo.leg, coreinfo.hole, coreinfo.holeCore)
+        #print "{}: coremin = {}, coremax = {}".format(coreinfo.getHoleCoreStr(), coremin, coremax)
+        return coremin, coremax
 
     def select(self, depth):
         good = False
@@ -662,7 +666,10 @@ class SpliceManager:
         return result
     
     def add(self, coreinfo):
-        interval = Interval(coreinfo.minDepth, coreinfo.maxDepth)
+        coremin, coremax = self.getCoreRange(coreinfo)
+        coreinfo.minDepth = coremin
+        coreinfo.maxDepth = coremax
+        interval = Interval(coremin, coremax)
         if self._canAdd(interval):
             for gap in gaps(self._overs(interval), interval.top, interval.bot):
                 self.ints.append(SpliceInterval(coreinfo, gap.top, gap.bot))
