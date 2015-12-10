@@ -162,22 +162,15 @@ class MainFrame(wx.Frame):
 					self.topMenu.Iconize(False)
 				self.FOCUS = 1
 
-			if self.IsIconized() == True :
+			if self.IsIconized():
 				if self.IDLE == 0 :
-					if self.dataFrame.IsIconized() == False :
-						self.dataFrame.Show(False)
 					self.topMenu.Show(False)
 					if platform_name[0] == "Windows" :	
 						self.topMenu.Iconize(True)
 					self.IDLE = 1
 			else :
 				if self.IDLE == 1 :
-					if self.midata.IsChecked() == True :
-						if self.dataFrame.IsIconized() == False :
-							self.dataFrame.Show(True)
-						if platform_name[0] == "Windows" :
-							self.dataFrame.Iconize(False)
-					if self.mitool.IsChecked() == True :
+					if self.mitool.IsChecked():
 						self.topMenu.Show(True)
 					if platform_name[0] == "Windows" :	
 						self.topMenu.Iconize(False)
@@ -262,10 +255,6 @@ class MainFrame(wx.Frame):
 
 		# View 
 		menuView = wx.Menu()
-		self.midata = menuView.AppendCheckItem(-1, "Data Repository", "Data repository")
-		self.midata.Check(True)
-		self.Bind(wx.EVT_MENU, self.SHOWRepository, self.midata)
-
 		self.mitool = menuView.AppendCheckItem(-1, "Toolbar", "Toolbar")
 		self.mitool.Check(True)
 		self.Bind(wx.EVT_MENU, self.SHOWToolbar, self.mitool)
@@ -484,13 +473,6 @@ class MainFrame(wx.Frame):
 				break
 			else :
 				break
-
-
-	def SHOWRepository(self, event):
-		if self.midata.IsChecked() == False :
-			self.dataFrame.Show(False)
-		else :
-			self.topMenu.OnDB(1)
 
 	def SHOWToolbar(self, event):
 		if self.mitool.IsChecked() == False :
@@ -2493,7 +2475,7 @@ class MainFrame(wx.Frame):
 		if self.dataFrame.IsShown() == False :
 			self.Window.Hide()
 			self.dataFrame.Show(True)
-			self.midata.Check(True)
+			#self.midata.Check(True)
 			self.topMenu.dbbtn.SetLabel("Go to Display")
 		self.Layout()
 
@@ -2506,7 +2488,7 @@ class MainFrame(wx.Frame):
 		self.Window.OnSize(None)
 
 		self.Window.Show(True)
-		self.midata.Check(False)
+		#self.midata.Check(False)
 		self.topMenu.dbbtn.SetLabel("Go to Data Manager")
 		self.Layout()
 

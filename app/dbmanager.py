@@ -160,7 +160,6 @@ class DataFrame(wx.Panel):
 
 	def OnHide(self,event):
 		self.Show(False)
-		self.parent.midata.Check(False)
 		
 	def OnSecSummMenu(self, event):
 		opId = event.GetId()
@@ -5471,9 +5470,7 @@ class DataFrame(wx.Panel):
 
 	def OnDISMISS(self, event):
 		self.Show(False)
-		self.parent.midata.Check(False)
 		self.parent.Window.SetFocusFromKbd()
-
 
 	def changeFORMAT(self, filename, ith):
 		# change format
