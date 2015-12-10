@@ -417,7 +417,7 @@ class MainFrame(wx.Frame):
 					dblist_f.write("\n"+ first_token+"\n")
 					os.chdir(self.DBPath+ "db")
 					if os.access(first_token, os.F_OK) == False :
-                                                os.mkdir(first_token)
+						os.mkdir(first_token)
 					os.chdir(path)
 					cmd = "cp -rf * " + self.DBPath + "db/" + first_token
 					if sys.platform == 'win32' :
@@ -427,7 +427,6 @@ class MainFrame(wx.Frame):
 					else :
 						#print "[DEBUG] " + cmd
 						os.system(cmd)
-                                        
 					updated = True 
 					if self.logFileptr != None :
 						global_logFile.write("Add Data Repository : " + first_token + "\n")
