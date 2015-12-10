@@ -1353,6 +1353,9 @@ class SpliceIntervalPanel():
 	def UpdateUI(self):
 		self._updateTable()
 		self._updateButtons()
+		
+	def OnInitUI(self): # to match other panels' interface
+		self.UpdateUI()
 
 	# add cells for SpliceInterval si at specified row
 	def _makeTableRow(self, row, si):

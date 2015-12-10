@@ -1403,6 +1403,7 @@ class MainFrame(wx.Frame):
 
 		self.compositePanel.OnInitUI()
 		#self.splicePanel.OnInitUI()
+		self.spliceIntervalPanel.OnInitUI()
 		self.eldPanel.OnInitUI()
 		self.autoPanel.OnInitUI(True)
 		self.agePanel.OnInitUI()
@@ -1421,6 +1422,7 @@ class MainFrame(wx.Frame):
 		self.Window.AdjustDepthCore = []
 		self.Window.TieData = []
 		self.Window.GuideCore = []
+		self.spliceManager.clear()
 		self.Window.SpliceHole = []
 		self.Window.SpliceData = []
 		self.Window.SpliceSmoothData = []
