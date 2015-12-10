@@ -178,6 +178,11 @@ class DataFrame(wx.Panel):
 				filepath = self.parent.DBPath + 'db/' + self.GetSelectedSiteName() + '/' + secsummname
 				os.remove(filepath)
 				self.tree.SetItemText(self.selectedIdx, "", 1)
+				self.tree.SetItemText(self.selectedIdx, "", 6)
+				self.tree.SetItemText(self.selectedIdx, "", 7)
+				self.tree.SetItemText(self.selectedIdx, "", 8)
+				self.tree.SetItemText(self.selectedIdx, "", 9)
+				self.tree.SetItemText(self.selectedIdx, "", 10)
 				self.OnUPDATE_DB_FILE(self.GetSelectedSiteName(), self.tree.GetItemParent(self.selectedIdx))
 				
 	def EnableTreeItem(self, item, enable):
@@ -454,13 +459,17 @@ class DataFrame(wx.Panel):
 		self.selectedIdx = None
 
 	def ImportSectionSummary(self):
-		secsumm = tabularImport.doImport(self, tabularImport.SectionSummaryFormat, allowEmptyCells=False)
+		secsumm, srcPath = tabularImport.doImport(self, tabularImport.SectionSummaryFormat, allowEmptyCells=False)
 		if secsumm is not None:
 			# update GUI
 			site = self.GetSelectedSiteName()
 			item = self.tree.GetSelection()
 			self.tree.SetItemText(item, secsumm.name, 1)
-			self.tree.SetItemText(item, secsumm.name, 10)
+			self.tree.SetItemText(item, self.GetTimestamp(), 6)
+			self.tree.SetItemText(item, self.parent.user, 7)
+			self.tree.SetItemText(item, secsumm.name, 8)
+			self.tree.SetItemText(item, srcPath, 9)
+			self.tree.SetItemText(item, site + '/', 10)
 			
 			# update site DB file
 			self.OnUPDATE_DB_FILE(site, self.tree.GetItemParent(item))
@@ -488,6 +497,18 @@ class DataFrame(wx.Panel):
 			item = parent
 		#print "Selected Site = {}".format(self.tree.GetItemText(item, 0))
 		return item
+	
+	def MakeSectionSummaryPopup(self, popupMenu):
+		secsumm_name = self.tree.GetItemText(self.selectedIdx, 1)
+		if secsumm_name == "":
+			popupMenu.Append(1, "&Import Section Summary...")
+			wx.EVT_MENU(popupMenu, 1, self.OnSecSummMenu)
+		else:
+			popupMenu.Append(2, "&View")
+			#path = self.parent.DBPath + 'db/' + self.GetSelectedSiteName() + '/' + secsumm_name
+			wx.EVT_MENU(popupMenu, 2, self.OnSecSummMenu)
+			popupMenu.Append(3, "&Delete")
+			wx.EVT_MENU(popupMenu, 3, self.OnSecSummMenu)
 
 
 	# build appropriate right-click menu based on selection type - rather than pulling
@@ -584,6 +605,8 @@ class DataFrame(wx.Panel):
 
 					popupMenu.Append(16, "&Export")
 					wx.EVT_MENU(popupMenu, 16, self.OnPOPMENU)
+				elif self.tree.GetItemText(self.selectedIdx, 0) == "Section Summary":
+					self.MakeSectionSummaryPopup(popupMenu)
 				else :
 					popupMenu.Append(1, "&Load")
 					wx.EVT_MENU(popupMenu, 1, self.OnPOPMENU)
@@ -665,16 +688,7 @@ class DataFrame(wx.Panel):
 					popupMenu.Append(21, "&Import image data")
 					wx.EVT_MENU(popupMenu, 21, self.OnPOPMENU)
 				elif str_name == "Section Summary":
-					secsumm_name = self.tree.GetItemText(self.selectedIdx, 1)
-					if secsumm_name == "":
-						popupMenu.Append(1, "&Import Section Summary...")
-						wx.EVT_MENU(popupMenu, 1, self.OnSecSummMenu)
-					else:
-						popupMenu.Append(2, "&View")
-						path = self.parent.DBPath + 'db/' + self.GetSelectedSiteName() + '/' + secsumm_name
-						wx.EVT_MENU(popupMenu, 2, self.OnSecSummMenu)
-						popupMenu.Append(3, "&Delete")
-						wx.EVT_MENU(popupMenu, 3, self.OnSecSummMenu)
+					self.MakeSectionSummaryPopup(popupMenu)
 				else :
 					popupMenu.Append(5, "&Add new data")
 					wx.EVT_MENU(popupMenu, 5, self.OnPOPMENU)
@@ -1751,6 +1765,13 @@ class DataFrame(wx.Panel):
 
 		f.close()
 		return valid
+	
+	def GetTimestamp(self):
+		tempstamp = str(datetime.today())
+		last = tempstamp.find(":", 0)
+		last = tempstamp.find(":", last+1)
+		stamp = tempstamp[0:last]
+		return stamp
 
 	def OnIMPORT_STRAT1(self):
 		filterindex = 0
@@ -2912,6 +2933,16 @@ class DataFrame(wx.Panel):
 		s = 'byWhom: ' + self.tree.GetItemText(item, 7) + '\n'
 		db_f.write(s)
 
+	def WriteSectionSummaryLine(self, treeItem, fileOut):
+		ssName = self.tree.GetItemText(treeItem, 1)
+		ssTime = self.tree.GetItemText(treeItem, 6)
+		ssUser = self.tree.GetItemText(treeItem, 7)
+		ssFilename = self.tree.GetItemText(treeItem, 8)
+		ssSourcePath = self.tree.GetItemText(treeItem, 9)
+		ssDbPath = self.tree.GetItemText(treeItem, 10)
+		if ssName != "": # brgbrg write
+			ssLine = '\nsecsumm: {}: {}: {}: {}: {}: {}\n'.format(ssName, ssTime, ssUser, ssFilename, ssSourcePath, ssDbPath)
+			fileOut.write(ssLine)
 
 	def OnUPDATE_DB_FILE(self, title, parentItem):
 		filename = self.parent.DBPath + 'db/' + title + '/datalist.db'
@@ -3016,9 +3047,7 @@ class DataFrame(wx.Panel):
 						s = '\nimage: ' + self.tree.GetItemText(child_item, 8) + ': ' + self.tree.GetItemText(child_item, 6) + ': ' + self.tree.GetItemText(child_item, 7) + ': ' + self.tree.GetItemText(child_item, 9) + ': ' + self.tree.GetItemText(child_item, 2) + '\n'
 						fout.write(s)
 			elif type == "Section Summary":
-				secsumm_name = self.tree.GetItemText(selectItem, 1)
-				if secsumm_name != "":
-					fout.write('\nsecsumm: ' + secsumm_name + '\n')
+				self.WriteSectionSummaryLine(selectItem, fout)
 			else :  
 				totalcount = self.tree.GetChildrenCount(selectItem, False)
 				culltable_item = None
@@ -3167,9 +3196,7 @@ class DataFrame(wx.Panel):
 							s = '\nimage: ' + self.tree.GetItemText(child_item, 8) + ': ' + self.tree.GetItemText(child_item, 6) + ': ' + self.tree.GetItemText(child_item, 7) + ': ' + self.tree.GetItemText(child_item, 9) + ': ' + self.tree.GetItemText(child_item, 2) + '\n'
 							fout.write(s)
 				elif type == "Section Summary":
-					secsumm_name = self.tree.GetItemText(selectItem, 1)
-					if secsumm_name != "":
-						fout.write('\nsecsumm: ' + secsumm_name + '\n')
+					self.WriteSectionSummaryLine(selectItem, fout)
 				else :
 					totalcount = self.tree.GetChildrenCount(selectItem, False)
 					culltable_item = None
@@ -5174,7 +5201,7 @@ class DataFrame(wx.Panel):
 				strat_child = self.tree.AppendItem(root, 'Stratigraphy')
 				age_child = self.tree.AppendItem(root, 'Age Models')
 				image_child = self.tree.AppendItem(root, 'Image Data')
-				secsumm_child = self.tree.AppendItem(root, 'Section Summary')
+				ssChild = self.tree.AppendItem(root, 'Section Summary')
 				self.tree.SortChildren(root)
 				child = None
 				hole_child = None
@@ -5425,8 +5452,14 @@ class DataFrame(wx.Panel):
 								else :
 									self.tree.SetItemTextColour(temp_child, wx.RED)
 						elif token[0] == "secsumm":
-							if secsumm_child is not None:
-								self.tree.SetItemText(secsumm_child, token[1].strip(), 1)
+							if ssChild is not None:
+								self.tree.SetItemText(ssChild, token[1].strip(), 1)
+								if len(token) > 2: # guard against old-style section summary data
+									self.tree.SetItemText(ssChild, token[2].strip(), 6) # timestamp
+									self.tree.SetItemText(ssChild, token[3].strip(), 7) # user
+									self.tree.SetItemText(ssChild, token[4].strip(), 8) # file
+									self.tree.SetItemText(ssChild, token[5].strip(), 9) # source path
+									self.tree.SetItemText(ssChild, token[6].strip(), 10) # db path
 				sub_f.close()
 
 		loaded_item_list = []

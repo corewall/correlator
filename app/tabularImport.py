@@ -280,19 +280,19 @@ class ImportDialog(wx.Dialog):
         self._checkReq()
         
 # with GUI, select and import a file, returning a SectionSummary (to be generalized)
-def doImport(parent, goalFormat, path=None):
+def doImport(parent, goalFormat, path=None, allowEmptyCells=True):
     secSumm = None
     if path is None:
         path = selectFile(parent, goalFormat)
     if path is not None:
         dataframe = parseFile(parent, path, goalFormat, checkcols=True)
         if dataframe is not None:
-            dlg = ImportDialog(parent, -1, path, dataframe, goalFormat)
+            dlg = ImportDialog(parent, -1, path, dataframe, goalFormat, allowEmptyCells)
             if dlg.ShowModal() == wx.ID_OK:
                 dataframe = reorderColumns(dlg.dataframe, dlg.reqColMap, goalFormat)
                 name = os.path.basename(dlg.path)
                 secSumm = SectionSummary(name, dataframe)
-    return secSumm
+    return secSumm, path
 
 def doSITImport(parent, goalFormat, path=None):
     sit = None
