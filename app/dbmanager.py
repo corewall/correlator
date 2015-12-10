@@ -6,6 +6,8 @@
 import platform
 platform_name = platform.uname()
 
+import shutil
+
 import wx 
 import wx.gizmos as gizmos
 from wx.lib import plot
@@ -1920,7 +1922,7 @@ class DataFrame(wx.Panel):
 				enabledFilename = st[0]
 				break
 		return spliceTables, enabledFilename
-
+	
 	def ExportAffineTable(self, affineFile, outFile, formatStr):
 		if formatStr == "XML":
 			self.SAVE_AFFINE_TO_XML(affineFile, outFile)
@@ -2020,8 +2022,11 @@ class DataFrame(wx.Panel):
 						else:
 							return
 					elif tableType == "SPLICE":
-						if not self.ExportSpliceTable(source, path + '/' + filename, siteItem):
-							return
+						# 12/10/2015 brg: for now, don't pop dialog, just copy existing file - need
+						# to resolve how we'll handle application of affine tables other than the
+						# one used to create a splice.
+						#self.ExportSpliceTable()
+						shutil.copy2(source, path + '/' + filename + ".sit.csv")
 					elif tableType == "ELD" :
 						outELDFile = filename + ".eld.table"
 						if not self.ExportELDTable(source, path + '/' + outELDFile, siteItem):
