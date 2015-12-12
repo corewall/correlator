@@ -590,8 +590,9 @@ class SpliceManager:
         # use section summary to get core's min and max values
         secsumm = self.parent.sectionSummary
         coremin, coremax = secsumm.getCoreRange(coreinfo.leg, coreinfo.hole, coreinfo.holeCore)
+        affineOffset = self.parent.Window.findCoreAffineOffset(coreinfo.hole, coreinfo.holeCore)
         #print "{}: coremin = {}, coremax = {}".format(coreinfo.getHoleCoreStr(), coremin, coremax)
-        return coremin, coremax
+        return coremin + affineOffset, coremax + affineOffset
 
     def select(self, depth):
         good = False
