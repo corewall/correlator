@@ -570,8 +570,8 @@ class SpliceManager:
                 
             affineOffset = self.parent.Window.findCoreAffineOffset(coreinfo.hole, coreinfo.holeCore)
             coremin, coremax = self.getCoreRange(coreinfo)
-            coreinfo.minDepth = coremin + affineOffset
-            coreinfo.maxDepth = coremax + affineOffset
+            coreinfo.minDepth = coremin
+            coreinfo.maxDepth = coremax
             
             top = row.TopDepthCSF
             bot = row.BottomDepthCSF
