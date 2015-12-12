@@ -1462,7 +1462,7 @@ class SpliceIntervalPanel():
 			tie.split()
 		else:
 			tie.tie()
-		self._updateButtons()
+		self.UpdateUI()
 		self.parent.Window.UpdateDrawing()
 		
 	def OnSave(self, event):

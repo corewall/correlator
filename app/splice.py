@@ -553,6 +553,8 @@ class SpliceManager:
     def load(self, filepath):
         self.clear()
         df = tabularImport.readFile(filepath)
+        previousSpliceType = None
+        previousAffBot = None
         for index, row in df.iterrows(): # itertuples() is faster if needed
             #print "Loading row {}: {}".format(index, str(row))
             # for each row, create CoreInfo
@@ -573,15 +575,21 @@ class SpliceManager:
             coreinfo.minDepth = coremin
             coreinfo.maxDepth = coremax
             
-            top = row.TopDepthCSF
-            bot = row.BottomDepthCSF
-            if top + affineOffset != row.TopDepthCCSF:
+            top = round(row.TopDepthCSF, 3)
+            bot = round(row.BottomDepthCSF, 3)
+            topaff = round(row.TopDepthCCSF, 3)
+            botaff = round(row.BottomDepthCCSF, 3)
+            #print "top = {}, bottom = {}, affinetop = {} bot = {}".format(top, bot, top + affineOffset, bot + affineOffset)
+            if top + affineOffset != topaff:
                 print "table has top CSF = {}, CCSF = {} for an offset of {}, current affine offset = {}".format(top, row.TopDepthCCSF, row.TopDepthCCSF - top, affineOffset)
-            if bot + affineOffset != row.BottomDepthCCSF:
-                print "table has bottom CSF = {}, CCSF = {} for an offset of {}, current affine offset = {}".format(bot, row.BottomDepthCCSF, row.BottomDepthCCSF - top, affineOffset)
+            if bot + affineOffset != botaff:
+                print "table has bottom CSF = {}, CCSF = {} for an offset of {}, current affine offset = {}".format(bot, row.BottomDepthCCSF, row.BottomDepthCCSF - bot, affineOffset)
                 
             comment = "" if pandas.isnull(row.Comment) else str(row.Comment)
-            spliceInterval = SpliceInterval(coreinfo, top + affineOffset, bot + affineOffset, comment)
+            intervalTop = previousAffBot if previousSpliceType == "TIE" and previousAffBot is not None else top + affineOffset
+            previousSpliceType = row.SpliceType
+            previousAffBot = bot + affineOffset
+            spliceInterval = SpliceInterval(coreinfo, intervalTop, previousAffBot, comment)
             self.ints.append(spliceInterval) # add to ints - should already be sorted properly
         
         self._onAdd(dirty=False) # notify listeners that intervals have been added
