@@ -671,11 +671,12 @@ class MainFrame(wx.Frame):
 		if self.showCompositePanel == 1 :
 			self.compositePanel.OnUpdateDrawing()
 		elif self.showSplicePanel == 1 : 
-			self.splicePanel.OnUpdateDrawing()
+			self.spliceIntervalPanel.OnUpdateDrawing()
 		elif self.showELDPanel == 1 :
 			self.eldPanel.OnUpdateDrawing()
 
 
+	# parse returned data from evalcoef/evalcoef_splice and add to appropriate graph
 	def OnAddFirstGraph(self, coef, depth1, depth2):
 		start = 0
 		last = 0
@@ -716,7 +717,7 @@ class MainFrame(wx.Frame):
 		if self.showCompositePanel == 1 :
 			self.compositePanel.OnAddFirstData(l, bestdata, best)
 		elif self.showSplicePanel == 1 : 
-			self.splicePanel.OnAddFirstData(l, bestdata, best)
+			self.spliceIntervalPanel.OnAddFirstData(l, bestdata, best)
 		elif self.showELDPanel == 1 :
 			self.eldPanel.OnAddFirstData(l, bestdata, best)
 
@@ -748,7 +749,7 @@ class MainFrame(wx.Frame):
 		if self.showCompositePanel == 1 :
 			self.compositePanel.OnAddData(l)
 		elif self.showSplicePanel == 1 : 
-			self.splicePanel.OnAddData(l)
+			self.spliceIntervalPanel.OnAddData(l)
 		elif self.showELDPanel == 1 :
 			self.eldPanel.OnAddData(l)
 

@@ -846,7 +846,7 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.compositePanel.OnUpdatePlots()
 		elif note_id == 2:
 			self.spliceIntervalPanel.Show()
-			self.parent.showSplicePanel = 0 
+			self.parent.showSplicePanel = 1
 			self.parent.showCompositePanel = 0 
 			self.parent.showELDPanel = 0
 		elif note_id == 3 :
@@ -5992,10 +5992,28 @@ class DataCanvas(wxBufferedWindow):
 			got = 1 
 			
 		# adjust SpliceIntervalTie's depth if one is selected
-		selectedIntervalTie = self.parent.spliceManager.getSelectedTie()
-		if selectedIntervalTie is not None:
+		siTie = self.parent.spliceManager.getSelectedTie()
+		if siTie is not None:
 			depth = self.getSpliceDepth(pos[1])
-			selectedIntervalTie.move(depth)
+			siTie.move(depth)
+			
+			# update splice evaluation graph data if tied
+			if siTie.isTied():
+				sortedInts = sorted([siTie.interval, siTie.adjInterval], key=lambda i:i.getTop())
+				topInterval = sortedInts[0]
+				botInterval = sortedInts[1]
+				h1, c1, t1 = topInterval.triad()
+				h2, c2, t2 = botInterval.triad()
+				# brgtodo: Natural Gamma naming tweak?
+				evalResult = py_correlator.evalcoef(t1, h1, int(c1), depth, t2, h2, int(c2), depth)
+				try: # attempt to parse evalResult into datapoints for eval graph
+					self.parent.OnAddFirstGraph(evalResult, depth, depth)
+				except ValueError:
+					print "Error parsing evalcoef() results, do cores have data at depth {}?".format(depth)
+					return
+				# brgtodo: other datatypes
+				self.parent.OnUpdateGraph()
+			
 			self.UpdateDrawing()
 			return
 

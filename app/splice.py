@@ -257,6 +257,9 @@ class SpliceInterval:
     def getHoleCoreStr(self):
         return self.coreinfo.getHoleCoreStr()
     
+    def triad(self): # "identifying triad" of hole, core, and datatype  
+        return self.coreinfo.hole, self.coreinfo.holeCore, self.coreinfo.type
+    
     def __repr__(self):
         return str(self.interval)
 
@@ -300,6 +303,13 @@ class SpliceIntervalTie():
         self.interval = interval
         self.adjInterval = adjInterval
         self.clampMessage = ""
+        
+    def getTriad(self):
+        return self.interval.triad()
+    
+    def getAdjTriad(self):
+        if self.adjInterval is not None:
+            return self.adjInterval.triad()
 
     def _setClampMessage(self, message):
         self.clampMessage = message

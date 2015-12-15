@@ -1279,6 +1279,107 @@ class SplicePanel():
 		self.polyline_list = []
 
 
+# Panel containing evaluation graph plot canvas and settings display/controls
+class EvalPlotPanel(wx.Panel):
+	def __init__(self, parent, depthStep, winLength, leadLag):
+		wx.Panel.__init__(self, parent, -1)
+		self.parent = parent
+		self.depthStep = depthStep
+		self.winLength = winLength
+		self.leadLag = leadLag
+		self.polylines = [] # data to be plotted
+		self._debugDrawCount = 0
+		
+		self._setupUI()
+
+	def _setupUI(self):
+		# evaluation graph
+		self.evalPlot = BetterLegendPlotCanvas(self)#evalPanel)
+		self.evalPlot.SetEnableGrid(True)
+		self.evalPlot.SetEnableTitle(False)
+		self.evalPlot.SetBackgroundColour("White")
+		self.evalPlot.Show(True)
+		evsz = wx.BoxSizer(wx.VERTICAL)
+		evsz.Add(self.evalPlot, 1, wx.EXPAND)
+		
+		paramPanel = wx.Panel(self, -1)
+		psz = wx.BoxSizer(wx.HORIZONTAL)
+		bmp = wx.Bitmap("icons/sprocket.png")
+		settingsBtn = wx.BitmapButton(paramPanel, -1, bmp)
+		self.crText = wx.StaticText(paramPanel, -1, "Step: 0.135 | Window: 1.0 | Lead/Lag: 1.0")
+		crFont = self.crText.GetFont()
+		crFont.SetPointSize(10)
+		self.crText.SetFont(crFont)
+		psz.Add(self.crText, 1, wx.ALIGN_CENTER_VERTICAL)
+		psz.Add(settingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+		paramPanel.SetSizer(psz)
+		
+		evsz.Add(paramPanel, 0, wx.EXPAND)
+		self.SetSizer(evsz)
+		
+		paramPanel.Bind(wx.EVT_BUTTON, self.OnEvalSettings, settingsBtn)
+
+		xdata = [ (-self.leadLag, 0), (0, 0), (self.leadLag, 0) ]
+		self.xaxes = plot.PolyLine(xdata, legend='', colour='black', width =2)
+		ydata = [ (0, -1),( 0, 1) ]
+		self.yaxes = plot.PolyLine(ydata, legend='', colour='black', width =2)
+
+		data = [ (-self.leadLag, 0), (0, 0), (self.leadLag, 0) ]
+		self.OnUpdateData(data, [])
+		self.OnUpdateDrawing()
+
+	def OnEvalSettings(self, evt):
+		pos = self.crText.GetScreenPositionTuple()
+		dlg = dialog.CorrParamsDialog(self, self.depthStep, self.winLength, self.leadLag)
+		dlg.SetPosition(pos)
+		if dlg.ShowModal() == wx.ID_OK:
+			self.depthStep = dlg.outDepthStep
+			self.winLength = dlg.outWinLength
+			self.leadLag = dlg.outLeadLag
+			self.UpdateEvalStatus()
+	
+	def OnUpdate(self):
+		self.evalPlot.Clear()
+		data = [(-self.leadLag, 0), (0, 0), (self.leadLag, 0)]
+		self.OnUpdateData(data, [])
+		self.OnUpdateDrawing()
+		#self.parent.Update() # appears to be unnecessary on Mac
+		self.UpdateEvalStatus()
+
+	def UpdateEvalStatus(self):
+		roundedDepthStep = int(10000.0 * float(self.depthStep)) / 10000.0
+		self.crText.SetLabel("Step: {} | Window: {} | Lead/Lag: {}".format(roundedDepthStep, self.winLength, self.leadLag))
+		
+	def OnUpdateDepth(self, data):
+		depthstep = int(10000.0 * float(data)) / 10000.0;
+		self.depth.SetValue(str(depthstep))
+
+	def OnUpdateData(self, data, bestdata):
+		line = plot.PolyLine(data, legend='', colour='red', width =2) 
+		self.polylines.append(line)
+		if bestdata != [] : 
+			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width =5) 
+			self.polylines.append(bestline)
+
+	def OnAddFirstData(self, data, bestdata, best):
+		line = plot.PolyLine(data, legend='', colour='red', width =2) 
+		self.polylines.append(line)
+		if bestdata != [] : 
+			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width =5) 
+			self.polylines.append(bestline)
+
+	def OnAddData(self, data):
+		line = plot.PolyLine(data, legend='', colour='grey', width =2) 
+		self.polylines.append(line)
+
+	def OnUpdateDrawing(self): # called by client
+		self.polylines.append(self.xaxes)
+		self.polylines.append(self.yaxes)
+		gc = plot.PlotGraphics(self.polylines, '', 'depth (m)', 'correlation coef (r)')
+		self.evalPlot.Draw(gc, xAxis = (-self.leadLag , self.leadLag), yAxis = (-1, 1))
+		self.polylines = []
+
+
 class SpliceIntervalPanel():
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
@@ -1295,10 +1396,12 @@ class SpliceIntervalPanel():
 		psz = wx.BoxSizer(wx.VERTICAL)
 		panel.SetSizer(psz)
 
-		# interval grid, comments, and delete button
-		gridPanel = wx.Panel(panel, -1)
+		# interval table, evaluation graph tabs
+		self.note = wx.Notebook(self.mainPanel, -1)#self.mainPanel, -1)
+		
+		# interval table
+		gridPanel = wx.Panel(self.note, -1)
 		gpsz = wx.BoxSizer(wx.VERTICAL)
-		gridbox = wx.StaticBoxSizer(wx.StaticBox(gridPanel, -1, "Splice Intervals"))
 		self.table = wx.grid.Grid(gridPanel, -1)
 		self.table.SetRowLabelSize(0) # hide row headers
 		self.table.DisableDragRowSize()
@@ -1307,30 +1410,44 @@ class SpliceIntervalPanel():
 		for colidx, label in enumerate(["Core", "Top (m)", "Bot (m)"]):
 			self.table.SetColLabelValue(colidx, label)
 		self.table.SetSelectionMode(wx.grid.Grid.SelectRows)
-		gridbox.Add(self.table, 1, wx.EXPAND)
+		gpsz.Add(self.table, 1, wx.EXPAND)
 		gridPanel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectRow)
 		gridPanel.Bind(wx.grid.EVT_GRID_CELL_LEFT_DCLICK, self.OnSetDepth)
-		gpsz.Add(gridbox, 4, wx.EXPAND)
+		gridPanel.SetSizer(gpsz)
+		self.note.AddPage(gridPanel, "Splice Interval")
+		self.gridPanel = gridPanel
 		
-		cbox = wx.StaticBoxSizer(wx.StaticBox(gridPanel, -1, "Interval Comments"))
-		self.commentText = wx.TextCtrl(gridPanel, -1, "[interval comment]", style=wx.TE_MULTILINE)
+		# evaluation graph
+		evalPlotPanel = EvalPlotPanel(self.note, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
+		self.note.AddPage(evalPlotPanel, "Evaluation Graph")
+		self.evalPanel = evalPlotPanel
+		
+		psz.Add(self.note, 2, wx.EXPAND)
+		self.note.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectNote)
+		self.note.SetSelection(1)
+		
+		# comments, delete button
+		ctrlPanel = wx.Panel(panel, -1)
+		cpsz = wx.BoxSizer(wx.VERTICAL)
+		cbox = wx.StaticBoxSizer(wx.StaticBox(ctrlPanel, -1, "Interval Comments"))
+		self.commentText = wx.TextCtrl(ctrlPanel, -1, "[interval comment]", style=wx.TE_MULTILINE)
 		self.commentText.Bind(wx.EVT_CHAR, self._prohibitCommas)
 		self.commentText.Bind(wx.EVT_KILL_FOCUS, self._saveComment)
 		cbox.Add(self.commentText, 1, wx.EXPAND)
-		gpsz.Add(cbox, 1, wx.EXPAND | wx.ALL, 5)
+		cpsz.Add(cbox, 1, wx.EXPAND | wx.ALL, 5)
 
-		self.delButton = wx.Button(gridPanel, -1, "Delete Interval")
-		gridPanel.Bind(wx.EVT_BUTTON, self.OnDelete, self.delButton)
-		gpsz.Add(self.delButton, 0, wx.EXPAND | wx.ALL, 5)
-		gridPanel.SetSizer(gpsz)
-		psz.Add(gridPanel, 2, wx.EXPAND)
+		self.delButton = wx.Button(ctrlPanel, -1, "Delete Interval")
+		ctrlPanel.Bind(wx.EVT_BUTTON, self.OnDelete, self.delButton)
+		cpsz.Add(self.delButton, 0, wx.EXPAND | wx.ALL, 5)
+		ctrlPanel.SetSizer(cpsz)
+		psz.Add(ctrlPanel, 2, wx.EXPAND)
 
 		# tie option buttons (split/tie)
 		tsbox = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Tie Options"), orient=wx.VERTICAL)	
 		tieSplitPanel = wx.Panel(panel, -1)
 		self.topTieButton = wx.Button(tieSplitPanel, -1, "Edit Top Tie")
 		tieSplitPanel.Bind(wx.EVT_BUTTON, self.OnTopTieButton, self.topTieButton)
-		self.botTieButton = wx.Button(tieSplitPanel, -1, "Edit Bot Tie")
+		self.botTieButton = wx.Button(tieSplitPanel, -1, "Edit Bottom Tie")
 		tieSplitPanel.Bind(wx.EVT_BUTTON, self.OnBotTieButton, self.botTieButton)
 		tspsz = wx.FlexGridSizer(rows=2, cols=2, vgap=10)
 		tspsz.AddGrowableCol(1, proportion=1)
@@ -1349,6 +1466,18 @@ class SpliceIntervalPanel():
 		vbox = wx.BoxSizer(wx.VERTICAL)
 		vbox.Add(panel, 1, wx.EXPAND)
 		self.mainPanel.SetSizer(vbox)
+		
+	def OnSelectNote(self, event):
+		newSel = event.GetSelection()
+		self.gridPanel.Hide()
+		self.evalPanel.Hide() 
+		if newSel == 0:
+			self.gridPanel.Show()
+			self.evalPanel.Hide()
+		else:
+			self.gridPanel.Hide()
+			self.evalPanel.Show()
+			self.evalPanel.OnUpdate() # update eval plot
 	
 	def UpdateUI(self):
 		self._updateTable()
@@ -1520,6 +1649,17 @@ class SpliceIntervalPanel():
 			tie.move(depth)
 			self.UpdateUI()
 			self.parent.Window.UpdateDrawing()
+
+	# wrappers for EvalPlotPanel
+	def OnAddFirstData(self, data, bestdata, best):
+		self.evalPanel.OnAddFirstData(data, bestdata, best)
+	def OnAddData(self, data):
+		self.evalPanel.OnAddData(data)
+	def OnUpdateDrawing(self):
+		self.evalPanel.OnUpdateDrawing()
+
+
+############## end SpliceIntervalPanel #################################
 
 class AutoPanel():
 	def __init__(self, parent, mainPanel):
