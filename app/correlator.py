@@ -75,7 +75,7 @@ class MainFrame(wx.Frame):
 		self.HScrollMax =0
 		self.CoreNo = 0
 		self.depthStep = 0.11
-		self.origin_depthStep = 0.11
+		self.minDepthStep = 0.11
 		self.winLength = 1.0 
 		self.leadLag = 1.0 
 		self.min = 999
@@ -598,10 +598,11 @@ class MainFrame(wx.Frame):
 			self.miFileClearsp.Enable(enable)
 			self.miFileClearsa.Enable(enable)
 
-	def OnEvalSetup(self):
-		if self.depthStep < self.origin_depthStep :
-			self.OnShowMessage("Error", str(self.origin_depthStep) + " is min depth step.", 1)
-			self.depthStep  = self.origin_depthStep
+	# update global Evaluation Graph parameters
+	def OnEvalSetup(self, depthStep, winLength, leadLag):
+		self.depthStep = depthStep
+		self.winLength = winLength
+		self.leadLag = leadLag
 		py_correlator.setEvalGraph(self.depthStep, self.winLength, self.leadLag)
 
 	def OnAdjustCore(self, opt, type, offset, comment):
@@ -639,19 +640,19 @@ class MainFrame(wx.Frame):
 
 	def OnUpdateDepthStep(self):
 		self.depthStep = py_correlator.getAveDepStep()
-		self.origin_depthStep = int(10000.0 * float(self.depthStep)) / 10000.0;
+		self.minDepthStep = int(10000.0 * float(self.depthStep)) / 10000.0;
 
 		self.compositePanel.OnUpdatePlots()
 		self.splicePanel.OnUpdate()
 		self.eldPanel.OnUpdate()
-		self.OnEvalSetup()
+		self.OnEvalSetup(self.depthStep, self.winLength, self.leadLag)
 
 	def OnUpdateGraphSetup(self, idx):
-		if idx == 1 :
+		if idx == 1:
 			self.compositePanel.OnUpdatePlots()
-		elif idx == 2 :
-			self.splicePanel.OnUpdate()
-		elif idx == 3 :
+		elif idx == 2:
+			self.Window.UpdateSpliceEvalPlot()
+		elif idx == 3:
 			self.eldPanel.OnUpdate()
 
 	def GetSpliceCore(self):
@@ -671,7 +672,7 @@ class MainFrame(wx.Frame):
 		if self.showCompositePanel == 1 :
 			self.compositePanel.OnUpdateDrawing()
 		elif self.showSplicePanel == 1 : 
-			self.spliceIntervalPanel.OnUpdateDrawing()
+			self.spliceIntervalPanel.OnUpdate()
 		elif self.showELDPanel == 1 :
 			self.eldPanel.OnUpdateDrawing()
 

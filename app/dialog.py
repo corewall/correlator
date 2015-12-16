@@ -1358,8 +1358,10 @@ class ProjectDialog(wx.Dialog):
 
 
 class CorrParamsDialog(wx.Dialog):
-	def __init__(self, parent, depthStep, winLength, leadLag):
+	def __init__(self, parent, minDepthStep, depthStep, winLength, leadLag):
 		wx.Dialog.__init__(self, parent, -1, "Correlation Parameters", size=(280,170), style=wx.CAPTION)
+		
+		self.minDepthStep = minDepthStep
 		
 		paramPanel = wx.Panel(self, -1)
 		sz = wx.FlexGridSizer(3, 2, hgap=5, vgap=5)
@@ -1391,7 +1393,13 @@ class CorrParamsDialog(wx.Dialog):
 		self.Bind(wx.EVT_BUTTON, self.OnApply, self.applyButton)
 		
 	def OnApply(self, evt):
-		self.outDepthStep = float(self.depthStep.GetValue())
+		depthStep = float(self.depthStep.GetValue())
+		if depthStep < self.minDepthStep:
+			dlg = MessageDialog(self, "Error", "Depth Step must be at least {}".format(self.minDepthStep), 1)
+			dlg.ShowModal()
+			self.depthStep.SetValue(str(self.minDepthStep))
+			return
+		self.outDepthStep = depthStep 
 		self.outWinLength = float(self.winLength.GetValue())
 		self.outLeadLag = float(self.leadLag.GetValue())
 		self.EndModal(wx.ID_OK)

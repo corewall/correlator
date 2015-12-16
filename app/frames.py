@@ -718,15 +718,11 @@ class CompositePanel():
 		self.parent.OnUndoCore(1)
 
 	def OnEvalSettings(self, evt):
-		dlg = dialog.CorrParamsDialog(self.plotNote, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
+		dlg = dialog.CorrParamsDialog(self.plotNote, self.parent.minDepthStep, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
 		pos = self.crText.GetScreenPositionTuple()
 		dlg.SetPosition(pos)
 		if dlg.ShowModal() == wx.ID_OK:
-			self.parent.depthStep = dlg.outDepthStep
-			self.parent.winLength = dlg.outWinLength
-			self.parent.leadLag = dlg.outLeadLag
-	
-			self.parent.OnEvalSetup()
+			self.parent.OnEvalSetup(dlg.outDepthStep, dlg.outWinLength, dlg.outLeadLag)
 			self.parent.OnUpdateGraphSetup(1)
 			if len(self.parent.Window.TieData) > 0 :
 				self.parent.Window.OnUpdateTie(1)
@@ -1224,14 +1220,10 @@ class SplicePanel():
 
 	def OnEvalSettings(self, evt):
 		pos = self.crText.GetScreenPositionTuple()
-		dlg = dialog.CorrParamsDialog(self.mainPanel, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
+		dlg = dialog.CorrParamsDialog(self.mainPanel, self.parent.minDepthStep, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
 		dlg.SetPosition(pos)
 		if dlg.ShowModal() == wx.ID_OK:
-			self.parent.depthStep = dlg.outDepthStep
-			self.parent.winLength = dlg.outWinLength
-			self.parent.leadLag = dlg.outLeadLag
-	
-			self.parent.OnEvalSetup()
+			self.parent.OnEvalSetup(dlg.outDepthStep, dlg.outWinLength, dlg.outLeadLag)
 			self.parent.OnUpdateGraphSetup(2)
 			self.parent.Window.OnUpdateTie(2)
 
@@ -1281,9 +1273,9 @@ class SplicePanel():
 
 # Panel containing evaluation graph plot canvas and settings display/controls
 class EvalPlotPanel(wx.Panel):
-	def __init__(self, parent, depthStep, winLength, leadLag):
-		wx.Panel.__init__(self, parent, -1)
-		self.parent = parent
+	def __init__(self, parent, uiParent, depthStep, winLength, leadLag):
+		wx.Panel.__init__(self, uiParent, -1)
+		self.parent = parent # correlator, so we can set global depthStep etc.
 		self.depthStep = depthStep
 		self.winLength = winLength
 		self.leadLag = leadLag
@@ -1319,27 +1311,23 @@ class EvalPlotPanel(wx.Panel):
 		
 		paramPanel.Bind(wx.EVT_BUTTON, self.OnEvalSettings, settingsBtn)
 
-		xdata = [ (-self.leadLag, 0), (0, 0), (self.leadLag, 0) ]
-		self.xaxes = plot.PolyLine(xdata, legend='', colour='black', width =2)
-		ydata = [ (0, -1),( 0, 1) ]
-		self.yaxes = plot.PolyLine(ydata, legend='', colour='black', width =2)
-
 		data = [ (-self.leadLag, 0), (0, 0), (self.leadLag, 0) ]
 		self.OnUpdateData(data, [])
 		self.OnUpdateDrawing()
 
 	def OnEvalSettings(self, evt):
 		pos = self.crText.GetScreenPositionTuple()
-		dlg = dialog.CorrParamsDialog(self, self.depthStep, self.winLength, self.leadLag)
+		dlg = dialog.CorrParamsDialog(self, self.parent.minDepthStep, self.depthStep, self.winLength, self.leadLag)
 		dlg.SetPosition(pos)
 		if dlg.ShowModal() == wx.ID_OK:
 			self.depthStep = dlg.outDepthStep
 			self.winLength = dlg.outWinLength
 			self.leadLag = dlg.outLeadLag
-			self.UpdateEvalStatus()
+			self.parent.OnEvalSetup(dlg.outDepthStep, dlg.outWinLength, dlg.outLeadLag)
+			self.parent.OnUpdateGraphSetup(2)
 	
 	def OnUpdate(self):
-		self.evalPlot.Clear()
+		#self.evalPlot.Clear() # appears to be unnecessary on Mac...check Win and pull if possible
 		data = [(-self.leadLag, 0), (0, 0), (self.leadLag, 0)]
 		self.OnUpdateData(data, [])
 		self.OnUpdateDrawing()
@@ -1350,10 +1338,6 @@ class EvalPlotPanel(wx.Panel):
 		roundedDepthStep = int(10000.0 * float(self.depthStep)) / 10000.0
 		self.crText.SetLabel("Step: {} | Window: {} | Lead/Lag: {}".format(roundedDepthStep, self.winLength, self.leadLag))
 		
-	def OnUpdateDepth(self, data):
-		depthstep = int(10000.0 * float(data)) / 10000.0;
-		self.depth.SetValue(str(depthstep))
-
 	def OnUpdateData(self, data, bestdata):
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
 		self.polylines.append(line)
@@ -1372,9 +1356,15 @@ class EvalPlotPanel(wx.Panel):
 		line = plot.PolyLine(data, legend='', colour='grey', width =2) 
 		self.polylines.append(line)
 
-	def OnUpdateDrawing(self): # called by client
+	def OnUpdateDrawing(self): # called by client to redraw
+		# update axes
+		xdata = [ (-self.leadLag, 0), (0, 0), (self.leadLag, 0) ]
+		self.xaxes = plot.PolyLine(xdata, legend='', colour='black', width =2)
+		ydata = [ (0, -1),( 0, 1) ]
+		self.yaxes = plot.PolyLine(ydata, legend='', colour='black', width =2)
 		self.polylines.append(self.xaxes)
 		self.polylines.append(self.yaxes)
+		
 		gc = plot.PlotGraphics(self.polylines, '', 'depth (m)', 'correlation coef (r)')
 		self.evalPlot.Draw(gc, xAxis = (-self.leadLag , self.leadLag), yAxis = (-1, 1))
 		self.polylines = []
@@ -1397,7 +1387,7 @@ class SpliceIntervalPanel():
 		panel.SetSizer(psz)
 
 		# interval table, evaluation graph tabs
-		self.note = wx.Notebook(self.mainPanel, -1)#self.mainPanel, -1)
+		self.note = wx.Notebook(self.mainPanel, -1)
 		
 		# interval table
 		gridPanel = wx.Panel(self.note, -1)
@@ -1414,17 +1404,17 @@ class SpliceIntervalPanel():
 		gridPanel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectRow)
 		gridPanel.Bind(wx.grid.EVT_GRID_CELL_LEFT_DCLICK, self.OnSetDepth)
 		gridPanel.SetSizer(gpsz)
-		self.note.AddPage(gridPanel, "Splice Interval")
+		self.note.AddPage(gridPanel, "Splice Intervals")
 		self.gridPanel = gridPanel
 		
 		# evaluation graph
-		evalPlotPanel = EvalPlotPanel(self.note, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
+		evalPlotPanel = EvalPlotPanel(self.parent, self.note, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
 		self.note.AddPage(evalPlotPanel, "Evaluation Graph")
 		self.evalPanel = evalPlotPanel
 		
 		psz.Add(self.note, 2, wx.EXPAND)
 		self.note.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectNote)
-		self.note.SetSelection(1)
+		self.note.SetSelection(0)
 		
 		# comments, delete button
 		ctrlPanel = wx.Panel(panel, -1)
@@ -1440,7 +1430,7 @@ class SpliceIntervalPanel():
 		ctrlPanel.Bind(wx.EVT_BUTTON, self.OnDelete, self.delButton)
 		cpsz.Add(self.delButton, 0, wx.EXPAND | wx.ALL, 5)
 		ctrlPanel.SetSizer(cpsz)
-		psz.Add(ctrlPanel, 2, wx.EXPAND)
+		psz.Add(ctrlPanel, 1, wx.EXPAND)
 
 		# tie option buttons (split/tie)
 		tsbox = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Tie Options"), orient=wx.VERTICAL)	
@@ -1477,7 +1467,6 @@ class SpliceIntervalPanel():
 		else:
 			self.gridPanel.Hide()
 			self.evalPanel.Show()
-			self.evalPanel.OnUpdate() # update eval plot
 	
 	def UpdateUI(self):
 		self._updateTable()
@@ -1655,8 +1644,8 @@ class SpliceIntervalPanel():
 		self.evalPanel.OnAddFirstData(data, bestdata, best)
 	def OnAddData(self, data):
 		self.evalPanel.OnAddData(data)
-	def OnUpdateDrawing(self):
-		self.evalPanel.OnUpdateDrawing()
+	def OnUpdate(self):
+		self.evalPanel.OnUpdate()
 
 
 ############## end SpliceIntervalPanel #################################
@@ -2375,14 +2364,10 @@ class ELDPanel():
 	
 	def OnEvalSettings(self, evt):
 		pos = self.crText.GetScreenPositionTuple()
-		dlg = dialog.CorrParamsDialog(self.mainPanel, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
+		dlg = dialog.CorrParamsDialog(self.mainPanel, self.parent.minDepthStep, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
 		dlg.SetPosition(pos)
 		if dlg.ShowModal() == wx.ID_OK:
-			self.parent.depthStep = dlg.outDepthStep
-			self.parent.winLength = dlg.outWinLength
-			self.parent.leadLag = dlg.outLeadLag
-	
-			self.parent.OnEvalSetup()
+			self.parent.OnEvalSetup(dlg.outDepthStep, dlg.outWinLength, dlg.outLeadLag)
 			self.parent.OnUpdateGraphSetup(3)
 			self.parent.Window.OnUpdateTie(2)
 	

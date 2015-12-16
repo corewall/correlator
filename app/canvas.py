@@ -361,6 +361,7 @@ class DataCanvas(wxBufferedWindow):
 		self.grabCore = -1
 		self.SPgrabCore = -1
 		self.spliceTie = -1
+		self.lastSiTie = None # track last-selected SpliceInterval tie
 		self.logTie = -1
 		self.splice_smooth_flag = 0 
 
@@ -4614,6 +4615,7 @@ class DataCanvas(wxBufferedWindow):
 			rect = wx.Rect(basex - 8, basey - 8, 16, 16)
 			if rect.Inside(wx.Point(pos[0], pos[1])):
 				self.parent.spliceManager.selectTie(siTie)
+				self.UpdateSpliceEvalPlot()
 				return
 		
 		# select SpliceInterval at click depth
@@ -5950,6 +5952,31 @@ class DataCanvas(wxBufferedWindow):
 				scroll_x += self.compositeX
 				self.DrawData["HScroll"] = (bmp, scroll_x, y)
 
+	
+	# Update splice eval plot for current splice tie - if none is currently selected,
+	# draw from last-selected tie.
+	def UpdateSpliceEvalPlot(self):
+		siTie = self.parent.spliceManager.getSelectedTie()
+		if siTie is None:
+			siTie = self.lastSiTie
+
+		if siTie is not None and siTie.isTied():
+			self.lastSiTie = siTie
+			sortedInts = sorted([siTie.interval, siTie.adjInterval], key=lambda i:i.getTop())
+			topInterval = sortedInts[0]
+			botInterval = sortedInts[1]
+			h1, c1, t1 = topInterval.triad()
+			h2, c2, t2 = botInterval.triad()
+			depth = siTie.depth()
+			evalResult = py_correlator.evalcoef(t1, h1, int(c1), depth, t2, h2, int(c2), depth)
+			try: # attempt to parse evalResult into datapoints for eval graph
+				self.parent.OnAddFirstGraph(evalResult, depth, depth)
+			except ValueError:
+				print "Error parsing evalcoef() results, do cores have data at depth {}?".format(depth)
+				return
+			# brgtodo: other datatypes
+			self.parent.OnUpdateGraph()
+	
 	def OnMainMotion(self, event):
 		if self.showMenu == True :
 			return
@@ -5998,24 +6025,7 @@ class DataCanvas(wxBufferedWindow):
 		if siTie is not None:
 			depth = self.getSpliceDepth(pos[1])
 			siTie.move(depth)
-			
-			# update splice evaluation graph data if tied
-			if siTie.isTied():
-				sortedInts = sorted([siTie.interval, siTie.adjInterval], key=lambda i:i.getTop())
-				topInterval = sortedInts[0]
-				botInterval = sortedInts[1]
-				h1, c1, t1 = topInterval.triad()
-				h2, c2, t2 = botInterval.triad()
-				# brgtodo: Natural Gamma naming tweak?
-				evalResult = py_correlator.evalcoef(t1, h1, int(c1), depth, t2, h2, int(c2), depth)
-				try: # attempt to parse evalResult into datapoints for eval graph
-					self.parent.OnAddFirstGraph(evalResult, depth, depth)
-				except ValueError:
-					print "Error parsing evalcoef() results, do cores have data at depth {}?".format(depth)
-					return
-				# brgtodo: other datatypes
-				self.parent.OnUpdateGraph()
-			
+			self.UpdateSpliceEvalPlot()
 			self.UpdateDrawing()
 			return
 
