@@ -1314,6 +1314,8 @@ class DataCanvas(wxBufferedWindow):
 	def _GetSpliceRange(self):
 		rangemin, rangemax = None, None
 		for datatype in self.parent.spliceManager.getDataTypes():
+			if datatype == "Natural Gamma":
+				datatype = "NaturalGamma"
 			datamin, datamax = self.GetMINMAX(datatype)
 			if datamin < rangemin or rangemin is None:
 				rangemin = datamin
