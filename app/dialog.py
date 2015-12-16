@@ -1093,6 +1093,16 @@ class ColorTableDialog(wx.Dialog):
 		self.parent.Window.UpdateDrawing()
 
 
+class CommentTextCtrl(wx.TextCtrl):
+	def __init__(self, parent, wxid, value=wx.EmptyString, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0):
+		wx.TextCtrl.__init__(self, parent, wxid, value, pos, size, style)
+		self.Bind(wx.EVT_CHAR, self._prohibitCommas)
+
+	# for unambiguous CSV output, don't allow commas in comment field
+	def _prohibitCommas(self, evt):
+		if chr(evt.GetKeyCode()) != ',':
+			evt.Skip()
+
 # adjust a core's MCD based on previous cores' growth rate (aka SET)
 class ProjectDialog(wx.Dialog):
 	def __init__(self, parent):
@@ -1163,7 +1173,7 @@ class ProjectDialog(wx.Dialog):
 		
 		commentSizer = wx.BoxSizer(wx.HORIZONTAL)
 		commentSizer.Add(wx.StaticText(self, -1, "Comment:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-		self.commentField = wx.TextCtrl(self, -1)
+		self.commentField = CommentTextCtrl(self, -1)
 		commentSizer.Add(self.commentField, 1, wx.EXPAND)
 
 		buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1190,13 +1200,6 @@ class ProjectDialog(wx.Dialog):
 		self.Bind(wx.EVT_TEXT, self.UpdateData, self.percentField)
 		self.Bind(wx.EVT_TEXT, self.UpdateData, self.fixedField)
 		self.Bind(wx.EVT_TEXT, self.OnSuggShiftChange, self.shiftField)
-
-		# for unambiguous CSV output, don't allow commas in comment field
-		self.commentField.Bind(wx.EVT_CHAR, self.ProhibitCommas)
-
-	def ProhibitCommas(self, evt):
-		if chr(evt.GetKeyCode()) != ',':
-			evt.Skip()
 
 	def OnApply(self, evt):
 		self.outHole = self.holeChoice.GetStringSelection()

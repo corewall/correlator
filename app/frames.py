@@ -575,11 +575,9 @@ class CompositePanel():
 		
 		commentSizer = wx.BoxSizer(wx.HORIZONTAL)
 		commentSizer.Add(wx.StaticText(panel3, -1, "Comment:"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
-		self.comment = wx.TextCtrl(panel3, -1)
+		self.comment = dialog.CommentTextCtrl(panel3, -1)
 		commentSizer.Add(self.comment, 1)
 		sizer31.Add(commentSizer, 0, wx.EXPAND | wx.TOP, 10)
-		
-		self.comment.Bind(wx.EVT_CHAR, self.ProhibitCommas)
 		
 		btnSizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.adjustButton = wx.Button(panel3, -1, "Shift to Tie")
@@ -835,9 +833,6 @@ class CompositePanel():
 		self.corrPlotCanvas.Draw(gc, xAxis = (-self.parent.leadLag , self.parent.leadLag), yAxis = (-1, 1))
 		self.polyline_list = []
 		
-	def ProhibitCommas(self, evt):
-		if chr(evt.GetKeyCode()) != ',':
-			evt.Skip()
 
 class SplicePanel():
 	def __init__(self, parent, mainPanel):
@@ -1420,8 +1415,7 @@ class SpliceIntervalPanel():
 		ctrlPanel = wx.Panel(panel, -1)
 		cpsz = wx.BoxSizer(wx.VERTICAL)
 		cbox = wx.StaticBoxSizer(wx.StaticBox(ctrlPanel, -1, "Interval Comments"))
-		self.commentText = wx.TextCtrl(ctrlPanel, -1, "[interval comment]", style=wx.TE_MULTILINE)
-		self.commentText.Bind(wx.EVT_CHAR, self._prohibitCommas)
+		self.commentText = dialog.CommentTextCtrl(ctrlPanel, -1, "[interval comment]", style=wx.TE_MULTILINE)
 		self.commentText.Bind(wx.EVT_KILL_FOCUS, self._saveComment)
 		cbox.Add(self.commentText, 1, wx.EXPAND)
 		cpsz.Add(cbox, 1, wx.EXPAND | wx.ALL, 5)
