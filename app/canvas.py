@@ -1305,6 +1305,9 @@ class DataCanvas(wxBufferedWindow):
 				self.smooth_id = r[4]
 				break
 			
+	def _GetSpliceRangeCoef(self, datamin, datamax):
+		return self.spliceHoleWidth / (datamax - datamin)
+			
 	def _UpdateSpliceRange(self, datamin, datamax):
 		for r in self.range:
 			if r[0] == "splice":
@@ -1312,12 +1315,13 @@ class DataCanvas(wxBufferedWindow):
 				break
 		self.range.append(("splice", datamin, datamax, datamax - datamin, 0, False))
 		
-	def _GetSpliceRange(self):
+	def _GetSpliceRange(self, datatype=None):
 		rangemin, rangemax = None, None
-		for datatype in self.parent.spliceManager.getDataTypes():
-			if datatype == "Natural Gamma":
-				datatype = "NaturalGamma"
-			datamin, datamax = self.GetMINMAX(datatype)
+		datatypes = [datatype] if datatype is not None else self.parent.spliceManager.getDataTypes() 
+		for dt in datatypes:
+			if dt == "Natural Gamma":
+				dt = "NaturalGamma"
+			datamin, datamax = self.GetMINMAX(dt)
 			if datamin < rangemin or rangemin is None:
 				rangemin = datamin
 			if datamax > rangemax or rangemax is None:
@@ -1368,8 +1372,16 @@ class DataCanvas(wxBufferedWindow):
 		
 		dc.DrawText(namestr, namex, ycoord - (splice.TIE_CIRCLE_RADIUS + 12))
 		
-	def DrawSpliceInterval(self, dc, interval, drawing_start, startX):
+	def DrawSpliceInterval(self, dc, interval, drawing_start, startX, smoothed):
 		interval.coreinfo.coredata = self.findCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type)
+
+		# set range for interval
+		datatype = interval.coreinfo.type
+		if datatype == "Natural Gamma":
+			datatype = "NaturalGamma"
+		rangemin, rangemax = self.GetMINMAX(datatype)
+		self._UpdateSpliceRange(rangemin, rangemax)
+		self._SetSpliceRangeCoef(smoothed)
 		
 		# as loaded or created on the spot, intervals with affine shifts work well, but all hell breaks
 		# loose when a core with an interval in the splice is shifted...listener/update?
@@ -1419,7 +1431,7 @@ class DataCanvas(wxBufferedWindow):
 			drawing_start = self.SPrulerStartDepth - 5.0
 			startX = self.splicerX + 50
 			for si in self.parent.spliceManager.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
-				self.DrawSpliceInterval(dc, si, drawing_start, startX)
+				self.DrawSpliceInterval(dc, si, drawing_start, startX, smoothed)
 				if si == self.parent.spliceManager.getSelected():
 					self.DrawSelectedSpliceGuide(dc, si, drawing_start, startX + self.holeWidth)
 			
@@ -6008,11 +6020,11 @@ class DataCanvas(wxBufferedWindow):
 							self.DrawData["HighlightCore"] = (x, y, w, h)
 			elif key == "SpliceArea" and self.MousePos[0] > self.splicerX:
 				ydepth = self.getSpliceDepth(pos[1])
-				#print "Mouse at depth {}".format(ydepth)
 				interval = self.parent.spliceManager.getIntervalAtDepth(ydepth)
 				if interval is not None:
-					splicemin, dummymax = self._GetSpliceRange()
-					datamin = (interval.coreinfo.minData - splicemin) * self.coefRangeSplice + self.splicerX + 50
+					splicemin, splicemax = self._GetSpliceRange(interval.coreinfo.type)
+					spliceCoef = self._GetSpliceRangeCoef(splicemin, splicemax)
+					datamin = (interval.coreinfo.minData - splicemin) * spliceCoef + self.splicerX + 50
 					miTuple = (interval.coreinfo.core, pos[0], pos[1], datamin, 0)
 					self.DrawData["MouseInfo"] = [miTuple]
 					got = 1 # must set or DrawData["MouseInfo"] will be cleared
