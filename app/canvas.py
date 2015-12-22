@@ -1357,20 +1357,20 @@ class DataCanvas(wxBufferedWindow):
 
 			msgWidth, msgHeight = dc.GetTextExtent(tie.clampMessage)
 			msgx = circlex - msgWidth / 2
-			msgy = ycoord - (splice.TIE_CIRCLE_RADIUS + 12 + 5 + msgHeight)
+			msgy = ycoord - (tie.TIE_CIRCLE_RADIUS + 12 + 5 + msgHeight)
 			dc.DrawRectangle(msgx - 1,  msgy - 1, msgWidth + 2, msgHeight + 2)
 			dc.DrawText(tie.clampMessage, msgx, msgy)
 			dc.SetBrush(wx.Brush(wx.RED))
 			dc.DrawLine(startx, ycoord, endx, ycoord)
-			dc.DrawCircle(circlex, ycoord, splice.TIE_CIRCLE_RADIUS)
+			dc.DrawCircle(circlex, ycoord, tie.TIE_CIRCLE_RADIUS)
 			dc.SetTextForeground(self.colorDict['foreground'])
 			dc.SetPen(whitePen)
 			dc.SetBrush(whiteBrush)
 		else:
 			dc.DrawLine(startx, ycoord, endx, ycoord)
-			dc.DrawCircle(circlex, ycoord, splice.TIE_CIRCLE_RADIUS)
+			dc.DrawCircle(circlex, ycoord, tie.TIE_CIRCLE_RADIUS)
 		
-		dc.DrawText(namestr, namex, ycoord - (splice.TIE_CIRCLE_RADIUS + 12))
+		dc.DrawText(namestr, namex, ycoord - (tie.TIE_CIRCLE_RADIUS + 12))
 		
 	def DrawSpliceInterval(self, dc, interval, drawing_start, startX, smoothed):
 		interval.coreinfo.coredata = self.findCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type)

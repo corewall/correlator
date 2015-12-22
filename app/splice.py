@@ -8,13 +8,6 @@ Support for the creation and editing of Splice Interval Tables.
 
 import unittest
 
-import pandas
-
-import tabularImport
-
-# drawing constants
-TIE_CIRCLE_RADIUS = 8
-
 
 class Interval:
     def __init__(self, top, bot):
@@ -304,6 +297,8 @@ class SpliceIntervalTie():
         self.adjInterval = adjInterval
         self.clampMessage = ""
         
+        self.TIE_CIRCLE_RADIUS = 8
+        
     def getTriad(self):
         return self.interval.triad()
     
@@ -432,24 +427,14 @@ class SpliceIntervalBotTie(SpliceIntervalTie):
         return depth
 
 
-class SpliceManager:
-    def __init__(self, parent):
-        self.parent = parent # using to access sectionSummary and HoleData for now
-        self.selChangeListeners = []
-        self.addIntervalListeners = []
+class SpliceBuilder:
+    def __init__(self):
         self.clear()
-        
+
     def clear(self): # initialize data members
         self.ints = [] # list of SpliceIntervals ordered by top member
         self.filepath = None
-        self.selected = None # currently selected SpliceInterval
-        self.topTie = None
-        self.botTie = None
-        self.selectedTie = None
-        self.dirty = False # need save?
         self.errorMsg = "Init State: No errors here, everything is peachy!"        
-        
-        self._onAdd(False) # notify listeners so UI elements update
     
     def count(self):
         return len(self.ints)
@@ -480,189 +465,12 @@ class SpliceManager:
         for interval in self.ints:
             types.add(interval.coreinfo.type)
         return types
-    
-    def hasSelection(self):
-        return self.selected is not None
-
-    def _canDeselect(self):
-        result = True
-        if self.hasSelection():
-            result = self.selected.valid()
-        return result
-    
-    def _updateSelection(self, interval):
-        if (interval != self.selected):
-            self.selected = interval
-            self._updateTies()
-            self._onSelChange()
-            
-    # SpliceController that serves as intermediary between SpliceManager model and client views?
-    def save(self, filepath): # better in Data Manager? creating a dependency on MainFrame is not desirable.
-        # better to create dependencies on SectionSummary and a non-existent "HoleDatabase" class, though
-        # HoleData will do...though we only need it for affine stuff, so possibly an AffineManager?
-        print "Saving splice to {}".format(filepath)
-        
-        rows = []
-        
-        secsumm = self.parent.sectionSummary
-        #print str(secsumm.dataframe)
-        #print "\n##############################\n"
-        
-        for index, si in enumerate(self.ints):
-            site = si.coreinfo.leg # ugh...mixed up? this site-exp shit is so dumb.
-            hole = si.coreinfo.hole
-            core = si.coreinfo.holeCore
-            #print "Saving Interval {}: {}".format(index, si.coreinfo.getHoleCoreStr())
-            
-            offset = self.parent.Window.findCoreAffineOffset(hole, core)
-            #print "   affine offset = {}".format(si.coreinfo.getHoleCoreStr(), offset)
-         
-            # section summary is always in CSF-A, remove CCSF-A/MCD offset for calculations
-            mbsfTop = round(si.getTop(), 3) - offset
-            topSection = secsumm.getSectionAtDepth(site, hole, core, mbsfTop)
-            if topSection is not None:
-                topDepth = secsumm.getSectionTop(site, hole, core, topSection)
-                topOffset = round((mbsfTop - topDepth) * 100.0, 1) # section depth in cm
-            else:
-                print "Skipping, couldn't find top section at top CSF depth {}".format(mbsfTop)
-                continue
-            
-            mbsfBot = round(si.getBot(), 3) - offset
-            botSection = secsumm.getSectionAtDepth(site, hole, core, mbsfBot)
-            if botSection is not None:
-                # bottom offset is poorly named: from the interval's bottom depth, it is the
-                # offset from the top (not bottom) of the containing section
-                botDepth = secsumm.getSectionTop(site, hole, core, botSection)
-                botOffset = round((mbsfBot - botDepth) * 100.0, 1) # section depth in cm
-            else:
-                print "Skipping, couldn't find section at bottom CSF depth {}".format(mbsfBot)
-                continue
-            
-            coreType = secsumm.getSectionCoreType(site, hole, core, botSection)
-            
-            # stub out for now: type for each of top and bottom? "CORE" type per Peter B's request?
-            spliceType = "APPEND"
-            if index < len(self.ints) - 1:
-                if self.ints[index+1].getTop() == si.getBot():
-                    spliceType = "TIE"
-                    
-            #print "   topSection {}, offset {}, depth {}, mcdDepth {}\nbotSection {}, offset {}, depth {}, mcdDepth {}\ntype {}, data {}, comment {}".format(topSection, topOffset, mbsfTop, mbsfTop+offset, botSection, botOffset, mbsfBot, mbsfBot+offset, spliceType, si.coreinfo.type, si.comment)
-            
-            series = pandas.Series({'Exp':si.coreinfo.site, 'Site':site, 'Hole':hole, 'Core':core, 'CoreType':coreType, \
-                                    'TopSection':topSection, 'TopOffset':topOffset, 'TopDepthCSF':mbsfTop, 'TopDepthCCSF':mbsfTop+offset, \
-                                    'BottomSection':botSection, 'BottomOffset':botOffset, 'BottomDepthCSF':mbsfBot, 'BottomDepthCCSF':mbsfBot+offset, \
-                                    'SpliceType':spliceType, 'DataUsed':si.coreinfo.type, 'Comment':si.comment})
-            rows.append(series)            
-        if len(rows) > 0:
-            df = pandas.DataFrame(columns=tabularImport.SITFormat.req)
-            df = df.append(rows, ignore_index=True)
-            #print "{}".format(df)
-            tabularImport.writeToFile(df, filepath)
-            self.setDirty(False)
-            
-    def load(self, filepath):
-        self.clear()
-        df = tabularImport.readFile(filepath)
-        previousSpliceType = None
-        previousAffBot = None
-        for index, row in df.iterrows(): # itertuples() is faster if needed
-            #print "Loading row {}: {}".format(index, str(row))
-            # for each row, create CoreInfo
-            #exp = row.Exp
-            #site = row.Site
-            hole = row.Hole
-            core = str(row.Core)
-            datatype = row.DataUsed
-            coreinfo = self.parent.Window.findCoreInfoByHoleCoreType(hole, core, datatype)
-            if coreinfo is None:
-                #print "Couldn't find hole {} core {} of type {}".format(hole, core, datatype)
-                coreinfo = self.parent.Window.findCoreInfoByHoleCore(hole, core)
-                if coreinfo is None:
-                    continue
-                
-            affineOffset = self.parent.Window.findCoreAffineOffset(coreinfo.hole, coreinfo.holeCore)
-            coremin, coremax = self.getCoreRange(coreinfo)
-            coreinfo.minDepth = coremin
-            coreinfo.maxDepth = coremax
-            
-            top = round(row.TopDepthCSF, 3)
-            bot = round(row.BottomDepthCSF, 3)
-            topaff = round(row.TopDepthCCSF, 3)
-            botaff = round(row.BottomDepthCCSF, 3)
-            #print "top = {}, bottom = {}, affinetop = {} bot = {}".format(top, bot, top + affineOffset, bot + affineOffset)
-            if top + affineOffset != topaff:
-                print "table has top CSF = {}, CCSF = {} for an offset of {}, current affine offset = {}".format(top, row.TopDepthCCSF, row.TopDepthCCSF - top, affineOffset)
-            if bot + affineOffset != botaff:
-                print "table has bottom CSF = {}, CCSF = {} for an offset of {}, current affine offset = {}".format(bot, row.BottomDepthCCSF, row.BottomDepthCCSF - bot, affineOffset)
-                
-            comment = "" if pandas.isnull(row.Comment) else str(row.Comment)
-            intervalTop = previousAffBot if previousSpliceType == "TIE" and previousAffBot is not None else top + affineOffset
-            previousSpliceType = row.SpliceType
-            previousAffBot = bot + affineOffset
-            spliceInterval = SpliceInterval(coreinfo, intervalTop, previousAffBot, comment)
-            self.ints.append(spliceInterval) # add to ints - should already be sorted properly
-        
-        self._onAdd(dirty=False) # notify listeners that intervals have been added
-        
-    def getCoreRange(self, coreinfo):
-        # use section summary to get core's min and max values
-        secsumm = self.parent.sectionSummary
-        coremin, coremax = secsumm.getCoreRange(coreinfo.leg, coreinfo.hole, coreinfo.holeCore)
-        affineOffset = self.parent.Window.findCoreAffineOffset(coreinfo.hole, coreinfo.holeCore)
-        #print "{}: coremin = {}, coremax = {}".format(coreinfo.getHoleCoreStr(), coremin, coremax)
-        return coremin + affineOffset, coremax + affineOffset
-
-    def select(self, depth):
-        good = False
-        if self._canDeselect():
-            good = True
-            selInt = self.getIntervalAtDepth(depth)
-            self._updateSelection(selInt)
-        else:
-            self._setErrorMsg("Can't deselect current interval, it has zero length. You may delete.")
-        return good
-    
-    def selectByIndex(self, index):
-        if self._canDeselect():
-            if len(self.ints) > index:
-                self._updateSelection(self.ints[index])
-        else:
-            self._setErrorMsg("Can't deselect current interval, it has zero length. You may delete.")
 
     def _setErrorMsg(self, msg):
         self.errorMsg = msg
         
     def getErrorMsg(self):
         return self.errorMsg
-    
-    def isDirty(self):
-        return self.dirty
-
-    def setDirty(self, dirty=True):
-        self.dirty = dirty
-
-    def getSelected(self):
-        return self.selected
-    
-    def getSelectedIndex(self):
-        return self.ints.index(self.selected) if self.hasSelection() else -1
-    
-    def deleteSelected(self):
-        if self.selected in self.ints:
-            self.ints.remove(self.selected)
-            self.selected = None
-            self.selectTie(None)
-            self.setDirty()
-            self._onSelChange()
-            
-    def selectTie(self, siTie):
-        if siTie in self.getTies():
-            self.selectedTie = siTie
-        elif siTie is None:
-            self.selectedTie = None
-            
-    def getSelectedTie(self):
-        return self.selectedTie
     
     def getIntervalAbove(self, interval):
         result = None
@@ -678,66 +486,38 @@ class SpliceManager:
             result = self.ints[idx + 1]
         return result
     
-    def getTies(self):
-        result = []
-        if self.topTie is not None and self.botTie is not None:
-            result = [self.topTie, self.botTie]
-        return result
-    
     def add(self, coreinfo):
-        coremin, coremax = self.getCoreRange(coreinfo)
-        coreinfo.minDepth = coremin
-        coreinfo.maxDepth = coremax
-        interval = Interval(coremin, coremax)
+        added = False
+        interval = Interval(coreinfo.minDepth, coreinfo.maxDepth)
         if self._canAdd(interval):
             for gap in gaps(self._overs(interval), interval.top, interval.bot):
                 self.ints.append(SpliceInterval(coreinfo, gap.top, gap.bot))
                 self.ints = sorted(self.ints, key=lambda i: i.getTop())
                 #print "Added {}, have {} splice intervals: = {}".format(interval, len(self.ints), self.ints)
-            self._onAdd()
+            added = True
         else:
             print "couldn't add interval {}".format(interval)
+        return added
+    
+    # for adding pre-existing, loaded SpliceIntervals
+    # brgtodo: validity checks?
+    def addInterval(self, interval):
+        self.ints.append(interval)
             
-    def addSelChangeListener(self, listener):
-        if listener not in self.selChangeListeners:
-            self.selChangeListeners.append(listener)
-            
-    def removeSelChangeListener(self, listener):
-        if listener in self.selChangeListeners:
-            self.selChangeListeners.remove(listener)
-            
-    def addAddIntervalListener(self, listener):
-        if listener not in self.addIntervalListeners:
-            self.addIntervalListeners.append(listener)
-            
-    def removeAddIntervalListener(self, listener):
-        if listener in self.addIntervalListeners:
-            self.addIntervalListeners.remove(listener)
-
-    def _updateTies(self):
-        if self.hasSelection():
-            self.topTie = SpliceIntervalTopTie(self.selected, self.getIntervalAbove(self.selected))
-            self.botTie = SpliceIntervalBotTie(self.selected, self.getIntervalBelow(self.selected))
-        else:
-            self.topTie = self.botTie = None
-        
+    def delete(self, interval):
+        deleted = False
+        if interval in self.ints:
+            self.ints.remove(interval)
+            deleted = True
+        return deleted
+    
+    # are there one or more gaps where part(s) of this interval can be added?
     def _canAdd(self, interval):
         u = union([i.interval for i in self.ints])
         e = [i for i in u if i.encompasses(interval)]
         if len(e) > 0:
             print "Interval {} encompassed by {}".format(interval, e)
         return len(e) == 0
-    
-    def _onAdd(self, dirty=True):
-        self._updateTies()
-        if dirty:
-            self.setDirty()
-        for listener in self.addIntervalListeners:
-            listener()
-    
-    def _onSelChange(self):
-        for listener in self.selChangeListeners:
-            listener()
 
     # return union of all overlapping Intervals in self.ints    
     def _overs(self, interval):

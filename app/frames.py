@@ -1489,7 +1489,7 @@ class SpliceIntervalPanel():
 	def _updateTable(self):
 		rows = self.parent.spliceManager.count()
 		self._adjustTableRows(rows)
-		for row, si in enumerate(self.parent.spliceManager.ints):
+		for row, si in enumerate(self.parent.spliceManager.getIntervals()):
 			self._makeTableRow(row, si)
 		self._updateTableSelection()
 			
