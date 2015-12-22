@@ -2954,6 +2954,7 @@ class MainFrame(wx.Frame):
 		return DrawData
 	
 	
+# brgtodo 12/21/2015: still depends on MainFrame 
 class SpliceController:
 	def __init__(self, parent):
 		self.parent = parent # MainFrame
@@ -3128,6 +3129,7 @@ class SpliceController:
 		#print str(secsumm.dataframe)
 		#print "\n##############################\n"
 		
+		# brgtodo: write mm-rounded values? possible to get long wacky decimals at present
 		for index, si in enumerate(self.splice.ints):
 			site = si.coreinfo.leg # ugh...mixed up? this site-exp shit is so dumb.
 			hole = si.coreinfo.hole
@@ -3186,42 +3188,64 @@ class SpliceController:
 		previousAffBot = None
 		for index, row in df.iterrows(): # itertuples() is faster if needed
 			#print "Loading row {}: {}".format(index, str(row))
-			# for each row, create CoreInfo
-			#exp = row.Exp
-			#site = row.Site
-			hole = row.Hole
-			core = str(row.Core)
-			datatype = row.DataUsed
-			coreinfo = self.parent.Window.findCoreInfoByHoleCoreType(hole, core, datatype)
-			if coreinfo is None:
-				#print "Couldn't find hole {} core {} of type {}".format(hole, core, datatype)
-				coreinfo = self.parent.Window.findCoreInfoByHoleCore(hole, core)
-				if coreinfo is None:
-					continue
-				
-			affineOffset = self.parent.Window.findCoreAffineOffset(coreinfo.hole, coreinfo.holeCore)
+			coreinfo, affineOffset, top, bot, fileTop, fileBot, appliedTop, appliedBot = self.getRowDepths(row)
 			coremin, coremax = self.getCoreRange(coreinfo)
 			coreinfo.minDepth = coremin
 			coreinfo.maxDepth = coremax
-			
-			top = round(row.TopDepthCSF, 3)
-			bot = round(row.BottomDepthCSF, 3)
-			topaff = round(row.TopDepthCCSF, 3)
-			botaff = round(row.BottomDepthCCSF, 3)
-			#print "top = {}, bottom = {}, affinetop = {} bot = {}".format(top, bot, top + affineOffset, bot + affineOffset)
-			if top + affineOffset != topaff:
-				print "table has top CSF = {}, CCSF = {} for an offset of {}, current affine offset = {}".format(top, row.TopDepthCCSF, row.TopDepthCCSF - top, affineOffset)
-			if bot + affineOffset != botaff:
-				print "table has bottom CSF = {}, CCSF = {} for an offset of {}, current affine offset = {}".format(bot, row.BottomDepthCCSF, row.BottomDepthCCSF - bot, affineOffset)
 				
 			comment = "" if pandas.isnull(row.Comment) else str(row.Comment)
-			intervalTop = previousAffBot if previousSpliceType == "TIE" and previousAffBot is not None else top + affineOffset
+			intervalTop = previousAffBot if previousSpliceType == "TIE" and previousAffBot is not None else appliedTop
 			previousSpliceType = row.SpliceType
-			previousAffBot = bot + affineOffset
+			previousAffBot = appliedBot
 			spliceInterval = splice.SpliceInterval(coreinfo, intervalTop, previousAffBot, comment)
 			self.splice.addInterval(spliceInterval) # add to ints - should already be sorted properly
 		
 		self._onAdd(dirty=False) # notify listeners that intervals have been added
+
+	def getRowDepths(self, row):
+		hole = row.Hole
+		core = str(row.Core)
+		datatype = row.DataUsed
+		coreinfo = self.parent.Window.findCoreInfoByHoleCoreType(hole, core, datatype)
+		if coreinfo is None:
+			#print "Couldn't find hole {} core {} of type {}".format(hole, core, datatype)
+			coreinfo = self.parent.Window.findCoreInfoByHoleCore(hole, core)
+			if coreinfo is None:
+				return
+		
+		# affine shift from currently-loaded affine table	
+		affineOffset = self.parent.Window.findCoreAffineOffset(coreinfo.hole, coreinfo.holeCore)
+		
+		# file CSF and CCSF depths - ensure no sub-mm decimals
+		top = round(row.TopDepthCSF, 3)
+		bot = round(row.BottomDepthCSF, 3)
+		fileTop = round(row.TopDepthCCSF, 3)
+		fileBot = round(row.BottomDepthCCSF, 3)
+		
+		# CCSF depths with current affine applied
+		appliedTop = round(top + affineOffset, 3)
+		appliedBot = round(bot + affineOffset, 3)
+		
+		return coreinfo, affineOffset, top, bot, fileTop, fileBot, appliedTop, appliedBot
+	
+	# confirm applied affine shift matches file's CSF and CCSF difference
+	def affineMatches(self, appliedVal, fileVal, coreinfo):
+		matches = appliedVal == fileVal
+		if not matches:
+			msg = "Core {}: Applied affine shift ({}) does not match shift in Splice Table ({}), can't load splice.".format(coreinfo.getHoleCoreStr(), appliedVal.__repr__(), fileVal.__repr__())
+			self._setErrorMsg(msg)
+		return matches
+
+	# do currently-applied affine shifts match corresponding Splice Interval file's shifts?
+	def canApplyAffine(self, filepath):
+		canApply = True
+		df = tabularImport.readFile(filepath)
+		for index, row in df.iterrows(): # itertuples() is faster if needed
+			coreinfo, affineOffset, top, bot, fileTop, fileBot, appliedTop, appliedBot = self.getRowDepths(row)
+			if not self.affineMatches(appliedTop, fileTop, coreinfo) or not self.affineMatches(appliedBot, fileBot, coreinfo):
+				canApply = False
+				break
+		return canApply
 
 
 class CorrelatorApp(wx.App):
@@ -3331,7 +3355,7 @@ if __name__ == "__main__":
 		if os.access(User_Dir  + "/Documents/Correlator/", os.F_OK) == False :
 			os.mkdir(User_Dir  + "/Documents/Correlator/")
 			new = True
-                
+
 	if os.access(myPath, os.F_OK) == False :
 		os.mkdir(myPath)
 		if new == True :
