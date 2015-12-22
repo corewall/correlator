@@ -1611,6 +1611,7 @@ class SpliceIntervalPanel():
 		
 		curint = self.parent.spliceManager.getSelected()
 		totalDepth = curint.getTop() if event.GetCol() == 1 else curint.getBot()
+		totalDepth = round(totalDepth, 3)
 		site = curint.coreinfo.leg # argh
 		hole = curint.coreinfo.hole
 		core = curint.coreinfo.holeCore

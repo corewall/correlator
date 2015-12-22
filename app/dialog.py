@@ -293,23 +293,24 @@ class SetDepthDialog(wx.Dialog):
 		self.totalRadio = wx.RadioButton(tdPanel, -1, "Total Depth:")
 		self.totalRadio.Bind(wx.EVT_RADIOBUTTON, self.totalRadioClicked)
 		
-		self.totalDepth = wx.TextCtrl(tdPanel, -1, str(totalDepth))
+		fieldSize = (70,-1) # brgtodo: fields always come out too wide without manual sizing
+		self.totalDepth = wx.TextCtrl(tdPanel, -1, str(totalDepth), size=fieldSize)
 		tdsz = wx.BoxSizer(wx.HORIZONTAL)
 		tdsz.Add(self.totalRadio, 0, wx.ALIGN_CENTER_VERTICAL)
 		tdsz.Add(self.totalDepth, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-		tdsz.Add(wx.StaticText(tdPanel, -1, "m"), 0, wx.ALIGN_CENTER_VERTICAL)
+		tdsz.Add(wx.StaticText(tdPanel, -1, "m"), 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 2)
 		tdPanel.SetSizer(tdsz)
 		
 		# section depth panel
 		sdPanel = wx.Panel(self, -1)
 		self.sectionRadio = wx.RadioButton(sdPanel, -1, "Section Depth:")
 		self.sectionRadio.Bind(wx.EVT_RADIOBUTTON, self.sectionRadioClicked)
-		self.sectionDepth = wx.TextCtrl(sdPanel, -1, str(sectionDepth))
-		self.sectionNumber = wx.TextCtrl(sdPanel, -1, str(section))
+		self.sectionDepth = wx.TextCtrl(sdPanel, -1, str(sectionDepth), size=fieldSize)
+		self.sectionNumber = wx.TextCtrl(sdPanel, -1, str(section),size=fieldSize)
 		sdsz = wx.BoxSizer(wx.HORIZONTAL)
 		sdsz.Add(self.sectionRadio, 0, wx.ALIGN_CENTER_VERTICAL)
 		sdsz.Add(self.sectionDepth, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-		sdsz.Add(wx.StaticText(sdPanel, -1, "cm"), 0, wx.ALIGN_CENTER_VERTICAL)
+		sdsz.Add(wx.StaticText(sdPanel, -1, "cm"), 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 2)
 		sdsz.Add(wx.StaticText(sdPanel, -1, "Section:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 10)
 		sdsz.Add(self.sectionNumber, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
 		sdPanel.SetSizer(sdsz)
@@ -317,7 +318,9 @@ class SetDepthDialog(wx.Dialog):
 		# button panel
 		btnPanel = wx.Panel(self, -1)
 		bsz = wx.BoxSizer(wx.HORIZONTAL)
-		bsz.Add(wx.Button(btnPanel, wx.ID_OK, "Set Depth"), 1)
+		okBtn = wx.Button(btnPanel, wx.ID_OK, "Set Depth")
+		okBtn.SetDefault()
+		bsz.Add(okBtn, 1)
 		bsz.Add(wx.Button(btnPanel, wx.ID_CANCEL, "Cancel"), 1, wx.LEFT, 10)
 		btnPanel.SetSizer(bsz)
 		
@@ -343,6 +346,15 @@ class SetDepthDialog(wx.Dialog):
 		self.sectionRadio.SetValue(not self.useTotal)
 		global LAST_USE_TOTAL
 		LAST_USE_TOTAL = self.useTotal
+		self._updateFocus()
+
+	def _updateFocus(self):
+		if self.useTotal:
+			self.totalDepth.SetFocus()
+			self.totalDepth.SelectAll()
+		else:
+			self.sectionDepth.SetFocus()
+			self.sectionDepth.SelectAll()
 
 
 class AgeListDialog(wx.Dialog):
