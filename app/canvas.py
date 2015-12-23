@@ -1374,6 +1374,11 @@ class DataCanvas(wxBufferedWindow):
 		
 	def DrawSpliceInterval(self, dc, interval, drawing_start, startX, smoothed):
 		interval.coreinfo.coredata = self.findCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type)
+		if len(interval.coreinfo.coredata) == 0: # data isn't enabled+loaded
+			ypos = self.getSpliceCoord(interval.getTop() + (interval.getBot() - interval.getTop())/2.0) # draw at middle of interval
+			dc.DrawText("[{}{} {} unavailable]".format(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type), startX + 5, ypos)
+			self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX)
+			return
 
 		# set range for interval
 		datatype = interval.coreinfo.type
@@ -1386,7 +1391,6 @@ class DataCanvas(wxBufferedWindow):
 		# as loaded or created on the spot, intervals with affine shifts work well, but all hell breaks
 		# loose when a core with an interval in the splice is shifted...listener/update?
 		intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
-		#intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
 		screenpoints = []
 		for pt in intdata:
 			if pt[0] >= drawing_start and pt[0] <= self.SPrulerEndDepth:
