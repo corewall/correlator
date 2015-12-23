@@ -6012,7 +6012,15 @@ class DataCanvas(wxBufferedWindow):
 			except ValueError:
 				print "Error parsing evalcoef() results, do cores have data at depth {}?".format(depth)
 				return
-			# brgtodo: other datatypes
+			
+			if t1 != t2: # if intervals' datatypes differ, plot eval for second type
+				try:
+					evalResult = py_correlator.evalcoef(t2, h1, int(c1), depth, t2, h2, int(c2), depth)
+					self.parent.OnAddGraph(evalResult, depth, depth)
+				except ValueError:
+					print "Error parsing evalcoef() results for mixed datatypes, do cores have data at depth {}?".format(depth)
+					return
+			
 			self.parent.OnUpdateGraph()
 	
 	def OnMainMotion(self, event):
