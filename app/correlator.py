@@ -3258,7 +3258,17 @@ class SpliceController:
 				canApply = False
 				break
 		return canApply
-
+	
+	# called before an affine shift - are the shifted core(s) included in the splice?
+	def allowAffineShift(self, hole, core, below=False):
+		matches = [i for i in self.splice.ints if i.coreinfo.hole == hole]
+		if core is not None:
+			if below: # shifting core and all below
+				matches = [i for i in matches if int(i.coreinfo.holeCore) >= int(core)]
+			else: # shifting single core
+				matches = [i for i in matches if int(i.coreinfo.holeCore) == int(core)]
+		return len(matches) == 0
+		
 
 class CorrelatorApp(wx.App):
 	def __init__(self, new_version, cfg=myPath+"default.cfg"):

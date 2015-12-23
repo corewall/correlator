@@ -3850,20 +3850,23 @@ class DataCanvas(wxBufferedWindow):
 		elif opId == 2 or opId == 3: # adjust this core and all below (2), adjust this core only (3)
 			if self.selectedTie >= 0 :
 				movableTie = self.TieData[self.selectedTie]
-				self.AdjustDepthCore.append(movableTie.core)
 				fixedTie = self.TieData[self.selectedTie - 1]
 				y1 = movableTie.depth
 				y2 = fixedTie.depth
 				shift = y2 - y1
-				self.OnDataChange(movableTie.core, shift)
-
 				ciA = self.findCoreInfoByIndex(movableTie.core)
 				ciB = self.findCoreInfoByIndex(fixedTie.core)
+				if not self.CanAdjustCore(ciA.hole, ciA.holeCore, opId == 2):
+					return
+				
+				self.AdjustDepthCore.append(movableTie.core)
+				self.OnDataChange(movableTie.core, shift)
 
 				if ciA != None and ciB != None:
 					#print "[DEBUG] Composite " + str(y1) +  " " + str(y2)
 					comment = self.parent.compositePanel.comment.GetValue()
-					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
+					py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
+						
 					self.parent.AffineChange = True
 					self.parent.UpdateData()
 					self.parent.UpdateStratData()
@@ -3895,18 +3898,22 @@ class DataCanvas(wxBufferedWindow):
 		self.drag = 0 
 		self.UpdateDrawing()
 
+	def CanAdjustCore(self, hole, core, shiftBelow):
+		canAdjust = self.parent.spliceManager.allowAffineShift(hole, core, shiftBelow)
+		if not canAdjust:
+			self.parent.OnShowMessage("Error", "Can't shift core(s) included in the current splice.", 1)
+		return canAdjust
+
 	# opt = 0 (adjust this core only) or 1 (adjust this and all below)
 	# actionType = 0 (best correlation), 1 (current tie), 2 (given, aka value in "Depth Adjust" field)
 	def OnAdjustCore(self, opt, actionType, strOffset, comment):
-		self.parent.compositePanel.OnButtonEnable(0, False)
-		self.parent.compositePanel.OnButtonEnable(1, True)
+		print "OnAdjustCore()"
 		offset = float(strOffset)
 		if self.selectedLastTie < 0 :
 			self.selectedLastTie = len(self.TieData) - 1
 
 		if self.selectedLastTie >= 0 :
 			movableTie = self.TieData[self.selectedLastTie]
-			self.AdjustDepthCore.append(movableTie.core)
 
 			fixedTie = self.TieData[self.selectedLastTie - 1]
 			y1 = movableTie.depth
@@ -3918,23 +3925,28 @@ class DataCanvas(wxBufferedWindow):
 			elif actionType == 2 : # to given
 				# ERROR - HYEJUNG
 				y1 = y2 - offset
-				shift = offset 
-
-			self.OnDataChange(movableTie.core, shift)
+				shift = offset
 
 			ciA = self.findCoreInfoByIndex(movableTie.core)
-			ciB = self.findCoreInfoByIndex(fixedTie.core)
+			ciB = self.findCoreInfoByIndex(fixedTie.core)	
+			if not self.CanAdjustCore(ciA.hole, ciA.holeCore, opt == 1):
+				return
 
-			if ciA != None and ciB != None:
+			self.AdjustDepthCore.append(movableTie.core)
+			self.OnDataChange(movableTie.core, shift)
+			self.parent.compositePanel.OnButtonEnable(0, False)
+			self.parent.compositePanel.OnButtonEnable(1, True)
+
+			if ciA is None and ciB is None:
 				# actionType(0=best, 1=tie, 2=given), strOffset 
 				opId = 2
 				#print "[DEBUG] Compostie " + str(y1) +  " " + str(y2)
 				if actionType < 2 :
 					opId = 2 if opt == 0 else 3
-					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
+					py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
 				else :
 					givenOp = 4 if opt == 0 else 5 # brgtodo 5/1/2014: name these types!
-					coef = py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), shift, givenOp, ciA.type, comment)
+					py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
 
 				self.parent.AffineChange = True
 
