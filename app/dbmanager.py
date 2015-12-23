@@ -4312,7 +4312,7 @@ class DataFrame(wx.Panel):
 			if len(tableLoaded[1]) > 0:
 				filepath = tableLoaded[1]
 				if self.parent.spliceManager.canApplyAffine(filepath):
-					self.parent.spliceManager.load(filepath)
+					self.parent.spliceManager.loadSplice(filepath)
 				else:
 					self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)
 					return

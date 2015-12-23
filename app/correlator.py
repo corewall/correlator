@@ -2959,7 +2959,7 @@ class SpliceController:
 	def __init__(self, parent):
 		self.parent = parent # MainFrame
 		self.splice = splice.SpliceBuilder() # SpliceBuilder for current splice
-		self.altSplice = None # SpliceBuilder for alternate splice
+		self.altSplice = splice.SpliceBuilder() # SpliceBuilder for alternate splice
 		
 		self.clear() # init selection, file state members
 		
@@ -2983,13 +2983,14 @@ class SpliceController:
 			self._onSelChange()
 			
 	def clear(self):
+		self.splice.clear()
+		self.altSplice.clear()
 		self.selected = None # selected SpliceInterval
 		self.selectedTie = None # selected splice handle
 		self.topTie = None # brgtodo: rename to handles since these don't always represent a "TIE"
 		self.botTie = None
 		self.dirty = False # is self.splice in a modified, unsaved state?
 		self.errorMsg = "All is well at the moment!"
-		self.splice.clear()
 		
 	def count(self):
 		return self.splice.count()
@@ -3181,8 +3182,7 @@ class SpliceController:
 			tabularImport.writeToFile(df, filepath)
 			self.setDirty(False)
 			
-	def load(self, filepath):
-		self.clear()
+	def load(self, filepath, destSplice, datatype=None):
 		df = tabularImport.readFile(filepath)
 		previousSpliceType = None
 		previousAffBot = None
@@ -3192,16 +3192,30 @@ class SpliceController:
 			coremin, coremax = self.getCoreRange(coreinfo)
 			coreinfo.minDepth = coremin
 			coreinfo.maxDepth = coremax
+			if datatype is not None: # override file datatype
+				if datatype == "NaturalGamma":
+					datatype = "Natural Gamma"
+				coreinfo.type = datatype
 				
 			comment = "" if pandas.isnull(row.Comment) else str(row.Comment)
 			intervalTop = previousAffBot if previousSpliceType == "TIE" and previousAffBot is not None else appliedTop
 			previousSpliceType = row.SpliceType
 			previousAffBot = appliedBot
 			spliceInterval = splice.SpliceInterval(coreinfo, intervalTop, previousAffBot, comment)
-			self.splice.addInterval(spliceInterval) # add to ints - should already be sorted properly
+			destSplice.addInterval(spliceInterval) # add to ints - should already be sorted properly
 		
 		self._onAdd(dirty=False) # notify listeners that intervals have been added
 
+	def loadSplice(self, filepath):
+		self.clear()
+		self.load(filepath, self.splice)
+	
+	def loadAlternateSplice(self, filepath, datatype):
+		self.altSplice.clear()
+		self.load(filepath, self.altSplice, datatype)
+
+	# given a Splice Interval Table row from pandas.DataFrame, return core info,
+	# applied affine shift, unshifed depths and shifted depths (both with file and applied affine) 
 	def getRowDepths(self, row):
 		hole = row.Hole
 		core = str(row.Core)

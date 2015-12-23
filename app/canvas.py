@@ -1434,6 +1434,28 @@ class DataCanvas(wxBufferedWindow):
 				self.DrawSpliceInterval(dc, si, drawing_start, startX, smoothed)
 				if si == self.parent.spliceManager.getSelected():
 					self.DrawSelectedSpliceGuide(dc, si, drawing_start, startX + self.holeWidth)
+					
+		self.DrawAlternateSplice(dc, hole, smoothed)
+					
+	def DrawAlternateSplice(self, dc, hole, smoothed):
+		# vertical dotted line separating splice from next splice hole (or core to be spliced)
+		spliceholewidth = self.splicerX + self.holeWidth * 2 + 150
+		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+		dc.DrawLines(((spliceholewidth, self.startDepth - 20), (spliceholewidth, self.Height)))
+		
+		if self.parent.spliceManager.altSplice.count() > 0:
+			rangemin, rangemax = self._GetSpliceRange()
+			self._UpdateSpliceRange(rangemin, rangemax)
+			self._SetSpliceRangeCoef(smoothed)
+			#self.DrawSpliceInfo(dc)
+			
+			drawing_start = self.SPrulerStartDepth - 5.0
+			startX = self.splicerX + self.holeWidth * 2 + 150
+			for si in self.parent.spliceManager.altSplice.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
+				self.DrawSpliceInterval(dc, si, drawing_start, startX, smoothed)
+				#if si == self.parent.spliceManager.getSelected():
+				#	self.DrawSelectedSpliceGuide(dc, si, drawing_start, startX + self.holeWidth)
+
 			
 	# draw current interval's core in its entirety to the right of the splice
 	def DrawSelectedSpliceGuide(self, dc, interval, drawing_start, startX):

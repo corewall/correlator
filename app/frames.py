@@ -1443,7 +1443,11 @@ class SpliceIntervalPanel():
 		tsbox.Add(tieSplitPanel, 1, wx.EXPAND)
 		psz.Add(tsbox, 1, wx.EXPAND | wx.TOP, 10)
 		
-		self.saveButton = wx.Button(panel, -1, "Save Splice")
+		self.altSpliceButton = wx.Button(panel, -1, "Select Alternate Splice...")
+		self.altSpliceButton.Bind(wx.EVT_BUTTON, self.OnAltSplice)
+		psz.Add(self.altSpliceButton, 0, wx.EXPAND | wx.ALL, 10)
+		
+		self.saveButton = wx.Button(panel, -1, "Save Splice...")
 		self.saveButton.Bind(wx.EVT_BUTTON, self.OnSave)
 		psz.Add(self.saveButton, 0, wx.EXPAND | wx.ALL, 10)
 				
@@ -1451,6 +1455,18 @@ class SpliceIntervalPanel():
 		vbox.Add(panel, 1, wx.EXPAND)
 		self.mainPanel.SetSizer(vbox)
 		
+	def OnAltSplice(self, event):
+		asd = dialog.AltSpliceDialog(self.parent)
+		if asd.ShowModal() == wx.ID_OK:
+			selectedType =  asd.selectedType
+			selectedSplice = asd.selectedSplice
+			altSplicePath = self.parent.DBPath + "db/" + self.parent.dataFrame.GetSelectedSiteName() + '/' + selectedSplice
+			if self.parent.spliceManager.canApplyAffine(altSplicePath):
+				self.parent.spliceManager.loadAlternateSplice(altSplicePath, selectedType)
+				self.parent.Window.UpdateDrawing()
+			else:
+				self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)
+	
 	def OnSelectNote(self, event):
 		newSel = event.GetSelection()
 		self.gridPanel.Hide()

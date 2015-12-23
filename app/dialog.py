@@ -680,7 +680,7 @@ class ExportCoreDialog(wx.Dialog):
 
 class AltSpliceDialog(wx.Dialog):
 	def __init__(self, parent):
-		wx.Dialog.__init__(self, parent, -1, "Select Second Splice(View Only)", size=(360, 200),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
+		wx.Dialog.__init__(self, parent, -1, "View Alternate Splice", size=(360, 200),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
 		panel = wx.Panel ( self, -1, (15, 15), size=(330, 100), style=wx.BORDER)
 		wx.StaticText(panel, -1, 'Data Type', (10, 20))
 		wx.StaticText(panel, -1, 'Splice', (10, 60))
