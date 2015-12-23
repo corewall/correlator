@@ -681,21 +681,20 @@ class ExportCoreDialog(wx.Dialog):
 class AltSpliceDialog(wx.Dialog):
 	def __init__(self, parent):
 		wx.Dialog.__init__(self, parent, -1, "View Alternate Splice", size=(360, 200),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
-		panel = wx.Panel ( self, -1, (15, 15), size=(330, 100), style=wx.BORDER)
+		panel = wx.Panel(self, -1, (15, 15), size=(330, 100), style=wx.BORDER)
 		wx.StaticText(panel, -1, 'Data Type', (10, 20))
 		wx.StaticText(panel, -1, 'Splice', (10, 60))
-		self.all = wx.ComboBox(panel, -1, "", (90,20), (220,-1), (""), wx.CB_DROPDOWN)
-		for types in parent.Window.range :
-			if types[0] != "splice" and types[0] != "altsplice" :
-				self.all.Append(types[0])
-		if self.all.GetCount() > 0 :
+		self.all = wx.Choice(panel, -1, (90,20), (220,-1))
+		for types in parent.Window.range:
+			if types[0] != "splice" and types[0] != "altsplice":
+				typename = types[0]
+				if typename == "NaturalGamma":
+					typename = "Natural Gamma"
+				self.all.Append(typename)
+		if self.all.GetCount() > 0:
 			self.all.Select(0)
 
-		self.all.SetForegroundColour(wx.BLACK)
-		self.all.SetEditable(False)
-		#self.Bind(wx.EVT_COMBOBOX, self.SetTYPE, self.all)
-
-		self.splice = wx.ComboBox(panel, -1, "", (90,60), (220,-1), (""), wx.CB_DROPDOWN)
+		self.splice = wx.Choice(panel, -1, (90,60), (220,-1))
 		parent.dataFrame.Update_PROPERTY_ITEM(parent.dataFrame.selectBackup)
 		property = parent.dataFrame.propertyIdx
 		totalcount = parent.dataFrame.tree.GetChildrenCount(property, False)
@@ -712,9 +711,6 @@ class AltSpliceDialog(wx.Dialog):
 		if self.splice.GetCount() > 0 :
 			self.splice.Select(0)
 
-		self.splice.SetForegroundColour(wx.BLACK)
-		self.splice.SetEditable(False)
-
 		self.selectedType = "" 
 		self.selectedSplice = "" 
 		okBtn = wx.Button(self, -1, "Select", (70, 135))
@@ -728,8 +724,8 @@ class AltSpliceDialog(wx.Dialog):
 			self.EndModal(wx.ID_CANCEL) 
 
 	def OnSELECT(self, event) :
-		self.selectedSplice = self.splice.GetValue()
-		self.selectedType = self.all.GetValue() 
+		self.selectedSplice = self.splice.GetStringSelection()
+		self.selectedType = self.all.GetStringSelection() 
 		self.EndModal(wx.ID_OK) 
 
 

@@ -3193,8 +3193,6 @@ class SpliceController:
 			coreinfo.minDepth = coremin
 			coreinfo.maxDepth = coremax
 			if datatype is not None: # override file datatype
-				if datatype == "NaturalGamma":
-					datatype = "Natural Gamma"
 				coreinfo.type = datatype
 				
 			comment = "" if pandas.isnull(row.Comment) else str(row.Comment)
