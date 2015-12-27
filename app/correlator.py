@@ -3153,7 +3153,8 @@ class SpliceController:
 			offset = self.parent.Window.findCoreAffineOffset(hole, core)
 			#print "   affine offset = {}".format(si.coreinfo.getHoleCoreStr(), offset)
 			# section summary is always in CSF-A, remove CCSF-A/MCD offset for calculations
-			mbsfTop = round(si.getTop(), 3) - offset
+			mbsfTop = round(si.getTop() - offset, 3)
+			mcdTop = round(si.getTop(), 3)
 			topSection = secsumm.getSectionAtDepth(site, hole, core, mbsfTop)
 			if topSection is not None:
 				topDepth = secsumm.getSectionTop(site, hole, core, topSection)
@@ -3162,7 +3163,8 @@ class SpliceController:
 				print "Skipping, couldn't find top section at top CSF depth {}".format(mbsfTop)
 				continue
 			
-			mbsfBot = round(si.getBot(), 3) - offset
+			mbsfBot = round(si.getBot() - offset, 3)
+			mcdBot = round(si.getBot(), 3)
 			botSection = secsumm.getSectionAtDepth(site, hole, core, mbsfBot)
 			if botSection is not None:
 				# bottom offset is poorly named: from the interval's bottom depth, it is the
@@ -3184,8 +3186,8 @@ class SpliceController:
 			#print "   topSection {}, offset {}, depth {}, mcdDepth {}\nbotSection {}, offset {}, depth {}, mcdDepth {}\ntype {}, data {}, comment {}".format(topSection, topOffset, mbsfTop, mbsfTop+offset, botSection, botOffset, mbsfBot, mbsfBot+offset, spliceType, si.coreinfo.type, si.comment)
 			
 			series = pandas.Series({'Exp':si.coreinfo.site, 'Site':site, 'Hole':hole, 'Core':core, 'CoreType':coreType, \
-									'TopSection':topSection, 'TopOffset':topOffset, 'TopDepthCSF':mbsfTop, 'TopDepthCCSF':mbsfTop+offset, \
-									'BottomSection':botSection, 'BottomOffset':botOffset, 'BottomDepthCSF':mbsfBot, 'BottomDepthCCSF':mbsfBot+offset, \
+									'TopSection':topSection, 'TopOffset':topOffset, 'TopDepthCSF':mbsfTop, 'TopDepthCCSF':mcdTop, \
+									'BottomSection':botSection, 'BottomOffset':botOffset, 'BottomDepthCSF':mbsfBot, 'BottomDepthCCSF':mcdBot, \
 									'SpliceType':spliceType, 'DataUsed':si.coreinfo.type, 'Comment':si.comment})
 			rows.append(series)			
 		if len(rows) > 0:
