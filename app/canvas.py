@@ -699,15 +699,23 @@ class DataCanvas(wxBufferedWindow):
 			print "Can't find matching coreinfo for holeCount " + str(holeCount)
 		return result
 	
-	def findCorePointData(self, hole, core, datatype):
-		for h in self.HoleData:
+	def getCorePointData(self, hole, core, datatype):
+		smoothType = self.GetSmoothType(datatype)
+		searchData = self.SmoothData if smoothType > 0 else self.HoleData
+		return self._findCorePointData(searchData, hole, core, datatype)
+	
+	# find and return (depth, data) tuples for specified hole/core/datatype
+	# from self.HoleData or self.SmoothData
+	def _findCorePointData(self, holedata, hole, core, datatype):
+		result = []
+		for h in holedata:
 			curhole = h[0]
 			if curhole[0][7] == hole and curhole[0][2] == datatype:
 				for curcore in curhole[1:]:
 					if curcore[0] == core:
 						result = curcore[10]
-						return result
-		return []
+						break
+		return result
 	
 	def findCoreAffineOffset(self, hole, core):
 		result = None
@@ -742,6 +750,15 @@ class DataCanvas(wxBufferedWindow):
 			if r[0] == type :
 				return (r[1], r[2])
 		return None
+	
+	def GetSmoothType(self, datatype):
+		if datatype == "Natural Gamma":
+			datatype = "NaturalGamma"
+		smoothType = None
+		for r in self.range:
+			if r[0] == datatype:
+				smoothType = r[4]
+		return smoothType
 
 	def GetRulerUnitsStr(self):
 		return self.rulerUnits
@@ -1373,7 +1390,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.DrawText(namestr, namex, ycoord - (tie.TIE_CIRCLE_RADIUS + 12))
 		
 	def DrawSpliceInterval(self, dc, interval, drawing_start, startX, smoothed):
-		interval.coreinfo.coredata = self.findCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type)
+		interval.coreinfo.coredata = self.getCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type)
 		if len(interval.coreinfo.coredata) == 0: # data isn't enabled+loaded
 			ypos = self.getSpliceCoord(interval.getTop() + (interval.getBot() - interval.getTop())/2.0) # draw at middle of interval
 			dc.DrawText("[{}{} {} unavailable]".format(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type), startX + 5, ypos)
