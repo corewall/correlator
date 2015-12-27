@@ -1443,26 +1443,36 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawText("Drag a core from the left to start a splice.", self.splicerX + 20, ypos)
 					
 		self.DrawAlternateSplice(dc, hole, smoothed)
+		
+	def DrawAlternateSpliceInfo(self, dc):
+		coreinfo = self.parent.spliceManager.getAltInfo()
+		rangeMax = self.splicerX + self.holeWidth * 2 + 150
+		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+		dc.DrawLines(((rangeMax, self.startDepth - 20), (rangeMax, self.Height)))
+		if coreinfo is not None:
+			dc.DrawText("Leg: " + coreinfo.site + " Site: " + coreinfo.leg + " Hole: Alternate Splice", rangeMax, 5)
+			dc.DrawText("Datatype: " + coreinfo.type, rangeMax, 25)
+		else:
+			dc.DrawText("Alternate Splice Area", rangeMax, 5)
+			dc.DrawText("Click 'Select Alternate Splice...'", rangeMax, 25)
+
 					
 	def DrawAlternateSplice(self, dc, hole, smoothed):
+		altSpliceX = self.splicerX + self.holeWidth * 2 + 150 # left edge of alternate splice area
+		
 		# vertical dotted line separating splice from next splice hole (or core to be spliced)
-		spliceholewidth = self.splicerX + self.holeWidth * 2 + 150
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-		dc.DrawLines(((spliceholewidth, self.startDepth - 20), (spliceholewidth, self.Height)))
+		dc.DrawLines(((altSpliceX, self.startDepth - 20), (altSpliceX, self.Height)))
 		
 		if self.parent.spliceManager.altSplice.count() > 0:
 			rangemin, rangemax = self._GetSpliceRange()
 			self._UpdateSpliceRange(rangemin, rangemax)
 			self._SetSpliceRangeCoef(smoothed)
-			#self.DrawSpliceInfo(dc)
-			
 			drawing_start = self.SPrulerStartDepth - 5.0
-			startX = self.splicerX + self.holeWidth * 2 + 150
 			for si in self.parent.spliceManager.altSplice.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
-				self.DrawSpliceInterval(dc, si, drawing_start, startX, smoothed)
-				#if si == self.parent.spliceManager.getSelected():
-				#	self.DrawSelectedSpliceGuide(dc, si, drawing_start, startX + self.holeWidth)
+				self.DrawSpliceInterval(dc, si, drawing_start, altSpliceX, smoothed)
 
+		self.DrawAlternateSpliceInfo(dc)
 			
 	# draw current interval's core in its entirety to the right of the splice
 	def DrawSelectedSpliceGuide(self, dc, interval, drawing_start, startX):

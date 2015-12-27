@@ -3004,6 +3004,13 @@ class SpliceController:
 	def getDataTypes(self):
 		return self.splice.getDataTypes()
 	
+	# return coreinfo for first interval in alternate splice
+	def getAltInfo(self):
+		info = None
+		if self.altSplice.count() > 0:
+			info = self.altSplice.getIntervalAtIndex(0).coreinfo
+		return info
+	
 	def getIntervals(self):
 		return self.splice.ints
 	
