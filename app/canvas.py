@@ -3856,7 +3856,7 @@ class DataCanvas(wxBufferedWindow):
 				shift = y2 - y1
 				ciA = self.findCoreInfoByIndex(movableTie.core)
 				ciB = self.findCoreInfoByIndex(fixedTie.core)
-				if not self.CanAdjustCore(ciA.hole, ciA.holeCore, opId == 2):
+				if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, opId == 2):
 					return
 				
 				self.AdjustDepthCore.append(movableTie.core)
@@ -3898,12 +3898,6 @@ class DataCanvas(wxBufferedWindow):
 		self.drag = 0 
 		self.UpdateDrawing()
 
-	def CanAdjustCore(self, hole, core, shiftBelow):
-		canAdjust = self.parent.spliceManager.allowAffineShift(hole, core, shiftBelow)
-		if not canAdjust:
-			self.parent.OnShowMessage("Error", "Can't shift core(s) included in the current splice.", 1)
-		return canAdjust
-
 	# opt = 0 (adjust this core only) or 1 (adjust this and all below)
 	# actionType = 0 (best correlation), 1 (current tie), 2 (given, aka value in "Depth Adjust" field)
 	def OnAdjustCore(self, opt, actionType, strOffset, comment):
@@ -3929,7 +3923,7 @@ class DataCanvas(wxBufferedWindow):
 
 			ciA = self.findCoreInfoByIndex(movableTie.core)
 			ciB = self.findCoreInfoByIndex(fixedTie.core)	
-			if not self.CanAdjustCore(ciA.hole, ciA.holeCore, opt == 1):
+			if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, opt == 1):
 				return
 
 			self.AdjustDepthCore.append(movableTie.core)

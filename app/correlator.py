@@ -608,6 +608,12 @@ class MainFrame(wx.Frame):
 		self.leadLag = leadLag
 		py_correlator.setEvalGraph(self.depthStep, self.winLength, self.leadLag)
 
+	def CanAdjustCore(self, hole, core, shiftBelow):
+		canAdjust = self.spliceManager.allowAffineShift(hole, core, shiftBelow)
+		if not canAdjust:
+			self.OnShowMessage("Error", "Can't shift core(s) included in the current splice.", 1)
+		return canAdjust
+	
 	def OnAdjustCore(self, opt, type, offset, comment):
 		self.Window.OnAdjustCore(opt, type, offset, comment)
 

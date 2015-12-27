@@ -1212,6 +1212,12 @@ class ProjectDialog(wx.Dialog):
 	def OnApply(self, evt):
 		self.outHole = self.holeChoice.GetStringSelection()
 		self.outCore = self.coreChoice.GetStringSelection()
+
+		# ensure shifted cores aren't part of current splice
+		checkBelow = self.outCore == "All"
+		if not self.parent.CanAdjustCore(self.outHole, '1' if checkBelow else self.outCore, checkBelow):
+			return
+		
 		try:
 			self.outOffset = float(self.shiftField.GetValue())
 		except ValueError:
