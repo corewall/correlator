@@ -920,6 +920,7 @@ class DataFrame(wx.Panel):
 						return
 					
 					self.parent.OnShowMessage("Information", "Export successful.", 1)
+					self.parent.spliceManager.clear()
 					return
 				else:
 					self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)

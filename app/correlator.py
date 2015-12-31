@@ -3262,11 +3262,14 @@ class SpliceController:
 		core = str(row.Core)
 		if datatype is None:
 			datatype = row.DataUsed
+		if datatype == "NaturalGamma":
+			datatype = "Natural Gamma"
 		coreinfo = self.parent.Window.findCoreInfoByHoleCoreType_v2(hole, core, datatype)
 		if coreinfo is None:
-			#print "Couldn't find hole {} core {} of type {}".format(hole, core, datatype)
+			print "Couldn't find hole {} core {} of type {}".format(hole, core, datatype)
 			coreinfo = self.parent.Window.findCoreInfoByHoleCore(hole, core)
 			if coreinfo is None:
+				print "Couldn't even find hole {} core {}".format(hole, core)
 				return
 		
 		# affine shift from currently-loaded affine table	
