@@ -33,7 +33,7 @@ def MessageDialog(parent, title, msg, nobutton):
 	style = 0
 	if title == "Error":
 		style = wx.ICON_ERROR
-	elif title == "About" or title == "Help" or title == "Information":
+	elif title in ["About", "Help", "Information", "Warning"]:
 		style = wx.ICON_INFORMATION
 
 	if nobutton == 0:

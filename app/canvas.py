@@ -679,14 +679,17 @@ class DataCanvas(wxBufferedWindow):
 			print "Can't find matching coreinfo for hole " + str(hole) + ", core (hole index) " + str(core)
 		return result
 
-	def findCoreInfoByHoleCoreType(self, hole, core, type):
+	def findCoreInfoByHoleCoreType(self, hole, core, datatype):
+		if datatype == "NaturalGamma":
+			datatype = "Natural Gamma"
 		result = None
 		for ci in self.DrawData["CoreInfo"]:
-			if ci.hole == hole and ci.holeCore == core and ci.type == type:
+			#print "DrawData = {}".format(ci)
+			if ci.hole == hole and ci.holeCore == core and ci.type == datatype:
 				result = ci
 				break
 		if result == None:
-			print "Can't find matching coreinfo for hole " + str(hole) + ", core (hole index) " + str(core) + ", type " + str(type)
+			print "Can't find matching coreinfo for hole " + str(hole) + ", core (hole index) " + str(core) + ", type " + str(datatype)
 		return result
 
 	def findCoreInfoByHoleCount(self, holeCount):
@@ -728,6 +731,20 @@ class DataCanvas(wxBufferedWindow):
 					if c[0] == core:
 						result = c[5] # affine offset
 		return result
+	
+	def findCoreInfoByHoleCoreType_v2(self, hole, core, datatype):
+		result = None
+		for h in self.HoleData:
+			curHole = h[0] # needless list
+			if curHole[0][7] == hole and curHole[0][2] == datatype:
+				for curCore in curHole[1:]:
+					if curCore[0] == core:
+						result = CoreInfo(0, curHole[0][0], curHole[0][1], curHole[0][7], curCore[0], curCore[3], curCore[4], curCore[10][0][0], curCore[10][-1][0], curCore[6], datatype, curCore[8], 0, curCore[10]) #brgbrg
+						break
+		if result == None:
+			print "V2: Can't find matching CoreInfo for hole " + str(hole) + ", core (hole index) " + str(core)
+		return result
+		
 
 	# convert y coordinate to depth - for composite area
 	def getDepth(self, ycoord):
@@ -1156,7 +1173,9 @@ class DataCanvas(wxBufferedWindow):
 				rangeMax = self.splicerX + (self.holeWidth * 2) + 150
 				dc.DrawLines(((rangeMax, self.startDepth - 20), (rangeMax, self.Height)))
 
+		# holeInfo = site, leg, datatype
 		holeInfo = hole[0]
+		#print "holeInfo = {}".format(holeInfo)
 		forcount = holeInfo[8] 
 
 		type = holeInfo[2]
@@ -1237,6 +1256,9 @@ class DataCanvas(wxBufferedWindow):
 		affine = 0.0
 		for i in range(len_hole) : 
 			holedata = hole[i + 1] # actually coredata
+			# 0:corename, 1:sectionMin, 2:sectionMax, 3:dataMin, 4:dataMax, 5:offset,
+			# 6:squish, 7:? (annotation?), 8:'0'?, 9:section depth list, 10:list of depth/data tuples
+			#print "   coredata = {}".format(holedata[:10])
 
 			if self.CurrentSpliceCore == self.coreCount :
 				spliceflag = 1	

@@ -734,9 +734,13 @@ class DataFrame(wx.Panel):
 
 			self.tree.PopupMenu(popupMenu, pos)
 		return
-
-
-	def EXPORT_CORE_DATA(self, selectedIdx, isType) :
+	
+	def EXPORT_CORE_DATA(self, selectedIdx, isType):
+		if len(self.parent.Window.HoleData) > 0:
+			msg = "Exporting core data will clear the current session, including unsaved affine and splice tables. Continue?"
+			if self.parent.OnShowMessage("Warning", msg, 0) != wx.ID_YES:
+				return
+		
 		dlg = dialog.ExportCoreDialog(self)
 		dlg.Centre()
 		ret = dlg.ShowModal()
@@ -745,17 +749,19 @@ class DataFrame(wx.Panel):
 			opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
 			ret = opendlg.ShowModal()
 			#output_path = opendlg.GetPath()
+			if ret != wx.ID_OK :
+				return
+
 			output_path = opendlg.GetDirectory()
 			output_prefix = opendlg.GetFilename()
 			self.parent.Directory = output_path
 			opendlg.Destroy()
-			if ret != wx.ID_OK :
-				return
 
-			if isType == False :
+			if isType == False:
 				parentItem = self.tree.GetItemParent(selectedIdx)
 			else : 
-				parentItem = selectedIdx 
+				parentItem = selectedIdx
+			print "isType = {}, item = {}, parentItem = {}".format(isType, self.tree.GetItemText(selectedIdx, 0), self.tree.GetItemText(parentItem, 0))
 
 			datatype = self.tree.GetItemText(parentItem, 0) 
 			#print "[DEBUG] datatype = " + datatype
@@ -834,7 +840,7 @@ class DataFrame(wx.Panel):
 								break
 
 			type, annot = self.parent.TypeStrToInt(datatype)
-			datatype = self.parent.TypeStrToFileSuffix(datatype, True)
+			typeSuffix = self.parent.TypeStrToFileSuffix(datatype, True)
 
 			if isType == False :
 				parentItem = self.tree.GetItemParent(selectedIdx)
@@ -857,6 +863,7 @@ class DataFrame(wx.Panel):
 			self.parent.OnNewData(None)
 			path = self.parent.DBPath + 'db/' + title + "/"
 
+			# brg 12/30/2015: retain for legacy export purposes
 			holes = []
 			if dlg.splice.GetValue() == True or isType == True :
 				totalcount = self.tree.GetChildrenCount(parentItem, False)
@@ -882,6 +889,9 @@ class DataFrame(wx.Panel):
 				filename = self.tree.GetItemText(selectedIdx, 8) 
 				ret = py_correlator.openHoleFile(path + filename, -1, type, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
 				holes.append(self.tree.GetItemText(selectedIdx, 0))
+				
+			if dlg.splice.GetValue():				
+				self.LoadAllHoles()
 
 			applied = ""
 			# APPLY TABLES 
@@ -889,16 +899,34 @@ class DataFrame(wx.Panel):
 				py_correlator.openCullTable(path + self.tree.GetItemText(cull_item, 8), type, annot)
 				applied = "cull"
 
+			affinePath = path + self.tree.GetItemText(affine_item, 8)
 			if dlg.affine.GetValue() == True and affine_item != None:
 				py_correlator.openAttributeFile(path + self.tree.GetItemText(affine_item, 8), 0)
 				applied = "affine"
 
-			if dlg.splice.GetValue() == True and splice_item != None :
-				ret_splice = py_correlator.openSpliceFile(path +self.tree.GetItemText(splice_item, 8))
-				if ret_splice == "error" : 
-					self.parent.OnShowMessage("Error", "Could not Make Splice Records", 1)
-				applied = "splice"
-			elif dlg.splice.GetValue() == True and splice_item == None :
+			if dlg.splice.GetValue() == True and splice_item is not None:
+				self.LoadSectionSummary()
+				self.parent.UpdateCORE() # depend on correlator.HoleData to export splice
+				
+				splicePath = path + self.tree.GetItemText(splice_item, 8)
+				if self.parent.spliceManager.canApplyAffine(splicePath):
+					self.parent.spliceManager.loadSplice(splicePath, datatype)
+					
+					# everything's in place now.
+					try:
+						self.parent.spliceManager.exportData(output_path, output_prefix, datatype, title)
+					except:
+						self.parent.OnShowMessage("Error", "Export failed: {}".format(sys.exc_info()[0]), 1)
+						return
+					
+					self.parent.OnShowMessage("Information", "Export successful.", 1)
+					return
+				else:
+					self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)
+					self.parent.OnNewData(None)
+					dlg.Destroy()
+					return
+			elif dlg.splice.GetValue() == True and splice_item is None :
 				self.parent.OnShowMessage("Error", "Can not export -need splice table", 1)
 				self.parent.OnNewData(None)
 				dlg.Destroy()
@@ -943,6 +971,7 @@ class DataFrame(wx.Panel):
 				count = py_correlator.saveCoreData(path + ".export.tmp", 1)
 			else :
 				count = py_correlator.saveCoreData(path + ".export.tmp", 0)
+				print "affine count = {}".format(count)
 				
 			if useCsv:
 				py_correlator.setDelimiter(0) # reset delimiter to space + tab so internal files are written normally
@@ -952,10 +981,10 @@ class DataFrame(wx.Panel):
 
 			if dlg.splice.GetValue() == True and count == 1 :
 				if dlg.xmlFormat.GetValue():
-					outfile = output_prefix + "-" + title + "-" + applied + "." + datatype + outExtension
+					outfile = output_prefix + "-" + title + "-" + applied + "." + typeSuffix + outExtension
 					self.SAVE_CORE_TO_XML(path, ".export.tmp", output_path, outfile, dlg.age.GetValue(), dlg.splice.GetValue())
 				else :
-					outfile = output_prefix + "-" + title + "-" + applied + "." + datatype + outExtension
+					outfile = output_prefix + "-" + title + "-" + applied + "." + typeSuffix + outExtension
 					if sys.platform == 'win32' :
 						workingdir = os.getcwd()
 						os.chdir(path)
@@ -967,7 +996,7 @@ class DataFrame(wx.Panel):
 						os.system(cmd)
 			else :
 				for i in range(count) :
-					outfile = output_prefix + "-" + title + "-" + applied + holes[i] + "." + datatype + outExtension
+					outfile = output_prefix + "-" + title + "-" + applied + holes[i] + "." + typeSuffix + outExtension
 					if dlg.xmlFormat.GetValue():
 						self.SAVE_CORE_TO_XML(path, ".export.tmp"+ str(i), output_path, outfile, dlg.age.GetValue(), dlg.splice.GetValue())
 					else :
@@ -1853,26 +1882,34 @@ class DataFrame(wx.Panel):
 	# this is necessary to create affine, splice, and ELD tables on the fly
 	def GetAllSiteHoles(self, siteRoot):
 		holeData = []
-		#print "site = {}".format(self.tree.GetItemText(siteRoot, 0))
+		print "site = {}".format(self.tree.GetItemText(siteRoot, 0))
 		kids = self.GetChildren(siteRoot)
 		for k in kids:
 			nodeName = self.tree.GetItemText(k, 0)
 			typeInt, annot = self.parent.TypeStrToInt(nodeName)
 			if nodeName not in STD_SITE_NODES:
-				#print "found type {}".format(nodeName)
+				print "found type {}".format(nodeName)
 				subkids = self.GetChildren(k)
 				for sk in subkids:
 					if self.tree.GetItemText(sk, 0) != "-Cull Table":
 						# found hole data! make a tuple of metadata required for py_correlator.openHoleFile()
 						filename = self.parent.DBPath + "db/" + self.tree.GetItemText(sk, 10) + self.tree.GetItemText(sk, 8)
 						decimate = int(self.tree.GetItemText(sk, 3))
-						mdTuple = (filename, typeInt, annot, decimate) # full file path, integer data type, annotation (for user type), decimate value
+						rangeMin = float(self.tree.GetItemText(sk, 4))
+						rangeMax = float(self.tree.GetItemText(sk, 5))
+						mdTuple = (filename, typeInt, annot, decimate, rangeMin, rangeMax) # full file path, integer data type, annotation (for user type), decimate value
 						holeData.append(mdTuple)
 		return holeData
 	
-	def LoadAllHoles(self, siteRoot):
-		for hd in self.GetAllSiteHoles(siteRoot):
-			py_correlator.openHoleFile(hd[0], -1, hd[1], hd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, hd[2])
+	def LoadAllHoles(self, siteItem=None):
+		if not siteItem:
+			siteItem = self.GetSelectedSite()
+		print "LoadAllHoles: site = {}".format(self.tree.GetItemText(siteItem, 0))
+		self.parent.Window.range = []
+		for hd in self.GetAllSiteHoles(siteItem):
+			result = py_correlator.openHoleFile(hd[0], -1, hd[1], hd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, hd[2])
+			print "tried loading {}, result = {}".format(hd[0], result)
+
 	
 	def GetTables(self, siteRoot, tableTypeStr):
 		tableData = []
@@ -3950,7 +3987,8 @@ class DataFrame(wx.Panel):
 			if found:
 				ssFilename = self.tree.GetItemText(secSummItem, 1)
 				if len(ssFilename) > 0:
-					ssFilepath = self.parent.DBPath +'db/' + self.title + '/' + ssFilename
+					siteDir = self.GetSelectedSiteName()
+					ssFilepath = self.parent.DBPath +'db/' + siteDir + '/' + ssFilename
 					secSumm = tabularImport.SectionSummary.createWithFile(ssFilepath)
 					self.parent.sectionSummary = secSumm
 					print "secSumm file [{}] found!".format(ssFilename)
@@ -4344,6 +4382,7 @@ class DataFrame(wx.Panel):
 		self.parent.Window.UpdateDrawing()
 
 		self.parent.compositePanel.OnUpdatePlots() # make sure growth rate is updated
+		self.parent.spliceIntervalPanel.UpdateUI()
 
 		self.parent.compositePanel.saveButton.Enable(True)
 		if self.parent.Window.LogData  == [] :

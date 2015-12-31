@@ -1394,7 +1394,7 @@ class MainFrame(wx.Frame):
 		self.Window.OnInit()
 
 		self.compositePanel.OnInitUI()
-		#self.splicePanel.OnInitUI()
+		self.spliceManager.clear()
 		self.spliceIntervalPanel.OnInitUI()
 		self.eldPanel.OnInitUI()
 		self.autoPanel.OnInitUI(True)
@@ -3203,7 +3203,7 @@ class SpliceController:
 		previousAffBot = None
 		for index, row in df.iterrows(): # itertuples() is faster if needed
 			#print "Loading row {}: {}".format(index, str(row))
-			coreinfo, affineOffset, top, bot, fileTop, fileBot, appliedTop, appliedBot = self.getRowDepths(row)
+			coreinfo, affineOffset, top, bot, fileTop, fileBot, appliedTop, appliedBot = self.getRowDepths(row, datatype)
 			coremin, coremax = self.getCoreRange(coreinfo)
 			coreinfo.minDepth = coremin
 			coreinfo.maxDepth = coremax
@@ -3217,23 +3217,52 @@ class SpliceController:
 			spliceInterval = splice.SpliceInterval(coreinfo, intervalTop, previousAffBot, comment)
 			destSplice.addInterval(spliceInterval) # add to ints - should already be sorted properly
 		
-		self._onAdd(dirty=False) # notify listeners that intervals have been added
+		#self._onAdd(dirty=False) # notify listeners that intervals have been added
 
-	def loadSplice(self, filepath):
+	def loadSplice(self, filepath, datatype=None):
 		self.clear()
-		self.load(filepath, self.splice)
+		self.load(filepath, self.splice, datatype)
 	
 	def loadAlternateSplice(self, filepath, datatype):
 		self.altSplice.clear()
 		self.load(filepath, self.altSplice, datatype)
+		
+	def exportData(self, filepath, fileprefix, datatype, siteexp):
+		print "exportData: {}, prefix = {}, datatype = {}".format(filepath, fileprefix, datatype)
+		exportRows = []
+		secsumm = self.parent.sectionSummary
+		for si in self.getIntervals():
+			pts = [pt for pt in si.coreinfo.coredata if pt[0] >= si.getTop() and pt[0] <= si.getBot()]
+			
+			# brgtodo 12/29/2105: const '1' assumes same coretype in core, which I'm 99% sure is correct
+			coreType = secsumm.getSectionCoreType(si.coreinfo.leg, si.coreinfo.hole, si.coreinfo.holeCore, '1')
+			affineOffset = round(self.parent.Window.findCoreAffineOffset(si.coreinfo.hole, si.coreinfo.holeCore), 3)
+			for p in pts:
+				mbsf = p[0] - affineOffset
+				section = secsumm.getSectionAtDepth(si.coreinfo.leg, si.coreinfo.hole, si.coreinfo.holeCore, mbsf)
+				secTop = secsumm.getSectionTop(si.coreinfo.leg, si.coreinfo.hole, si.coreinfo.holeCore, section)
+				topOffset = round((mbsf - secTop) * 100, 1)
+				botOffset = topOffset
+				rawDepth = round(p[0] - affineOffset, 3)
+				row = pandas.Series({'Exp':si.coreinfo.site, 'Site':si.coreinfo.leg, 'Hole':si.coreinfo.hole,
+								'Core':si.coreinfo.holeCore, 'CoreType':coreType, 'Section':section, 'TopOffset':topOffset,
+								'BottomOffset':botOffset, 'Depth':round(p[0], 3), 'Data':p[1], 'RunNo':'-', 'RawDepth':rawDepth, 'Offset':affineOffset})
+				exportRows.append(row)
+		if len(exportRows) > 0:
+			df = pandas.DataFrame(columns=tabularImport.CoreExportFormat.req)
+			df = df.append(exportRows, ignore_index=True)
+			#print "{}".format(df)
+			exportPath = filepath + '/' + fileprefix + '_' + siteexp + '-' + datatype + '.csv'
+			tabularImport.writeToFile(df, exportPath)
 
 	# given a Splice Interval Table row from pandas.DataFrame, return core info,
 	# applied affine shift, unshifed depths and shifted depths (both with file and applied affine) 
-	def getRowDepths(self, row):
+	def getRowDepths(self, row, datatype=None):
 		hole = row.Hole
 		core = str(row.Core)
-		datatype = row.DataUsed
-		coreinfo = self.parent.Window.findCoreInfoByHoleCoreType(hole, core, datatype)
+		if datatype is None:
+			datatype = row.DataUsed
+		coreinfo = self.parent.Window.findCoreInfoByHoleCoreType_v2(hole, core, datatype)
 		if coreinfo is None:
 			#print "Couldn't find hole {} core {} of type {}".format(hole, core, datatype)
 			coreinfo = self.parent.Window.findCoreInfoByHoleCore(hole, core)

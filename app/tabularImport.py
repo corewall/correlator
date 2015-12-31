@@ -91,7 +91,6 @@ class TabularFormat:
     def __init__(self, name, req):
         self.name = name
         self.req = req
-        pass
 
 MeasurementFormat = TabularFormat("Measurement Data",
                                   ['Exp', 'Site', 'Hole', 'Core', 'CoreType', 'Section', 'TopOffset', 'BottomOffset', 'Depth'])
@@ -103,6 +102,12 @@ SITFormat = TabularFormat("Splice Interval Table",
                           ['Exp', 'Site', 'Hole', 'Core', 'CoreType', 'TopSection', 'TopOffset', \
                            'TopDepthCSF', 'TopDepthCCSF', 'BottomSection', 'BottomOffset', 'BottomDepthCSF', \
                            'BottomDepthCCSF', 'SpliceType', 'DataUsed', 'Comment'])
+
+# Format for exported core data...may not need RunNo, RawDepth or Offset any longer?
+CoreExportFormat = TabularFormat("Exported Core Data",
+                                 ['Exp', 'Site', 'Hole', 'Core', 'CoreType',
+                                  'Section', 'TopOffset', 'BottomOffset', 'Depth',
+                                  'Data', 'RunNo', 'RawDepth', 'Offset'])
 
 class ImportDialog(wx.Dialog):
     def __init__(self, parent, id, path, dataframe, goalFormat, allowEmptyCells=True):
