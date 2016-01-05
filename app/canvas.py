@@ -702,9 +702,9 @@ class DataCanvas(wxBufferedWindow):
 			print "Can't find matching coreinfo for holeCount " + str(holeCount)
 		return result
 	
-	def getCorePointData(self, hole, core, datatype):
+	def getCorePointData(self, hole, core, datatype, forceUnsmooth=False):
 		smoothType = self.GetSmoothType(datatype)
-		searchData = self.SmoothData if smoothType > 0 else self.HoleData
+		searchData = self.SmoothData if (smoothType > 0 and not forceUnsmooth) else self.HoleData
 		return self._findCorePointData(searchData, hole, core, datatype)
 	
 	# find and return (depth, data) tuples for specified hole/core/datatype
@@ -1418,7 +1418,7 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawText("[{}{} {} unavailable]".format(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type), startX + 5, ypos)
 			self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX)
 			return
-
+		
 		# set range for interval
 		datatype = interval.coreinfo.type
 		if datatype == "Natural Gamma":
@@ -1430,24 +1430,42 @@ class DataCanvas(wxBufferedWindow):
 		# as loaded or created on the spot, intervals with affine shifts work well, but all hell breaks
 		# loose when a core with an interval in the splice is shifted...listener/update?
 		intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
-		screenpoints = []
-		for pt in intdata:
-			if pt[0] >= drawing_start and pt[0] <= self.SPrulerEndDepth:
-				y = self.startDepth + (pt[0] - self.SPrulerStartDepth) * (self.length / self.gap)
-				x = (pt[1] - self.minRange) * self.coefRangeSplice + startX
-				screenpoints.append((x,y))
+		screenPoints = self.GetScreenPoints(intdata, drawing_start, startX)
+				
+		usScreenPoints = [] # unsmoothed screenpoints 
+		drawUnsmoothed = self.GetSmoothType(datatype) == 2 # 2 == draw both Smooth & Unsmooth data
+		if drawUnsmoothed:
+			smoothdata = self.getCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type, forceUnsmooth=True)
+			smoothdata = [pt for pt in smoothdata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()] # trim to interval
+			usScreenPoints = self.GetScreenPoints(smoothdata, drawing_start, startX)
 
 		selected = (interval == self.parent.spliceManager.getSelected())
 		if selected:
 			for tie in self.parent.spliceManager.getTies():
 				self.DrawSpliceIntervalTie(dc, tie) 
-		if len(screenpoints) >= 1:
+		if len(screenPoints) >= 1:
 			dc.SetPen(wx.Pen(wx.GREEN, 2)) if selected else	dc.SetPen(wx.Pen(self.colorDict['splice'], 1)) 
-			dc.DrawLines(screenpoints) if (len(screenpoints) > 1) else dc.DrawPoint(screenpoints[0][0], screenpoints[0][1])	
+			dc.DrawLines(screenPoints) if (len(screenPoints) > 1) else dc.DrawPoint(screenPoints[0][0], screenPoints[0][1])	
 		else:
 			print "Can't draw {}, it contains 0 points".format(interval.coreinfo.getName())
 			
+		if drawUnsmoothed:
+			if len(usScreenPoints) >= 1:
+				dc.SetPen(wx.Pen(wx.WHITE, 1)) 
+				dc.DrawLines(usScreenPoints) if (len(usScreenPoints) > 1) else dc.DrawPoint(usScreenPoints[0][0], usScreenPoints[0][1])	
+			else:
+				print "Can't draw unsmoothed {} data over smoothed, it contains 0 points".format(interval.coreinfo.getName())
+			
 		self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX)
+		
+	def GetScreenPoints(self, dataPoints, drawingStart, startX):
+		screenpoints = []
+		for pt in dataPoints:
+			if pt[0] >= drawingStart and pt[0] <= self.SPrulerEndDepth:
+				y = self.startDepth + (pt[0] - self.SPrulerStartDepth) * (self.length / self.gap)
+				x = (pt[1] - self.minRange) * self.coefRangeSplice + startX
+				screenpoints.append((x,y))
+		return screenpoints
 			
 	def DrawSpliceInfo(self, dc):
 		firstint = self.parent.spliceManager.getIntervalAtIndex(0)
