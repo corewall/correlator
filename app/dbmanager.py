@@ -945,7 +945,8 @@ class DataFrame(wx.Panel):
 					dlg.Destroy()
 					return
 
-			useCsv = dlg.csvFormat.GetValue()
+			# brg 1/4/2016: always export in CSV
+			useCsv = True
 			if useCsv:
 				py_correlator.setDelimiter(1) # write comma-delimited file for export
 			
@@ -976,40 +977,33 @@ class DataFrame(wx.Panel):
 				
 			if useCsv:
 				py_correlator.setDelimiter(0) # reset delimiter to space + tab so internal files are written normally
-			outExtension = ".csv" if useCsv else ".dat"
+			outExtension = ".csv"
 
 			self.parent.OnNewData(None)
 
-			if dlg.splice.GetValue() == True and count == 1 :
-				if dlg.xmlFormat.GetValue():
-					outfile = output_prefix + "-" + title + "-" + applied + "." + typeSuffix + outExtension
-					self.SAVE_CORE_TO_XML(path, ".export.tmp", output_path, outfile, dlg.age.GetValue(), dlg.splice.GetValue())
+			if dlg.splice.GetValue() == True and count == 1:
+				outfile = output_prefix + "-" + title + "-" + applied + "." + typeSuffix + outExtension
+				if sys.platform == 'win32' :
+					workingdir = os.getcwd()
+					os.chdir(path)
+					cmd = 'copy ' +  ".export.tmp" + ' \"' + output_path + '/' + outfile + '\"'
+					os.system(cmd)
+					os.chdir(workingdir)
 				else :
-					outfile = output_prefix + "-" + title + "-" + applied + "." + typeSuffix + outExtension
+					cmd = 'cp \"' +  path + ".export.tmp" + '\" \"' + output_path + '/' + outfile + '\"'
+					os.system(cmd)
+			else:
+				for i in range(count) :
+					outfile = output_prefix + "-" + title + "-" + applied + holes[i] + "." + typeSuffix + outExtension
 					if sys.platform == 'win32' :
 						workingdir = os.getcwd()
 						os.chdir(path)
-						cmd = 'copy ' +  ".export.tmp" + ' \"' + output_path + '/' + outfile + '\"'
+						cmd = 'copy ' +  ".export.tmp" + str(i) + ' \"' + output_path + '/' + outfile + '\"'
 						os.system(cmd)
 						os.chdir(workingdir)
 					else :
-						cmd = 'cp \"' +  path + ".export.tmp" + '\" \"' + output_path + '/' + outfile + '\"'
+						cmd = 'cp \"' +  path + ".export.tmp" + str(i) + '\" \"' + output_path + '/' + outfile + '\"'
 						os.system(cmd)
-			else :
-				for i in range(count) :
-					outfile = output_prefix + "-" + title + "-" + applied + holes[i] + "." + typeSuffix + outExtension
-					if dlg.xmlFormat.GetValue():
-						self.SAVE_CORE_TO_XML(path, ".export.tmp"+ str(i), output_path, outfile, dlg.age.GetValue(), dlg.splice.GetValue())
-					else :
-						if sys.platform == 'win32' :
-							workingdir = os.getcwd()
-							os.chdir(path)
-							cmd = 'copy ' +  ".export.tmp" + str(i) + ' \"' + output_path + '/' + outfile + '\"'
-							os.system(cmd)
-							os.chdir(workingdir)
-						else :
-							cmd = 'cp \"' +  path + ".export.tmp" + str(i) + '\" \"' + output_path + '/' + outfile + '\"'
-							os.system(cmd)
 
 			if count > 0 :
 				self.parent.OnShowMessage("Information", "Successfully exported", 1)

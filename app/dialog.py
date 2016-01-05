@@ -600,21 +600,16 @@ class ExportELDDialog(wx.Dialog):
 
 class ExportCoreDialog(wx.Dialog):
 	def __init__(self, parent):
-		wx.Dialog.__init__(self, parent, -1, "Export Core", size=(300, 260),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
+		wx.Dialog.__init__(self, parent, -1, "Export Core Data", style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
 
 		vbox = wx.BoxSizer(wx.VERTICAL)
 		vbox.Add(wx.StaticText(self, -1, 'Check to Export Core data'), 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 12)
-
-		#self.core = wx.CheckBox(self, -1, 'Raw Core data')
-		#self.core.SetValue(True)
-		#self.core.Enable(False)
-		#vbox.Add(self.core, 0, wx.TOP | wx.LEFT, 9)
 
 		panel = wx.Panel(self, -1)
 		vbox_opt = wx.BoxSizer(wx.HORIZONTAL)
 
 		opt_panel = wx.Panel(panel, -1)
-		sizer = wx.StaticBoxSizer(wx.StaticBox(opt_panel, -1, 'Options'), orient=wx.VERTICAL)
+		sizer = wx.StaticBoxSizer(wx.StaticBox(opt_panel, -1, 'Apply Options'), orient=wx.VERTICAL)
 
 		self.cull = wx.CheckBox(opt_panel, -1, 'Apply Cull')
 		sizer.Add(self.cull, 1)
@@ -636,26 +631,22 @@ class ExportCoreDialog(wx.Dialog):
 
 		opt_panel.SetSizer(sizer)
 		vbox_opt.Add(opt_panel)
-
-		format_panel = wx.Panel(panel, -1)
-		format_sizer = wx.StaticBoxSizer(wx.StaticBox(format_panel, -1, 'Format'), orient=wx.VERTICAL)
-		self.textFormat = wx.RadioButton(format_panel, -1, "Text", style=wx.RB_GROUP)
-		self.textFormat.SetValue(True)
-		format_sizer.Add(self.textFormat, 1, wx.BOTTOM, 5)
-		self.csvFormat = wx.RadioButton(format_panel, -1, "CSV")
-		format_sizer.Add(self.csvFormat, 1, wx.BOTTOM, 5)
-		self.xmlFormat = wx.RadioButton(format_panel, -1, "XML")
-		format_sizer.Add(self.xmlFormat, 1)
-		format_panel.SetSizer(format_sizer)
-		vbox_opt.Add(format_panel, 0, wx.LEFT, 14)
 		panel.SetSizer(vbox_opt)
-		vbox.Add(panel, 0, wx.TOP | wx.LEFT, 12)
+		vbox.Add(panel, 0, wx.EXPAND | wx.ALL, 10)
 
-		self.SetSizer(vbox)
-
-		wx.Button(self, wx.ID_OK, "Next", (45, 200))
-		wx.Button(self, wx.ID_CANCEL, "Cancel", (140, 200))
+		btnPanel = wx.Panel(self, -1)
+		okBtn = wx.Button(btnPanel, wx.ID_OK, "Export")
+		cancelBtn = wx.Button(btnPanel, wx.ID_CANCEL, "Cancel")
+		bsz = wx.BoxSizer(wx.HORIZONTAL)
+		bsz.Add(okBtn, 1, wx.ALIGN_CENTER_VERTICAL, 5)
+		bsz.Add(cancelBtn, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+		btnPanel.SetSizer(bsz)
+		vbox.Add(btnPanel, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 5)
+		
 		wx.EVT_KEY_UP(self, self.OnCharUp)
+		
+		self.SetSizer(vbox)
+		self.Fit()
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
