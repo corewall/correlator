@@ -3914,7 +3914,7 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.UpdateData()
 					self.parent.UpdateStratData()
 					self.parent.compositePanel.OnButtonEnable(1, False)
-		elif opId == 2 or opId == 3: # adjust this core and all below (2), adjust this core only (3)
+		elif opId == 2 or opId == 3: # adjust this core only (2), adjust this core and all below (3)
 			if self.selectedTie >= 0 :
 				movableTie = self.TieData[self.selectedTie]
 				fixedTie = self.TieData[self.selectedTie - 1]
@@ -3923,7 +3923,7 @@ class DataCanvas(wxBufferedWindow):
 				shift = y2 - y1
 				ciA = self.findCoreInfoByIndex(movableTie.core)
 				ciB = self.findCoreInfoByIndex(fixedTie.core)
-				if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, opId == 2):
+				if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, opId == 3):
 					return
 				
 				self.AdjustDepthCore.append(movableTie.core)
