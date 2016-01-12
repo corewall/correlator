@@ -760,6 +760,12 @@ class CompositePanel():
 
 			self.parent.UpdateData()
 			self.parent.UpdateStratData()
+			
+			if dlg.outCore == "All":
+				self.parent.Window.UpdateShiftedSpliceIntervals(dlg.outHole, '1', True)
+			else:
+				self.parent.Window.UpdateShiftedSpliceIntervals(dlg.outHole, dlg.outCore, False)
+			self.parent.Window.UpdateDrawing()
 
 	def OnUpdateDepth(self, data):
 		depth = int(10000.0 * float(data)) / 10000.0;

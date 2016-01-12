@@ -3871,6 +3871,22 @@ class DataCanvas(wxBufferedWindow):
 		#self.parent.UndoShiftSectionSend()
 		self.parent.UpdateData()
 		self.parent.UpdateStratData()
+		
+	def UpdateShiftedSpliceIntervals(self, hole, holeCore, below):
+		newIntervalCoreInfos = []
+		intervals = self.parent.spliceManager.findIntervals(hole, holeCore, below)
+		
+		# delete affected intervals, first using their CoreInfo to gather updated CoreInfo
+		for interval in intervals:
+			newCoreInfo = self.findCoreInfoByHoleCoreType_v2(hole, interval.coreinfo.holeCore, interval.coreinfo.type)
+			if newCoreInfo is not None:
+				newIntervalCoreInfos.append(newCoreInfo)
+				self.parent.spliceManager.delete(interval)
+		
+		# re-add deleted intervals, which are now correctly shifted
+		for nci in newIntervalCoreInfos:
+			self.parent.spliceManager.add(nci)
+				
 	
 	def OnTieSelectionCb(self, event) :
 		opId = event.GetId() 
@@ -3923,7 +3939,8 @@ class DataCanvas(wxBufferedWindow):
 				shift = y2 - y1
 				ciA = self.findCoreInfoByIndex(movableTie.core)
 				ciB = self.findCoreInfoByIndex(fixedTie.core)
-				if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, opId == 3):
+				shiftAllBelow = opId == 3
+				if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, shiftAllBelow):
 					return
 				
 				self.AdjustDepthCore.append(movableTie.core)
@@ -3942,11 +3959,13 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.compositePanel.OnButtonEnable(0, False)
 					self.parent.compositePanel.OnButtonEnable(1, True)
 					self.parent.compositePanel.UpdateGrowthPlot()
+					
+					self.UpdateShiftedSpliceIntervals(ciA.hole, ciA.holeCore, shiftAllBelow)
 
-					if opId == 3 : 
+					if shiftAllBelow: 
 						s = "Composite(All Below): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 						self.parent.logFileptr.write(s)
-					else :
+					else:
 						s = "Composite: hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 						self.parent.logFileptr.write(s)
 
@@ -3988,8 +4007,9 @@ class DataCanvas(wxBufferedWindow):
 				shift = offset
 
 			ciA = self.findCoreInfoByIndex(movableTie.core)
-			ciB = self.findCoreInfoByIndex(fixedTie.core)	
-			if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, opt == 1):
+			ciB = self.findCoreInfoByIndex(fixedTie.core)
+			shiftAllBelow = opt == 1
+			if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, shiftAllBelow):
 				return
 
 			self.AdjustDepthCore.append(movableTie.core)
@@ -4010,10 +4030,10 @@ class DataCanvas(wxBufferedWindow):
 
 				self.parent.AffineChange = True
 
-				if opt == 0 :
+				if not shiftAllBelow:
 					s = "Composite: hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 					self.parent.logFileptr.write(s)
-				else :
+				else:
 					s = "Composite(All Below): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 					self.parent.logFileptr.write(s)
 
@@ -4029,6 +4049,8 @@ class DataCanvas(wxBufferedWindow):
 				self.parent.UpdateData()
 				self.parent.UpdateStratData()
 				self.TieData = []
+				
+				self.UpdateShiftedSpliceIntervals(ciA.hole, ciA.holeCore, shiftAllBelow)
 
 			self.selectedTie = -1
 			self.activeTie = -1

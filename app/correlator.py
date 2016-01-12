@@ -609,10 +609,12 @@ class MainFrame(wx.Frame):
 		py_correlator.setEvalGraph(self.depthStep, self.winLength, self.leadLag)
 
 	def CanAdjustCore(self, hole, core, shiftBelow):
-		canAdjust = self.spliceManager.allowAffineShift(hole, core, shiftBelow)
-		if not canAdjust:
-			self.OnShowMessage("Error", "Can't shift core(s) included in the current splice.", 1)
-		return canAdjust
+		adjust = True
+		allowShift = self.spliceManager.allowAffineShift(hole, core, shiftBelow)
+		if not allowShift:
+			override = self.OnShowMessage("Warning", "This affine shift will affect cores included in the current splice, do you want to continue?", 0)
+			adjust = override == wx.ID_YES
+		return adjust
 	
 	def OnAdjustCore(self, opt, type, offset, comment):
 		self.Window.OnAdjustCore(opt, type, offset, comment)
@@ -3030,6 +3032,12 @@ class SpliceController:
 		coreinfo.maxDepth = coremax
 		if self.splice.add(coreinfo):
 			self._onAdd()
+			
+	def delete(self, interval):
+		if self.hasSelection() and interval == self.selected:
+			self.deleteSelected()
+		else:
+			self.splice.delete(interval)
 	
 	def select(self, depth):
 		good = False
@@ -3308,13 +3316,17 @@ class SpliceController:
 	
 	# called before an affine shift - are the shifted core(s) included in the splice?
 	def allowAffineShift(self, hole, core, below=False):
+		matches = self.findIntervals(hole, core, below)
+		return len(matches) == 0
+	
+	def findIntervals(self, hole, core, below=False):
 		matches = [i for i in self.splice.ints if i.coreinfo.hole == hole]
 		if core is not None:
-			if below: # shifting core and all below
+			if below: # include all cores below core
 				matches = [i for i in matches if int(i.coreinfo.holeCore) >= int(core)]
-			else: # shifting single core
+			else: # single core
 				matches = [i for i in matches if int(i.coreinfo.holeCore) == int(core)]
-		return len(matches) == 0
+		return matches
 		
 
 class CorrelatorApp(wx.App):
