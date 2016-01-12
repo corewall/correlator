@@ -80,6 +80,11 @@ class SectionSummary:
         section = self._findSection(site, hole, core, section)
         return section.iloc[0][columnName]
     
+class AffineTable:
+    def __init__(self, name, dataframe):
+        self.name = name
+        self.dataframe = dataframe
+
 class SpliceIntervalTable:
     def __init__(self, name, dataframe):
         self.name = name
@@ -96,6 +101,11 @@ MeasurementFormat = TabularFormat("Measurement Data",
                                   ['Exp', 'Site', 'Hole', 'Core', 'CoreType', 'Section', 'TopOffset', 'BottomOffset', 'Depth'])
 SectionSummaryFormat = TabularFormat("Section Summary", 
                                      ['Exp', 'Site', 'Hole', 'Core', 'CoreType', 'Section', 'TopDepth', 'BottomDepth'])
+
+AffineFormat = TabularFormat("Affine Table",
+                             ['Site', 'Hole', 'Core', 'Core Type', 'Depth CSF (m)', 'Depth CCSF (m)', \
+                              'Cumulative Offset (m)', 'Differential Offset (m)', 'Growth Rate', 'Shift Type', \
+                              'Data Used', 'Quality Comment'])
 
 # Splice Interval Table
 SITFormat = TabularFormat("Splice Interval Table",
@@ -299,6 +309,28 @@ def doImport(parent, goalFormat, path=None, allowEmptyCells=True):
                 secSumm = SectionSummary(name, dataframe)
     return secSumm, path
 
+# brgtodo: generalize Import methods, they're all the same except for the
+# object they create!
+def doAffineImport(parent, goalFormat, path=None):
+    sit = None
+    if path is None:
+        path = selectFile(parent, goalFormat)
+    if path is not None:
+        dataframe = parseFile(parent, path, goalFormat, checkcols=True)
+        if dataframe is not None:
+            dlg = ImportDialog(parent, -1, path, dataframe, goalFormat)
+            if dlg.ShowModal() == wx.ID_OK:
+                dataframe = reorderColumns(dlg.dataframe, dlg.reqColMap, goalFormat)
+
+                # 1/12/2016 brg: Importing legacy tab+space delimited files into Excel, then exporting
+                # as CSV to import into Correlator can result in cells with whitespace following text,
+                # which confuses e.g. site and hole name-matching. Strip all whitespace in cells.
+                stripCells(dataframe)
+                
+                name = os.path.basename(dlg.path)
+                sit = AffineTable(name, dataframe)
+    return sit
+
 def doSITImport(parent, goalFormat, path=None):
     sit = None
     if path is None:
@@ -340,6 +372,14 @@ def reorderColumns(dataframe, colmap, format):
             newmap[colName] = dataframe.icol(index)
     df = pandas.DataFrame(newmap, columns=format.req)
     return df
+
+""" strip whitespace from dataframe cells """ 
+def stripCells(dataframe):
+    for c in dataframe.columns:
+        try:
+            dataframe[c] = dataframe[c].str.strip()
+        except:
+            pass
 
 def errbox(parent, msg):
     md = dialog.MessageDialog(parent, "Error", msg, 1)

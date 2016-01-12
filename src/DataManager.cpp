@@ -230,9 +230,6 @@ Data* DataManager::load( const char* filename, Data* dataptr, char* annotation )
 		}	
 	}
 
-	string filename2(filename);
-	filename2 += "_IODP";
-
 	int iscreatedHere = 0;	
 	DataInfo* info = NULL;
 	if(dataptr == NULL) 
@@ -271,15 +268,7 @@ Data* DataManager::load( const char* filename, Data* dataptr, char* annotation )
 		break;
 	case AFFINE_TABLE:
 	{
-		//ret = ReadAffineTable(fptr, dataptr);
-		FILE *fptr2 = fopen(filename2.c_str(), "r+");
-		if (fptr2 == NULL) {
-			cout << "No IODP affine table, reading old style" << endl;
-			ret = ReadAffineTable(fptr, dataptr);
-		} else {
-			cout << "IODP affine table found, reading" << endl;
-			ret = ReadIODPAffineTable(fptr2, dataptr);
-		}
+		ret = ReadAffineTable(fptr, dataptr);
         break;
 	}
 	case SPLICE_TABLE:
@@ -374,17 +363,9 @@ Data* DataManager::load( const char* filename, Data* dataptr, char* annotation )
 				dataptr->init(ALL_TIE);
 				dataptr->update();
 				fptr= fopen(info->m_appliedAffineFilename.c_str(),"r+");
-				if(fptr != NULL)
+				if (fptr != NULL)
 				{
-					//ReadAffineTable(fptr, dataptr);
-					FILE *fptr2 = fopen(filename2.c_str(), "r+");
-					if (fptr2 == NULL) {
-						cout << "No IODP affine table, reading old style" << endl;
-						ret = ReadAffineTable(fptr, dataptr);
-					} else {
-						cout << "IODP affine table found, reading" << endl;
-						ret = ReadIODPAffineTable(fptr2, dataptr);
-					}
+					ret = ReadAffineTable(fptr, dataptr);
 				}
 				dataptr->update();
 				fclose(fptr);
@@ -681,7 +662,6 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 	if(dataptr == NULL || filename == NULL) return -1;
 	string fullpath(filename);
 	FILE *fptr = fopen(filename,"w+");
-	FILE *iodpFile = NULL;
 
 	if(fptr == NULL) 
 	{
@@ -703,40 +683,15 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 	case JANUSORIG:
 		break;
 	case AFFINE_TABLE:
-		{
-			int pos = fullpath.find(".xml");
-			if(pos != string::npos) 
-			{
-				//ret = WriteAffineTableinXML(fptr, dataptr);
-			} else 
-			{
-				string iodpFilename(filename);
-				iodpFilename += "_IODP";
-				iodpFile = fopen(iodpFilename.c_str(), "w+");
-				if (!iodpFile) return -1;
-
-				ret = WriteAffineTable(fptr, dataptr);
-				WriteIODPAffineTable(iodpFile, dataptr);
-			}
-		}
+	{
+		ret = WriteAffineTable(fptr, dataptr);
         break;
-	case SPLICE_TABLE:
-		{
-			DataInfo* info = NULL;
-			if (m_dataList.size() > 0)
-				info = (DataInfo*) *m_dataList.begin();
-
-			const char *affineFile = info ? info->m_appliedAffineFilename.c_str() : NULL;
-			ret = WriteSpliceTable(fptr, dataptr, affineFile);
-
-			// write SIT table
-			string iodpFilename(filename);
-			iodpFilename += "_IODP";
-			iodpFile = fopen(iodpFilename.c_str(), "w+");
-			if (!iodpFile) return -1;
-			WriteSpliceIntervalTable(iodpFile, dataptr);
-		}
+	}
+	case SPLICE_TABLE:	// brg 1/11/2016: Splice Interval tables handled entirely on Python side
+	{
+		ret = -1;
 		break;
+	}
 	case EQLOGDEPTH_TABLE:
 		{
 			int pos = fullpath.find(".xml");		
@@ -777,8 +732,6 @@ int	DataManager::save( char* filename, Data* dataptr, int format )
 	}
 	
 	fclose(fptr);
-	if (iodpFile)
-		fclose(iodpFile);
 	return ret;
 }
 
@@ -787,7 +740,7 @@ int DataManager::exportAffine(const char *filename, Data *dataptr)
 	FILE *outFile = fopen(filename, "w+");
 	if (!outFile) return -1;
 
-	const int ret = WriteIODPAffineTable(outFile, dataptr);
+	const int ret = WriteAffineTable(outFile, dataptr);
 
 	fclose(outFile);
 	return ret;

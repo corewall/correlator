@@ -65,8 +65,8 @@ int ReadStrat( FILE *fptr, Data* dataptr, int datatype );
 int ReadStratTable( FILE *fptr, Data* datapt );
 int ReadCullTable( FILE *fptr, int coretype, Data* dataptr, char* annotation );
 
+int WriteLegacyAffineTable( FILE *fptr, Data* dataptr );
 int WriteAffineTable( FILE *fptr, Data* dataptr );
-int WriteIODPAffineTable( FILE *fptr, Data* dataptr );
 int WriteSpliceTable( FILE *fptr, Data* dataptr, const char* affinefilename= NULL);
 int WriteSpliceIntervalTable(FILE *fptr, Data* dataptr);
 int WriteEqLogDepthTable( FILE *fptr, Data* dataptr, const char* affinefilename );

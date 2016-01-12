@@ -2046,13 +2046,8 @@ class DataFrame(wx.Panel):
 				if selParentTitle == "Saved Tables" :
 					tableType = self.tree.GetItemText(self.selectedIdx, 1)
 					if tableType == "AFFINE" :
-						formatDlg = dialog.ExportFormatDialog(self)
-						if formatDlg.ShowModal() == wx.ID_OK:
-							self.LoadAllHoles(siteItem)
-							outAffineFile = filename + ".affine.table"
-							self.ExportAffineTable(source, path + '/' + outAffineFile, formatDlg.GetSelectedFormat())
-						else:
-							return
+						# 1/12/2016 brg: exporting affine is a straight copy, no need to load hole data
+						shutil.copy2(source, path + '/' + filename + ".affine.csv")
 					elif tableType == "SPLICE":
 						# 12/10/2015 brg: for now, don't pop dialog, just copy existing file - need
 						# to resolve how we'll handle application of affine tables other than the
@@ -5795,13 +5790,19 @@ class DataFrame(wx.Panel):
 			else :
 				self.parent.OnShowMessage("Error", "It is not for " + title, 1)
 
+	def ImportAffineTable(self, sourceFilePath):
+		affine = tabularImport.doAffineImport(self.parent, tabularImport.AffineFormat, sourceFilePath)
+		if affine is not None:
+			dbFilePath = self.Add_TABLE("AFFINE", "affine", False, True, affine.name)
+			tabularImport.writeToFile(affine.dataframe, dbFilePath)
+			self.parent.OnShowMessage("Information", "Successfully imported", 1)
 
 	def ImportSpliceTable(self, sourceFilePath):
 		sit = tabularImport.doSITImport(self.parent, tabularImport.SITFormat, sourceFilePath)
 		if sit is not None:
 			dbFilePath = self.Add_TABLE("SPLICE", "splice", False, True, sit.name)
 			tabularImport.writeToFile(sit.dataframe, dbFilePath)
-			self.parent.OnShowMessage("Information", "Succesfully imported", 1)
+			self.parent.OnShowMessage("Information", "Successfully imported", 1)
 	
 	def OnIMPORT_TABLE(self, tableType):
 		self.propertyIdx = self.tree.GetSelection()
@@ -5829,77 +5830,7 @@ class DataFrame(wx.Panel):
 			opendlg.Destroy()
 
 			if ret == wx.ID_OK :
-				last = path.find(".xml", 0)
-				valid = False
-				main_form = False
-				if last < 0 :
-					f = open(path, 'r+')
-					for line in f :
-						if line[0] == "#" :
-							main_form = True 
-							continue
-						modifiedLine = line[0:-1].split()
-						if modifiedLine[0] == 'null' :
-							continue
-						max = len(modifiedLine)
-						if max == 1 :
-							modifiedLine = line[0:-1].split('\t')
-							max = len(modifiedLine)
-
-						if max == 9 or max == 7 or max == 8 :
-							if modifiedLine[6] == '\tY' or modifiedLine[6] == '\tN' :
-								valid = True 
-							elif modifiedLine[6] == 'Y' or modifiedLine[6] == 'N' :
-								valid = True 
-							elif modifiedLine[6] == 'Y\r' or modifiedLine[6] == 'N\r' :
-								valid = True 
-							elif modifiedLine[6] == '\tY\r' or modifiedLine[6] == '\tN\r' :
-								valid = True 
-
-						if leg == modifiedLine[0] and site == self.RemoveFRONTSPACE(modifiedLine[1]) :
-							siteflag = True 
-						else :
-							valid = False 
-
-						break
-					f.close()
-
-					if valid == True and main_form == False :
-						filename = ".tmp_table"
-						if sys.platform == 'win32' :
-							self.OnFORMATTING(path, self.parent.Directory + "\\.tmp_table", tableType)
-							path = self.parent.Directory + "\\.tmp_table"
-						else :
-							self.OnFORMATTING(path, self.parent.Directory + "/.tmp_table", tableType)
-							path = self.parent.Directory + "/.tmp_table"
-
-				else : # last >= 0
-					self.handler.init()
-					if sys.platform == 'win32' :
-                                                self.handler.openFile(self.parent.Directory + "\\.tmp_table")
-                                                self.parser.parse(path)
-                                                path = self.parent.Directory + "\\.tmp_table"
-                                        else :
-                                                self.handler.openFile(self.parent.Directory + "/.tmp_table")
-                                                self.parser.parse(path)
-                                                path = self.parent.Directory + "/.tmp_table"
-					self.handler.closeFile()
-					
-					filename = ".tmp_table"
-					if self.handler.type == "affine table" :
-						valid = True
-					if self.handler.site == site and self.handler.leg == leg :
-						siteflag = True
-					else :
-						valid = False 
-
-				if valid == True :
-					type = self.Add_TABLE('AFFINE' , 'affine', False, True, source_filename)
-					self.parent.OnShowMessage("Information", "Successfully imported", 1)
-				elif siteflag == True :
-					self.parent.OnShowMessage("Error", "It is not affine table", 1)
-				else :
-					self.parent.OnShowMessage("Error", "It is not for " + self.title, 1)
+				self.ImportAffineTable(source_filename)
 
 		elif tableType == 'Splice' :
 			# Splice Table
@@ -5913,75 +5844,7 @@ class DataFrame(wx.Panel):
 
 			if ret == wx.ID_OK :
 				self.ImportSpliceTable(source_filename)
-# 				last = path.find(".xml", 0)
-# 				valid = False
-# 				main_form = False
-# 				if last < 0 :
-# 					f = open(path, 'r+')
-# 					valid = False
-# 					for line in f :
-# 						if line[0] == "#" :
-# 							main_form = True 
-# 							continue
-# 						modifiedLine = line[0:-1].split()
-# 						if modifiedLine[0] == 'null' :
-# 							continue
-# 						max = len(modifiedLine)
-# 						if max == 1 :
-# 							modifiedLine = line[0:-1].split('\t')
-# 							max = len(modifiedLine)
-# 
-# 						if max == 19 :
-# 							if modifiedLine[9] == '\tTIE' :
-# 								valid = True 
-# 							elif modifiedLine[9] == 'TIE' :
-# 								valid = True 
-# 							elif modifiedLine[9] == '\ttie' :
-# 								valid = True 
-# 							elif modifiedLine[9] == 'tie' :
-# 								valid = True 
-# 						#print "[DEBUG] " + site + " = " + modifiedLine[0] + " ? "
-# 						if site == modifiedLine[0] :
-# 							siteflag = True 
-# 						else :
-# 							valid = False 
-# 						break
-# 					f.close()
-# 					if valid == True and main_form == False :
-#                                                 filename = ".tmp_table"
-#                                                 if sys.platform == 'win32' :
-#                                                         self.OnFORMATTING(path, self.parent.Directory + "\\.tmp_table", tableType)
-#                                                         path = self.parent.Directory + "\\.tmp_table"
-#                                                 else :
-#                                                         self.OnFORMATTING(path, self.parent.Directory + "/.tmp_table", tableType)
-#                                                         path = self.parent.Directory + "/.tmp_table"
-# 				else :
-# 					self.handler.init()
-# 					if sys.platform == 'win32' :
-#                                                 self.handler.openFile(self.parent.Directory + "\\.tmp_table")
-#                                                 self.parser.parse(path)
-#                                                 path = self.parent.Directory + "\\.tmp_table"
-# 					else :
-#                                                 self.handler.openFile(self.parent.Directory + "/.tmp_table")
-#                                                 self.parser.parse(path)
-#                                                 path = self.parent.Directory + "/.tmp_table"
-# 					self.handler.closeFile()
-# 					
-# 					filename = ".tmp_table"
-# 					if self.handler.type == "splice table" :
-# 						valid = True
-# 					if self.handler.site == site and self.handler.leg == leg :
-# 						siteflag = True
-# 					else :
-# 						valid = False 
-# 
-# 				if valid == True :
-# 					type = self.Add_TABLE('SPLICE' , 'splice', False, True, source_filename)
-# 					self.parent.OnShowMessage("Information", "Successfully imported", 1)
-# 				elif siteflag == True :
-# 					self.parent.OnShowMessage("Error", "It is not splice table", 1)
-# 				else :
-# 					self.parent.OnShowMessage("Error", "It is not for " + self.title, 1)
+
 		else :
 			# ELD Table
 			opendlg = wx.FileDialog(self, "Select a ELD table file", self.parent.Directory, "", "*.*")
