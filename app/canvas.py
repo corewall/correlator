@@ -3929,7 +3929,7 @@ class DataCanvas(wxBufferedWindow):
 				self.AdjustDepthCore.append(movableTie.core)
 				self.OnDataChange(movableTie.core, shift)
 
-				if ciA != None and ciB != None:
+				if ciA is not None and ciB is not None:
 					#print "[DEBUG] Composite " + str(y1) +  " " + str(y2)
 					comment = self.parent.compositePanel.comment.GetValue()
 					py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
@@ -3968,7 +3968,6 @@ class DataCanvas(wxBufferedWindow):
 	# opt = 0 (adjust this core only) or 1 (adjust this and all below)
 	# actionType = 0 (best correlation), 1 (current tie), 2 (given, aka value in "Depth Adjust" field)
 	def OnAdjustCore(self, opt, actionType, strOffset, comment):
-		print "OnAdjustCore()"
 		offset = float(strOffset)
 		if self.selectedLastTie < 0 :
 			self.selectedLastTie = len(self.TieData) - 1
@@ -3998,7 +3997,7 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.compositePanel.OnButtonEnable(0, False)
 			self.parent.compositePanel.OnButtonEnable(1, True)
 
-			if ciA is None and ciB is None:
+			if ciA is not None and ciB is not None:
 				# actionType(0=best, 1=tie, 2=given), strOffset 
 				opId = 2
 				#print "[DEBUG] Compostie " + str(y1) +  " " + str(y2)
