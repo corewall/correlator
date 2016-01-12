@@ -580,7 +580,7 @@ class CompositePanel():
 		sizer31.Add(commentSizer, 0, wx.EXPAND | wx.TOP, 10)
 		
 		btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.adjustButton = wx.Button(panel3, -1, "Shift to Tie")
+		self.adjustButton = wx.Button(panel3, -1, "Apply Shift")
 		self.clearButton = wx.Button(panel3, -1, "Clear Tie")
 		btnSizer.Add(self.clearButton, 1, wx.RIGHT, 5)
 		btnSizer.Add(self.adjustButton, 1, 5)
