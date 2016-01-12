@@ -5893,23 +5893,23 @@ class DataFrame(wx.Panel):
 						break
 					f.close()
 					if valid == True and main_form == False :
-                                                filename = ".tmp_table"
-                                                if sys.platform == 'win32' :
-                                                        self.OnFORMATTING(path, self.parent.Directory + "\\.tmp_table", tableType)
-                                                        path = self.parent.Directory + "\\.tmp_table"
-                                                else :
-                                                        self.OnFORMATTING(path, self.parent.Directory + "/.tmp_table", tableType)
-                                                        path = self.parent.Directory + "/.tmp_table"
+						filename = ".tmp_table"
+						if sys.platform == 'win32' :
+							self.OnFORMATTING(path, self.parent.Directory + "\\.tmp_table", tableType)
+							path = self.parent.Directory + "\\.tmp_table"
+						else :
+							self.OnFORMATTING(path, self.parent.Directory + "/.tmp_table", tableType)
+							path = self.parent.Directory + "/.tmp_table"
 				else :
 					self.handler.init()
 					if sys.platform == 'win32' :
-                                                self.handler.openFile(self.parent.Directory + "\\.tmp_table")
-                                                self.parser.parse(path)
-                                                path = self.parent.Directory + "\\.tmp_table"
+						self.handler.openFile(self.parent.Directory + "\\.tmp_table")
+						self.parser.parse(path)
+						path = self.parent.Directory + "\\.tmp_table"
 					else :
-                                                self.handler.openFile(self.parent.Directory + "/.tmp_table")
-                                                self.parser.parse(path)
-                                                path = self.parent.Directory + "/.tmp_table"
+						self.handler.openFile(self.parent.Directory + "/.tmp_table")
+						self.parser.parse(path)
+						path = self.parent.Directory + "/.tmp_table"
 
 					self.handler.closeFile()
 					
