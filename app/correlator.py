@@ -612,7 +612,8 @@ class MainFrame(wx.Frame):
 		adjust = True
 		allowShift = self.spliceManager.allowAffineShift(hole, core, shiftBelow)
 		if not allowShift:
-			override = self.OnShowMessage("Warning", "This affine shift will affect cores included in the current splice, do you want to continue?", 0)
+			msg = "This affine shift affects cores included in the current splice. These cores will be removed from the splice. Do you want to continue?"
+			override = self.OnShowMessage("Warning", msg, 0)
 			adjust = override == wx.ID_YES
 		return adjust
 	
@@ -2973,6 +2974,7 @@ class SpliceController:
 		
 		self.selChangeListeners = []
 		self.addIntervalListeners = []
+		self.deleteIntervalListeners = []
 		
 	# splice interval selection
 	def hasSelection(self):
@@ -3038,7 +3040,8 @@ class SpliceController:
 			self.deleteSelected()
 		else:
 			self.splice.delete(interval)
-	
+		self._onDelete()
+			
 	def select(self, depth):
 		good = False
 		if self._canDeselect():
@@ -3108,12 +3111,24 @@ class SpliceController:
 	def removeAddIntervalListener(self, listener):
 		if listener in self.addIntervalListeners:
 			self.addIntervalListeners.remove(listener)
+			
+	def addDeleteIntervalListener(self, listener):
+		if listener not in self.deleteIntervalListeners:
+			self.deleteIntervalListeners.append(listener)
+			
+	def removeDeleteIntervalListener(self, listener):
+		if listener in self.deleteIntervalListeners:
+			self.deleteIntervalListeners.remove(listener)
 
 	def _onAdd(self, dirty=True):
 		self._updateTies()
 		if dirty:
 			self.setDirty()
 		for listener in self.addIntervalListeners:
+			listener()
+			
+	def _onDelete(self):
+		for listener in self.deleteIntervalListeners:
 			listener()
 
 	def _onSelChange(self):

@@ -1381,6 +1381,7 @@ class SpliceIntervalPanel():
 		
 		self.parent.spliceManager.addSelChangeListener(self.OnSelectionChange)
 		self.parent.spliceManager.addAddIntervalListener(self.OnAdd)
+		self.parent.spliceManager.addDeleteIntervalListener(self.UpdateUI)
 		
 	def _setupUI(self):
 		panel = wx.Panel(self.mainPanel, -1)

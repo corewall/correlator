@@ -3871,22 +3871,11 @@ class DataCanvas(wxBufferedWindow):
 		#self.parent.UndoShiftSectionSend()
 		self.parent.UpdateData()
 		self.parent.UpdateStratData()
-		
+
 	def UpdateShiftedSpliceIntervals(self, hole, holeCore, below):
-		newIntervalCoreInfos = []
 		intervals = self.parent.spliceManager.findIntervals(hole, holeCore, below)
-		
-		# delete affected intervals, first using their CoreInfo to gather updated CoreInfo
 		for interval in intervals:
-			newCoreInfo = self.findCoreInfoByHoleCoreType_v2(hole, interval.coreinfo.holeCore, interval.coreinfo.type)
-			if newCoreInfo is not None:
-				newIntervalCoreInfos.append(newCoreInfo)
-				self.parent.spliceManager.delete(interval)
-		
-		# re-add deleted intervals, which are now correctly shifted
-		for nci in newIntervalCoreInfos:
-			self.parent.spliceManager.add(nci)
-				
+			self.parent.spliceManager.delete(interval)
 	
 	def OnTieSelectionCb(self, event) :
 		opId = event.GetId() 
