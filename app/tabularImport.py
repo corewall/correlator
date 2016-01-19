@@ -107,11 +107,18 @@ AffineFormat = TabularFormat("Affine Table",
                               'Cumulative Offset (m)', 'Differential Offset (m)', 'Growth Rate', 'Shift Type', \
                               'Data Used', 'Quality Comment'])
 
-# Splice Interval Table
-SITFormat = TabularFormat("Splice Interval Table",
+# Splice Interval Table headers: 2.0.2 b8 and earlier
+# brg 1/18/2016: keeping for now, may want to convert from this format
+SITFormat_202_b8 = TabularFormat("Splice Interval Table 2.0.2 b8 and earlier",
                           ['Exp', 'Site', 'Hole', 'Core', 'CoreType', 'TopSection', 'TopOffset', \
                            'TopDepthCSF', 'TopDepthCCSF', 'BottomSection', 'BottomOffset', 'BottomDepthCSF', \
                            'BottomDepthCCSF', 'SpliceType', 'DataUsed', 'Comment'])
+
+SITFormat = TabularFormat("Splice Interval Table",
+                          ['Exp', 'Site', 'Hole', 'Core', 'Core Type', 'Top Section', 'Top Offset', \
+                           'Top Depth CSF-A', 'Top Depth CCSF-A', 'Bottom Section', 'Bottom Offset', 'Bottom Depth CSF-A', \
+                           'Bottom Depth CCSF-A', 'Splice Type', 'Data Used', 'Comment'])
+
 
 # Format for exported core data...may not need RunNo, RawDepth or Offset any longer?
 CoreExportFormat = TabularFormat("Exported Core Data",

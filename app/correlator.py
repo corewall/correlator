@@ -3208,10 +3208,10 @@ class SpliceController:
 					
 			#print "   topSection {}, offset {}, depth {}, mcdDepth {}\nbotSection {}, offset {}, depth {}, mcdDepth {}\ntype {}, data {}, comment {}".format(topSection, topOffset, mbsfTop, mbsfTop+offset, botSection, botOffset, mbsfBot, mbsfBot+offset, spliceType, si.coreinfo.type, si.comment)
 			
-			series = pandas.Series({'Exp':si.coreinfo.site, 'Site':site, 'Hole':hole, 'Core':core, 'CoreType':coreType, \
-									'TopSection':topSection, 'TopOffset':topOffset, 'TopDepthCSF':mbsfTop, 'TopDepthCCSF':mcdTop, \
-									'BottomSection':botSection, 'BottomOffset':botOffset, 'BottomDepthCSF':mbsfBot, 'BottomDepthCCSF':mcdBot, \
-									'SpliceType':spliceType, 'DataUsed':si.coreinfo.type, 'Comment':si.comment})
+			series = pandas.Series({'Exp':si.coreinfo.site, 'Site':site, 'Hole':hole, 'Core':core, 'Core Type':coreType, \
+									'Top Section':topSection, 'Top Offset':topOffset, 'Top Depth CSF-A':mbsfTop, 'Top Depth CCSF-A':mcdTop, \
+									'Bottom Section':botSection, 'Bottom Offset':botOffset, 'Bottom Depth CSF-A':mbsfBot, 'Bottom Depth CCSF-A':mcdBot, \
+									'Splice Type':spliceType, 'Data Used':si.coreinfo.type, 'Comment':si.comment})
 			rows.append(series)			
 		if len(rows) > 0:
 			df = pandas.DataFrame(columns=tabularImport.SITFormat.req)
@@ -3233,9 +3233,9 @@ class SpliceController:
 			if datatype is not None: # override file datatype
 				coreinfo.type = datatype
 				
-			comment = "" if pandas.isnull(row.Comment) else str(row.Comment)
+			comment = "" if pandas.isnull(row["Comment"]) else str(row["Comment"])
 			intervalTop = previousAffBot if previousSpliceType == "TIE" and previousAffBot is not None else appliedTop
-			previousSpliceType = row.SpliceType
+			previousSpliceType = row["Splice Type"]
 			previousAffBot = appliedBot
 			spliceInterval = splice.SpliceInterval(coreinfo, intervalTop, previousAffBot, comment)
 			destSplice.addInterval(spliceInterval) # add to ints - should already be sorted properly
@@ -3281,10 +3281,10 @@ class SpliceController:
 	# given a Splice Interval Table row from pandas.DataFrame, return core info,
 	# applied affine shift, unshifed depths and shifted depths (both with file and applied affine) 
 	def getRowDepths(self, row, datatype=None):
-		hole = row.Hole
-		core = str(row.Core)
+		hole = row["Hole"]
+		core = str(row["Core"])
 		if datatype is None:
-			datatype = row.DataUsed
+			datatype = row["Data Used"]
 		if datatype == "NaturalGamma":
 			datatype = "Natural Gamma"
 		coreinfo = self.parent.Window.findCoreInfoByHoleCoreType_v2(hole, core, datatype)
@@ -3299,10 +3299,10 @@ class SpliceController:
 		affineOffset = self.parent.Window.findCoreAffineOffset(coreinfo.hole, coreinfo.holeCore)
 		
 		# file CSF and CCSF depths - ensure no sub-mm decimals
-		top = round(row.TopDepthCSF, 3)
-		bot = round(row.BottomDepthCSF, 3)
-		fileTop = round(row.TopDepthCCSF, 3)
-		fileBot = round(row.BottomDepthCCSF, 3)
+		top = round(row["Top Depth CSF-A"], 3)
+		bot = round(row["Bottom Depth CSF-A"], 3)
+		fileTop = round(row["Top Depth CCSF-A"], 3)
+		fileBot = round(row["Bottom Depth CCSF-A"], 3)
 		
 		# CCSF depths with current affine applied
 		appliedTop = round(top + affineOffset, 3)
