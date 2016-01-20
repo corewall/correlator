@@ -3168,7 +3168,7 @@ class SpliceController:
 		
 		# brgtodo: write mm-rounded values? possible to get long wacky decimals at present
 		for index, si in enumerate(self.splice.ints):
-			site = si.coreinfo.leg # ugh...mixed up? this site-exp shit is so dumb.
+			site = si.coreinfo.leg # mixed-up site and leg, ugh.
 			hole = si.coreinfo.hole
 			core = si.coreinfo.holeCore
 			#print "Saving Interval {}: {}".format(index, si.coreinfo.getHoleCoreStr())
@@ -3208,7 +3208,7 @@ class SpliceController:
 					
 			#print "   topSection {}, offset {}, depth {}, mcdDepth {}\nbotSection {}, offset {}, depth {}, mcdDepth {}\ntype {}, data {}, comment {}".format(topSection, topOffset, mbsfTop, mbsfTop+offset, botSection, botOffset, mbsfBot, mbsfBot+offset, spliceType, si.coreinfo.type, si.comment)
 			
-			series = pandas.Series({'Exp':si.coreinfo.site, 'Site':site, 'Hole':hole, 'Core':core, 'Core Type':coreType, \
+			series = pandas.Series({'Site':site, 'Hole':hole, 'Core':core, 'Core Type':coreType, \
 									'Top Section':topSection, 'Top Offset':topOffset, 'Top Depth CSF-A':mbsfTop, 'Top Depth CCSF-A':mcdTop, \
 									'Bottom Section':botSection, 'Bottom Offset':botOffset, 'Bottom Depth CSF-A':mbsfBot, 'Bottom Depth CCSF-A':mcdBot, \
 									'Splice Type':spliceType, 'Data Used':si.coreinfo.type, 'Comment':si.comment})
@@ -3234,9 +3234,17 @@ class SpliceController:
 				coreinfo.type = datatype
 				
 			comment = "" if pandas.isnull(row["Comment"]) else str(row["Comment"])
-			intervalTop = previousAffBot if previousSpliceType == "TIE" and previousAffBot is not None else appliedTop
+			intervalTop = previousAffBot if previousSpliceType is not None and previousSpliceType.upper() == "TIE" and previousAffBot is not None else appliedTop
 			previousSpliceType = row["Splice Type"]
 			previousAffBot = appliedBot
+			
+			# skip invalid intervals?
+			if intervalTop == previousAffBot:
+				print "{}: top ({}) == bot ({}), interval has length zero, skipping".format(coreinfo.getHoleCoreStr(), intervalTop, previousAffBot)
+				continue
+			
+			print "creating interval for {}: {} - {}".format(coreinfo.getHoleCoreStr(), intervalTop, previousAffBot)
+			# 1/19/2016 brgtodo: catch ValueError (for invalid interval) and skip instead of failing?
 			spliceInterval = splice.SpliceInterval(coreinfo, intervalTop, previousAffBot, comment)
 			destSplice.addInterval(spliceInterval) # add to ints - should already be sorted properly
 		
@@ -3251,7 +3259,7 @@ class SpliceController:
 		self.load(filepath, self.altSplice, datatype)
 		
 	def exportData(self, filepath, fileprefix, datatype, siteexp):
-		print "exportData: {}, prefix = {}, datatype = {}".format(filepath, fileprefix, datatype)
+		#print "exportData: {}, prefix = {}, datatype = {}".format(filepath, fileprefix, datatype)
 		exportRows = []
 		secsumm = self.parent.sectionSummary
 		for si in self.getIntervals():
@@ -3263,14 +3271,18 @@ class SpliceController:
 			for p in pts:
 				mbsf = p[0] - affineOffset
 				section = secsumm.getSectionAtDepth(si.coreinfo.leg, si.coreinfo.hole, si.coreinfo.holeCore, mbsf)
-				secTop = secsumm.getSectionTop(si.coreinfo.leg, si.coreinfo.hole, si.coreinfo.holeCore, section)
-				topOffset = round((mbsf - secTop) * 100, 1)
-				botOffset = topOffset
-				rawDepth = round(p[0] - affineOffset, 3)
-				row = pandas.Series({'Exp':si.coreinfo.site, 'Site':si.coreinfo.leg, 'Hole':si.coreinfo.hole,
-								'Core':si.coreinfo.holeCore, 'CoreType':coreType, 'Section':section, 'TopOffset':topOffset,
-								'BottomOffset':botOffset, 'Depth':round(p[0], 3), 'Data':p[1], 'RunNo':'-', 'RawDepth':rawDepth, 'Offset':affineOffset})
-				exportRows.append(row)
+				#print "seeking section at depth {}: result = {}".format(mbsf, section)
+				if section is not None:
+					secTop = secsumm.getSectionTop(si.coreinfo.leg, si.coreinfo.hole, si.coreinfo.holeCore, section)
+					topOffset = round((mbsf - secTop) * 100, 1)
+					botOffset = topOffset
+					rawDepth = round(p[0] - affineOffset, 3)
+					row = pandas.Series({'Exp':si.coreinfo.site, 'Site':si.coreinfo.leg, 'Hole':si.coreinfo.hole,
+									'Core':si.coreinfo.holeCore, 'CoreType':coreType, 'Section':section, 'TopOffset':topOffset,
+									'BottomOffset':botOffset, 'Depth':round(p[0], 3), 'Data':p[1], 'RunNo':'-', 'RawDepth':rawDepth, 'Offset':affineOffset})
+					exportRows.append(row)
+				else:
+					print "Couldn't find section in {}{} at depth {}, skipping".format(si.coreinfo.hole, si.coreinfo.holeCore, mbsf)
 		if len(exportRows) > 0:
 			df = pandas.DataFrame(columns=tabularImport.CoreExportFormat.req)
 			df = df.append(exportRows, ignore_index=True)
@@ -3285,6 +3297,10 @@ class SpliceController:
 		core = str(row["Core"])
 		if datatype is None:
 			datatype = row["Data Used"]
+			# older SIT tables may not have Data Used values...grab first available type
+			if datatype is None:
+				ci = self.parent.Window.findCoreInfoByHoleCore(hole, core)
+				datatype = ci.type
 		if datatype == "NaturalGamma":
 			datatype = "Natural Gamma"
 		coreinfo = self.parent.Window.findCoreInfoByHoleCoreType_v2(hole, core, datatype)
@@ -3312,7 +3328,9 @@ class SpliceController:
 	
 	# confirm applied affine shift matches file's CSF and CCSF difference
 	def affineMatches(self, appliedVal, fileVal, coreinfo):
-		matches = appliedVal == fileVal
+		TOLERANCE = 0.01
+		diff = abs(fileVal - appliedVal)
+		matches = diff <= TOLERANCE
 		if not matches:
 			msg = "Core {}: Applied affine shift ({}) does not match shift in Splice Table ({}), can't load splice.".format(coreinfo.getHoleCoreStr(), appliedVal.__repr__(), fileVal.__repr__())
 			self._setErrorMsg(msg)

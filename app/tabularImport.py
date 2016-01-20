@@ -115,7 +115,7 @@ SITFormat_202_b8 = TabularFormat("Splice Interval Table 2.0.2 b8 and earlier",
                            'BottomDepthCCSF', 'SpliceType', 'DataUsed', 'Comment'])
 
 SITFormat = TabularFormat("Splice Interval Table",
-                          ['Exp', 'Site', 'Hole', 'Core', 'Core Type', 'Top Section', 'Top Offset', \
+                          ['Site', 'Hole', 'Core', 'Core Type', 'Top Section', 'Top Offset', \
                            'Top Depth CSF-A', 'Top Depth CCSF-A', 'Bottom Section', 'Bottom Offset', 'Bottom Depth CSF-A', \
                            'Bottom Depth CCSF-A', 'Splice Type', 'Data Used', 'Comment'])
 
