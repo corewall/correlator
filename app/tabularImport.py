@@ -34,6 +34,9 @@ class SectionSummary:
             coremax = cores['BottomDepth'].max()
             return coremin, coremax
         return None
+    
+    def getHoles(self):
+        return set(self.dataframe['Hole'])
         
     def getSectionTop(self, site, hole, core, section):
         return self._getSectionValue(site, hole, int(core), section, 'TopDepth')
