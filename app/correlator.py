@@ -3366,28 +3366,30 @@ class CorrelatorApp(wx.App):
 	def __init__(self, new_version, cfg=myPath+"default.cfg"):
 		self.cfgfile = cfg
 		self.new = new_version
+		self.showSplash = False
 		wx.App.__init__(self,0)
 		
 	def OnInit(self):
 		user = getpass.getuser()
-		#if platform_name[0] != "Windows" :
-		openframe = dialog.OpenFrame(None, -1, user, vers.ShortVersion)
-		openframe.Centre()
-		ret =  openframe.ShowModal()
-		user = openframe.user
-		openframe.Destroy()
-		if ret == wx.ID_CANCEL :
-			if global_logFile != None :
-				global_logFile.close()
-				if sys.platform == 'win32' :
-					workingdir = os.getcwd()
-					os.chdir(myPath)
-					os.system('del ' + global_logName)
-					os.chdir(workingdir)
-				else :
-					filename = myPath + global_logName
-					os.system('rm \"'+ filename + '\"')
-			return False
+		if self.showSplash:
+			#if platform_name[0] != "Windows" :
+			openframe = dialog.OpenFrame(None, -1, user, vers.ShortVersion)
+			openframe.Centre()
+			ret =  openframe.ShowModal()
+			user = openframe.user
+			openframe.Destroy()
+			if ret == wx.ID_CANCEL :
+				if global_logFile != None :
+					global_logFile.close()
+					if sys.platform == 'win32' :
+						workingdir = os.getcwd()
+						os.chdir(myPath)
+						os.system('del ' + global_logName)
+						os.chdir(workingdir)
+					else :
+						filename = myPath + global_logName
+						os.system('rm \"'+ filename + '\"')
+				return False
 
 		winx = 460 
 		winy = 600
