@@ -176,14 +176,15 @@ class DataFrame(wx.Panel):
 			self.DeleteSecSummFile()
 				
 	def DeleteSecSummFile(self, event=None):
-		siteNode = self.GetSiteForNode(self.selectedIdx)
 		secsummname = self.tree.GetItemText(self.selectedIdx, 1)
 		ret = self.parent.OnShowMessage("Information", "Are you sure you want to delete {}?".format(secsummname), 2)
 		if ret == wx.ID_OK:
-			filepath = self.parent.DBPath + 'db/' + self.GetSelectedSiteName() + '/' + secsummname
+			siteName = self.GetSelectedSiteName()
+			siteNode = self.GetSiteForNode(self.selectedIdx)
+			filepath = self.parent.DBPath + 'db/' + siteName + '/' + secsummname
 			os.remove(filepath)
 			self.tree.Delete(self.selectedIdx)
-			self.OnUPDATE_DB_FILE(self.GetSelectedSiteName(), siteNode)
+			self.OnUPDATE_DB_FILE(siteName, siteNode)
 				
 	def EnableTreeItem(self, item, enable):
 		self.tree.SetItemText(item, 'Enable' if enable else 'Disable', 2)
