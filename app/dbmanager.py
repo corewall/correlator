@@ -460,26 +460,28 @@ class DataFrame(wx.Panel):
 		self.selectedIdx = None
 
 	def ImportSectionSummary(self):
-		secsumm, srcPath = tabularImport.doImport(self, tabularImport.SectionSummaryFormat, allowEmptyCells=False)
-		if secsumm is not None:
+		secSummMap = tabularImport.doMultiImport(self, tabularImport.SectionSummaryFormat, allowEmptyCells=False)
+		if len(secSummMap) > 0:
 			# update GUI
 			site = self.GetSelectedSiteName()
 			ssRoot = self.tree.GetSelection()
 			
-			ssNode = self.tree.AppendItem(ssRoot, ','.join(secsumm.getHoles()))
-			self.tree.SetItemText(ssNode, secsumm.name, 1)
-			self.tree.SetItemText(ssNode, self.GetTimestamp(), 6)
-			self.tree.SetItemText(ssNode, self.parent.user, 7)
-			self.tree.SetItemText(ssNode, secsumm.name, 8)
-			self.tree.SetItemText(ssNode, srcPath, 9)
-			self.tree.SetItemText(ssNode, site + '/', 10)
-			
-			# update site DB file
+			for path, secsumm in secSummMap.iteritems():
+				ssNode = self.tree.AppendItem(ssRoot, ','.join(secsumm.getHoles()))
+				self.tree.SetItemText(ssNode, secsumm.name, 1)
+				self.tree.SetItemText(ssNode, self.GetTimestamp(), 6)
+				self.tree.SetItemText(ssNode, self.parent.user, 7)
+				self.tree.SetItemText(ssNode, secsumm.name, 8)
+				self.tree.SetItemText(ssNode, path, 9)
+				self.tree.SetItemText(ssNode, site + '/', 10)
+				
+				# write file
+				sspath = self.parent.DBPath +'db/' + site + '/' + secsumm.name
+				tabularImport.writeToFile(secsumm.dataframe, sspath)
+				
+			# update site DB file and GUI
 			self.OnUPDATE_DB_FILE(site, self.tree.GetItemParent(ssRoot))
-			
-			# write file
-			sspath = self.parent.DBPath +'db/' + site + '/' + secsumm.name
-			tabularImport.writeToFile(secsumm.dataframe, sspath)
+			self.tree.SortChildren(ssRoot)
 
 
 	# get name of parent Site (child of Root node) for current selection in self.tree
@@ -3270,7 +3272,6 @@ class DataFrame(wx.Panel):
 							fout.write(s)
 				elif type == "Section Summaries":
 					self.WriteSectionSummaryLine(selectItem, fout)
-					# todo
 				else :
 					totalcount = self.tree.GetChildrenCount(selectItem, False)
 					culltable_item = None

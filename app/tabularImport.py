@@ -319,6 +319,45 @@ def doImport(parent, goalFormat, path=None, allowEmptyCells=True):
                 secSumm = SectionSummary(name, dataframe)
     return secSumm, path
 
+def _columnHeadersMatch(chLists):
+    columnsMatch = True
+    if len(chLists) > 1:
+        ch1 = chLists[0]
+        for ch in chLists[1:]:
+            if ch != ch1:
+                columnsMatch = False
+                break
+    return columnsMatch
+
+def doMultiImport(parent, goalFormat, allowEmptyCells=True):
+    secSummMap = {}
+    paths = selectFiles(parent, goalFormat)
+    if len(paths) > 0:
+        # confirm all files have same column headers
+        chLists = []
+        for p in paths:
+            df = parseFile(parent, p, goalFormat, checkcols=True)
+            chLists.append(list(df.columns.values))
+        print "column sets:\n{}".format(chLists)
+        if not _columnHeadersMatch(chLists):
+            errbox(parent, "For multiple file import, all files must have identical column headers in name and order.")
+            return
+        else:
+            print "1 set found for {}".format(len(chLists))
+            
+        importPath = paths[0]
+        importDataframe = parseFile(parent, importPath, goalFormat, checkcols=True)
+        dlg = ImportDialog(parent, -1, importPath, importDataframe, goalFormat, allowEmptyCells)
+        if dlg.ShowModal() == wx.ID_OK:
+            for p in paths:
+                df = parseFile(parent, p, goalFormat, checkcols=True)
+                reorderedDf = reorderColumns(df, dlg.reqColMap, goalFormat)
+                name = os.path.basename(p)
+                secSummMap[p] = SectionSummary(name, reorderedDf)
+
+    return secSummMap
+
+
 # brgtodo: generalize Import methods, they're all the same except for the
 # object they create!
 def doAffineImport(parent, goalFormat, path=None):
@@ -401,6 +440,13 @@ def selectFile(parent, goalFormat):
     if dlg.ShowModal() == wx.ID_OK:
         path = dlg.GetPath()
     return path
+
+def selectFiles(parent, goalFormat):
+    paths = []
+    dlg = wx.FileDialog(parent, "Select {} Files".format(goalFormat.name), wildcard="CSV Files (*.csv)|*.csv", style=wx.OPEN|wx.MULTIPLE)
+    if dlg.ShowModal() == wx.ID_OK:
+        paths = dlg.GetPaths()
+    return paths
 
 def parseFile(parent, path, goalFormat, checkcols=False):
     dataframe = None
