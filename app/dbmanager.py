@@ -5552,7 +5552,9 @@ class DataFrame(wx.Panel):
 									self.tree.SetItemText(ssChild, token[4].strip(), 8) # file
 									self.tree.SetItemText(ssChild, token[5].strip(), 9) # source path
 									self.tree.SetItemText(ssChild, token[6].strip(), 10) # db path
+				
 				sub_f.close()
+				self.tree.SortChildren(secSummRoot)
 
 		loaded_item_list = []
 
