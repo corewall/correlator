@@ -25,6 +25,10 @@ class SectionSummary:
         cores = self._findCores(site, hole, int(core))
         return not cores.empty
     
+    def containsSection(self, site, hole, core, section):
+        sections = self._findSection(site, hole, int(core), section)
+        return not sections.empty
+    
     # return depth of top of top section, bottom of bottom section
     def getCoreRange(self, site, hole, core):
         cores = self._findCores(site, hole, int(core))

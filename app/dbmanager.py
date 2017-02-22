@@ -4021,21 +4021,21 @@ class DataFrame(wx.Panel):
 		return self.parent.DBPath +'db/' + siteDir + '/' + filename
 	
 	def LoadSectionSummary(self):
-		secSumm = None
+		secSumms = []
 		siteItem = self.GetSelectedSite()
 		if siteItem is not None:
 			found, secSummItem = self.FindItem(siteItem, "Section Summaries")
 			if found:
-				ssFilename = self.tree.GetItemText(secSummItem, 1)
-				if len(ssFilename) > 0:
-					siteDir = self.GetSelectedSiteName()
-					ssFilepath = self.parent.DBPath +'db/' + siteDir + '/' + ssFilename
-					secSumm = tabularImport.SectionSummary.createWithFile(ssFilepath)
-					self.parent.sectionSummary = secSumm
-					print "secSumm file [{}] found!".format(ssFilename)
+				for ssNode in self.GetChildren(secSummItem):
+					ssFilename = self.tree.GetItemText(ssNode, 1)
+					if len(ssFilename) > 0:
+						siteDir = self.GetSelectedSiteName()
+						ssFilepath = self.parent.DBPath +'db/' + siteDir + '/' + ssFilename
+						secSumms.append(tabularImport.SectionSummary.createWithFile(ssFilepath))
+						print "secSumm file [{}] found!".format(ssFilename)
 			else:
 				print "secSumm couldn't be loaded"
-		self.parent.sectionSummary = secSumm
+		self.parent.sectionSummary.setSummaries(secSumms)
 			
 	def OnLOAD(self):
 		self.propertyIdx = None
