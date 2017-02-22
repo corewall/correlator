@@ -1102,7 +1102,8 @@ class CommentTextCtrl(wx.TextCtrl):
 		if chr(evt.GetKeyCode()) != ',':
 			evt.Skip()
 
-# adjust a core's MCD based on previous cores' growth rate (aka SET)
+# adjust a core's MCD based on a percentage or a fixed distance,
+# resulting in an affine shift of type SET
 class ProjectDialog(wx.Dialog):
 	def __init__(self, parent):
 		self.parent = parent
@@ -1126,12 +1127,8 @@ class ProjectDialog(wx.Dialog):
 		
 		methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Shift Based On:"), orient=wx.VERTICAL)
 		hsz = wx.BoxSizer(wx.HORIZONTAL)
-		self.growthRadio = wx.RadioButton(self, -1, "Growth Rate:")
-		self.growthRadio.SetValue(True)
-		self.growthRateText = wx.StaticText(self, -1)
-		hsz.Add(self.growthRadio, 0)
-		hsz.Add(self.growthRateText, 0)
 		self.percentRadio = wx.RadioButton(self, -1, "Percentage:")
+		self.percentRadio.SetValue(True)
 		self.percentField = wx.TextCtrl(self, -1, "10.0", size=(70,-1))
 		hsz2 = wx.BoxSizer(wx.HORIZONTAL)
 		hsz2.Add(self.percentRadio, 0, wx.RIGHT, 5)
@@ -1158,7 +1155,7 @@ class ProjectDialog(wx.Dialog):
 		coreSizer.Add(hsz, 0, wx.EXPAND)
 		
 		self.currentShiftText = wx.StaticText(self, -1, "Current shift:")
-		coreSizer.Add(self.currentShiftText, 0, wx.EXPAND | wx.TOP, 10)
+		coreSizer.Add(self.currentShiftText, 0, wx.EXPAND | wx.TOP, 5)
 		
 		shiftSizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.shiftLabel = wx.StaticText(self, -1, "Suggested shift: ")
@@ -1187,13 +1184,13 @@ class ProjectDialog(wx.Dialog):
 		dlgSizer.Add(buttonSizer, 0, wx.ALIGN_RIGHT | wx.ALL, border=5)
 	
 		self.SetSizer(dlgSizer)
+		self.Fit()
 
 		self.InitChoices()
 
 		self.Bind(wx.EVT_CHOICE, self.UpdateCoreChoice, self.holeChoice)
 		self.Bind(wx.EVT_CHOICE, self.UpdateData, self.coreChoice)
 		self.Bind(wx.EVT_BUTTON, self.OnApply, self.applyButton)
-		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.growthRadio)
 		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.percentRadio)
 		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.fixedRadio)
 		self.Bind(wx.EVT_TEXT, self.UpdateData, self.percentField)
@@ -1217,9 +1214,8 @@ class ProjectDialog(wx.Dialog):
 			except ValueError:
 				self.outOffset = 0.0
 		self.outComment = self.commentField.GetValue()
-		if self.growthRadio.GetValue():
-			self.outRate = self.growthRate
-		elif self.percentRadio.GetValue():
+
+		if self.percentRadio.GetValue():
 			self.outRate = float(self.percentField.GetValue())/100.0 + 1.0
 		else:
 			self.outRate = None
@@ -1248,9 +1244,7 @@ class ProjectDialog(wx.Dialog):
 					mcdVals.append(mcd)
 					mbsf = mcd - core[5] # offset
 					mbsfVals.append(mbsf)
-					growthRate = numpy.polyfit(mbsfVals, mcdVals, 1)
-					#print "msbf = {}, mcd = {}, gr = {}".format(mbsfVals, mcdVals, growthRate)
-					coreDict[holeName][coreName] = (coreName, mbsf, mcd, round(growthRate[0], 3))
+					coreDict[holeName][coreName] = (coreName, mbsf, mcd)
 
 		# update self.coreData
 		for hole in coreDict:
@@ -1286,8 +1280,7 @@ class ProjectDialog(wx.Dialog):
 			self.curCoreName = None
 			self.prevCoreName = None
 			self.suggShift = None
-			 # use bottom core's growth rate for "All" since it factors in all cores' shifts
-			self.growthRate = self.coreData[curHole][-1][3]
+			# use bottom core's growth rate for "All" since it factors in all cores' shifts
 		else:
 			self.allSelected = False
 			coreIndex -= 1
@@ -1296,20 +1289,11 @@ class ProjectDialog(wx.Dialog):
 			self.curCoreShift = curCore[2] - curCore[1]
 			
 			if coreIndex > 0:
-				prevCore = self.coreData[curHole][coreIndex - 1]
 				self.prevCoreName = curHole + self.coreChoice.GetString(coreIndex)
-				growthRate = prevCore[2] if coreIndex == 1 else prevCore[3]
-				self.growthRate = round(growthRate, 3)
 			else:
 				self.prevCoreName = None
-				self.growthRate = None
-				
-			if self.growthRadio.GetValue():
-				if self.growthRate is not None:
-					self.suggShift = round(curCore[1] * self.growthRate - curCore[1], 3)
-				else:
-					self.suggShift = None
-			elif self.percentRadio.GetValue():
+
+			if self.percentRadio.GetValue():
 				try:
 					pct = float(self.percentField.GetValue())/100.0 + 1.0 
 					self.suggShift = round(curCore[1] * pct, 3) - curCore[1]
@@ -1325,18 +1309,8 @@ class ProjectDialog(wx.Dialog):
 		self.UpdateCurShiftText()
 		self.UpdateSuggShiftText()
 		self.UpdateShiftDiffText()
-		self.UpdateGrowthRateText()
 
-	def UpdateGrowthRateText(self):
-		if self.growthRate is not None:
-			if self.allSelected:
-				self.growthRateText.SetLabel(str(self.growthRate) + " at hole bottom")
-			else:
-				self.growthRateText.SetLabel(str(self.growthRate) + " at " + self.prevCoreName)
-		else:
-			self.growthRateText.SetLabel("[n/a]")
-			
-	def UpdateSuggShiftText(self, ):
+	def UpdateSuggShiftText(self):
 		if self.suggShift is not None:
 			self.shiftField.SetValue(str(self.suggShift))
 		else:
