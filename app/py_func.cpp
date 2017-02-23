@@ -1336,14 +1336,16 @@ static PyObject* projectAll(PyObject *self, PyObject *args)
 	char *comment = NULL;
 	bool isRate = false;
 
-	if (!PyArg_ParseTuple(args, "ssfsi", &hole, &datatypeStr, &shiftValue, &comment, &isRate))
+	// 2/21/2016 - On Mac, I found that unless comment is last in the args sequence, it
+	// ended up being parsed into non null-terminated garbage that led to crashes.
+	if (!PyArg_ParseTuple(args, "ssfis", &hole, &datatypeStr, &shiftValue, &isRate, &comment))
 		return NULL;
 
 	char* annotation = NULL;
 	int datatype = USERDEFINEDTYPE;
 	getTypeAndAnnot(datatypeStr, datatype, &annotation);
 
-	float ret = (float) correlator.projectAll(hole, datatype, annotation, shiftValue, comment, isRate);
+	float ret = (float) correlator.projectAll(hole, datatype, annotation, shiftValue, isRate, comment);
 
 	return Py_BuildValue("f", ret);
 }

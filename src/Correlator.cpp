@@ -913,6 +913,9 @@ double Correlator::composite(char* holeA, int coreidA, double posA, char* holeB,
 // If isRate = true, treat shiftValue as a growth rate to apply to each core.
 // Otherwise, treat shiftValue as a fixed offset to apply to each core.
 double Correlator::projectAll(char *hole, int datatype, char *annot, const float shiftValue, char *comment, const bool isRate)
+// If isRate = true, treat shiftValue as a % shift to apply to each core.
+// Otherwise, treat shiftValue as a fixed offset to add to each core.
+double Correlator::projectAll(char *hole, int datatype, char *annot, const float shiftValue, const bool isRate, char *comment)
 {
 	//cout << "projectAll!" << endl;
 	if (m_dataptr == NULL) return -1;

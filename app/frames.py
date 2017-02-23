@@ -745,7 +745,7 @@ class CompositePanel():
 			if dlg.outCore == "All":
 				isRate = dlg.outRate is not None
 				value = dlg.outRate if isRate else dlg.outOffset
-				py_correlator.projectAll(dlg.outHole, dlg.outType, value, dlg.outComment, isRate)
+				py_correlator.projectAll(dlg.outHole, dlg.outType, value, isRate, dlg.outComment)
 			else:
 				py_correlator.project(dlg.outHole, int(dlg.outCore), dlg.outType, dlg.outOffset, dlg.outComment)
 
