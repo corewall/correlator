@@ -4390,23 +4390,25 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.TieUpdateSend(ciA.leg, ciA.site, ciA.hole, int(ciA.holeCore), ciB.hole, int(ciB.holeCore), depth, shift)
 
 			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-			if flag == 1 :
-				testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), depth2, ciB.type, ciB.hole, int(ciB.holeCore), depth)
-				if testret != "" :
-					self.parent.OnAddFirstGraph(testret, depth2, depth)
-
-				typeA = ciA.type # needed since we don't want to modify ciA's type
-				for data_item in self.range :
-					if data_item[0] == "Natural Gamma" and ciA.type == "NaturalGamma" :
-						typeA = "Natural Gamma"
-					elif data_item[0] == "NaturalGamma" and ciA.type == "Natural Gamma" :
-						typeA = "NaturalGamma"
-					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-						testret = py_correlator.evalcoef(data_item[0], ciA.hole, int(ciA.holeCore), depth2, data_item[0], ciB.hole, int(ciB.holeCore), depth)
-						if testret != "" :
-							self.parent.OnAddGraph(testret, depth2, depth)
-
-				self.parent.OnUpdateGraph()
+			# brg 2/22/2017: stifle evaluation graph for now - want to move
+			# to Python side but not a priority at the moment
+# 			if flag == 1 :
+# 				testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), depth2, ciB.type, ciB.hole, int(ciB.holeCore), depth)
+# 				if testret != "" :
+# 					self.parent.OnAddFirstGraph(testret, depth2, depth)
+# 
+# 				typeA = ciA.type # needed since we don't want to modify ciA's type
+# 				for data_item in self.range :
+# 					if data_item[0] == "Natural Gamma" and ciA.type == "NaturalGamma" :
+# 						typeA = "Natural Gamma"
+# 					elif data_item[0] == "NaturalGamma" and ciA.type == "Natural Gamma" :
+# 						typeA = "NaturalGamma"
+# 					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
+# 						testret = py_correlator.evalcoef(data_item[0], ciA.hole, int(ciA.holeCore), depth2, data_item[0], ciB.hole, int(ciB.holeCore), depth)
+# 						if testret != "" :
+# 							self.parent.OnAddGraph(testret, depth2, depth)
+# 
+# 				self.parent.OnUpdateGraph()
 
 
 		elif self.activeSPTie != -1 : # update splice tie
@@ -5782,22 +5784,25 @@ class DataCanvas(wxBufferedWindow):
 									self.parent.TieUpdateSend(ciA.leg, ciA.site, ciA.hole, int(ciA.holeCore), ciB.hole, int(ciB.holeCore), y1, shift)
 									self.parent.compositePanel.OnButtonEnable(0, True)
 									flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-									if flag == 1:
-										testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
-										if testret != "" :
-											self.parent.OnAddFirstGraph(testret, y2, y1)
-										for data_item in self.range :
-											typeA = ciA.type
-											if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
-												typeA = "Natural Gamma"
-											elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
-												typeA = "NaturalGamma"
-											if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-												testret = py_correlator.evalcoef(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
-												if testret != "" :
-													self.parent.OnAddGraph(testret, y2, y1)
+									# brg 2/22/2017: stifle evaluation graph for now - want to move
+									# to Python side but not a priority at the moment
+# 									if flag == 1:
+# 										testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
+# 										if testret != "" :
+# 											self.parent.OnAddFirstGraph(testret, y2, y1)
+# 										for data_item in self.range :
+# 											typeA = ciA.type
+# 											if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
+# 												typeA = "Natural Gamma"
+# 											elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
+# 												typeA = "NaturalGamma"
+# 											if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
+# 												testret = py_correlator.evalcoef(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
+# 												if testret != "" :
+# 													self.parent.OnAddGraph(testret, y2, y1)
+# 
+# 										self.parent.OnUpdateGraph()
 
-										self.parent.OnUpdateGraph()
 				elif len(self.LogTieData) == 0: # create splice tie
 					if (len(self.RealSpliceTie) == 0 and len(self.SpliceTieData) < 2) or(len(self.RealSpliceTie) >= 2 and len(self.SpliceTieData) < 4) :
 						fixed = 0 
@@ -5964,7 +5969,8 @@ class DataCanvas(wxBufferedWindow):
 		flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
 		if ciA != None and ciB != None and flag == 1:
 			if tieType == 1 : # composite
-				testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
+				pass
+				#testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
 			else :
 				testret = py_correlator.evalcoef_splice(ciB.type, ciB.hole, int(ciB.holeCore), y1, y2)
 			if testret != "" :
@@ -5977,7 +5983,8 @@ class DataCanvas(wxBufferedWindow):
 					typeA = "NaturalGamma"
 				if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
 					if tieType == 1 : # composite
-						testret = py_correlator.evalcoef(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
+						pass
+						#testret = py_correlator.evalcoef(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
 					else :
 						testret = py_correlator.evalcoef_splice(data_item[0], ciB.hole, int(ciB.holeCore), y1, y2)
 					if testret != "" :
@@ -6161,6 +6168,7 @@ class DataCanvas(wxBufferedWindow):
 			self.UpdateDrawing()
 			return
 
+		# adjust affine tie
 		if self.selectedTie >= 0 :
 			movableTie = self.TieData[self.selectedTie]
 			if self.selectedCore != movableTie.core:
@@ -6179,29 +6187,32 @@ class DataCanvas(wxBufferedWindow):
 				data.screenY = pos[1]
 				data.depth = y1
 			
+			# Notify Corelyzer of modified tie point
 			self.parent.TieUpdateSend(ciA.leg, ciA.site, ciB.hole, int(ciB.holeCore), ciA.hole, int(ciA.holeCore), y1, shift)
 
 			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-			if ciA.hole != None and ciB.hole != None and flag == 1:
-				testret = py_correlator.evalcoef(ciB.type, ciB.hole, int(ciB.holeCore), y2, ciA.type, ciA.hole, int(ciA.holeCore), y1)
-				if testret != "" :
-					data = self.TieData[self.selectedTie]
-					data.screenY = pos[1]
-					data.depth = y1
-					self.parent.OnUpdateDepth(shift)
-					self.parent.OnAddFirstGraph(testret, y2, y1)
-
-				for data_item in self.range :
-					typeA = ciA.type
-					if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
-						typeA = "Natural Gamma"
-					elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
-						typeA = "NaturalGamma"
-					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-						testret = py_correlator.evalcoef(data_item[0], ciB.hole, int(ciB.holeCore), y2, data_item[0], ciA.hole, int(ciA.holeCore), y1)
-						if testret != "" :
-							self.parent.OnAddGraph(testret, y2, y1)
-				self.parent.OnUpdateGraph()
+			# brg 2/22/2017: stifle evaluation graph for now - want to move
+			# to Python side but not a priority at the moment
+ 			if ciA.hole != None and ciB.hole != None and flag == 1:
+# 				testret = py_correlator.evalcoef(ciB.type, ciB.hole, int(ciB.holeCore), y2, ciA.type, ciA.hole, int(ciA.holeCore), y1)
+# 				if testret != "" :
+				data = self.TieData[self.selectedTie]
+				data.screenY = pos[1]
+				data.depth = y1
+				self.parent.OnUpdateDepth(shift)
+#					self.parent.OnAddFirstGraph(testret, y2, y1)
+# 
+# 				for data_item in self.range :
+# 					typeA = ciA.type
+# 					if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
+# 						typeA = "Natural Gamma"
+# 					elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
+# 						typeA = "NaturalGamma"
+# 					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
+# 						testret = py_correlator.evalcoef(data_item[0], ciB.hole, int(ciB.holeCore), y2, data_item[0], ciA.hole, int(ciA.holeCore), y1)
+# 						if testret != "" :
+# 							self.parent.OnAddGraph(testret, y2, y1)
+# 				self.parent.OnUpdateGraph()
 
 			self.selectedCore = movableTie.core
 			self.GuideCore = []
@@ -6209,6 +6220,7 @@ class DataCanvas(wxBufferedWindow):
 			self.OnDrawGuide()
 			got = 1
 
+		# adjust splice tie - predates Splice Intervals, should be able to discard
 		if self.SPselectedTie >= 0 :
 			spliceTie = self.SpliceTieData[self.SPselectedTie]
 			depth = 0
