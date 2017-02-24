@@ -9,33 +9,21 @@ Support for the creation and editing of Affine Shifts and resulting tables.
 class AffineShift:  
     def __init__(self):
         pass
-    
-    def isTie(self): # hmmm this may be dumb.
-        pass
-    
-    def isSet(self):
-        pass
 
 class TieShift(AffineShift):
-    def __init__(self, core, depth, fromCore, fromDepth, distance, comment=""):
+    def __init__(self, fromCore, fromDepth, core, depth, distance, comment=""):
         AffineShift.__init__(self)
-        self.core = core # CoreInfo for shifted core
-        self.depth = depth # MBSF depth of shifted core's TIE point
         self.fromCore = fromCore # core to which self.core was tied
         self.fromDepth = fromDepth # MBSF depth of "from" core's TIE point
+        self.core = core # CoreInfo for shifted core
+        self.depth = depth # MBSF depth of shifted core's TIE point
         self.distance = distance # distance of shift: distance + depth = MCD
         self.comment = comment
 
-    def isTie(self):
-        return True
-    
-    def isSet(self):
-        return False
-
     def __repr__(self):
-        fmtStr = "TIE: {}@{}mcd ({}mbsf) shifted {}m to align with {}@{}mcd ({})" 
-        commentStr = "{}".format(self.comment) if self.comment != "" else ""
-        return fmtStr.format(self.core.GetHoleCoreStr(), self.depth, self.depth - self.distance, self.distance, self.fromCore.GetHoleCoreStr(), self.fromDepth, commentStr)
+        fmtStr = "TIE from {}@{}mcd to {}@{}mcd ({}mbsf), shifted {}{}" 
+        commentStr = "({})".format(self.comment) if self.comment != "" else ""
+        return fmtStr.format(self.fromCore, self.fromDepth, self.core, self.depth, self.depth - self.distance, self.distance, commentStr)
 
 
 class SetShift(AffineShift):
@@ -45,15 +33,15 @@ class SetShift(AffineShift):
         self.distance = distance # distance of shift: distance + depth = MCD
         self.comment = comment
 
-    def isTie(self):
-        return False
-    
-    def isSet(self):
-        return True
-        
     def __repr__(self):
         commentStr = "{}".format(self.comment) if self.comment != "" else ""
         return "SET: {} shifted {}m ({})".format(self.core.GetHoleCoreStr(), self.distance, commentStr)
+    
+def isTie(shift):
+    return isinstance(shift, TieShift)
+
+def isSet(shift):
+    return isinstance(shift, SetShift)
 
 
 class AffineBuilder:
@@ -68,15 +56,15 @@ class AffineBuilder:
         else:
             print "core already has shift {}".format(self.getShift(core))
             
-    def tie(self, core, depth, fromCore, fromDepth, comment=""):
-        deltaDist = (fromDepth - depth) 
+    def tie(self, fromCore, fromDepth, core, depth, comment=""):
+        deltaDist = fromDepth - depth
         if not self.coreHasShift(core):
-            ts = TieShift(core, depth, fromCore, fromDepth, fromDepth - depth, comment)
+            ts = TieShift(fromCore, fromDepth, core, depth, deltaDist, comment)
             self.add(ts)
         else: # core already has a shift...
             oldShift = self.getShift(core)
             if isinstance(oldShift, SetShift): # if it's a SET, override it entirely
-                ts = TieShift(core, depth, fromCore, fromDepth, fromDepth - depth, comment)
+                ts = TieShift(core, depth, fromCore, fromDepth, deltaDist, comment)
                 self.replace(oldShift, ts)
             else: # it's a TIE, the new shift distance is the old shift distance plus fromDepth - depth
                 newDist = deltaDist + oldShift.distance
@@ -96,13 +84,13 @@ class AffineBuilder:
         curShift = self.getShift(curCore)
         if curShift is None:
             return False
-        elif curShift.fromCore == searchCore: #.hole == searchCore.hole and curShift.fromCore.holeCore == searchCore.holeCore:
+        elif curShift.fromCore == searchCore:
             return True
         else:
             return self.isUpstream(searchCore, curShift.fromCore)
     
     def updateTieChain(self, core, deltaDist):
-        for shift in [s for s in self.shifts if s.isTie() and s.fromCore == core]: #s.fromCore.hole == core.hole and s.fromCore.holeCore == core.holeCore]:
+        for shift in [s for s in self.shifts if isTie(s) and s.fromCore == core]:
             print "{} has parent {}, shifting by {}".format(shift.core, shift.fromCore, deltaDist)
             shift.distance += deltaDist
             self.updateTieChain(shift.core, deltaDist) # recurse
@@ -124,7 +112,7 @@ class AffineBuilder:
         return self.getShift(core) is not None
     
     def getShift(self, core):
-        shifts = [s for s in self.shifts if s.core == core] #s.core.hole == core.hole and s.core.holeCore == core.holeCore]
+        shifts = [s for s in self.shifts if s.core == core]
         assert len(shifts) <= 1
         return shifts[0] if len(shifts) == 1 else None
     
@@ -153,12 +141,10 @@ if __name__ == "__main__":
     assert not MockCoreInfo("A", "1") == MockCoreInfo("B", "1")
     
     ab = AffineBuilder()
-    ss = SetShift(MockCoreInfo("A", "2"), 2.03, "I am a fake SET")
-    ts = TieShift(MockCoreInfo("A", "1"), 1.45, MockCoreInfo("B", "1"), 1.6, 0.15, "I am a fake TIE")
     ab.set(MockCoreInfo("A", "2"), 2.03, "I am a fake SET")
-    ab.tie(MockCoreInfo("A", "1"), 1.45, MockCoreInfo("B", "1"), 1.6)
-    ab.tie(MockCoreInfo("B", "1"), 1.60, MockCoreInfo("C", "1"), 1.8)
-    ab.tie(MockCoreInfo("C", "1"), 2.3, MockCoreInfo("B", "2"), 2.8)
+    ab.tie(MockCoreInfo("B", "1"), 1.6, MockCoreInfo("A", "1"), 1.45)
+    ab.tie(MockCoreInfo("C", "1"), 1.8, MockCoreInfo("B", "1"), 1.60)
+    ab.tie(MockCoreInfo("B", "2"), 2.8, MockCoreInfo("C", "1"), 2.3)
     assert ab.isUpstream(MockCoreInfo("B", "1"), MockCoreInfo("A", "1"))
 #     
 #     ss2 = SetShift(MockCoreInfo("A", "3"), 2.03, "I am a fake SET")
