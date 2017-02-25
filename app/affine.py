@@ -6,7 +6,10 @@ Created on Feb 22, 2017
 Support for the creation and editing of Affine Shifts and resulting tables.
 '''
 
-class AffineShift:  
+import unittest
+import numpy
+
+class AffineShift:
     def __init__(self):
         pass
 
@@ -45,16 +48,32 @@ def isSet(shift):
 
 
 class AffineBuilder:
-    def __init__(self, shifts=[]):
-        self.shifts = shifts # list of TieShifts and SetShifts representing the current affine state
+    def __init__(self):
+        self.shifts = [] # list of TieShifts and SetShifts representing the current affine state
      
+    # shift a single core by a given distance (SET) 
     def set(self, core, distance, comment=""):
+        deltaDist = distance
         if not self.coreHasShift(core):
             ss = SetShift(core, distance, comment)
             self.add(ss)
-            #print "added shift {}".format(ss)
         else:
-            print "core already has shift {}".format(self.getShift(core))
+            shift = self.getShift(core)
+            if isSet(shift):
+                deltaDist = distance - shift.distance
+                shift.distance = distance
+                print "core already has shift {}, adjusting by {} to {}".format(shift, deltaDist, distance)
+            else: # it's a TIE - probably want to confirm with user? wilBreakTie() method?
+                print "No can do, brah! SET will break existing shift {} and that would be weird.\nTODO: Confirmation dialog.".format(shift)
+                return
+        # update TIE chain, since the shifted core may be the fromCore of a chain
+        # at present this would only apply to the topmost core in a chain since there's
+        # no notion of SET-chaining right now (though that may be desired going forward)
+        self.updateTieChain(core, deltaDist)
+    
+    # hmmm better to just have set() at this level and let Controller issue individual set() calls?
+    def setBelow(self, core, distance, comment=""):
+        pass
             
     def tie(self, fromCore, fromDepth, core, depth, comment=""):
         deltaDist = fromDepth - depth
@@ -63,21 +82,21 @@ class AffineBuilder:
             self.add(ts)
         else: # core already has a shift...
             oldShift = self.getShift(core)
-            if isinstance(oldShift, SetShift): # if it's a SET, override it entirely
-                ts = TieShift(core, depth, fromCore, fromDepth, deltaDist, comment)
+            #if isinstance(oldShift, SetShift): # if it's a SET, override it entirely
+            if isSet(oldShift):
+                ts = TieShift(fromCore, fromDepth, core, depth, deltaDist, comment)
                 self.replace(oldShift, ts)
             else: # it's a TIE, the new shift distance is the old shift distance plus fromDepth - depth
                 newDist = deltaDist + oldShift.distance
                 print "   current TIE shift {} + new shift {} = cumulative shift {}".format(oldShift.distance, deltaDist, newDist)
-                #fromShiftDist = self.getShiftDistance(fromCore)
-                ts = TieShift(core, depth - oldShift.distance, fromCore, deltaDist, newDist, comment)
+                ts = TieShift(fromCore, deltaDist, core, depth - oldShift.distance, newDist, comment)
                 self.replace(oldShift, ts)
 
         # update TieShifts that descend from the core we just shifted     
         self.updateTieChain(core, deltaDist)
     
-    def isLegalTie(self, core, fromCore):
-        pass
+    def isLegalTie(self, fromCore, core):
+        return not self.isUpstream(fromCore, core)
     
     # is searchCore the fromCore for anything upstream?
     def isUpstream(self, searchCore, curCore):
@@ -91,9 +110,16 @@ class AffineBuilder:
     
     def updateTieChain(self, core, deltaDist):
         for shift in [s for s in self.shifts if isTie(s) and s.fromCore == core]:
-            print "{} has parent {}, shifting by {}".format(shift.core, shift.fromCore, deltaDist)
             shift.distance += deltaDist
+            print "{} has parent {}, shifting by {} for a total shift of {}".format(shift.core, shift.fromCore, deltaDist, shift.distance)
             self.updateTieChain(shift.core, deltaDist) # recurse
+            
+    def printChain(self, core, count=0):
+        shift = self.getShift(core)
+        if shift is not None and isTie(shift): # no SET chaining at present
+            self.printChain(shift.fromCore, count + 1)
+        endstr = ".\n" if count == 0 else " ->"
+        print "{}{}".format(core, endstr),
             
     def add(self, shift):
         print "adding {}".format(shift)
@@ -116,9 +142,10 @@ class AffineBuilder:
         assert len(shifts) <= 1
         return shifts[0] if len(shifts) == 1 else None
     
-    def getShiftDistance(self, core):
-        shift = self.getShift(core)
-        return shift.distance if shift is not None else 0.0
+    # don't think we need it and how do we handle case where there is no shift?
+#     def getShiftDistance(self, core):
+#         shift = self.getShift(core)
+#         return shift.distance if shift is not None else 0.0
 
 
 # purely for testing in this module - we only care about hole and core identifiers
@@ -136,23 +163,119 @@ class MockCoreInfo:
     def __eq__(self, other):
         return self.hole == other.hole and self.holeCore == other.holeCore
 
+def mci(hole, core):
+    return MockCoreInfo(hole, core)
+
+class TestAffine(unittest.TestCase):
+    # use numpy.isclose to deal with tiny floating point discrepancies causing == to return False 
+    def assertClose(self, fp1, fp2):
+        return self.assertTrue(numpy.isclose(fp1, fp2))
+    
+    def test_mci_eq(self):
+        c1 = mci('A', '1')
+        c1dup = mci('A', '1')
+        self.assertTrue(c1 == c1dup)
+    
+    def test_set_shift(self):
+        c1 = mci('A', '1')
+        ss = SetShift(c1, 1.0)
+        self.assertTrue(isSet(ss))
+        self.assertTrue(ss.distance == 1.0)
+        
+    def test_tie_shift(self):
+        a1 = mci('A', '1')
+        b1 = mci('B', '1')
+        ts = TieShift(a1, 0.5, b1, 0.25, 0.25)
+        self.assertTrue(isTie(ts))
+        self.assertTrue(ts.distance == 0.25)
+        
+    def test_builder(self):
+        a1 = mci('A', '1')
+        b1 = mci('B', '1')
+        c1 = mci('C', '1')
+        d1 = mci('D', '1')
+        ab = AffineBuilder()
+        ab.tie(a1, 0.5, b1, 0.25)
+        self.assertTrue(ab.coreHasShift(b1))
+        self.assertTrue(ab.getShift(b1).distance == 0.25)
+        self.assertFalse(ab.coreHasShift(a1))
+          
+        ab.tie(b1, 1.0, c1, 0.5)
+        self.assertTrue(ab.coreHasShift(c1))
+        self.assertTrue(ab.getShift(c1).distance == 0.5)
+          
+        # push a1 down by 0.2 - ensure b1 and c1 are pushed by same distance
+        ab.tie(d1, 0.5, a1, 0.3)
+        self.assertTrue(ab.coreHasShift(a1))
+        self.assertTrue(ab.getShift(a1).distance == 0.2)
+        self.assertTrue(ab.getShift(b1).distance == 0.45)
+        self.assertTrue(ab.getShift(c1).distance == 0.7)
+           
+        # chain 1: d1 -> a1 -> b1 -> c1
+        self.assertTrue(ab.isUpstream(b1, c1))
+        self.assertTrue(ab.isUpstream(a1, c1))
+        self.assertTrue(ab.isUpstream(a1, b1))
+        self.assertTrue(ab.isUpstream(d1, a1))
+        self.assertFalse(ab.isUpstream(b1, a1))
+           
+        # build a separate chain and test upstream-ness
+        # chain 2: a2 -> b2 -> c2 -> d2
+        a2 = mci('A', '2')
+        b2 = mci('B', '2')
+        c2 = mci('C', '2')
+        d2 = mci('D', '2')
+        ab.tie(a2, 0.8, b2, 1.0)
+        self.assertClose(-0.2, ab.getShift(b2).distance)
+        ab.tie(b2, 1.5, c2, 1.4)
+        self.assertClose(0.1, ab.getShift(c2).distance)
+        ab.tie(c2, 1.7, d2, 2.0)
+        self.assertClose(-0.3, ab.getShift(d2).distance)
+           
+        self.assertTrue(ab.isUpstream(a2, b2))
+        self.assertTrue(ab.isUpstream(b2, c2))
+        self.assertTrue(ab.isUpstream(c2, d2))
+        self.assertTrue(ab.isUpstream(a2, d2))
+           
+        # chains 1 and 2 are separate
+        self.assertFalse(ab.isUpstream(a1, b2))
+           
+        # join those chains and test new upstream-ness state
+        self.assertFalse(ab.isUpstream(c1, d2))
+        ab.tie(c1, 1.0, a2, 0.5)
+        self.assertTrue(ab.isUpstream(c1, d2))
+        
+    def test_override(self):        
+        # confirm TIE overrides SET
+        a1 = mci('A', '1')
+        b1 = mci('B', '1')
+        ab = AffineBuilder()
+        ab.set(a1, 1.0)
+        ab.tie(b1, 1.0, a1, 1.5)
+        shift = ab.getShift(a1)
+        self.assertTrue(isTie(shift))
+        self.assertClose(shift.distance, -0.5)
+        
+    # confirm a SET can be the top of a TIE chain
+    def test_set_to_tie_chain(self):
+        a1 = mci('A', '1')
+        b1 = mci('B', '1')
+        ab = AffineBuilder()
+        ab.set(a1, 1.0)
+        ab.tie(a1, 1.5, b1, 1.0)
+        self.assertTrue(ab.getShift(b1).fromCore == a1)
+        
+        c1 = mci('C', '1')
+        ab.tie(b1, 2.0, c1, 1.0)
+        self.assertClose(ab.getShift(c1).distance, 1.0)
+        
+        # chain: a1 -> b1 -> c1
+        #ab.printChain(c1)
+        
+        # does adjusting a1 push chain as expected?
+        ab.set(a1, 2.0)
+        self.assertTrue(ab.isUpstream(a1, c1))
+        self.assertClose(ab.getShift(b1).distance, 1.5)
+        self.assertClose(ab.getShift(c1).distance, 2.0)
+
 if __name__ == "__main__":
-    assert MockCoreInfo("A", "1") == MockCoreInfo("A", "1")
-    assert not MockCoreInfo("A", "1") == MockCoreInfo("B", "1")
-    
-    ab = AffineBuilder()
-    ab.set(MockCoreInfo("A", "2"), 2.03, "I am a fake SET")
-    ab.tie(MockCoreInfo("B", "1"), 1.6, MockCoreInfo("A", "1"), 1.45)
-    ab.tie(MockCoreInfo("C", "1"), 1.8, MockCoreInfo("B", "1"), 1.60)
-    ab.tie(MockCoreInfo("B", "2"), 2.8, MockCoreInfo("C", "1"), 2.3)
-    assert ab.isUpstream(MockCoreInfo("B", "1"), MockCoreInfo("A", "1"))
-#     
-#     ss2 = SetShift(MockCoreInfo("A", "3"), 2.03, "I am a fake SET")
-#     ss3 = SetShift(MockCoreInfo("A", "4"), 2.03, "I am a fake SET")
-#     ss4 = SetShift(MockCoreInfo("A", "4"), 2.03, "I am a fake SET")
-#     shifts = [ss, ss2, ss3, ss4]
-    
-#     ts = TieShift(MockCoreInfo("A", "1"), 1.45, MockCoreInfo("B", "1"), 1.6, 0.15, "I am a fake TIE")
-#     print ts
-#     ss = SetShift(MockCoreInfo("A", "2"), 2.03, "I am a fake SET")
-#     print ss
+    unittest.main()
