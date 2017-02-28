@@ -790,7 +790,7 @@ class DataCanvas(wxBufferedWindow):
 
 	# only affine for now
 	def GetCompositeTieCount(self):
-		 return len(self.TieData)
+		return len(self.TieData)
 
 	def OnSelectELDNote(self, event):
 		note_id = event.GetSelection()
