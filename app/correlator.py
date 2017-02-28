@@ -1902,8 +1902,13 @@ class MainFrame(wx.Frame):
 				break
 		return idx, type
 
-	def GetSectionAtDepth(self, hole, core, type, depth):
-		return py_correlator.getSectionAtDepth(hole, core, type, depth)
+	def GetSectionAtDepth(self, leg, hole, core, type, depth):
+		affineShift = self.affineManager.getShift(hole, core).distance if self.affineManager.coreHasShift(hole, core) else 0.0
+		section = self.sectionSummary.getSectionAtDepth(leg, hole, core, depth - affineShift)
+		#print "{}{}; section at depth {} - shift {} = {} is section {}".format(hole, core, depth, affineShift, depth - affineShift, section)
+		return section
+		
+		#return py_correlator.getSectionAtDepth(hole, core, type, depth)
 
 
 	def ShiftSectionSend(self, hole, core, offset, type):
@@ -2151,13 +2156,29 @@ class MainFrame(wx.Frame):
 			self.CoreStart = start
 			self.CoreLast = last
 			return
+		
+		# find affine shift for core if present
+		affineStr = ""
+		affineShift = 0.0
+		if self.affineManager.coreHasShift(holename, coreNum):
+			affineShift = round(self.affineManager.getShift(holename, coreNum).distance, 3)
+			affineStr = "affine shift of {}".format(affineShift)
+		else:
+			affineStr = "no affine shift"
+		#print "Getting data...AffineManager sez {}{} has {}".format(holename, coreNum, affineStr)
+		
 
 		#for i in range(6) :
-		for key in ['coreTop', 'coreBottom', 'coreMin', 'coreMax', 'values', 'affine']:
+		# I believe 'squish' is the compression percentage for ELD 
+		for key in ['coreTop', 'coreBottom', 'coreMin', 'coreMax', 'affineShift', 'squish']:
 			last = data.find(",", start)
 			coreProperty = float(data[start:last])
-			#print "{} = {},".format(key, coreProperty), 
-			temp.append(coreProperty) 
+			#print "{} = {},".format(key, coreProperty),
+			if key == 'affineShift':
+				#print "affine = {}".format(coreProperty)
+				temp.append(affineShift)
+			else: 
+				temp.append(coreProperty) 
 			start = last + 1
 			
 		#print "" # newline after core number and properties
@@ -2172,16 +2193,6 @@ class MainFrame(wx.Frame):
 		last = data.find(",", start)
 		quality = data[start:last] 
 		start = last +1
-
-		# find affine shift for core if present
-		affineStr = ""
-		affineShift = 0.0
-		if self.affineManager.coreHasShift(holename, coreNum):
-			affineShift = self.affineManager.getShift(holename, coreNum).distance
-			affineStr = "affine shift of {}".format(affineShift)
-		else:
-			affineStr = "no affine shift"
-		#print "Getting data...AffineManager sez {}{} has {}".format(holename, coreNum, affineStr)
 
 		# Get Section Information
 		last = data.find(":", start)

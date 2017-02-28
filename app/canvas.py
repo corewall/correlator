@@ -1256,8 +1256,8 @@ class DataCanvas(wxBufferedWindow):
 		affine = 0.0
 		for i in range(len_hole) : 
 			holedata = hole[i + 1] # actually coredata
-			# 0:corename, 1:sectionMin, 2:sectionMax, 3:dataMin, 4:dataMax, 5:offset,
-			# 6:squish, 7:? (annotation?), 8:'0'?, 9:section depth list, 10:list of depth/data tuples
+			# 0:corename, 1:sectionMin, 2:sectionMax, 3:dataMin, 4:dataMax, 5:affine offset,
+			# 6:squish (ELD compression), 7:? (annotation?), 8:'0'?, 9:section depth list, 10:list of depth/data tuples
 			#print "   coredata = {}".format(holedata[:10])
 
 			if self.CurrentSpliceCore == self.coreCount :
@@ -2479,7 +2479,7 @@ class DataCanvas(wxBufferedWindow):
 					dc.DrawText(str(tempx), x, self.startDepth - 15)
 				break
 
-		section = self.parent.GetSectionAtDepth(coreInfo.hole, int(coreInfo.holeCore), type, ycoord)
+		section = self.parent.GetSectionAtDepth(coreInfo.leg, coreInfo.hole, coreInfo.holeCore, type, ycoord)
 		self.statusStr += " Section: " + str(section)
 
 		# display depth in ruler units
