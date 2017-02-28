@@ -30,6 +30,7 @@ import frames
 import dbmanager
 import version as vers
 import model
+from affine import AffineBuilder, aci
 import splice
 import tabularImport
 
@@ -68,6 +69,7 @@ class MainFrame(wx.Frame):
 		self.SetMenuBar( self.CreateMenu() )
 		
 		self.sectionSummary = SectionSummaryPool()
+		self.affineManager = AffineController(self)
 		self.spliceManager = SpliceController(self) #splice.SpliceManager(self)
 
 		self.RawData = ""
@@ -933,6 +935,7 @@ class MainFrame(wx.Frame):
 			self.ParseSpliceData(ret, False)
 
 
+	# 2/22/2017 does this do anything at this point? Shouldn't be any splice data on C++ side
 	def UpdateSPLICE(self, locked):
 		self.Window.SpliceData = []
 		ret = ""
@@ -1605,6 +1608,9 @@ class MainFrame(wx.Frame):
 		self.Window.UpdateDrawing()
 		return
 
+	################################################################################################
+	# Most Correlator to Corelyzer communication routines live here - TODO: move to separate module!
+	#
 	def UndoSpliceSectionSend(self):
 		if self.client == None :
 			return
@@ -1942,7 +1948,9 @@ class MainFrame(wx.Frame):
 			cmd = "affine_table\t" + self.CurrentDir + "tmp.affine.table\n" 
 			#print "[DEBUG] send to Corelyzer : "  + str(cmd)
 			self.client.send(cmd)
-							
+	###
+	### End (most) Correlator to Corelyzer communication methods
+	#################################################################
 
 	def ParseSectionSend(self, data):
 		self.Window.SectionData = []
@@ -2113,7 +2121,7 @@ class MainFrame(wx.Frame):
 		last = data.find("#", start)
 		if start != last :
 			for i in range(coreNum) :
-				self.ParseCore(start, last, hole, data)
+				self.ParseCore(start, last, hole, holename, data)
 				start = self.CoreStart
 				last = self.CoreLast 
 
@@ -2128,11 +2136,13 @@ class MainFrame(wx.Frame):
 			self.CoreLast = last
 
 
-	def ParseCore(self, start, last, hole, data) :
+	def ParseCore(self, start, last, hole, holename, data):
 		# core-number, top, bottom, min, max, values, affine
 		temp =[]
 		last = data.find(",", start)
-		temp.append(data[start:last])
+		coreNum = data[start:last]
+		#print "Parsing core {}{}: ".format(holename, coreNum),
+		temp.append(coreNum)
 		start = last +1
 
 		last = data.find(":", start)
@@ -2142,12 +2152,18 @@ class MainFrame(wx.Frame):
 			self.CoreLast = last
 			return
 
-		for i in range(6) :
+		#for i in range(6) :
+		for key in ['coreTop', 'coreBottom', 'coreMin', 'coreMax', 'values', 'affine']:
 			last = data.find(",", start)
-			temp.append(float(data[start:last])) 
-			start = last +1
+			coreProperty = float(data[start:last])
+			#print "{} = {},".format(key, coreProperty), 
+			temp.append(coreProperty) 
+			start = last + 1
+			
+		#print "" # newline after core number and properties
+
 		corelist = [] 
-		value = ()	
+		#value = ()	
 
 		last = data.find(",", start)
 		annot = data[start:last] 
@@ -2157,17 +2173,29 @@ class MainFrame(wx.Frame):
 		quality = data[start:last] 
 		start = last +1
 
+		# find affine shift for core if present
+		affineStr = ""
+		affineShift = 0.0
+		if self.affineManager.coreHasShift(holename, coreNum):
+			affineShift = self.affineManager.getShift(holename, coreNum).distance
+			affineStr = "affine shift of {}".format(affineShift)
+		else:
+			affineStr = "no affine shift"
+		#print "Getting data...AffineManager sez {}{} has {}".format(holename, coreNum, affineStr)
+
 		# Get Section Information
 		last = data.find(":", start)
 		sections = []
 		while start != last : 
 			last = data.find(",", start)
-			sec_depth = float(data[start:last])
+			sec_depth = float(data[start:last]) + affineShift # apply affine
 			start = last +1
 			sections.append(sec_depth)
 
 			last = data.find(":", start)
-		start = last +1
+		start = last + 1
+		
+		#print "annot = {}, quality = {}, sections = {}".format(annot, quality, sections)
 
 		# Get Data
 		last = data.find(":", start)
@@ -2178,7 +2206,7 @@ class MainFrame(wx.Frame):
 		else : 
 			while True:
 				last = data.find(",", start)
-				v_value = float(data[start:last])
+				v_value = float(data[start:last]) + affineShift # apply affine
 				start = last +1
 				last = data.find(",", start)
 				v_data = float(data[start:last])
@@ -2188,8 +2216,7 @@ class MainFrame(wx.Frame):
 				if start == last :
 					# Create a "core data" item, which looks like the following: 
 					# (1-based core index in hole, top, bottom, mindata, maxdata, affine offset, stretch, annotated type,
-					# core quality, sections (list of each sections' top depth), list of all cores's depth/data tuple-pairs
-					# a list of all the core's depth/data pairs.
+					# core quality, sections (list of each sections' top depth), list of all core's depth/data tuple-pairs
 					coreinfo = temp[0], temp[1], temp[2], temp[3], temp[4], temp[5], temp[6], annot, quality, sections, corelist
 					hole.append(coreinfo)
 					start = last + 1
@@ -2961,7 +2988,51 @@ class MainFrame(wx.Frame):
 			self.Window.ScrollUpdate = 1 
 
 		return DrawData
+
+
+class AffineController:
+	def __init__(self, parent):
+		self.parent = parent # MainFrame
+		self.affine = AffineBuilder() # AffineBuilder for current affine table
+		
+	# shift a single core with method SET
+	def set(self, hole, core, distance, comment=""):
+		self.affine.set(aci(hole, core), distance, comment)
+		
+	# shift all cores in a hole with method SET
+	def setAll(self, hole, coreList, value, isPercent, comment=""):
+		site = self.parent.Window.GetHoleSite(hole)
+		cores = self.parent.Window.GetHoleCores(hole)
+		print "got site {} for hole {}".format(site, hole)
+		print "got cores {} for holes {}".format(cores, hole)
+		for core in coreList:
+			if isPercent:
+				coreTop, coreBot = self.parent.sectionSummary.getCoreRange(site, hole, core)
+				shiftDistance = (coreTop * value) - coreTop
+			else:
+				shiftDistance = value
+			self.affine.set(aci(hole, core), shiftDistance)
+			
+	def tie(self, fromHole, fromCore, fromDepth, hole, core, depth, comment=""):
+		self.affine.tie(aci(fromHole, fromCore), fromDepth, aci(hole, core), depth, comment)
+		
+	def coreHasShift(self, hole, core):
+		return self.affine.coreHasShift(aci(hole, core))
 	
+	def getShift(self, hole, core):
+		return self.affine.getShift(aci(hole, core))
+	
+	# gross, but useful
+	def getCoreTop(self, coreinfo):
+		# use section summary to get core's min and max values
+		secsumm = self.parent.sectionSummary
+		coremin, coremax = secsumm.getCoreRange(coreinfo.leg, coreinfo.hole, coreinfo.holeCore)
+		return coremin
+	
+	# apply affine shifts to all data
+	def updateCoreData(self):
+		pass
+
 	
 # brgtodo 12/21/2015: still depends on MainFrame 
 class SpliceController:

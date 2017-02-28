@@ -1114,6 +1114,7 @@ class ProjectDialog(wx.Dialog):
 		# vars for output
 		self.outHole = ""
 		self.outCore = ""
+		self.outCoreList = [] # list of all cores in current hole
 		self.outType = None # datatype
 		self.outRate = None
 		self.outOffset = 0
@@ -1266,6 +1267,7 @@ class ProjectDialog(wx.Dialog):
 		curHoleStr = self.holeChoice.GetStringSelection()
 		for coreTuple in self.coreData[curHoleStr]:
 			self.coreChoice.Append(coreTuple[0])
+			self.outCoreList.append(coreTuple[0])
 		if self.coreChoice.GetCount() > 0:
 			self.coreChoice.Insert("All", 0)
 			self.coreChoice.Select(1)

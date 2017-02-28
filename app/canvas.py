@@ -1328,6 +1328,26 @@ class DataCanvas(wxBufferedWindow):
 						print "Did NOT find in section summary"
 								
 			print "##########################################\n\n"
+			
+	def GetHoleSite(self, hole):
+		site = None
+		for h in self.HoleData:
+			holeInnerList = h[0]
+			holeInfo = holeInnerList[0]
+			if holeInfo[7] == hole:
+				site = holeInfo[0]
+				break
+		return site
+	
+	def GetHoleCores(self, hole):
+		cores = []
+		for h in self.HoleData:
+			holeInnerList = h[0]
+			holeInfo = holeInnerList[0]
+			if holeInfo[7] == hole:
+				for core in holeInnerList[1:]:
+					cores.append(core[0])
+		return cores
 
 	def _SetSpliceRangeCoef(self, smoothed):
 		modifiedType = "splice"
@@ -3938,7 +3958,8 @@ class DataCanvas(wxBufferedWindow):
 				if ciA is not None and ciB is not None:
 					#print "[DEBUG] Composite " + str(y1) +  " " + str(y2)
 					comment = self.parent.compositePanel.comment.GetValue()
-					py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
+					self.parent.affineManager.tie(ciB.hole, ciB.holeCore, y2, ciA.hole, ciA.holeCore, y1, comment)
+					#py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
 						
 					self.parent.AffineChange = True
 					self.parent.UpdateData()

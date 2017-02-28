@@ -38,7 +38,7 @@ class SetShift(AffineShift):
 
     def __repr__(self):
         commentStr = "{}".format(self.comment) if self.comment != "" else ""
-        return "SET: {} shifted {}m ({})".format(self.core.GetHoleCoreStr(), self.distance, commentStr)
+        return "SET: {} shifted {}m ({})".format(self.core, self.distance, commentStr)
     
 def isTie(shift):
     return isinstance(shift, TieShift)
@@ -147,6 +147,25 @@ class AffineBuilder:
 #         shift = self.getShift(core)
 #         return shift.distance if shift is not None else 0.0
 
+
+# convenience method to create AffineCoreInfo
+def aci(hole, core):
+    return AffineCoreInfo(hole, core)
+
+# TODO: dump MockCoreInfo and replace with this - turns out to be reeeeal useful
+class AffineCoreInfo:
+    def __init__(self, hole, core):
+        self.hole = hole
+        self.core = core
+        
+    def GetHoleCoreStr(self):
+        return "{}{}".format(self.hole, self.core)
+    
+    def __repr__(self):
+        return self.GetHoleCoreStr()
+    
+    def __eq__(self, other):
+        return self.hole == other.hole and self.core == other.core
 
 # purely for testing in this module - we only care about hole and core identifiers
 class MockCoreInfo:
