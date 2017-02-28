@@ -61,15 +61,22 @@ class SectionSummary:
         #print "section depth {} in section {} = {} overall".format(secDepth, section, result)        
         return result
     
+    def checkStrType(self, argList):
+        for arg in argList:
+            if not isinstance(arg, str):
+                print "SectionSummary ERROR: encountered non-str query element {}".format(arg)
+    
     def _findCores(self, site, hole, core):
+        # omitting core here and below since it's an integer at present
+        self.checkStrType([site, hole])
         df = self.dataframe
         cores = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core)]
         if cores.empty:
             print "SectionSummary: Could not find core {}-{}{}".format(site, hole, core)
         return cores
-        
 
     def _findSection(self, site, hole, core, section):
+        self.checkStrType([site, hole, section])
         df = self.dataframe
         section = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core) & (df.Section == section)]
         if section.empty:
@@ -77,6 +84,7 @@ class SectionSummary:
         return section
     
     def _findSectionAtDepth(self, site, hole, core, depth):
+        self.checkStrType([site, hole])
         df = self.dataframe
         section = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core) & (depth >= df.TopDepth) & (depth <= df.BottomDepth)]
         if not section.empty:
@@ -84,6 +92,7 @@ class SectionSummary:
         return None
     
     def _getSectionValue(self, site, hole, core, section, columnName):
+        self.checkStrType([site, hole, section])
         section = self._findSection(site, hole, core, section)
         return section.iloc[0][columnName]
     
