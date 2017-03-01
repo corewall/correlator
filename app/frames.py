@@ -566,9 +566,9 @@ class CompositePanel():
 		tdpSizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.actionType = wx.Choice(panel3, -1, choices=["To tie", "To best correlation", "By given amount (m):"])
 		self.actionType.SetSelection(0)
-		self.depth = wx.TextCtrl(panel3, -1)
+		self.depthField = wx.TextCtrl(panel3, -1)
 		tdpSizer.Add(self.actionType, 0, wx.RIGHT, 5)
-		tdpSizer.Add(self.depth)
+		tdpSizer.Add(self.depthField)
 		sizer31.Add(tdpSizer, 0, wx.EXPAND | wx.TOP, 5)
 		
 		self.mainPanel.Bind(wx.EVT_CHOICE, self.UpdateDepthField, self.actionType)
@@ -655,7 +655,7 @@ class CompositePanel():
 		
 	def UpdateDepthField(self, evt=None):
 		enableDepth = (self.actionType.GetSelection() == 2) # "By given amount"
-		self.depth.Enable(enableDepth)
+		self.depthField.Enable(enableDepth)
 
 	def OnSAVE(self, event):
 		dlg = dialog.Message3Button(self.parent, "Do you want to create new affine file?")
@@ -687,19 +687,8 @@ class CompositePanel():
 		self.Hide()
 
 	def OnAdjust(self, evt):
-		offset = self.depth.GetValue()
-
-		type = 0 # To best correlation
-		actionStr = self.actionType.GetStringSelection()
-		if actionStr == "To best correlation":
-			offset = str(self.bestOffset)
-		elif actionStr == "To tie":
-			type = 1
-		elif actionStr == "By given amount (m):":
-			type = 2
-
-		adjustType = self.applyCore.GetSelection() # 0 = this core only, 1 = core and all below
-		self.parent.OnAdjustCore(adjustType, type, offset, self.comment.GetValue())
+		adjustCoreOnly = (self.applyCore.GetSelection() == 0) # 0 = this core only, 1 = core and all below
+		self.parent.OnAdjustCore(adjustCoreOnly, self.GetShiftType())
 
 		self.parent.Window.activeTie = -1
 		self.UpdateGrowthPlot()
@@ -773,7 +762,7 @@ class CompositePanel():
 
 	def OnUpdateDepth(self, data):
 		depth = int(10000.0 * float(data)) / 10000.0;
-		self.depth.SetValue(str(depth))
+		self.depthField.SetValue(str(depth))
 
 	# brgtodo 9/4/2014: only called from this module, and always to set "empty" data:
 	# merge f'ns and add default params?
@@ -842,6 +831,25 @@ class CompositePanel():
 		gc = plot.PlotGraphics(self.polyline_list, 'Evaluation Graph', 'depth Axis', 'coef Axis')
 		self.corrPlotCanvas.Draw(gc, xAxis = (-self.parent.leadLag , self.parent.leadLag), yAxis = (-1, 1))
 		self.polyline_list = []
+		
+	def GetDepthValue(self):
+		return self.depthField.GetValue()
+	
+	def GetBestOffset(self):
+		return self.bestOffset
+	
+	# shiftType values do not correspond to order in self.actionType list
+	def GetShiftType(self):
+		shiftType = 0 # To best correlation
+		actionStr = self.actionType.GetStringSelection()
+		if actionStr == "To tie":
+			shiftType = 1
+		elif actionStr == "By given amount (m):":
+			shiftType = 2
+		return shiftType
+	
+	def GetComment(self):
+		return self.comment.GetValue()
 		
 
 class SplicePanel():

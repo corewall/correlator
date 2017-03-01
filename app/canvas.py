@@ -3948,74 +3948,26 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.UpdateStratData()
 					self.parent.compositePanel.OnButtonEnable(1, False)
 		elif opId == 2 or opId == 3: # adjust this core only (2), adjust this core and all below (3)
-			if self.selectedTie >= 0 :
-				movableTie = self.TieData[self.selectedTie]
-				fixedTie = self.TieData[self.selectedTie - 1]
-				y1 = movableTie.depth
-				y2 = fixedTie.depth
-				shift = y2 - y1
-				ciA = self.findCoreInfoByIndex(movableTie.core)
-				ciB = self.findCoreInfoByIndex(fixedTie.core)
-				shiftAllBelow = opId == 3
-				if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, shiftAllBelow):
-					return
-				
-				self.AdjustDepthCore.append(movableTie.core)
-				self.OnDataChange(movableTie.core, shift)
-
-				if ciA is not None and ciB is not None:
-					#print "[DEBUG] Composite " + str(y1) +  " " + str(y2)
-					comment = self.parent.compositePanel.comment.GetValue()
-					self.parent.affineManager.tie(ciB.hole, ciB.holeCore, y2, ciA.hole, ciA.holeCore, y1, comment)
-					#py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
-						
-					self.parent.AffineChange = True
-					self.parent.UpdateData()
-					self.parent.UpdateStratData()
-
-					self.TieData = []
-					self.parent.compositePanel.OnButtonEnable(0, False)
-					self.parent.compositePanel.OnButtonEnable(1, True)
-					self.parent.compositePanel.UpdateGrowthPlot()
-					
-					self.UpdateShiftedSpliceIntervals(ciA.hole, ciA.holeCore, shiftAllBelow)
-
-					if shiftAllBelow: 
-						s = "Composite(All Below): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
-						self.parent.logFileptr.write(s)
-					else:
-						s = "Composite: hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
-						self.parent.logFileptr.write(s)
-
-					s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
-					self.parent.logFileptr.write(s)
-
-					#py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
-					self.parent.ShiftSectionSend(ciA.hole, ciA.holeCore, shift, opId)
-
-					if self.parent.showReportPanel == 1 :
-						self.parent.OnUpdateReport()
-
-			self.GuideCore = []
+			shiftCoreOnly = (opId == 2)
+			self.OnAdjustCore(shiftCoreOnly)
+			return # OnAdjustCore() handles updates below
 
 		self.selectedTie = -1
 		self.drag = 0 
 		self.UpdateDrawing()
 
-	# opt = 0 (adjust this core only) or 1 (adjust this and all below)
-	# actionType = 0 (best correlation), 1 (current tie), 2 (given, aka value in "Depth Adjust" field)
-	def OnAdjustCore(self, opt, actionType, strOffset, comment):
-		offset = float(strOffset)
+	def OnAdjustCore(self, shiftCoreOnly, actionType=1): # tie by default
 		if self.selectedLastTie < 0 :
 			self.selectedLastTie = len(self.TieData) - 1
 
 		if self.selectedLastTie >= 0 :
 			movableTie = self.TieData[self.selectedLastTie]
-
 			fixedTie = self.TieData[self.selectedLastTie - 1]
 			y1 = movableTie.depth
 			y2 = fixedTie.depth
 			shift = fixedTie.depth - movableTie.depth
+			
+			offset = self.parent.compositePanel.GetBestOffset() if actionType == 0 else float(self.parent.compositePanel.GetDepthValue())
 			if actionType == 0 : # to best 
 				y1 = y1 + offset
 				shift = shift + offset 
@@ -4026,8 +3978,7 @@ class DataCanvas(wxBufferedWindow):
 
 			ciA = self.findCoreInfoByIndex(movableTie.core)
 			ciB = self.findCoreInfoByIndex(fixedTie.core)
-			shiftAllBelow = opt == 1
-			if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, shiftAllBelow):
+			if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, not shiftCoreOnly):
 				return
 
 			self.AdjustDepthCore.append(movableTie.core)
@@ -4036,21 +3987,12 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.compositePanel.OnButtonEnable(1, True)
 
 			if ciA is not None and ciB is not None:
-				# actionType(0=best, 1=tie, 2=given), strOffset 
-				opId = 2
-				#print "[DEBUG] Compostie " + str(y1) +  " " + str(y2)
-				if actionType < 2 :
-					opId = 2 if opt == 0 else 3
-					self.parent.affineManager.tie(ciB.hole, ciB.holeCore, y2, ciA.hole, ciA.holeCore, y1, comment)
-					#py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
-				else :
-					#givenOp = 4 if opt == 0 else 5 # brgtodo 5/1/2014: name these types! 2/28/2017 never used!
-					self.parent.affineManager.tie(ciB.hole, ciB.holeCore, y2, ciA.hole, ciA.holeCore, y1, comment)
-					#py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
+				comment = self.parent.compositePanel.GetComment()
+				self.parent.affineManager.tie(ciB.hole, ciB.holeCore, y2, ciA.hole, ciA.holeCore, y1, comment)
 
 				self.parent.AffineChange = True
 
-				if not shiftAllBelow:
+				if shiftCoreOnly:
 					s = "Composite: hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 					self.parent.logFileptr.write(s)
 				else:
@@ -4061,7 +4003,7 @@ class DataCanvas(wxBufferedWindow):
 				self.parent.logFileptr.write(s)
 
 				#py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
-				self.parent.ShiftSectionSend(ciA.hole, ciA.holeCore, shift, opId)
+				self.parent.ShiftSectionSend()
 
 				if self.parent.showReportPanel == 1 :
 					self.parent.OnUpdateReport()
@@ -4070,7 +4012,7 @@ class DataCanvas(wxBufferedWindow):
 				self.parent.UpdateStratData()
 				self.TieData = []
 				
-				self.UpdateShiftedSpliceIntervals(ciA.hole, ciA.holeCore, shiftAllBelow)
+				self.UpdateShiftedSpliceIntervals(ciA.hole, ciA.holeCore, not shiftCoreOnly)
 
 			self.selectedTie = -1
 			self.activeTie = -1

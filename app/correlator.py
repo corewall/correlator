@@ -619,8 +619,8 @@ class MainFrame(wx.Frame):
 			adjust = override == wx.ID_YES
 		return adjust
 	
-	def OnAdjustCore(self, opt, type, offset, comment):
-		self.Window.OnAdjustCore(opt, type, offset, comment)
+	def OnAdjustCore(self, opt, type):
+		self.Window.OnAdjustCore(opt, type)
 
 	def OnUndoCore(self, opt):
 		self.Window.OnUndoCore(opt)
@@ -1777,7 +1777,7 @@ class MainFrame(wx.Frame):
 
 	def UndoShiftSectionSend(self):
 		if self.shiftHole != None :
-			self.ShiftSectionSend(self.shiftHole, self.shiftCore, self.shiftOffset, self.shiftType)
+			self.ShiftSectionSend()
 			self.shiftHole = None 
 
 	def TieUpdateSend(self, leg, site, holeA, coreA, holeB, coreB, tie_depth, shift):
@@ -1911,7 +1911,7 @@ class MainFrame(wx.Frame):
 		#return py_correlator.getSectionAtDepth(hole, core, type, depth)
 
 
-	def ShiftSectionSend(self, hole, core, offset, type):
+	def ShiftSectionSend(self):
 		if self.client != None :
 			"""
 			self.shiftHole = hole
