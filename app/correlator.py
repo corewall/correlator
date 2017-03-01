@@ -1903,7 +1903,7 @@ class MainFrame(wx.Frame):
 		return idx, type
 
 	def GetSectionAtDepth(self, leg, hole, core, type, depth):
-		affineShift = self.affineManager.getShift(hole, core).distance if self.affineManager.coreHasShift(hole, core) else 0.0
+		affineShift = self.affineManager.getShiftDistance(hole, core)
 		section = self.sectionSummary.getSectionAtDepth(leg, hole, core, depth - affineShift)
 		#print "{}{}; section at depth {} - shift {} = {} is section {}".format(hole, core, depth, affineShift, depth - affineShift, section)
 		return section
@@ -2161,7 +2161,7 @@ class MainFrame(wx.Frame):
 		affineStr = ""
 		affineShift = 0.0
 		if self.affineManager.coreHasShift(holename, coreNum):
-			affineShift = round(self.affineManager.getShift(holename, coreNum).distance, 3)
+			affineShift = round(self.affineManager.getShiftDistance(holename, coreNum), 3)
 			affineStr = "affine shift of {}".format(affineShift)
 		else:
 			affineStr = "no affine shift"
@@ -3030,8 +3030,19 @@ class AffineController:
 	def coreHasShift(self, hole, core):
 		return self.affine.coreHasShift(aci(hole, core))
 	
+	# return TieShift or SetShift for hole-core combination if present in AffineBuilder, else None
 	def getShift(self, hole, core):
 		return self.affine.getShift(aci(hole, core))
+	
+	# convenience method that always returns a shift distance, even for nonsense hole+cores.
+	# - if hole and core are found in the AffineBuilder's shifts list, return that distance
+	# - if hole and core are *not* found in the list, return 0.0, even if the hole-core combination
+	# doesn't exist in the project! If client needs to confirm existence, use coreHasShift().
+	def getShiftDistance(self, hole, core):
+		if self.affine.coreHasShift(aci(hole, core)):
+			return self.affine.getShift(aci(hole, core)).distance
+		else:
+			return 0.0
 	
 	# gross, but useful
 	def getCoreTop(self, coreinfo):

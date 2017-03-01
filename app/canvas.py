@@ -1348,6 +1348,14 @@ class DataCanvas(wxBufferedWindow):
 				for core in holeInnerList[1:]:
 					cores.append(core[0])
 		return cores
+	
+	# wrapper to remove affine shifts before handing off to py_correlator.evalcoef(), which
+	# has no knowledge of any affine shifts since they're now managed on the Python side 
+	def EvaluateCorrelation(self, typeA, holeA, coreA, depthA, typeB, holeB, coreB, depthB):
+		unshiftedDepthA = depthA - self.parent.affineManager.getShiftDistance(holeA, coreA)
+		unshiftedDepthB = depthB - self.parent.affineManager.getShiftDistance(holeB, coreB)
+		evalCoefs = py_correlator.evalcoef(typeA, holeA, int(coreA), unshiftedDepthA, typeB, holeB, int(coreB), unshiftedDepthB)
+		return evalCoefs
 
 	def _SetSpliceRangeCoef(self, smoothed):
 		modifiedType = "splice"
@@ -4413,23 +4421,23 @@ class DataCanvas(wxBufferedWindow):
 			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
 			# brg 2/22/2017: stifle evaluation graph for now - want to move
 			# to Python side but not a priority at the moment
-# 			if flag == 1 :
-# 				testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), depth2, ciB.type, ciB.hole, int(ciB.holeCore), depth)
-# 				if testret != "" :
-# 					self.parent.OnAddFirstGraph(testret, depth2, depth)
-# 
-# 				typeA = ciA.type # needed since we don't want to modify ciA's type
-# 				for data_item in self.range :
-# 					if data_item[0] == "Natural Gamma" and ciA.type == "NaturalGamma" :
-# 						typeA = "Natural Gamma"
-# 					elif data_item[0] == "NaturalGamma" and ciA.type == "Natural Gamma" :
-# 						typeA = "NaturalGamma"
-# 					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-# 						testret = py_correlator.evalcoef(data_item[0], ciA.hole, int(ciA.holeCore), depth2, data_item[0], ciB.hole, int(ciB.holeCore), depth)
-# 						if testret != "" :
-# 							self.parent.OnAddGraph(testret, depth2, depth)
-# 
-# 				self.parent.OnUpdateGraph()
+			if flag == 1 :
+				testret = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), depth2, ciB.type, ciB.hole, int(ciB.holeCore), depth)
+				if testret != "" :
+					self.parent.OnAddFirstGraph(testret, depth2, depth)
+ 
+				typeA = ciA.type # needed since we don't want to modify ciA's type
+				for data_item in self.range :
+					if data_item[0] == "Natural Gamma" and ciA.type == "NaturalGamma" :
+						typeA = "Natural Gamma"
+					elif data_item[0] == "NaturalGamma" and ciA.type == "Natural Gamma" :
+						typeA = "NaturalGamma"
+					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
+						testret = self.EvaluateCorrelation(data_item[0], ciA.hole, int(ciA.holeCore), depth2, data_item[0], ciB.hole, int(ciB.holeCore), depth)
+						if testret != "" :
+							self.parent.OnAddGraph(testret, depth2, depth)
+ 
+				self.parent.OnUpdateGraph()
 
 
 		elif self.activeSPTie != -1 : # update splice tie
@@ -5807,22 +5815,22 @@ class DataCanvas(wxBufferedWindow):
 									flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
 									# brg 2/22/2017: stifle evaluation graph for now - want to move
 									# to Python side but not a priority at the moment
-# 									if flag == 1:
-# 										testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
-# 										if testret != "" :
-# 											self.parent.OnAddFirstGraph(testret, y2, y1)
-# 										for data_item in self.range :
-# 											typeA = ciA.type
-# 											if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
-# 												typeA = "Natural Gamma"
-# 											elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
-# 												typeA = "NaturalGamma"
-# 											if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-# 												testret = py_correlator.evalcoef(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
-# 												if testret != "" :
-# 													self.parent.OnAddGraph(testret, y2, y1)
-# 
-# 										self.parent.OnUpdateGraph()
+									if flag == 1:
+										testret = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
+										if testret != "" :
+											self.parent.OnAddFirstGraph(testret, y2, y1)
+										for data_item in self.range :
+											typeA = ciA.type
+											if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
+												typeA = "Natural Gamma"
+											elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
+												typeA = "NaturalGamma"
+											if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
+												testret = self.EvaluateCorrelation(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
+												if testret != "" :
+													self.parent.OnAddGraph(testret, y2, y1)
+ 
+										self.parent.OnUpdateGraph()
 
 				elif len(self.LogTieData) == 0: # create splice tie
 					if (len(self.RealSpliceTie) == 0 and len(self.SpliceTieData) < 2) or(len(self.RealSpliceTie) >= 2 and len(self.SpliceTieData) < 4) :
@@ -5990,8 +5998,7 @@ class DataCanvas(wxBufferedWindow):
 		flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
 		if ciA != None and ciB != None and flag == 1:
 			if tieType == 1 : # composite
-				pass
-				#testret = py_correlator.evalcoef(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
+				testret = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
 			else :
 				testret = py_correlator.evalcoef_splice(ciB.type, ciB.hole, int(ciB.holeCore), y1, y2)
 			if testret != "" :
@@ -6004,8 +6011,7 @@ class DataCanvas(wxBufferedWindow):
 					typeA = "NaturalGamma"
 				if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
 					if tieType == 1 : # composite
-						pass
-						#testret = py_correlator.evalcoef(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
+						testret = self.EvaluateCorrelation(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
 					else :
 						testret = py_correlator.evalcoef_splice(data_item[0], ciB.hole, int(ciB.holeCore), y1, y2)
 					if testret != "" :
@@ -6120,7 +6126,7 @@ class DataCanvas(wxBufferedWindow):
 			h1, c1, t1 = topInterval.triad()
 			h2, c2, t2 = botInterval.triad()
 			depth = siTie.depth()
-			evalResult = py_correlator.evalcoef(t1, h1, int(c1), depth, t2, h2, int(c2), depth)
+			evalResult = self.EvaluateCorrelation(t1, h1, int(c1), depth, t2, h2, int(c2), depth)
 			try: # attempt to parse evalResult into datapoints for eval graph
 				self.parent.OnAddFirstGraph(evalResult, depth, depth)
 			except ValueError:
@@ -6129,7 +6135,7 @@ class DataCanvas(wxBufferedWindow):
 			
 			if t1 != t2: # if intervals' datatypes differ, plot eval for second type
 				try:
-					evalResult = py_correlator.evalcoef(t2, h1, int(c1), depth, t2, h2, int(c2), depth)
+					evalResult = self.EvaluateCorrelation(t2, h1, int(c1), depth, t2, h2, int(c2), depth)
 					self.parent.OnAddGraph(evalResult, depth, depth)
 				except ValueError:
 					print "Error parsing evalcoef() results for mixed datatypes, do cores have data at depth {}?".format(depth)
@@ -6215,25 +6221,25 @@ class DataCanvas(wxBufferedWindow):
 			# brg 2/22/2017: stifle evaluation graph for now - want to move
 			# to Python side but not a priority at the moment
  			if ciA.hole != None and ciB.hole != None and flag == 1:
-# 				testret = py_correlator.evalcoef(ciB.type, ciB.hole, int(ciB.holeCore), y2, ciA.type, ciA.hole, int(ciA.holeCore), y1)
-# 				if testret != "" :
-				data = self.TieData[self.selectedTie]
-				data.screenY = pos[1]
-				data.depth = y1
-				self.parent.OnUpdateDepth(shift)
-#					self.parent.OnAddFirstGraph(testret, y2, y1)
-# 
-# 				for data_item in self.range :
-# 					typeA = ciA.type
-# 					if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
-# 						typeA = "Natural Gamma"
-# 					elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
-# 						typeA = "NaturalGamma"
-# 					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
-# 						testret = py_correlator.evalcoef(data_item[0], ciB.hole, int(ciB.holeCore), y2, data_item[0], ciA.hole, int(ciA.holeCore), y1)
-# 						if testret != "" :
-# 							self.parent.OnAddGraph(testret, y2, y1)
-# 				self.parent.OnUpdateGraph()
+				testret = self.EvaluateCorrelation(ciB.type, ciB.hole, int(ciB.holeCore), y2, ciA.type, ciA.hole, int(ciA.holeCore), y1)
+				if testret != "" :
+					data = self.TieData[self.selectedTie]
+					data.screenY = pos[1]
+					data.depth = y1
+					self.parent.OnUpdateDepth(shift)
+					self.parent.OnAddFirstGraph(testret, y2, y1)
+ 
+				for data_item in self.range :
+					typeA = ciA.type
+					if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma" :
+						typeA = "Natural Gamma"
+					elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma" :
+						typeA = "NaturalGamma"
+					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log" :
+						testret = self.EvaluateCorrelation(data_item[0], ciB.hole, int(ciB.holeCore), y2, data_item[0], ciA.hole, int(ciA.holeCore), y1)
+						if testret != "" :
+							self.parent.OnAddGraph(testret, y2, y1)
+				self.parent.OnUpdateGraph()
 
 			self.selectedCore = movableTie.core
 			self.GuideCore = []
