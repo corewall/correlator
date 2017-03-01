@@ -3990,7 +3990,7 @@ class DataCanvas(wxBufferedWindow):
 					s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
 					self.parent.logFileptr.write(s)
 
-					py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
+					#py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
 					self.parent.ShiftSectionSend(ciA.hole, ciA.holeCore, shift, opId)
 
 					if self.parent.showReportPanel == 1 :
@@ -4041,10 +4041,12 @@ class DataCanvas(wxBufferedWindow):
 				#print "[DEBUG] Compostie " + str(y1) +  " " + str(y2)
 				if actionType < 2 :
 					opId = 2 if opt == 0 else 3
-					py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
+					self.parent.affineManager.tie(ciB.hole, ciB.holeCore, y2, ciA.hole, ciA.holeCore, y1, comment)
+					#py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
 				else :
-					givenOp = 4 if opt == 0 else 5 # brgtodo 5/1/2014: name these types!
-					py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
+					#givenOp = 4 if opt == 0 else 5 # brgtodo 5/1/2014: name these types! 2/28/2017 never used!
+					self.parent.affineManager.tie(ciB.hole, ciB.holeCore, y2, ciA.hole, ciA.holeCore, y1, comment)
+					#py_correlator.composite(ciA.hole, int(ciA.holeCore), y1, ciB.hole, int(ciB.holeCore), y2, opId, ciA.type, comment)
 
 				self.parent.AffineChange = True
 
@@ -4058,7 +4060,7 @@ class DataCanvas(wxBufferedWindow):
 				s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
 				self.parent.logFileptr.write(s)
 
-				py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
+				#py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
 				self.parent.ShiftSectionSend(ciA.hole, ciA.holeCore, shift, opId)
 
 				if self.parent.showReportPanel == 1 :
