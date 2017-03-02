@@ -89,11 +89,12 @@ class AffineBuilder:
             else: # it's a TIE, the new shift distance is the old shift distance plus fromDepth - depth
                 newDist = deltaDist + oldShift.distance
                 print "   current TIE shift {} + new shift {} = cumulative shift {}".format(oldShift.distance, deltaDist, newDist)
-                ts = TieShift(fromCore, deltaDist, core, depth - oldShift.distance, newDist, comment)
+                ts = TieShift(fromCore, fromDepth, core, depth - oldShift.distance, newDist, comment)
                 self.replace(oldShift, ts)
 
         # update TieShifts that descend from the core we just shifted     
         self.updateTieChain(core, deltaDist)
+        # return new TieShift?
     
     def isLegalTie(self, fromCore, core):
         return not self.isUpstream(fromCore, core)
@@ -263,7 +264,7 @@ class TestAffine(unittest.TestCase):
         ab.tie(c1, 1.0, a2, 0.5)
         self.assertTrue(ab.isUpstream(c1, d2))
         
-    def test_override(self):        
+    def test_tie_override_of_set(self):        
         # confirm TIE overrides SET
         a1 = mci('A', '1')
         b1 = mci('B', '1')
@@ -273,6 +274,27 @@ class TestAffine(unittest.TestCase):
         shift = ab.getShift(a1)
         self.assertTrue(isTie(shift))
         self.assertClose(shift.distance, -0.5)
+        
+    # confirm new TIE correctly replaces existing TIE        
+    def test_tie_override_of_tie(self):
+        # initial TIE
+        a1 = mci('A', '1')
+        b1 = mci('B', '1')
+        ab = AffineBuilder()
+        ab.tie(b1, 1.0, a1, 1.5)
+        shift = ab.getShift(a1)
+        self.assertClose(shift.fromDepth, 1.0)
+        self.assertClose(shift.depth, 1.5)
+        self.assertClose(shift.distance, -0.5)
+        
+        # replace TIE with same fromCore at different depth. Current
+        # TIE shifts A1 by -0.5m
+        ab.tie(b1, 1.2, a1, 1.5) # A1 1.5mcd = 2.0mbsf due to current shift
+        shift = ab.getShift(a1)
+        self.assertTrue(isTie(shift))
+        self.assertClose(shift.fromDepth, 1.2)
+        self.assertClose(shift.depth, 2.0)
+        self.assertClose(shift.distance, -0.8) # shifted a further -0.3m + current -0.5m
         
     # confirm a SET can be the top of a TIE chain
     def test_set_to_tie_chain(self):
