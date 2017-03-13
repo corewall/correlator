@@ -3054,6 +3054,10 @@ class AffineController:
 	# apply affine shifts to all data
 	def updateCoreData(self):
 		pass
+	
+	# moveCore and fixedCore are CoreInfo objects
+	def isUpstream(self, moveCore, fixedCore):
+		return self.affine.isUpstream(aci(moveCore.hole, moveCore.holeCore), aci(fixedCore.hole, fixedCore.holeCore))
 
 	
 # brgtodo 12/21/2015: still depends on MainFrame 
