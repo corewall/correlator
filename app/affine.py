@@ -24,7 +24,7 @@ class TieShift(AffineShift):
         self.comment = comment
 
     def __repr__(self):
-        fmtStr = "TIE from {}@{}mcd to {}@{}mcd ({}mbsf), shifted {}{}" 
+        fmtStr = "TIE from {}@{}mcd to {}@{}mcd ({}mbsf), shifted {}m {}" 
         commentStr = "({})".format(self.comment) if self.comment != "" else ""
         return fmtStr.format(self.fromCore, self.fromDepth, self.core, self.depth, self.depth - self.distance, self.distance, commentStr)
 
@@ -37,8 +37,8 @@ class SetShift(AffineShift):
         self.comment = comment
 
     def __repr__(self):
-        commentStr = "{}".format(self.comment) if self.comment != "" else ""
-        return "SET: {} shifted {}m ({})".format(self.core, self.distance, commentStr)
+        commentStr = "({})".format(self.comment) if self.comment != "" else ""
+        return "SET: {} shifted {}m {}".format(self.core, self.distance, commentStr)
     
 def isTie(shift):
     return isinstance(shift, TieShift)
