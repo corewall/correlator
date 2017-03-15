@@ -13,6 +13,24 @@ class AffineShift:
     def __init__(self):
         pass
 
+# An affine shift resulting from the shift of another core that "pushes"
+# all cores below and/or related cores. Because the user didn't explicitly
+# shift this core, it isn't a TIE or a SET, but a "convenience" shift
+# that maintains relative positions between cores in a hole. Ultimately, such
+# shifts will usually be replaced with a TIE or SET as they're integrated into
+# the CCSF-A/MCD depth scale.
+class ImplicitShift(AffineShift):
+    def __init__(self, core, distance, comment=""):
+        AffineShift.__init__(self)
+        self.core = core
+        self.distance = distance
+        self.comment = comment
+    
+    def __repr__(self):
+        commentStr = "({})".format(self.comment) if self.comment != "" else ""
+        return "Implicit shift of {} by {}m {}".format(self.core, self.distance, commentStr)
+    
+
 class TieShift(AffineShift):
     def __init__(self, fromCore, fromDepth, core, depth, distance, comment=""):
         AffineShift.__init__(self)
