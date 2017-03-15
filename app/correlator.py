@@ -1400,6 +1400,7 @@ class MainFrame(wx.Frame):
 		self.Window.OnInit()
 
 		self.compositePanel.OnInitUI()
+		self.affineManager.clear()
 		self.spliceManager.clear()
 		self.spliceIntervalPanel.OnInitUI()
 		self.eldPanel.OnInitUI()
@@ -1420,6 +1421,7 @@ class MainFrame(wx.Frame):
 		self.Window.AdjustDepthCore = []
 		self.Window.TieData = []
 		self.Window.GuideCore = []
+		self.affineManager.clear()
 		self.spliceManager.clear()
 		self.Window.SpliceHole = []
 		self.Window.SpliceData = []
@@ -3005,7 +3007,11 @@ class AffineController:
 	def __init__(self, parent):
 		self.parent = parent # MainFrame
 		self.affine = AffineBuilder() # AffineBuilder for current affine table
-		
+	
+	# remove all shifts
+	def clear(self):
+		self.affine.clear()
+	
 	# shift a single core with method SET
 	def set(self, hole, core, distance, comment=""):
 		self.affine.set(aci(hole, core), distance, comment)

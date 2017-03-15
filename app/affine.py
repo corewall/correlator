@@ -68,6 +68,9 @@ def isSet(shift):
 class AffineBuilder:
     def __init__(self):
         self.shifts = [] # list of TieShifts and SetShifts representing the current affine state
+        
+    def clear(self):
+        self.shifts = []
      
     # shift a single core by a given distance (SET) 
     def set(self, core, distance, comment=""):
