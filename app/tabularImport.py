@@ -41,6 +41,9 @@ class SectionSummary:
     
     def getHoles(self):
         return set(self.dataframe['Hole'])
+    
+    def getCores(self, hole):
+        return set(self.dataframe[self.dataframe['Hole'] == hole]['Core'])
         
     def getSectionTop(self, site, hole, core, section):
         return self._getSectionValue(site, hole, int(core), section, 'TopDepth')

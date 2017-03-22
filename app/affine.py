@@ -13,9 +13,9 @@ class AffineShift:
     def __init__(self):
         pass
 
-# An affine shift resulting from the shift of another core that "pushes"
-# all cores below and/or related cores. Because the user didn't explicitly
-# shift this core, it isn't a TIE or a SET, but a "convenience" shift
+# An affine shift resulting from the shift of another core that "pushes" or "pulls"
+# all cores below and/or related cores to maintain spacing of cores. Because the user
+# didn't explicitly shift this core, it isn't a TIE or a SET, but a "convenience" shift
 # that maintains relative positions between cores in a hole. Ultimately, such
 # shifts will usually be replaced with a TIE or SET as they're integrated into
 # the CCSF-A/MCD depth scale.
@@ -69,8 +69,18 @@ class AffineBuilder:
     def __init__(self):
         self.shifts = [] # list of TieShifts and SetShifts representing the current affine state
         
+    def __repr__(self):
+        superstr = "AffineBuilder: {} shifts\n".format(len(self.shifts))
+        for index, shift in enumerate(self.shifts):
+            superstr += "  {}: {}\n".format(index, shift)
+        return superstr
+        
     def clear(self):
         self.shifts = []
+        
+    # add implicit shift
+    def addImplicit(self, core, distance, comment=""):
+        self.shifts.append(ImplicitShift(core, distance, comment))
      
     # shift a single core by a given distance (SET) 
     def set(self, core, distance, comment=""):

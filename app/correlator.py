@@ -68,7 +68,7 @@ class MainFrame(wx.Frame):
 		# make the menu
 		self.SetMenuBar( self.CreateMenu() )
 		
-		self.sectionSummary = SectionSummaryPool()
+		self.sectionSummary = SectionSummaryPool() # todo: build "implicit" section summary from Window.HoleData
 		self.affineManager = AffineController(self)
 		self.spliceManager = SpliceController(self) #splice.SpliceManager(self)
 
@@ -3005,12 +3005,29 @@ class MainFrame(wx.Frame):
 
 class AffineController:
 	def __init__(self, parent):
-		self.parent = parent # MainFrame
+		self.parent = parent # MainFrame - oy, this dependency!
 		self.affine = AffineBuilder() # AffineBuilder for current affine table
 	
 	# remove all shifts
 	def clear(self):
 		self.affine.clear()
+		
+	def load(self, filepath):
+		if filepath is not None:
+			pass # todo: hookup loading a real affine file!
+		
+		# add entries for any SectionSummary cores not included in just-loaded affine table
+		# (for now, that's everything!)
+		# for now, access current section summary through self.parent - TODO: pass at loadtime and maintain! SpliceController too.
+		ss = self.parent.sectionSummary
+		for hole in ss.getHoles():
+			for core in ss.getCores(hole):
+				self.add(hole, core, 0.0, "initial affine entry")
+		
+		print "{}".format(self.affine)
+	
+	def add(self, hole, core, distance, comment=""):
+		self.affine.addImplicit(aci(hole, core), distance, comment)
 	
 	# shift a single core with method SET
 	def set(self, hole, core, distance, comment=""):
@@ -3479,6 +3496,22 @@ class SectionSummaryPool:
 				matchingSummary = ss
 				break
 		return matchingSummary
+	
+	def getHoles(self):
+		holeList = []
+		for ss in self.secSumms:
+			ssHoles = ss.getHoles()
+			for hole in ssHoles:
+				holeList.append(hole)
+		return set(holeList)
+	
+	def getCores(self, hole):
+		coreList = []
+		for ss in self.secSumms:
+			ssCores = ss.getCores(hole)
+			for core in ssCores:
+				coreList.append(core)
+		return set(coreList)
 		
 	def containsCore(self, site, hole, core):
 		return self.findSummary(site, hole, core) is not None

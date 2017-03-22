@@ -3415,6 +3415,7 @@ class DataFrame(wx.Panel):
 		return tableItem
 		
 
+	# load and apply affine, splice, and ELD tables if present and enabled
 	def OnLOAD_TABLE(self, parentItem):
 		ret = [] 
 		found, savedTablesItem = self.FindItem(parentItem, 'Saved Tables')
@@ -3459,7 +3460,7 @@ class DataFrame(wx.Panel):
 			else:
 				ret.append(False)
 
-		return ret 
+		return ret # list of 3 booleans: [was affine loaded?, was splice loaded?, was eld loaded?] 
 
 
 	# return TreeItemID of first enabled Downhole Log Data item (if any), else None
@@ -4386,6 +4387,9 @@ class DataFrame(wx.Panel):
 		self.parent.UpdateSMOOTH_CORE()
 		self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
 
+		# 'load' affine - just generating from section summary at the moment
+		self.parent.affineManager.load(filepath=None) 
+		
 		# now load splice and ELD if necessary
 		if tableLoaded != [] :
 			if len(tableLoaded[1]) > 0:
