@@ -139,6 +139,24 @@ class AffineBuilder:
             return True
         else:
             return self.isUpstream(searchCore, curShift.fromCore)
+        
+    # returns True if searchCore is the top of a chain or chains
+    def isChainTop(self, searchCore):
+        tiedChainTop = self.countChildren(searchCore) > 1 and isTie(self.getShift(searchCore))
+        return tiedChainTop or (self.countChildren(searchCore) > 0 and not isTie(self.getShift(searchCore)))
+        
+    # is searchCore part of a TIE chain?
+    def inChain(self, searchCore):
+        shift = self.getShift(searchCore)
+        return isTie(shift) or self.isChainTop(searchCore)
+    
+    # get immediate descendants of searchCore
+    def getChildren(self, searchCore):
+        return [shift for shift in self.shifts if isTie(shift) and shift.fromCore == searchCore]
+    
+    # count immediate descendants of searchCore
+    def countChildren(self, searchCore):
+        return len(self.getChildren(searchCore)) 
     
     def updateTieChain(self, core, deltaDist):
         for shift in [s for s in self.shifts if isTie(s) and s.fromCore == core]:
@@ -148,7 +166,7 @@ class AffineBuilder:
             
     def printChain(self, core, count=0):
         shift = self.getShift(core)
-        if shift is not None and isTie(shift): # no SET chaining at present
+        if shift is not None and isTie(shift):
             self.printChain(shift.fromCore, count + 1)
         endstr = ".\n" if count == 0 else " ->"
         print "{}{}".format(core, endstr),
@@ -239,6 +257,64 @@ class TestAffine(unittest.TestCase):
         ts = TieShift(a1, 0.5, b1, 0.25, 0.25)
         self.assertTrue(isTie(ts))
         self.assertTrue(ts.distance == 0.25)
+
+    def test_inChain(self):
+        a1 = mci('A', '1')
+        a2 = mci('A', '2')
+        b1 = mci('B', '1')
+        b2 = mci('B', '2')
+        c2 = mci('C', '2')
+        ab = AffineBuilder()
+        ab.tie(a1, 2.0, b1, 1.0)
+        ab.tie(b1, 2.5, c2, 1.0)
+        ab.tie(c2, 3.0, b2, 1.0)
+        ab.tie(b1, 2.8, a2, 2.0)
+        
+        self.assertTrue(ab.inChain(a1))
+        self.assertTrue(ab.inChain(a2))
+        self.assertTrue(ab.inChain(b1))
+        self.assertTrue(ab.inChain(b2))
+        self.assertTrue(ab.inChain(c2))
+        
+    def test_isChainTop(self):
+        a1 = mci('A', '1')
+        a2 = mci('A', '2')
+        b1 = mci('B', '1')
+        b2 = mci('B', '2')
+        c2 = mci('C', '2')
+        ab = AffineBuilder()
+        ab.tie(a1, 2.0, b1, 1.0)
+        ab.tie(b1, 2.5, c2, 1.0)
+        ab.tie(c2, 3.0, b2, 1.0)
+        ab.tie(b1, 2.8, a2, 2.0)
+        
+        # A1 is chain top but is not a TIE
+        self.assertTrue(ab.isChainTop(a1))
+        
+        # B1 is a chain top that is a TIE
+        self.assertTrue(ab.isChainTop(b1))
+
+        # all others are not chain tops        
+        self.assertFalse(ab.isChainTop(b2))
+        self.assertFalse(ab.isChainTop(c2))
+        self.assertFalse(ab.isChainTop(a2))
+
+    def test_countChildren(self):
+        a1 = mci('A', '1')
+        a2 = mci('A', '2')
+        b1 = mci('B', '1')
+        b2 = mci('B', '2')
+        c2 = mci('C', '2')
+        ab = AffineBuilder()
+        ab.tie(a1, 2.0, b1, 1.0)
+        ab.tie(b1, 2.5, c2, 1.0)
+        ab.tie(c2, 3.0, b2, 1.0)
+        ab.tie(b1, 2.8, a2, 2.0)
+        
+        self.assertTrue(ab.countChildren(b1) == 2) # A2, C2
+        self.assertTrue(ab.countChildren(a1) == 1) # B1
+        self.assertTrue(ab.countChildren(c2) == 1) # B2
+        self.assertTrue(ab.countChildren(b2) == 0) # B2
         
     def test_builder(self):
         a1 = mci('A', '1')
