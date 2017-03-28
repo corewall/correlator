@@ -202,7 +202,7 @@ class AffineBuilder:
 def aci(hole, core):
     return AffineCoreInfo(hole, core)
 
-# TODO: dump MockCoreInfo and replace with this - turns out to be reeeeal useful
+# Reference to hole and core for affine shifts
 class AffineCoreInfo:
     def __init__(self, hole, core):
         self.hole = hole
@@ -217,23 +217,6 @@ class AffineCoreInfo:
     def __eq__(self, other):
         return self.hole == other.hole and self.core == other.core
 
-# purely for testing in this module - we only care about hole and core identifiers
-class MockCoreInfo:
-    def __init__(self, hole, holeCore):
-        self.hole = hole
-        self.holeCore = holeCore
-        
-    def GetHoleCoreStr(self):
-        return "{}{}".format(self.hole, self.holeCore)
-    
-    def __repr__(self):
-        return self.GetHoleCoreStr()
-    
-    def __eq__(self, other):
-        return self.hole == other.hole and self.holeCore == other.holeCore
-
-def mci(hole, core):
-    return MockCoreInfo(hole, core)
 
 class TestAffine(unittest.TestCase):
     # use numpy.isclose to deal with tiny floating point discrepancies causing == to return False 
@@ -241,29 +224,29 @@ class TestAffine(unittest.TestCase):
         return self.assertTrue(numpy.isclose(fp1, fp2))
     
     def test_mci_eq(self):
-        c1 = mci('A', '1')
-        c1dup = mci('A', '1')
+        c1 = aci('A', '1')
+        c1dup = aci('A', '1')
         self.assertTrue(c1 == c1dup)
     
     def test_set_shift(self):
-        c1 = mci('A', '1')
+        c1 = aci('A', '1')
         ss = SetShift(c1, 1.0)
         self.assertTrue(isSet(ss))
         self.assertTrue(ss.distance == 1.0)
         
     def test_tie_shift(self):
-        a1 = mci('A', '1')
-        b1 = mci('B', '1')
+        a1 = aci('A', '1')
+        b1 = aci('B', '1')
         ts = TieShift(a1, 0.5, b1, 0.25, 0.25)
         self.assertTrue(isTie(ts))
         self.assertTrue(ts.distance == 0.25)
 
     def test_inChain(self):
-        a1 = mci('A', '1')
-        a2 = mci('A', '2')
-        b1 = mci('B', '1')
-        b2 = mci('B', '2')
-        c2 = mci('C', '2')
+        a1 = aci('A', '1')
+        a2 = aci('A', '2')
+        b1 = aci('B', '1')
+        b2 = aci('B', '2')
+        c2 = aci('C', '2')
         ab = AffineBuilder()
         ab.tie(a1, 2.0, b1, 1.0)
         ab.tie(b1, 2.5, c2, 1.0)
@@ -277,11 +260,11 @@ class TestAffine(unittest.TestCase):
         self.assertTrue(ab.inChain(c2))
         
     def test_isChainTop(self):
-        a1 = mci('A', '1')
-        a2 = mci('A', '2')
-        b1 = mci('B', '1')
-        b2 = mci('B', '2')
-        c2 = mci('C', '2')
+        a1 = aci('A', '1')
+        a2 = aci('A', '2')
+        b1 = aci('B', '1')
+        b2 = aci('B', '2')
+        c2 = aci('C', '2')
         ab = AffineBuilder()
         ab.tie(a1, 2.0, b1, 1.0)
         ab.tie(b1, 2.5, c2, 1.0)
@@ -300,11 +283,11 @@ class TestAffine(unittest.TestCase):
         self.assertFalse(ab.isChainTop(a2))
 
     def test_countChildren(self):
-        a1 = mci('A', '1')
-        a2 = mci('A', '2')
-        b1 = mci('B', '1')
-        b2 = mci('B', '2')
-        c2 = mci('C', '2')
+        a1 = aci('A', '1')
+        a2 = aci('A', '2')
+        b1 = aci('B', '1')
+        b2 = aci('B', '2')
+        c2 = aci('C', '2')
         ab = AffineBuilder()
         ab.tie(a1, 2.0, b1, 1.0)
         ab.tie(b1, 2.5, c2, 1.0)
@@ -317,10 +300,10 @@ class TestAffine(unittest.TestCase):
         self.assertTrue(ab.countChildren(b2) == 0) # B2
         
     def test_builder(self):
-        a1 = mci('A', '1')
-        b1 = mci('B', '1')
-        c1 = mci('C', '1')
-        d1 = mci('D', '1')
+        a1 = aci('A', '1')
+        b1 = aci('B', '1')
+        c1 = aci('C', '1')
+        d1 = aci('D', '1')
         ab = AffineBuilder()
         ab.tie(a1, 0.5, b1, 0.25)
         self.assertTrue(ab.coreHasShift(b1))
@@ -347,10 +330,10 @@ class TestAffine(unittest.TestCase):
            
         # build a separate chain and test upstream-ness
         # chain 2: a2 -> b2 -> c2 -> d2
-        a2 = mci('A', '2')
-        b2 = mci('B', '2')
-        c2 = mci('C', '2')
-        d2 = mci('D', '2')
+        a2 = aci('A', '2')
+        b2 = aci('B', '2')
+        c2 = aci('C', '2')
+        d2 = aci('D', '2')
         ab.tie(a2, 0.8, b2, 1.0)
         self.assertClose(-0.2, ab.getShift(b2).distance)
         ab.tie(b2, 1.5, c2, 1.4)
@@ -373,8 +356,8 @@ class TestAffine(unittest.TestCase):
         
     def test_tie_override_of_set(self):        
         # confirm TIE overrides SET
-        a1 = mci('A', '1')
-        b1 = mci('B', '1')
+        a1 = aci('A', '1')
+        b1 = aci('B', '1')
         ab = AffineBuilder()
         ab.set(a1, 1.0)
         ab.tie(b1, 1.0, a1, 1.5)
@@ -385,8 +368,8 @@ class TestAffine(unittest.TestCase):
     # confirm new TIE correctly replaces existing TIE        
     def test_tie_override_of_tie(self):
         # initial TIE
-        a1 = mci('A', '1')
-        b1 = mci('B', '1')
+        a1 = aci('A', '1')
+        b1 = aci('B', '1')
         ab = AffineBuilder()
         ab.tie(b1, 1.0, a1, 1.5)
         shift = ab.getShift(a1)
@@ -405,14 +388,14 @@ class TestAffine(unittest.TestCase):
         
     # confirm a SET can be the top of a TIE chain
     def test_set_to_tie_chain(self):
-        a1 = mci('A', '1')
-        b1 = mci('B', '1')
+        a1 = aci('A', '1')
+        b1 = aci('B', '1')
         ab = AffineBuilder()
         ab.set(a1, 1.0)
         ab.tie(a1, 1.5, b1, 1.0)
         self.assertTrue(ab.getShift(b1).fromCore == a1)
         
-        c1 = mci('C', '1')
+        c1 = aci('C', '1')
         ab.tie(b1, 2.0, c1, 1.0)
         self.assertClose(ab.getShift(c1).distance, 1.0)
         
