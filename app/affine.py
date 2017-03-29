@@ -16,8 +16,14 @@ class AffineError(Exception):
         self.message = message
 
 class AffineShift:
-    def __init__(self):
-        pass
+    def __init__(self, core, distance, comment=""):
+        self.core = core # CoreInfo (or AffineCoreInfo) for the shifted core
+        self.distance = distance # shift distance (can be 0)
+        self.comment = comment # user comment
+        
+    # adjust current shift by deltaDistance
+    def adjust(self, deltaDistance):
+        self.distance += deltaDistance
 
 # An affine shift resulting from the shift of another core that "pushes" or "pulls"
 # all cores below and/or related cores to maintain spacing of cores. Because the user
@@ -27,10 +33,7 @@ class AffineShift:
 # the CCSF-A/MCD depth scale.
 class ImplicitShift(AffineShift):
     def __init__(self, core, distance, comment=""):
-        AffineShift.__init__(self)
-        self.core = core
-        self.distance = distance
-        self.comment = comment
+        AffineShift.__init__(self, core, distance, comment)
     
     def __repr__(self):
         commentStr = "({})".format(self.comment) if self.comment != "" else ""
@@ -39,13 +42,10 @@ class ImplicitShift(AffineShift):
 
 class TieShift(AffineShift):
     def __init__(self, fromCore, fromDepth, core, depth, distance, comment=""):
-        AffineShift.__init__(self)
-        self.fromCore = fromCore # core to which self.core was tied
+        AffineShift.__init__(self, core, distance, comment)
+        self.fromCore = fromCore # CoreInfo for core to which self.core was tied
         self.fromDepth = fromDepth # MBSF depth of "from" core's TIE point
-        self.core = core # CoreInfo for shifted core
         self.depth = depth # MBSF depth of shifted core's TIE point
-        self.distance = distance # distance of shift: distance + depth = MCD
-        self.comment = comment
 
     def __repr__(self):
         fmtStr = "TIE from {}@{}mcd to {}@{}mcd ({}mbsf), shifted {}m {}" 
@@ -55,10 +55,7 @@ class TieShift(AffineShift):
 
 class SetShift(AffineShift):
     def __init__(self, core, distance, comment=""):
-        AffineShift.__init__(self)
-        self.core = core # CoreInfo for shifted core
-        self.distance = distance # distance of shift: distance + depth = MCD
-        self.comment = comment
+        AffineShift.__init__(self, core, distance, comment)
 
     def __repr__(self):
         commentStr = "({})".format(self.comment) if self.comment != "" else ""
@@ -96,7 +93,7 @@ class AffineBuilder:
         
     # modify existing shift by deltaDistance
     def adjust(self, core, deltaDistance):
-        self.getShift(core).distance += deltaDistance
+        self.getShift(core).adjust(deltaDistance)
      
     # shift a single core by a given distance (SET) 
     def set(self, core, distance, comment=""):
@@ -139,7 +136,6 @@ class AffineBuilder:
                 print "   current TIE shift {} + new shift {} = cumulative shift {}".format(oldShift.distance, deltaDist, newDist)
                 ts = TieShift(fromCore, fromDepth, core, depth - oldShift.distance, newDist, comment)
                 self.replace(oldShift, ts)
-                
 
         # update TieShifts that descend from the core we just shifted     
         self.updateTieChain(core, deltaDist)
@@ -228,11 +224,6 @@ class AffineBuilder:
         assert len(shifts) <= 1
         return shifts[0] if len(shifts) == 1 else None
     
-    # don't think we need it and how do we handle case where there is no shift?
-#     def getShiftDistance(self, core):
-#         shift = self.getShift(core)
-#         return shift.distance if shift is not None else 0.0
-
 
 # Reference to hole and core for affine shifts
 class AffineCoreInfo:
@@ -253,12 +244,7 @@ class AffineCoreInfo:
 def aci(hole, core):
     return AffineCoreInfo(hole, core)
 
-
-class InvalidHoleCoreStringError(AffineError):
-    def __init__(self, expression, message):
-        AffineError.__init__(self, expression, message)
-
-# create AffineCoreInfo from string of form "[hole][core]"
+# convenience method to create AffineCoreInfo from string of form "[hole][core]"
 def acistr(holeCoreStr):
     charNumPattern = "([A-Z]+)([0-9]+)"
     hc_items = re.match(charNumPattern, holeCoreStr)
@@ -268,6 +254,11 @@ def acistr(holeCoreStr):
         return AffineCoreInfo(hole, core)
     raise InvalidHoleCoreStringError(holeCoreStr, "Cannot be parsed into an alphabetic hole and numeric core")
 
+
+# malformed hole core string
+class InvalidHoleCoreStringError(AffineError):
+    def __init__(self, expression, message):
+        AffineError.__init__(self, expression, message)
 
 
 class TestAffine(unittest.TestCase):
