@@ -2026,6 +2026,7 @@ class DataCanvas(wxBufferedWindow):
 			data_tie = -999
 
 			# draw composite depth shift arrows
+			# this check looks like a lot of work...
 			if self.ShiftClue == True :
 				if startX < self.splicerX :
 					coreno = int(coreno)
@@ -2063,6 +2064,7 @@ class DataCanvas(wxBufferedWindow):
 				if depth_tie != -999 :
 					y_depth = depth_tie
 
+				# if core's current top depth is in visual range, draw affine shift arrow
 				if y_depth >= drawing_start and y_depth <= self.rulerEndDepth :
 
 					dc.SetPen(wx.Pen(self.colorDict['mbsf'], 1))
@@ -2084,6 +2086,7 @@ class DataCanvas(wxBufferedWindow):
 
 					dc.DrawLines(((startX, y), (startX, y1))) 
 
+					# arrowhead, shift distance
 					if affine > 0 :
 						dc.DrawLines(((startX - 5, y - 5), (startX, y))) 
 						dc.DrawLines(((startX, y), (startX + 5, y - 5))) 
@@ -3988,7 +3991,7 @@ class DataCanvas(wxBufferedWindow):
 
 			if ciA is not None and ciB is not None:
 				comment = self.parent.compositePanel.GetComment()
-				self.parent.affineManager.tie(ciB.hole, ciB.holeCore, y2, ciA.hole, ciA.holeCore, y1, comment)
+				self.parent.affineManager.tie(shiftCoreOnly, ciB.hole, ciB.holeCore, y2, ciA.hole, ciA.holeCore, y1, comment)
 
 				self.parent.AffineChange = True
 

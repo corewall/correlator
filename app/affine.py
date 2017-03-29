@@ -6,8 +6,14 @@ Created on Feb 22, 2017
 Support for the creation and editing of Affine Shifts and resulting tables.
 '''
 
+import re # to parse combined hole/core strings
 import unittest
 import numpy
+
+class AffineError(Exception):
+    def __init__(self, expression, message):
+        self.expression = expression
+        self.message = message
 
 class AffineShift:
     def __init__(self):
@@ -64,6 +70,12 @@ def isTie(shift):
 def isSet(shift):
     return isinstance(shift, SetShift)
 
+def isImplicit(shift):
+    return isinstance(shift, ImplicitShift)
+
+class UnknownCoreError(AffineError):
+    def __init__(self, expression, message):
+        AffineError.__init__(self, expression, message)
 
 class AffineBuilder:
     def __init__(self):
@@ -81,6 +93,10 @@ class AffineBuilder:
     # add implicit shift
     def addImplicit(self, core, distance, comment=""):
         self.shifts.append(ImplicitShift(core, distance, comment))
+        
+    # modify existing shift by deltaDistance
+    def adjust(self, core, deltaDistance):
+        self.getShift(core).distance += deltaDistance
      
     # shift a single core by a given distance (SET) 
     def set(self, core, distance, comment=""):
@@ -109,12 +125,13 @@ class AffineBuilder:
     def tie(self, fromCore, fromDepth, core, depth, comment=""):
         deltaDist = fromDepth - depth
         if not self.coreHasShift(core):
+            #raise UnknownCoreError(core, "Core {} not found in AffineBuilder.shifts")
             ts = TieShift(fromCore, fromDepth, core, depth, deltaDist, comment)
             self.add(ts)
-        else: # core already has a shift...
+        else: # core already has a shift...should always get here!
             oldShift = self.getShift(core)
             #if isinstance(oldShift, SetShift): # if it's a SET, override it entirely
-            if isSet(oldShift):
+            if isSet(oldShift) or isImplicit(oldShift):
                 ts = TieShift(fromCore, fromDepth, core, depth, deltaDist, comment)
                 self.replace(oldShift, ts)
             else: # it's a TIE, the new shift distance is the old shift distance plus fromDepth - depth
@@ -122,10 +139,29 @@ class AffineBuilder:
                 print "   current TIE shift {} + new shift {} = cumulative shift {}".format(oldShift.distance, deltaDist, newDist)
                 ts = TieShift(fromCore, fromDepth, core, depth - oldShift.distance, newDist, comment)
                 self.replace(oldShift, ts)
+                
 
         # update TieShifts that descend from the core we just shifted     
         self.updateTieChain(core, deltaDist)
         # return new TieShift?
+        
+    # return list of cores that will be moved if shiftCore moves, either due to TIE
+    # relationships or cores below being "pushed", which could affect other TIE relationships
+    def gatherAffectedCores(self, shiftCore):
+        # first, consider case with no ties, just cores below
+        
+        pass
+    
+    # get all cores in hole below core by name - not actual position!
+    # todo: abstract concept of "below"?
+    # todo: this really shouldn't be part of AffineBuilder, should be done
+    # through SectionSummary so we can deal with holes/cores directly instead
+    # of cracking open Shifts to get at hole/core names. Or at least at
+    # AffineController level where there's a notion of SectionSummary.
+    # But for now...and therefore forever...
+    def getCoresBelow(self, hole, core):
+        cb = [shift.core for shift in self.shifts if shift.core.hole == hole and int(shift.core.core) > int(core)]
+        return cb
     
     def isLegalTie(self, fromCore, core):
         return not self.isUpstream(fromCore, core)
@@ -133,7 +169,7 @@ class AffineBuilder:
     # is searchCore the fromCore for anything upstream?
     def isUpstream(self, searchCore, curCore):
         curShift = self.getShift(curCore)
-        if curShift is None:
+        if not isTie(curShift):
             return False
         elif curShift.fromCore == searchCore:
             return True
@@ -198,10 +234,6 @@ class AffineBuilder:
 #         return shift.distance if shift is not None else 0.0
 
 
-# convenience method to create AffineCoreInfo
-def aci(hole, core):
-    return AffineCoreInfo(hole, core)
-
 # Reference to hole and core for affine shifts
 class AffineCoreInfo:
     def __init__(self, hole, core):
@@ -217,11 +249,47 @@ class AffineCoreInfo:
     def __eq__(self, other):
         return self.hole == other.hole and self.core == other.core
 
+# convenience method to create AffineCoreInfo
+def aci(hole, core):
+    return AffineCoreInfo(hole, core)
+
+
+class InvalidHoleCoreStringError(AffineError):
+    def __init__(self, expression, message):
+        AffineError.__init__(self, expression, message)
+
+# create AffineCoreInfo from string of form "[hole][core]"
+def acistr(holeCoreStr):
+    charNumPattern = "([A-Z]+)([0-9]+)"
+    hc_items = re.match(charNumPattern, holeCoreStr)
+    if hc_items and len(hc_items.groups()) == 2:
+        hole = hc_items.groups()[0]
+        core = hc_items.groups()[1]
+        return AffineCoreInfo(hole, core)
+    raise InvalidHoleCoreStringError(holeCoreStr, "Cannot be parsed into an alphabetic hole and numeric core")
+
+
 
 class TestAffine(unittest.TestCase):
     # use numpy.isclose to deal with tiny floating point discrepancies causing == to return False 
     def assertClose(self, fp1, fp2):
         return self.assertTrue(numpy.isclose(fp1, fp2))
+    
+    def test_acistr(self):
+        aci1 = acistr("A1")
+        self.assertTrue(aci1.hole == 'A')
+        self.assertTrue(aci1.core == '1')
+        aci2 = acistr("B309")
+        self.assertTrue(aci2.hole == 'B')
+        self.assertTrue(aci2.core == '309')
+        
+        # physically ridiculous but logically valid case (AZ == 51st hole)
+        aci3 = acistr("AZ69743")
+        self.assertTrue(aci3.hole == 'AZ')
+        self.assertTrue(aci3.core == '69743')
+        
+        # invalid string
+        self.assertRaises(InvalidHoleCoreStringError, acistr, "1F")
     
     def test_mci_eq(self):
         c1 = aci('A', '1')
@@ -297,7 +365,32 @@ class TestAffine(unittest.TestCase):
         self.assertTrue(ab.countChildren(b1) == 2) # A2, C2
         self.assertTrue(ab.countChildren(a1) == 1) # B1
         self.assertTrue(ab.countChildren(c2) == 1) # B2
-        self.assertTrue(ab.countChildren(b2) == 0) # B2
+        self.assertTrue(ab.countChildren(b2) == 0)
+        
+    def test_getCoresBelow(self):
+        # mock up some holes 'n cores
+        mockAci = []
+        for hole in ['A', 'B', 'C', 'D']:
+            for core in range(10):
+                mockAci.append(acistr(hole + str(core + 1)))
+        
+        # add implicit shift for each mock core
+        ab = AffineBuilder()
+        for maci in mockAci:
+            ab.addImplicit(maci, 0.0, 'mock core')
+            
+        self.assertTrue(ab.getCoresBelow('A', '10') == [])
+        coresBelow = ab.getCoresBelow('A', '8')
+        self.assertFalse(acistr('A8') in coresBelow)
+        self.assertTrue(acistr('A9') in coresBelow)
+        self.assertTrue(acistr('A10') in coresBelow)
+        
+        bcores = ab.getCoresBelow('B', '2')
+        bcbs = [core for core in [acistr(hc) for hc in ['B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10']] if core in bcores]
+        self.assertTrue(len(bcbs) == 8)
+        
+        # OK! Now hook up basic case of TIE and all related, SET and all related
+        
         
     def test_builder(self):
         a1 = aci('A', '1')

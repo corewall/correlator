@@ -2165,7 +2165,7 @@ class MainFrame(wx.Frame):
 		if self.affineManager.coreHasShift(holename, coreNum):
 			affineShift = round(self.affineManager.getShiftDistance(holename, coreNum), 3)
 			affineStr = "affine shift of {}".format(affineShift)
-		else:
+		else: # should never hit this now, every core has a shift
 			affineStr = "no affine shift"
 		#print "Getting data...AffineManager sez {}{} has {}".format(holename, coreNum, affineStr)
 		
@@ -3022,11 +3022,11 @@ class AffineController:
 		ss = self.parent.sectionSummary
 		for hole in ss.getHoles():
 			for core in ss.getCores(hole):
-				self.add(hole, core, 0.0, "initial affine entry")
+				self.implicit(hole, str(core), 0.0, "initial affine entry")
 		
 		print "{}".format(self.affine)
 	
-	def add(self, hole, core, distance, comment=""):
+	def implicit(self, hole, core, distance, comment=""):
 		self.affine.addImplicit(aci(hole, core), distance, comment)
 	
 	# shift a single core with method SET
@@ -3047,13 +3047,28 @@ class AffineController:
 				shiftDistance = value
 			self.affine.set(aci(hole, core), shiftDistance)
 			
-	def tie(self, fromHole, fromCore, fromDepth, hole, core, depth, comment=""):
-		self.affine.tie(aci(fromHole, fromCore), fromDepth, aci(hole, core), depth, comment)
-		
+	def tie(self, shiftCoreOnly, fromHole, fromCore, fromDepth, hole, core, depth, comment=""):
+		print "type of core = {}".format(type(core))
+		if shiftCoreOnly:
+			# todo: will shifting this core only break relationships? if so, get confirmation from user
+			# todo: add param to shift only single core
+			self.affine.tie(aci(fromHole, fromCore), fromDepth, aci(hole, core), depth, comment)
+		else: # shift core and related
+			# todo: warn and confirm if breaking
+			coresBelow = self.affine.getCoresBelow(hole, core)
+			print "found {} cores below".format(len(coresBelow))
+			shiftDistance = fromDepth - depth
+			for cb in coresBelow:
+				self.affine.adjust(cb, shiftDistance)
+			self.affine.tie(aci(fromHole, fromCore), fromDepth, aci(hole, core), depth, comment)
+			# todo: move cores below...part of tie()?
+
+	# this should now be True for everything		
 	def coreHasShift(self, hole, core):
 		return self.affine.coreHasShift(aci(hole, core))
 	
 	# return TieShift or SetShift for hole-core combination if present in AffineBuilder, else None
+	# again, should never have a hole-core combination for which there is no shift
 	def getShift(self, hole, core):
 		return self.affine.getShift(aci(hole, core))
 	
