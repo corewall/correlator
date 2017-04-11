@@ -4348,6 +4348,10 @@ class DataFrame(wx.Panel):
 			self.parent.Window.range.append(newrange)
 			parentItem = titleItem
 
+		self.LoadSectionSummary()
+		# 'load' affine - just generating from section summary at the moment
+		self.parent.affineManager.load(filepath=None) 
+
 		self.parent.OnUpdateDepthStep()
 		tableLoaded = [] 
 		logLoaded = False
@@ -4380,15 +4384,10 @@ class DataFrame(wx.Panel):
 		self.parent.logFileptr.write("\n")
 		self.parent.LOCK = 0 
 
-		self.LoadSectionSummary()
-
 		# always load up core data before loading splice		
 		self.parent.UpdateCORE()
 		self.parent.UpdateSMOOTH_CORE()
 		self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
-
-		# 'load' affine - just generating from section summary at the moment
-		self.parent.affineManager.load(filepath=None) 
 		
 		# now load splice and ELD if necessary
 		if tableLoaded != [] :

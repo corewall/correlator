@@ -2160,15 +2160,10 @@ class MainFrame(wx.Frame):
 			return
 		
 		# find affine shift for core if present
-		affineStr = ""
-		affineShift = 0.0
-		if self.affineManager.coreHasShift(holename, coreNum):
-			affineShift = round(self.affineManager.getShiftDistance(holename, coreNum), 3)
-			affineStr = "affine shift of {}".format(affineShift)
-		else: # should never hit this now, every core has a shift
-			affineStr = "no affine shift"
+		#affineStr = ""
+		affineShift = round(self.affineManager.getShiftDistance(holename, coreNum), 3)
+		#affineStr = "affine shift of {}".format(affineShift)
 		#print "Getting data...AffineManager sez {}{} has {}".format(holename, coreNum, affineStr)
-		
 
 		#for i in range(6) :
 		# I believe 'squish' is the compression percentage for ELD 
@@ -2998,7 +2993,7 @@ class MainFrame(wx.Frame):
 		if self.ScrollMax != 0 :
 			self.Window.UpdateScroll(1)
 			self.Window.UpdateScroll(2)
-			self.Window.ScrollUpdate = 1 
+			self.Window.ScrollUpdate = 1
 
 		return DrawData
 
@@ -3020,11 +3015,8 @@ class AffineController:
 		# (for now, that's everything!)
 		# for now, access current section summary through self.parent - TODO: pass at loadtime and maintain! SpliceController too.
 		ss = self.parent.sectionSummary
-		for hole in ss.getHoles():
-			for core in ss.getCores(hole):
-				self.implicit(hole, str(core), 0.0, "initial affine entry")
-		
-		print "{}".format(self.affine)
+		assert ss.nonempty()
+		self.affine = AffineBuilder.createWithSectionSummary(self.parent.sectionSummary)
 	
 	def implicit(self, hole, core, distance, comment=""):
 		self.affine.addImplicit(aci(hole, core), distance, comment)
@@ -3048,39 +3040,32 @@ class AffineController:
 			self.affine.set(aci(hole, core), shiftDistance)
 			
 	def tie(self, shiftCoreOnly, fromHole, fromCore, fromDepth, hole, core, depth, comment=""):
-		print "type of core = {}".format(type(core))
 		if shiftCoreOnly:
 			# todo: will shifting this core only break relationships? if so, get confirmation from user
 			# todo: add param to shift only single core
+			ci = aci(fromHole, fromCore)
+			#if self.affine.isTie(ci):
+				# 
+			
 			self.affine.tie(aci(fromHole, fromCore), fromDepth, aci(hole, core), depth, comment)
 		else: # shift core and related
-			# todo: warn and confirm if breaking
-			coresBelow = self.affine.getCoresBelow(hole, core)
-			print "found {} cores below".format(len(coresBelow))
-			shiftDistance = fromDepth - depth
-			for cb in coresBelow:
-				self.affine.adjust(cb, shiftDistance)
-			self.affine.tie(aci(fromHole, fromCore), fromDepth, aci(hole, core), depth, comment)
+			pass
+			# todo: rework based on new AffineBuilder
+			#coresBelow = self.affine.getCoresBelow(hole, core)
+# 			print "found {} cores below".format(len(coresBelow))
+# 			shiftDistance = fromDepth - depth
+# 			for cb in coresBelow:
+# 				self.affine.adjust(cb, shiftDistance)
+# 			self.affine.tie(aci(fromHole, fromCore), fromDepth, aci(hole, core), depth, comment)
 			# todo: move cores below...part of tie()?
 
-	# this should now be True for everything		
-	def coreHasShift(self, hole, core):
-		return self.affine.coreHasShift(aci(hole, core))
-	
-	# return TieShift or SetShift for hole-core combination if present in AffineBuilder, else None
-	# again, should never have a hole-core combination for which there is no shift
+	# return TieShift or SetShift for hole-core combination
 	def getShift(self, hole, core):
-		return self.affine.getShift(aci(hole, core))
+		return self.affine.getShift(aci(hole, str(core)))
 	
-	# convenience method that always returns a shift distance, even for nonsense hole+cores.
-	# - if hole and core are found in the AffineBuilder's shifts list, return that distance
-	# - if hole and core are *not* found in the list, return 0.0, even if the hole-core combination
-	# doesn't exist in the project! If client needs to confirm existence, use coreHasShift().
+	# return shift distance for hole-core
 	def getShiftDistance(self, hole, core):
-		if self.affine.coreHasShift(aci(hole, core)):
-			return self.affine.getShift(aci(hole, core)).distance
-		else:
-			return 0.0
+		return self.affine.getShift(aci(hole, str(core))).distance
 	
 	# gross, but useful
 	def getCoreTop(self, coreinfo):
@@ -3094,8 +3079,8 @@ class AffineController:
 		pass
 	
 	# moveCore and fixedCore are CoreInfo objects
-	def isUpstream(self, moveCore, fixedCore):
-		return self.affine.isUpstream(aci(moveCore.hole, moveCore.holeCore), aci(fixedCore.hole, fixedCore.holeCore))
+	def isLegalTie(self, moveCore, fixedCore):
+		return self.affine.isLegalTie(aci(moveCore.hole, moveCore.holeCore), aci(fixedCore.hole, fixedCore.holeCore))
 
 	
 # brgtodo 12/21/2015: still depends on MainFrame 
@@ -3500,6 +3485,9 @@ class SpliceController:
 class SectionSummaryPool:
 	def __init__(self):
 		self.secSumms = []
+		
+	def nonempty(self):
+		return len(self.getHoles()) > 0
 		
 	def setSummaries(self, summaries):
 		self.secSumms = summaries

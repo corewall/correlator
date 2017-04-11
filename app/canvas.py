@@ -5753,7 +5753,7 @@ class DataCanvas(wxBufferedWindow):
 									del self.TieData[-1]
 									self.parent.OnShowMessage("Error", "Composite ties cannot be made in the same hole", 1)
 									return
-								elif self.parent.affineManager.isUpstream(ciB, ciA):
+								elif not self.parent.affineManager.isLegalTie(ciB, ciA):
 									del self.TieData[-1]
 									self.parent.OnShowMessage("Error", "Core {}{} is upstream in the tie chain.".format(ciB.hole, ciB.holeCore), 1)
 									return
