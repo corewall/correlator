@@ -280,6 +280,7 @@ class AffineBuilder:
             # if so, need confirmation - ideally with warning explaining where breaks will take place
         return (False, "")
     
+    # gather all cores that should be shifted if shiftCore is shifted   
     def gatherRelatedCores(self, shiftCore):
         topChainCores = {} # for each hole encountered (key), track topmost chain core (value)
         chainCores = []
@@ -290,8 +291,8 @@ class AffineBuilder:
             
             # update topChainCores for current hole if needed
             if topCore is not None:
-                if curCore.hole not in topChainCores or topCore.core < topChainCores[curCore.hole]:
-                    topChainCores[curCore.hole] = topCore.core
+                if curCore.hole not in topChainCores or topCore.core < topChainCores[curCore.hole].core:
+                    topChainCores[curCore.hole] = topCore
                     
             # find a core in chainCores with hole != curCore.hole that's above the current topChainCores
             # value for that hole, if any, and make it the new curCore
@@ -300,14 +301,33 @@ class AffineBuilder:
             for hole in offHoles:
                 topOffHoleCore = self._topCoreInHole(hole, offHoleCores)
                 if topOffHoleCore is not None:
-                    if hole not in topChainCores or topOffHoleCore.core < topChainCores[hole]:
-                        topChainCores[hole] = topOffHoleCore.core
+                    if hole not in topChainCores or topOffHoleCore.core < topChainCores[hole].core:
+                        topChainCores[hole] = topOffHoleCore
                         curCore = topOffHoleCore
                         break
             else: # otherwise, we're done!
                 done = True
                 
-        return chainCores
+        # All related chain cores have been gathered. Now gather all non-chain
+        # cores below the topmost chain core in each hole.
+        nonChainCores = []
+        for hole, ci in topChainCores.items():
+#             print "searching hole {} for non-chain cores below {}...".format(hole, ci.core)
+#             nccBelow = []
+#             for shift in self.affine.shifts:
+#                 print "trying core {}".format(shift.core)
+#                 if shift.core.hole == ci.hole:
+#                     print "hole {} match".format(ci.hole)
+#                     if int(shift.core.core) > int(ci.core):
+#                         print "core {} is greater".format(int(shift.core.core))
+#                         if not self.affine.inChain(shift.core):
+#                             print "not in chain - adding!"
+#                             nccBelow.append(shift.core)
+            nccBelow = [shift.core for shift in self.affine.shifts if shift.core.hole == ci.hole and int(shift.core.core) > int(ci.core) and not self.affine.inChain(shift.core)]
+            nonChainCores.extend(nccBelow)
+        
+        relatedCores = chainCores + nonChainCores
+        return relatedCores
         
     # search core and below for chain cores - add all to chainCores list
     def _gatherHoleChainCores(self, core, chainCores):
@@ -434,7 +454,7 @@ class TestAffineTable(unittest.TestCase):
         d1 = acistr('D1')
         d2 = acistr('D2')
         d3 = acistr('D3')
-        affine = AffineTable.createWithCores([a1, a2, b1, b2, c1, c2, d1, d2])
+        affine = AffineTable.createWithCores([a1, a2, b1, b2, c1, c2, d1, d2, d3])
         # chain: A1 > B1 > [C2 > B2, A2] 
         affine.addShift(TieShift(a1, 2.0, b1, 1.0, 1.0))
         affine.addShift(TieShift(b1, 2.5, c2, 1.0, 1.5))
@@ -451,6 +471,7 @@ class TestAffineTable(unittest.TestCase):
         self.assertTrue(affine.inChain(b1))
         self.assertTrue(affine.inChain(b2))
         self.assertTrue(affine.inChain(c2))
+        self.assertFalse(affine.inChain(d3))
         
         # isChainTop() - A1 is chain top but is not a TIE
         self.assertTrue(affine.isChainTop(a1))
@@ -468,6 +489,7 @@ class TestAffineTable(unittest.TestCase):
         self.assertTrue(affine.countChildren(a1) == 1) # B1
         self.assertTrue(affine.countChildren(c2) == 1) # B2
         self.assertTrue(affine.countChildren(b2) == 0)
+        self.assertTrue(affine.countChildren(d3) == 0)
         
         # getParent()
         self.assertTrue(affine.getParent(a1) is None)
@@ -492,6 +514,7 @@ class TestAffineTable(unittest.TestCase):
         # D3 isn't part of any chain
         self.assertTrue(affine.getChainCores(d3) == [])
         
+        # AffineBuilder tests
         ab = AffineBuilder()
         ab.affine = affine
 
@@ -504,10 +527,11 @@ class TestAffineTable(unittest.TestCase):
         self.assertTrue(len(relCores) == 5)
         self.assertTrue(assertElementsInList([a1, a2, b1, b2, c2], relCores))
         
-        # chain 2 should gather itself *and* all chain 1 elements!
+        # chain 2 should gather itself *and* all chain 1 elements *and* D3 because it's
+        # a non-chain core below chain elements
         relCores = ab.gatherRelatedCores(d1)
-        self.assertTrue(len(relCores) == 8)
-        self.assertTrue(assertElementsInList([a1, a2, b1, b2, c1, c2, d1, d2], relCores))
+        self.assertTrue(len(relCores) == 9)
+        self.assertTrue(assertElementsInList([a1, a2, b1, b2, c1, c2, d1, d2, d3], relCores))
 
 class TestAffine(unittest.TestCase):
     # use numpy.isclose to deal with tiny floating point discrepancies causing == to return False 
@@ -522,7 +546,7 @@ class TestAffine(unittest.TestCase):
         self.assertTrue(aci2.hole == 'B')
         self.assertTrue(aci2.core == '309')
         
-        # physically ridiculous but logically valid case (AZ == 51st hole)
+        # physically ridiculous but logically valid case (after hole Z, next is AA, so AZ == 52nd hole)
         aci3 = acistr("AZ69743")
         self.assertTrue(aci3.hole == 'AZ')
         self.assertTrue(aci3.core == '69743')
