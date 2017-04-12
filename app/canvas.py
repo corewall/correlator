@@ -2490,8 +2490,8 @@ class DataCanvas(wxBufferedWindow):
 					dc.DrawText(str(tempx), x, self.startDepth - 15)
 				break
 
-		section = self.parent.GetSectionAtDepth(coreInfo.leg, coreInfo.hole, coreInfo.holeCore, type, ycoord)
-		self.statusStr += " Section: " + str(section)
+		section, offset = self.parent.GetSectionAtDepth(coreInfo.leg, coreInfo.hole, coreInfo.holeCore, type, ycoord)
+		self.statusStr += " Section: " + str(section) + " Section offset: " + str(offset) + "cm"
 
 		# display depth in ruler units
 		yUnitAdjusted = round(unroundedYcoord * self.GetRulerUnitsFactor(), 3)

@@ -56,6 +56,9 @@ class SectionSummary:
     def getSectionCoreType(self, site, hole, core, section):
         return self._getSectionValue(site, hole, core, section, 'CoreType')
     
+    def getSection(self, site, hole, core, section):
+        return self._findSection(site, hole, core, section)
+    
     def getSectionAtDepth(self, site, hole, core, depth):
         sec = self._findSectionAtDepth(site, hole, core, depth)
         return sec
@@ -94,7 +97,7 @@ class SectionSummary:
         section = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core) & (depth >= df.TopDepth) & (depth <= df.BottomDepth)]
         if not section.empty:
             return section.iloc[0]['Section']
-        return None
+        return None    
     
     def _getSectionValue(self, site, hole, core, section, columnName):
         self.checkStrType([site, hole, section])

@@ -1906,9 +1906,11 @@ class MainFrame(wx.Frame):
 
 	def GetSectionAtDepth(self, leg, hole, core, type, depth):
 		affineShift = self.affineManager.getShiftDistance(hole, core)
-		section = self.sectionSummary.getSectionAtDepth(leg, hole, core, depth - affineShift)
+		sectionNumber = self.sectionSummary.getSectionAtDepth(leg, hole, core, depth - affineShift)
+		section = self.sectionSummary.getSection(leg, hole, core, sectionNumber)
+		offset = round((depth - section['TopDepth']) * 100.0, 1)
 		#print "{}{}; section at depth {} - shift {} = {} is section {}".format(hole, core, depth, affineShift, depth - affineShift, section)
-		return section
+		return sectionNumber, offset
 		
 		#return py_correlator.getSectionAtDepth(hole, core, type, depth)
 
@@ -3538,6 +3540,10 @@ class SectionSummaryPool:
 	def getSectionCoreType(self, site, hole, core, section):
 		ss = self.findSummary(site, hole, core, section)
 		return ss.getSectionCoreType(site, hole, core, section)
+	
+	def getSection(self, site, hole, core, section):
+		ss = self.findSummary(site, hole, core, section)
+		return ss.getSection(site, hole, core, section)
 	
 	def getSectionAtDepth(self, site, hole, core, depth):
 		ss = self.findSummary(site, hole, core)
