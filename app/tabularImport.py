@@ -19,19 +19,21 @@ class SectionSummary:
     @classmethod
     def createWithFile(cls, filepath):
         dataframe = readFile(filepath)
+        stringColumns = ['Core', 'Section']
+        forceStringDatatype(stringColumns, dataframe)
         return cls(os.path.basename(filepath), dataframe)
     
     def containsCore(self, site, hole, core):
-        cores = self._findCores(site, hole, int(core))
+        cores = self._findCores(site, hole, core)
         return not cores.empty
     
     def containsSection(self, site, hole, core, section):
-        sections = self._findSection(site, hole, int(core), section)
+        sections = self._findSection(site, hole, core, section)
         return not sections.empty
     
     # return depth of top of top section, bottom of bottom section
     def getCoreRange(self, site, hole, core):
-        cores = self._findCores(site, hole, int(core))
+        cores = self._findCores(site, hole, core)
         cores = cores[(cores.Section != "CC")] # omit CC section for time being
         if not cores.empty:
             coremin = cores['TopDepth'].min()
@@ -46,16 +48,16 @@ class SectionSummary:
         return set(self.dataframe[self.dataframe['Hole'] == hole]['Core'])
         
     def getSectionTop(self, site, hole, core, section):
-        return self._getSectionValue(site, hole, int(core), section, 'TopDepth')
+        return self._getSectionValue(site, hole, core, section, 'TopDepth')
     
     def getSectionBot(self, site, hole, core, section):
-        return self._getSectionValue(site, hole, int(core), section, 'BottomDepth')
+        return self._getSectionValue(site, hole, core, section, 'BottomDepth')
     
     def getSectionCoreType(self, site, hole, core, section):
-        return self._getSectionValue(site, hole, int(core), section, 'CoreType')
+        return self._getSectionValue(site, hole, core, section, 'CoreType')
     
     def getSectionAtDepth(self, site, hole, core, depth):
-        sec = self._findSectionAtDepth(site, hole, int(core), depth)
+        sec = self._findSectionAtDepth(site, hole, core, depth)
         return sec
     
     def sectionDepthToTotal(self, site, hole, core, section, secDepth):
@@ -482,6 +484,15 @@ def parseFile(parent, path, goalFormat, checkcols=False):
             return None
 
     return dataframe
+
+# force pandas column dtype and convert values to object (string)
+def forceStringDatatype(cols, dataframe):
+    for col in cols:
+        dataframe[col] = dataframe[col].astype(object)
+        dataframe[col] = dataframe[col].apply(lambda x: str(x)) # todo: if x != NaN? to avoid line below?
+        
+        # forced string conversion forces all NaN values to the string "nan" - remove these
+        dataframe[col] = dataframe[col].apply(lambda x: "" if x == "nan" else x)
 
 
 class FooApp(wx.App):
