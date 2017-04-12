@@ -56,9 +56,6 @@ class SectionSummary:
     def getSectionCoreType(self, site, hole, core, section):
         return self._getSectionValue(site, hole, core, section, 'CoreType')
     
-    def getSection(self, site, hole, core, section):
-        return self._findSection(site, hole, core, section)
-    
     def getSectionAtDepth(self, site, hole, core, depth):
         sec = self._findSectionAtDepth(site, hole, core, depth)
         return sec
