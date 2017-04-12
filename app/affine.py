@@ -323,7 +323,7 @@ class AffineBuilder:
 #                         if not self.affine.inChain(shift.core):
 #                             print "not in chain - adding!"
 #                             nccBelow.append(shift.core)
-            nccBelow = [shift.core for shift in self.affine.shifts if shift.core.hole == ci.hole and int(shift.core.core) > int(ci.core) and not self.affine.inChain(shift.core)]
+            nccBelow = [core for core in self.getCoresInHole(ci.hole) if int(core.core) > int(ci.core) and not self.affine.inChain(core)]
             nonChainCores.extend(nccBelow)
         
         relatedCores = chainCores + nonChainCores
@@ -356,8 +356,11 @@ class AffineBuilder:
     # AffineController level where there's a notion of SectionSummary.
     # But for now...and therefore forever...
     def getCoresBelow(self, ci):
-        cb = [shift.core for shift in self.affine.shifts if shift.core.hole == ci.hole and int(shift.core.core) > int(ci.core)]
+        cb = [core for core in self.getCoresInHole(ci.hole) if int(core.core) > int(ci.core)]
         return cb
+    
+    def getCoresInHole(self, hole):
+        return [shift.core for shift in self.affine.shifts if shift.core.hole == hole]
     
     def isLegalTie(self, fromCore, core):
         return not self.affine.isUpstream(fromCore, core)
