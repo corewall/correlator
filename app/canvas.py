@@ -2019,32 +2019,27 @@ class DataCanvas(wxBufferedWindow):
 						y = self.startDepth + (y - self.rulerStartDepth) * (self.length / self.gap)
 						dc.DrawLines(((startX, y), (startX + self.holeWidth, y))) 
 
+		# draw affine shift arrow and distance centered on core
 		y_depth, x = coreData[0]
-
-		# if core's current top depth is in visual range, draw affine shift arrow
+		coreTopY, coreBotY = coreData[0][0], coreData[-1][0]
+		shiftInfoY = coreTopY + (coreBotY - coreTopY) / 2
 		if affine != 0 and y_depth >= drawing_start and y_depth <= self.rulerEndDepth :
-
-			dc.SetPen(wx.Pen(self.colorDict['mbsf'], 1))
-			y1 = self.startDepth + (y_depth - affine - self.rulerStartDepth) * (self.length / self.gap)
-			dc.DrawLines(((startX - 5, y1), (startX + 5, y1))) 
-			y = self.startDepth + (y_depth - self.rulerStartDepth) * (self.length / self.gap)
-			dc.DrawLines(((startX - 5, y), (startX + 5, y))) 
-
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
-			y = self.startDepth + (y_depth - self.rulerStartDepth) * (self.length / self.gap)
-			tie_ptn = 15
-			dc.DrawLines(((startX - 5, y), (startX + tie_ptn, y))) 
-			dc.DrawLines(((startX, y), (startX, y1))) 
+			y = self.startDepth + (shiftInfoY - self.rulerStartDepth) * (self.length / self.gap)
 
-			# arrowhead, shift distance
+			# arrowhead
+			arrowheadAdjust = 8 if affine > 0 else -8
+			arrowY = y + 4
+			tribase1 = wx.Point(startX - 4, arrowY)
+			tribase2 = wx.Point(startX + 4, arrowY)
+			tribase3 = wx.Point(startX, arrowY + arrowheadAdjust)
+			dc.SetBrush(wx.Brush(self.colorDict['foreground']))
 			if affine > 0 :
-				dc.DrawLines(((startX - 5, y - 5), (startX, y))) 
-				dc.DrawLines(((startX, y), (startX + 5, y - 5))) 
-				dc.DrawText(str(affine), startX - 40, y1 - 15)
-			else :
-				dc.DrawLines(((startX - 5, y + 5), (startX, y))) 
-				dc.DrawLines(((startX, y), (startX + 5, y + 5))) 
-				dc.DrawText(str(affine), startX - 40, y1 + 5)
+				dc.DrawPolygon((tribase3, tribase2, tribase1))
+			else:
+				dc.DrawPolygon((tribase3, tribase1, tribase2))
+			# shift distance text				
+			dc.DrawText(str(affine), startX - 40, y)
 
 			dc.SetPen(wx.Pen(self.colorDict['mcd'], 1))
 		else :
