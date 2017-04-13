@@ -2041,9 +2041,8 @@ class DataCanvas(wxBufferedWindow):
 			# shift distance text				
 			dc.DrawText(str(affine), startX - 40, y)
 
-			dc.SetPen(wx.Pen(self.colorDict['mcd'], 1))
-		else :
-			dc.SetPen(wx.Pen(self.colorDict['mbsf'], 1))
+		colorKey = 'mcd' if affine != 0 else 'mbsf'
+		dc.SetPen(wx.Pen(self.colorDict[colorKey], 1))
 
 		for r in range(len(self.AdjustDepthCore)) :
 			if self.AdjustDepthCore[r] == index :
@@ -2173,9 +2172,8 @@ class DataCanvas(wxBufferedWindow):
 		# draw lines 
 		y = 0
 		if self.DiscretePlotMode == 0 :
-			for r in lines :
-				px, py, x, y = r
-				dc.DrawLines(((px, py), (x, y))) 
+			for px, py, x, y in lines :
+				dc.DrawLines(((px, py), (x, y)))
 		else :
 			for r in lines :
 				px, py, x, y = r
