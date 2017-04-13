@@ -1199,8 +1199,9 @@ class ProjectDialog(wx.Dialog):
 		self.Bind(wx.EVT_TEXT, self.OnSuggShiftChange, self.shiftField)
 
 	def OnApply(self, evt):
-		self.outHole = self.holeChoice.GetStringSelection()
-		self.outCore = self.coreChoice.GetStringSelection()
+		# str() to convert from type unicode
+		self.outHole = str(self.holeChoice.GetStringSelection())
+		self.outCore = str(self.coreChoice.GetStringSelection())
 
 		# ensure shifted cores aren't part of current splice
 		checkBelow = self.outCore == "All"

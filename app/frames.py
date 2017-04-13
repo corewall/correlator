@@ -732,15 +732,12 @@ class CompositePanel():
 		result = dlg.ShowModal()
 		if result == wx.ID_OK:
 			if dlg.outCore == "All":
-				print "HELLO"
 				isRate = dlg.outRate is not None
 				value = dlg.outRate if isRate else dlg.outOffset
 				coreList = dlg.outCoreList
-				#py_correlator.projectAll(dlg.outHole, dlg.outType, value, isRate, dlg.outComment)
 				self.parent.affineManager.setAll(dlg.outHole, coreList, value, isRate, dlg.outComment)
 			else:
 				self.parent.affineManager.set(dlg.outHole, dlg.outCore, dlg.outOffset, dlg.outComment)
-				#py_correlator.project(dlg.outHole, int(dlg.outCore), dlg.outType, dlg.outOffset, dlg.outComment)
 
 			self.parent.AffineChange = True
 			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)

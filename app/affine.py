@@ -219,7 +219,7 @@ class AffineBuilder:
      
     # shift a single core by a given distance (SET) 
     def set(self, core, distance, comment=""):
-        pass
+        self.affine.addShift(SetShift(core, distance, comment))
     
     def tie(self, coreOnly, fromCore, fromDepth, core, depth, comment=""):
         shiftDistance = fromDepth - depth
