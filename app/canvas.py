@@ -2107,12 +2107,12 @@ class DataCanvas(wxBufferedWindow):
 		spliceholewidth = self.splicerX + (self.holeWidth * log_number) + (50 * log_number) + 50
 		y = 0
 		
-		for r in coreData :
-			y, x = r
+		scale = self.length / self.gap
+		for y,x in [cd for cd in coreData if cd[0] >= drawing_start]:
 			if spliceflag == 1 :
-				if y >= drawing_start and y <= self.SPrulerEndDepth :
+				if y <= self.SPrulerEndDepth :
 					if bottom == -1 or y <= bottom : 
-						sy = self.startDepth + (y - self.SPrulerStartDepth) * (self.length / self.gap)
+						sy = self.startDepth + (y - self.SPrulerStartDepth) * scale
 						sx = x - self.minRange
 						sx = (sx * self.coefRange) + spliceholewidth 
 
@@ -2126,8 +2126,8 @@ class DataCanvas(wxBufferedWindow):
 
 			if compositeflag == 1 :
 				if smoothed == 2 :
-					if y >= drawing_start and y <= self.SPrulerEndDepth :
-						y = self.startDepth + (y - self.SPrulerStartDepth) * (self.length / self.gap)
+					if y <= self.SPrulerEndDepth :
+						y = self.startDepth + (y - self.SPrulerStartDepth) * scale
 						x = x - self.minRange
 						x = (x * self.coefRange) + spliceholewidth
 
@@ -2143,8 +2143,8 @@ class DataCanvas(wxBufferedWindow):
 					elif y > self.SPrulerEndDepth:
 						break
 				else :
-					if y >= drawing_start and y <= self.rulerEndDepth :
-						y = self.startDepth + (y - self.rulerStartDepth) * (self.length / self.gap)
+					if y <= self.rulerEndDepth :
+						y = self.startDepth + (y - self.rulerStartDepth) * scale
 						x = x - self.minRange
 						x = (x * self.coefRange) + startX 
 
