@@ -533,9 +533,25 @@ class CompositePanel():
 		grSubPanel.GetSizer().Add(self.grText, 1, wx.ALIGN_CENTER_VERTICAL)
 		grSubPanel.GetSizer().Add(gpSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
 		self.grPanel.GetSizer().Add(grSubPanel, 0, wx.EXPAND)
+		
+		# Affine Table panel
+		atPanel = wx.Panel(self.plotNote, -1)
+		atsz = wx.BoxSizer(wx.VERTICAL)
+		self.table = wx.grid.Grid(atPanel, -1)
+		self.table.SetRowLabelSize(0) # hide row headers
+		self.table.DisableDragRowSize()
+		self.table.EnableEditing(False)
+		self.table.CreateGrid(numRows=0, numCols=3)
+		for colidx, label in enumerate(["Core", "Shift", "Type"]):
+			self.table.SetColLabelValue(colidx, label)
+		self.table.SetSelectionMode(wx.grid.Grid.SelectRows)
+		atsz.Add(self.table, 1, wx.EXPAND)
+		atPanel.SetSizer(atsz)
+		self.atPanel = atPanel		
 
 		self.plotNote.AddPage(self.crPanel, "Evaluation")
 		self.plotNote.AddPage(self.grPanel, "Growth Rate")
+		self.plotNote.AddPage(self.atPanel, "Shifts")
 		
 		self.grPanel.Bind(wx.EVT_BUTTON, self.OnGrowthSettings, gpSettingsBtn)
 
@@ -788,15 +804,19 @@ class CompositePanel():
 	def OnSelectPlotNote(self, event):
 		self.crPanel.Hide()
 		self.grPanel.Hide()	
+		self.atPanel.Hide()
 		if event.GetSelection() == 0:
 			self.crPanel.Show()
 		elif event.GetSelection() == 1:
 			self.UpdateGrowthPlot()
 			self.grPanel.Show()
+		elif event.GetSelection() == 2:
+			self.atPanel.Show()
 
 	def OnUpdatePlots(self):
 		self.UpdateEvalPlot()
 		self.UpdateGrowthPlot()
+		self.UpdateAffineTable()
 	
 	def UpdateGrowthPlot(self):
 		# 9/18/2013 brg: Was unable to get Window attribute on init without adding this
@@ -818,6 +838,20 @@ class CompositePanel():
 		self.OnUpdateData(data, [], 0)
 		self.UpdateEvalStatus()
 		self.OnUpdateDrawing()
+		
+	def UpdateAffineTable(self):
+		affineRows = self.parent.affineManager.getAffineRows()
+		
+		if len(affineRows) > self.table.GetNumberRows():
+			self.table.InsertRows(pos=0, numRows=len(affineRows))
+		
+		# sort by hole, then numeric core to avoid lexi sorting e.g. A1, A10, A11
+		# TODO: account for possibility of 'AA' holes
+		affineRows.sort(key=lambda x:(x[0][0], int(x[0][1:])))
+		for rowIndex, ar in enumerate(affineRows):
+			self.table.SetCellValue(rowIndex, 0, ar[0])
+			self.table.SetCellValue(rowIndex, 1, ar[1])
+			self.table.SetCellValue(rowIndex, 2, ar[2])
 
 	def UpdateEvalStatus(self):
 		roundedDepthStep = int(10000.0 * float(self.parent.depthStep)) / 10000.0

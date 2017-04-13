@@ -3023,10 +3023,14 @@ class AffineController:
 		ss = self.parent.sectionSummary
 		assert ss.nonempty()
 		self.affine = AffineBuilder.createWithSectionSummary(self.parent.sectionSummary)
+		
+	def updateGUIAffineTable(self):
+		self.parent.compositePanel.UpdateAffineTable()
 	
 	# shift a single core with method SET
 	def set(self, hole, core, distance, comment=""):
 		self.affine.set(False, aci(hole, core), distance, comment)
+		self.updateGUIAffineTable()
 		
 	# shift all cores in a hole with method SET
 	def setAll(self, hole, coreList, value, isPercent, comment=""):
@@ -3041,6 +3045,7 @@ class AffineController:
 			else:
 				shiftDistance = value
 			self.affine.set(True, aci(hole, core), shiftDistance)
+		self.updateGUIAffineTable()
 			
 	def tie(self, coreOnly, fromHole, fromCore, fromDepth, hole, core, depth, comment=""):
 		fromCoreInfo = aci(fromHole, fromCore)
@@ -3060,6 +3065,8 @@ class AffineController:
 		else: # shift core and related
 			# todo: confirm
 			self.affine.tie(coreOnly, fromCoreInfo, fromDepth, coreInfo, depth, comment)
+
+		self.updateGUIAffineTable()
 
 	# return TieShift or SetShift for hole-core combination
 	def getShift(self, hole, core):
@@ -3093,6 +3100,13 @@ class AffineController:
 		secsumm = self.parent.sectionSummary
 		coremin, coremax = secsumm.getCoreRange(coreinfo.leg, coreinfo.hole, coreinfo.holeCore)
 		return coremin
+	
+	# get rows for GUI affine table: each tuple is hole+core, shift distance, and shift type
+	def getAffineRows(self):
+		rows = []
+		for shift in self.affine.affine.shifts:
+			rows.append((shift.core.GetHoleCoreStr(), str(shift.distance), self.getShiftTypeStr(shift.core.hole, shift.core.core)))
+		return rows
 	
 	# apply affine shifts to all data
 	def updateCoreData(self):
