@@ -3026,7 +3026,7 @@ class AffineController:
 	
 	# shift a single core with method SET
 	def set(self, hole, core, distance, comment=""):
-		self.affine.set(aci(hole, core), distance, comment)
+		self.affine.set(False, aci(hole, core), distance, comment)
 		
 	# shift all cores in a hole with method SET
 	def setAll(self, hole, coreList, value, isPercent, comment=""):
@@ -3040,7 +3040,7 @@ class AffineController:
 				shiftDistance = (coreTop * value) - coreTop
 			else:
 				shiftDistance = value
-			self.affine.set(aci(hole, core), shiftDistance)
+			self.affine.set(True, aci(hole, core), shiftDistance)
 			
 	def tie(self, coreOnly, fromHole, fromCore, fromDepth, hole, core, depth, comment=""):
 		fromCoreInfo = aci(fromHole, fromCore)

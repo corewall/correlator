@@ -218,8 +218,17 @@ class AffineBuilder:
         self.affine.getShift(core).adjust(deltaDistance)
      
     # shift a single core by a given distance (SET) 
-    def set(self, core, distance, comment=""):
-        self.affine.addShift(SetShift(core, distance, comment))
+    def set(self, coreOnly, core, distance, comment=""):
+        if coreOnly:
+            self.affine.addShift(SetShift(core, distance, comment))
+        else: # consider related
+            fromCore = aci('Z', '666') # bogus core to ensure nothing matches
+            shift = self.affine.getShift(core)
+            deltaDistance = distance - shift.distance
+            relatedCores = self.gatherRelatedCores(core, fromCore)
+            self.affine.addShift(SetShift(core, distance, comment))
+            for ci in relatedCores:
+                self.affine.adjust(ci, deltaDistance)            
     
     def tie(self, coreOnly, fromCore, fromDepth, core, depth, comment=""):
         shiftDistance = fromDepth - depth
