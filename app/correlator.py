@@ -1908,10 +1908,13 @@ class MainFrame(wx.Frame):
 		affineShift = self.affineManager.getShiftDistance(hole, core)
 		mbsfDepth = depth - affineShift
 		sectionNumber = self.sectionSummary.getSectionAtDepth(leg, hole, core, mbsfDepth)
-		sectionTopDepth = self.sectionSummary.getSectionTop(leg, hole, core, sectionNumber)
-		offset = round((mbsfDepth - sectionTopDepth) * 100.0, 1)
+		if sectionNumber is not None:
+			sectionTopDepth = self.sectionSummary.getSectionTop(leg, hole, core, sectionNumber)
+			offset = round((mbsfDepth - sectionTopDepth) * 100.0, 1)
 		#print "{}{}; section at depth {} - shift {} = {} is section {}".format(hole, core, depth, affineShift, depth - affineShift, section)
-		return sectionNumber, offset
+			return sectionNumber, offset
+		else:
+			return "[none]", "[none]"
 		
 		#return py_correlator.getSectionAtDepth(hole, core, type, depth)
 
