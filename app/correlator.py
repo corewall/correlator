@@ -1906,9 +1906,10 @@ class MainFrame(wx.Frame):
 
 	def GetSectionAtDepth(self, leg, hole, core, type, depth):
 		affineShift = self.affineManager.getShiftDistance(hole, core)
-		sectionNumber = self.sectionSummary.getSectionAtDepth(leg, hole, core, depth - affineShift)
+		mbsfDepth = depth - affineShift
+		sectionNumber = self.sectionSummary.getSectionAtDepth(leg, hole, core, mbsfDepth)
 		sectionTopDepth = self.sectionSummary.getSectionTop(leg, hole, core, sectionNumber)
-		offset = round((depth - sectionTopDepth) * 100.0, 1)
+		offset = round((mbsfDepth - sectionTopDepth) * 100.0, 1)
 		#print "{}{}; section at depth {} - shift {} = {} is section {}".format(hole, core, depth, affineShift, depth - affineShift, section)
 		return sectionNumber, offset
 		
