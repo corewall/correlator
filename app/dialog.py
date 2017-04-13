@@ -1126,7 +1126,7 @@ class ProjectDialog(wx.Dialog):
 		
 		dlgSizer = wx.BoxSizer(wx.VERTICAL)
 		
-		methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Shift Based On:"), orient=wx.VERTICAL)
+		methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Shift by:"), orient=wx.VERTICAL)
 		hsz = wx.BoxSizer(wx.HORIZONTAL)
 		self.percentRadio = wx.RadioButton(self, -1, "Percentage:")
 		self.percentRadio.SetValue(True)
@@ -1144,19 +1144,9 @@ class ProjectDialog(wx.Dialog):
 		methodSizer.Add(hsz, 0, wx.EXPAND | wx.BOTTOM, 5)
 		methodSizer.Add(hsz2, 0, wx.BOTTOM, 5)
 		methodSizer.Add(hsz3, 0)
-
-		coreSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Apply to Core(s)"), orient=wx.VERTICAL)
-		hsz = wx.BoxSizer(wx.HORIZONTAL)
-		hsz.Add(wx.StaticText(self, -1, "Hole:"), 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
-		self.holeChoice = wx.Choice(self, -1, size=(70,-1))
-		hsz.Add(self.holeChoice, 0, wx.ALL, 5)
-		self.coreChoice = wx.Choice(self, -1, size=(70,-1))
-		hsz.Add(wx.StaticText(self, -1, "Core:"), 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
-		hsz.Add(self.coreChoice, 0, wx.ALL, 5)
-		coreSizer.Add(hsz, 0, wx.EXPAND)
 		
 		self.currentShiftText = wx.StaticText(self, -1, "Current shift:")
-		coreSizer.Add(self.currentShiftText, 0, wx.EXPAND | wx.TOP, 5)
+		methodSizer.Add(self.currentShiftText, 0, wx.EXPAND | wx.TOP, 5)
 		
 		shiftSizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.shiftLabel = wx.StaticText(self, -1, "Suggested shift: ")
@@ -1166,7 +1156,24 @@ class ProjectDialog(wx.Dialog):
 		shiftSizer.Add(self.shiftField, 0, wx.RIGHT, 2)
 		shiftSizer.Add(self.shiftDiffText, 1, wx.ALIGN_CENTER_VERTICAL)
 		
-		coreSizer.Add(shiftSizer, 0, wx.EXPAND | wx.TOP, 10)
+		methodSizer.Add(shiftSizer, 0, wx.EXPAND | wx.TOP, 10)
+		
+
+		coreSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Apply shift to:"), orient=wx.VERTICAL)
+		hsz = wx.BoxSizer(wx.HORIZONTAL)
+		hsz.Add(wx.StaticText(self, -1, "Hole:"), 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+		self.holeChoice = wx.Choice(self, -1, size=(70,-1))
+		hsz.Add(self.holeChoice, 0, wx.ALL, 5)
+		self.coreChoice = wx.Choice(self, -1, size=(70,-1))
+		hsz.Add(wx.StaticText(self, -1, "Core:"), 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+		hsz.Add(self.coreChoice, 0, wx.ALL, 5)
+		coreSizer.Add(hsz, 0, wx.EXPAND)
+		
+		self.coreOnly = wx.RadioButton(self, -1, "Selected core only", style=wx.RB_GROUP)
+		self.coreAndBelow = wx.RadioButton(self, -1, "Selected core and all below")
+		self.coreOnly.SetValue(True)
+		coreSizer.Add(self.coreOnly, 0, wx.EXPAND | wx.TOP, 5)
+		coreSizer.Add(self.coreAndBelow, 0, wx.EXPAND | wx.TOP, 5)
 		
 		commentSizer = wx.BoxSizer(wx.HORIZONTAL)
 		commentSizer.Add(wx.StaticText(self, -1, "Comment:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
@@ -1179,8 +1186,8 @@ class ProjectDialog(wx.Dialog):
 		buttonSizer.Add(self.cancelButton, 0, wx.ALL, 5)
 		buttonSizer.Add(self.applyButton, 0, wx.ALL, 5)
 
-		dlgSizer.Add(methodSizer, 0, wx.ALL | wx.EXPAND, 5)
 		dlgSizer.Add(coreSizer, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND, 5)
+		dlgSizer.Add(methodSizer, 0, wx.ALL | wx.EXPAND, 5)
 		dlgSizer.Add(commentSizer, 0, wx.LEFT | wx.RIGHT | wx.TOP | wx.EXPAND, 10)
 		dlgSizer.Add(buttonSizer, 0, wx.ALIGN_RIGHT | wx.ALL, border=5)
 	
@@ -1204,7 +1211,7 @@ class ProjectDialog(wx.Dialog):
 		self.outCore = str(self.coreChoice.GetStringSelection())
 
 		# ensure shifted cores aren't part of current splice
-		checkBelow = self.outCore == "All"
+		checkBelow = self.coreAndBelow.GetValue()
 		if not self.parent.CanAdjustCore(self.outHole, '1' if checkBelow else self.outCore, checkBelow):
 			return
 		
@@ -1270,44 +1277,39 @@ class ProjectDialog(wx.Dialog):
 			self.coreChoice.Append(coreTuple[0])
 			self.outCoreList.append(coreTuple[0])
 		if self.coreChoice.GetCount() > 0:
-			self.coreChoice.Insert("All", 0)
-			self.coreChoice.Select(1)
+			self.coreChoice.Select(0)
 			self.UpdateData()
 
 	# update growth rate, current core shift, etc 
 	def UpdateData(self, evt=None):
 		curHole = self.holeChoice.GetStringSelection()
 		coreIndex = self.coreChoice.GetSelection()
-		if coreIndex == 0: # "All" selected
-			self.allSelected = True
-			self.curCoreName = None
-			self.prevCoreName = None
-			self.suggShift = None
-			# use bottom core's growth rate for "All" since it factors in all cores' shifts
+		curCore = self.coreData[curHole][coreIndex]
+		self.curCoreName = curHole + self.coreChoice.GetStringSelection()
+		self.curCoreShift = curCore[2] - curCore[1]
+		
+		if coreIndex > 0:
+			self.prevCoreName = curHole + self.coreChoice.GetString(coreIndex)
 		else:
-			self.allSelected = False
-			coreIndex -= 1
-			curCore = self.coreData[curHole][coreIndex]
-			self.curCoreName = curHole + self.coreChoice.GetStringSelection()
-			self.curCoreShift = curCore[2] - curCore[1]
+			self.prevCoreName = None
 			
-			if coreIndex > 0:
-				self.prevCoreName = curHole + self.coreChoice.GetString(coreIndex)
-			else:
-				self.prevCoreName = None
+		self.outCoreList = []
+		for coreTuple in [ct for ct in self.coreData[curHole] if int(ct[0]) >= int(self.coreChoice.GetStringSelection())]:
+			self.outCoreList.append(coreTuple[0])
+		#print "Updated outCoreList = {}".format(self.outCoreList)
 
-			if self.percentRadio.GetValue():
-				try:
-					pct = float(self.percentField.GetValue())/100.0 + 1.0 
-					self.suggShift = round(curCore[1] * pct, 3) - curCore[1]
-				except ValueError:
-					self.suggShift = None
-			else: # fixed distance
-				try:
-					dist = float(self.fixedField.GetValue())
-					self.suggShift = dist
-				except ValueError:
-					self.suggShift = None
+		if self.percentRadio.GetValue():
+			try:
+				pct = float(self.percentField.GetValue())/100.0 + 1.0 
+				self.suggShift = round(curCore[1] * pct, 3) - curCore[1]
+			except ValueError:
+				self.suggShift = None
+		else: # fixed distance
+			try:
+				dist = float(self.fixedField.GetValue())
+				self.suggShift = dist
+			except ValueError:
+				self.suggShift = None
 
 		self.UpdateCurShiftText()
 		self.UpdateSuggShiftText()

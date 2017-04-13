@@ -729,9 +729,10 @@ class CompositePanel():
 
 	def OnProject(self, evt):
 		dlg = dialog.ProjectDialog(self.parent)
+		dlg.Centre(wx.CENTER_ON_SCREEN)
 		result = dlg.ShowModal()
 		if result == wx.ID_OK:
-			if dlg.outCore == "All":
+			if dlg.coreAndBelow.GetValue(): # SET current core and below
 				isRate = dlg.outRate is not None
 				value = dlg.outRate if isRate else dlg.outOffset
 				coreList = dlg.outCoreList
