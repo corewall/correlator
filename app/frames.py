@@ -558,7 +558,7 @@ class CompositePanel():
 		panel3 = wx.Panel(self.mainPanel, -1)
 
 		sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'TIE Shift Options'), orient=wx.VERTICAL)
-		self.applyCore = wx.Choice(panel3, -1, choices=["This core only", "This core and all below"])
+		self.applyCore = wx.Choice(panel3, -1, choices=["This core only", "This core and all related cores below"])
 		self.applyCore.SetSelection(0)
 		sizer31.Add(self.applyCore, 0, wx.EXPAND | wx.BOTTOM, 5)
 		

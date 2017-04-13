@@ -4499,16 +4499,12 @@ class DataCanvas(wxBufferedWindow):
 				popupMenu = wx.Menu()
 				# create Menu
 				if data.fixed == 0 : # movable tie	
-					popupMenu.Append(2, "&Adjust depth with this core only")
+					popupMenu.Append(2, "&Shift this core only")
 					wx.EVT_MENU(popupMenu, 2, self.OnTieSelectionCb)
-					popupMenu.Append(3, "&Adjust depth with this core and all below")
+					popupMenu.Append(3, "&Shift this core and all related cores below")
 					wx.EVT_MENU(popupMenu, 3, self.OnTieSelectionCb)
-					popupMenu.Append(4, "&Undo to previous offset")
-					wx.EVT_MENU(popupMenu, 4, self.OnTieSelectionCb)
-					popupMenu.Append(5, "&Undo to offset of core above")
-					wx.EVT_MENU(popupMenu, 5, self.OnTieSelectionCb)
 
-				popupMenu.Append(1, "&Clear")
+				popupMenu.Append(1, "&Clear tie point(s)")
 				wx.EVT_MENU(popupMenu, 1, self.OnTieSelectionCb)
 
 				self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
