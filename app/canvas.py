@@ -2038,11 +2038,12 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawPolygon((tribase3, tribase2, tribase1))
 			else:
 				dc.DrawPolygon((tribase3, tribase1, tribase2))
-			# shift distance text				
+			# shift distance text, type			
 			dc.DrawText(str(affine), startX - 40, y)
+			dc.DrawText(self.parent.affineManager.getShiftTypeStr(hole, coreno), startX - 32, y - 12)
 
-		colorKey = 'mcd' if affine != 0 else 'mbsf'
-		dc.SetPen(wx.Pen(self.colorDict[colorKey], 1))
+		coreColor = self.parent.affineManager.getShiftColor(hole, coreno) if affine != 0 else self.colorDict['mbsf']
+		dc.SetPen(wx.Pen(coreColor, 1))
 
 		for r in range(len(self.AdjustDepthCore)) :
 			if self.AdjustDepthCore[r] == index :

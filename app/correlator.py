@@ -30,7 +30,7 @@ import frames
 import dbmanager
 import version as vers
 import model
-from affine import AffineBuilder, aci
+from affine import AffineBuilder, aci, isTie, isSet, isImplicit
 import splice
 import tabularImport
 
@@ -3064,6 +3064,24 @@ class AffineController:
 	# return TieShift or SetShift for hole-core combination
 	def getShift(self, hole, core):
 		return self.affine.getShift(aci(hole, str(core)))
+	
+	def getShiftColor(self, hole, core):
+		shift = self.affine.getShift(aci(hole, str(core)))
+		if isTie(shift):
+			return wx.Colour(0, 139, 0) # green
+		elif isSet(shift):
+			return wx.Colour(0, 102, 255) # blue
+		elif isImplicit(shift):
+			return wx.Colour(255, 153, 0) # orange
+		
+	def getShiftTypeStr(self, hole, core):
+		shift = self.affine.getShift(aci(hole, str(core)))
+		if isTie(shift):
+			return "TIE"
+		elif isSet(shift):
+			return "SET"
+		elif isImplicit(shift):
+			return "REL"
 	
 	# return shift distance for hole-core
 	def getShiftDistance(self, hole, core):
