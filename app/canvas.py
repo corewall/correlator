@@ -2019,87 +2019,36 @@ class DataCanvas(wxBufferedWindow):
 						y = self.startDepth + (y - self.rulerStartDepth) * (self.length / self.gap)
 						dc.DrawLines(((startX, y), (startX + self.holeWidth, y))) 
 
+		y_depth, x = coreData[0]
 
-		if smoothed != -1 and affine != 0 :
-			draw_flag = False
-			depth_tie = -999
-			data_tie = -999
+		# if core's current top depth is in visual range, draw affine shift arrow
+		if affine != 0 and y_depth >= drawing_start and y_depth <= self.rulerEndDepth :
 
-			# draw composite depth shift arrows
-			# this check looks like a lot of work...
-			if self.ShiftClue == True :
-				if startX < self.splicerX :
-					coreno = int(coreno)
-					for shifttie_data in self.ShiftTieList :
-						if shifttie_data[1] == hole : 
-							points_list = shifttie_data[2]
-							i = 0
-							for point in points_list : 
-								if i == 0 : 
-									if point == coreno :
-										draw_flag = True 
-									else :
-										if draw_flag == True :
-											break
-								elif i == 1 : 
-									if draw_flag == True  :
-										depth_tie = point
-								else :
-									if draw_flag == True  :
-										if self.HoleCount == shifttie_data[0] :
-											data_tie = point
-									i = -1
-								i += 1
-					if draw_flag == False :
-						if affine != prev_affine :
-							draw_flag = True 
+			dc.SetPen(wx.Pen(self.colorDict['mbsf'], 1))
+			y1 = self.startDepth + (y_depth - affine - self.rulerStartDepth) * (self.length / self.gap)
+			dc.DrawLines(((startX - 5, y1), (startX + 5, y1))) 
+			y = self.startDepth + (y_depth - self.rulerStartDepth) * (self.length / self.gap)
+			dc.DrawLines(((startX - 5, y), (startX + 5, y))) 
 
-			if smoothed == 6 :
-				if self.LogClue == True :
-					startX = self.splicerX + (self.holeWidth * 2) + 150
-					draw_flag = True 
+			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
+			y = self.startDepth + (y_depth - self.rulerStartDepth) * (self.length / self.gap)
+			tie_ptn = 15
+			dc.DrawLines(((startX - 5, y), (startX + tie_ptn, y))) 
+			dc.DrawLines(((startX, y), (startX, y1))) 
 
-			if draw_flag == True :
-				y_depth, x = coreData[0]
-				if depth_tie != -999 :
-					y_depth = depth_tie
-
-				# if core's current top depth is in visual range, draw affine shift arrow
-				if y_depth >= drawing_start and y_depth <= self.rulerEndDepth :
-
-					dc.SetPen(wx.Pen(self.colorDict['mbsf'], 1))
-					y1 = self.startDepth + (y_depth - affine - self.rulerStartDepth) * (self.length / self.gap)
-					dc.DrawLines(((startX - 5, y1), (startX + 5, y1))) 
-					y = self.startDepth + (y_depth - self.rulerStartDepth) * (self.length / self.gap)
-					dc.DrawLines(((startX - 5, y), (startX + 5, y))) 
-
-					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
-					y = self.startDepth + (y_depth - self.rulerStartDepth) * (self.length / self.gap)
-					tie_ptn = 15
-					if data_tie != -999 :
-						tie_ptn = (data_tie - self.minRange) * self.coefRange
-
-					dc.DrawLines(((startX - 5, y), (startX + tie_ptn, y))) 
-
-					#radius = self.tieDotSize / 2.0
-					#dc.DrawCircle(startX+20,y, radius)
-
-					dc.DrawLines(((startX, y), (startX, y1))) 
-
-					# arrowhead, shift distance
-					if affine > 0 :
-						dc.DrawLines(((startX - 5, y - 5), (startX, y))) 
-						dc.DrawLines(((startX, y), (startX + 5, y - 5))) 
-						dc.DrawText(str(affine), startX - 40, y1 - 15)
-					else :
-						dc.DrawLines(((startX - 5, y + 5), (startX, y))) 
-						dc.DrawLines(((startX, y), (startX + 5, y + 5))) 
-						dc.DrawText(str(affine), startX - 40, y1 + 5)
+			# arrowhead, shift distance
+			if affine > 0 :
+				dc.DrawLines(((startX - 5, y - 5), (startX, y))) 
+				dc.DrawLines(((startX, y), (startX + 5, y - 5))) 
+				dc.DrawText(str(affine), startX - 40, y1 - 15)
+			else :
+				dc.DrawLines(((startX - 5, y + 5), (startX, y))) 
+				dc.DrawLines(((startX, y), (startX + 5, y + 5))) 
+				dc.DrawText(str(affine), startX - 40, y1 + 5)
 
 			dc.SetPen(wx.Pen(self.colorDict['mcd'], 1))
 		else :
 			dc.SetPen(wx.Pen(self.colorDict['mbsf'], 1))
-
 
 		for r in range(len(self.AdjustDepthCore)) :
 			if self.AdjustDepthCore[r] == index :
