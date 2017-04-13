@@ -3940,7 +3940,7 @@ class DataCanvas(wxBufferedWindow):
 
 			if ciA is not None and ciB is not None:
 				comment = self.parent.compositePanel.GetComment()
-				self.parent.affineManager.tie(shiftCoreOnly, ciB.hole, ciB.holeCore, y2, ciA.hole, ciA.holeCore, y1, comment)
+				self.parent.affineManager.tie(shiftCoreOnly, ciB.hole, ciB.holeCore, round(y2, 3), ciA.hole, ciA.holeCore, round(y1, 3), comment)
 
 				self.parent.AffineChange = True
 
