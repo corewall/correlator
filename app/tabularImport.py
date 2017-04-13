@@ -41,6 +41,9 @@ class SectionSummary:
             return coremin, coremax
         return None
     
+    def getSites(self):
+        return set(self.dataframe['Site'])
+    
     def getHoles(self):
         return set(self.dataframe['Hole'])
     

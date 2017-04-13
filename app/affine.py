@@ -84,7 +84,7 @@ class AffineTable:
         
     @classmethod
     def createWithCores(cls, cores):
-        print "core type = {}, hole type = {}".format(type(cores[0].core), type(cores[0].hole))
+        #print "core type = {}, hole type = {}".format(type(cores[0].core), type(cores[0].hole))
         affine = cls()
         for c in cores:
             affine.addShift(ImplicitShift(c, 0.0))
@@ -192,6 +192,8 @@ class AffineTable:
 class AffineBuilder:
     def __init__(self):
         self.affine = AffineTable() # AffineTable representing the current affine state
+        self.sectionSummary = None
+        self.site = None # Yuck. Maintaining so we can query sectionSummary
         
     @classmethod
     def createWithSectionSummary(cls, secsumm):
@@ -201,6 +203,8 @@ class AffineBuilder:
             for core in secsumm.getCores(hole):
                 cores.append(aci(hole, str(core)))
         affineBuilder.affine = AffineTable.createWithCores(cores)
+        affineBuilder.sectionSummary = secsumm
+        affineBuilder.site = list(secsumm.getSites())[0] # assume a single site!
         return affineBuilder
         
     def __repr__(self):
@@ -209,10 +213,6 @@ class AffineBuilder:
     def clear(self):
         self.affine.clear()
         
-    # add implicit shift
-    def addImplicit(self, core, distance, comment=""):
-        self.affine.addShift(ImplicitShift(core, distance, comment))
-        
     # modify existing shift by deltaDistance
     def adjust(self, core, deltaDistance):
         self.affine.getShift(core).adjust(deltaDistance)
@@ -220,74 +220,45 @@ class AffineBuilder:
     # shift a single core by a given distance (SET) 
     def set(self, core, distance, comment=""):
         pass
-#         deltaDist = distance
-#         if not self.coreHasShift(core):
-#             ss = SetShift(core, distance, comment)
-#             self.add(ss)
-#         else:
-#             shift = self.getShift(core)
-#             if isSet(shift):
-#                 deltaDist = distance - shift.distance
-#                 shift.distance = distance
-#                 print "core already has shift {}, adjusting by {} to {}".format(shift, deltaDist, distance)
-#             else: # it's a TIE - probably want to confirm with user? wilBreakTie() method?
-#                 print "No can do, brah! SET will break existing shift {} and that would be weird.\nTODO: Confirmation dialog.".format(shift)
-#                 return
-        # update TIE chain, since the shifted core may be the fromCore of a chain
-        # at present this would only apply to the topmost core in a chain since there's
-        # no notion of SET-chaining right now (though that may be desired going forward)
-        #self.updateTieChain(core, deltaDist)
     
-    def tie(self, fromCore, fromDepth, core, depth, comment=""):
-        pass
-#         deltaDist = fromDepth - depth
-#         if not self.coreHasShift(core):
-#             #raise UnknownCoreError(core, "Core {} not found in AffineBuilder.shifts")
-#             ts = TieShift(fromCore, fromDepth, core, depth, deltaDist, comment)
-#             self.add(ts)
-#         else: # core already has a shift...should always get here!
-#             oldShift = self.getShift(core)
-#             #if isinstance(oldShift, SetShift): # if it's a SET, override it entirely
-#             if isSet(oldShift) or isImplicit(oldShift):
-#                 ts = TieShift(fromCore, fromDepth, core, depth, deltaDist, comment)
-#                 self.replace(oldShift, ts)
-#             else: # it's a TIE, the new shift distance is the old shift distance plus fromDepth - depth
-#                 newDist = deltaDist + oldShift.distance
-#                 print "   current TIE shift {} + new shift {} = cumulative shift {}".format(oldShift.distance, deltaDist, newDist)
-#                 ts = TieShift(fromCore, fromDepth, core, depth - oldShift.distance, newDist, comment)
-#                 self.replace(oldShift, ts)
-# 
-#         # update TieShifts that descend from the core we just shifted     
-#         self.updateTieChain(core, deltaDist)
-        # return new TieShift?
+    def tie(self, coreOnly, fromCore, fromDepth, core, depth, comment=""):
+        shiftDistance = fromDepth - depth
+        if coreOnly:
+            self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, shiftDistance, comment))
+            # need to update any shifts for which this is a from core to be SetShifts...right? Or Implicit?
+        else:
+            shift = self.affine.getShift(core)
+            deltaDistance = shiftDistance - shift.distance
+            relatedCores = self.gatherRelatedCores(core, fromCore)
+            self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, shiftDistance, comment))
+            #print "related cores = {}".format(relatedCores)
+            for ci in relatedCores:
+                self.affine.adjust(ci, deltaDistance)
         
     # will shifting core have side effects that require user confirmation to proceed?
     # returns tuple of form (confirmation needed [boolean], warning message [string])
-    def needConfirmation(self, core, coreOnly):
+    def needConfirmation(self, fromCore, core, coreOnly):
         if coreOnly:
-            #shift = self.getShift(core)
+            shift = self.affine.getShift(core)
             if self.affine.inChain(core):
-                return True, "Shifting core {} only will break a TIE chain.".format(core)
+                #print "old fromCore = {}, new = {}".format(shift.fromCore, fromCore)
+                if isTie(shift) and shift.fromCore != fromCore or self.affine.isChainTop(core):
+            #if self.affine.inChain(core):
+                    return True, "Shifting core {} only will break a TIE chain.".format(core)
         else:
-            affectedCores = []
-            # if core is part of a chain, walk chain, gathering all non-chain cores below
-            if self.affine.inChain(core):
-                chainCores = self.affine.getChainCores(core)
-                nonHoleCores = [c for c in chainCores if c.hole != core.hole]
-                
-            # do the same for each core in hole below core
-            # determine whether any chain cores above core are being shifted
-            # if so, need confirmation - ideally with warning explaining where breaks will take place
-        return (False, "")
+            pass
+
+        return False, ""
     
-    # gather all cores that should be shifted if shiftCore is shifted   
-    def gatherRelatedCores(self, shiftCore):
-        topChainCores = {} # for each hole encountered (key), track topmost chain core (value)
+    # gather all cores that will be shifted by "Shift by [shiftCore] and related cores below" action
+    # this only makes sense to use for TIE operations.
+    def gatherRelatedCores(self, shiftCore, fromCore):
+        topChainCores = {shiftCore.hole: shiftCore} # for each hole encountered (key), track topmost chain core (value)
         chainCores = []
         done = False
         curCore = shiftCore
         while not done:
-            topCore = self._gatherHoleChainCores(curCore, chainCores)
+            topCore = self._gatherHoleChainCores(curCore, fromCore, chainCores)
             
             # update topChainCores for current hole if needed
             if topCore is not None:
@@ -296,7 +267,7 @@ class AffineBuilder:
                     
             # find a core in chainCores with hole != curCore.hole that's above the current topChainCores
             # value for that hole, if any, and make it the new curCore
-            offHoleCores = [c for c in chainCores if c.hole != curCore.hole]
+            offHoleCores = [c for c in chainCores if c.hole != curCore.hole and c != fromCore]
             offHoles = set(c.hole for c in offHoleCores)
             for hole in offHoles:
                 topOffHoleCore = self._topCoreInHole(hole, offHoleCores)
@@ -327,14 +298,18 @@ class AffineBuilder:
             nonChainCores.extend(nccBelow)
         
         relatedCores = chainCores + nonChainCores
+        
+        # remove shiftCore from relatedCores!
+        relatedCores = [c for c in relatedCores if c != shiftCore]
         return relatedCores
         
     # search core and below for chain cores - add all to chainCores list
-    def _gatherHoleChainCores(self, core, chainCores):
+    def _gatherHoleChainCores(self, core, fromCore, chainCores):
         foundCores = []
         for c in [core] + self.getCoresBelow(core):
             if c not in chainCores and self.affine.inChain(c):
-                foundCores.extend(self.affine.getChainCores(c))
+                newChainCores = [nc for nc in self.affine.getChainCores(c) if nc != fromCore]
+                foundCores.extend(newChainCores)
                 chainCores.extend(foundCores)
         
         return self._topCoreInHole(core.hole, foundCores)
@@ -364,33 +339,6 @@ class AffineBuilder:
     
     def isLegalTie(self, fromCore, core):
         return not self.affine.isUpstream(fromCore, core)
-    
-    def updateTieChain(self, core, deltaDist):
-        pass
-#         for shift in [s for s in self.shifts if isTie(s) and s.fromCore == core]:
-#             shift.distance += deltaDist
-#             print "{} has parent {}, shifting by {} for a total shift of {}".format(shift.core, shift.fromCore, deltaDist, shift.distance)
-#             self.updateTieChain(shift.core, deltaDist) # recurse
-            
-    def printChain(self, core, count=0):
-        shift = self.getShift(core)
-        if shift is not None and isTie(shift):
-            self.printChain(shift.fromCore, count + 1)
-        endstr = ".\n" if count == 0 else " ->"
-        print "{}{}".format(core, endstr),
-            
-    def add(self, shift):
-        print "adding {}".format(shift)
-        self.shifts.append(shift)
-    
-    def delete(self, shift):
-        assert shift in self.shifts
-        print "deleting {}".format(shift)
-        self.shifts.remove(shift)
-        
-    def replace(self, oldShift, newShift):
-        self.delete(oldShift)
-        self.add(newShift)
         
     def coreHasShift(self, core):
         return self.getShift(core) is not None
@@ -406,6 +354,8 @@ class AffineBuilder:
 # Reference to hole and core for affine shifts
 class AffineCoreInfo:
     def __init__(self, hole, core):
+        assert isinstance(hole, str)
+        assert isinstance(core, str)
         self.hole = hole
         self.core = core
         
@@ -417,6 +367,9 @@ class AffineCoreInfo:
     
     def __eq__(self, other):
         return self.hole == other.hole and self.core == other.core
+    
+    def __ne__(self, other):
+        return self.hole != other.hole or self.core != other.core
 
 # convenience method to create AffineCoreInfo
 def aci(hole, core):
@@ -561,155 +514,10 @@ class TestAffine(unittest.TestCase):
         c1 = aci('A', '1')
         c1dup = aci('A', '1')
         self.assertTrue(c1 == c1dup)
-    
-    def test_set_shift(self):
-        c1 = aci('A', '1')
-        ss = SetShift(c1, 1.0)
-        self.assertTrue(isSet(ss))
-        self.assertTrue(ss.distance == 1.0)
-        
-    def test_tie_shift(self):
-        a1 = aci('A', '1')
-        b1 = aci('B', '1')
-        ts = TieShift(a1, 0.5, b1, 0.25, 0.25)
-        self.assertTrue(isTie(ts))
-        self.assertTrue(ts.distance == 0.25)
+        self.assertFalse(c1 != c1dup)
 
-    def test_getCoresBelow(self):
-        # mock up some holes 'n cores
-        mockAci = []
-        for hole in ['A', 'B', 'C', 'D']:
-            for core in range(10):
-                mockAci.append(acistr(hole + str(core + 1)))
-        
-        # add implicit shift for each mock core
-        ab = AffineBuilder()
-        for maci in mockAci:
-            ab.addImplicit(maci, 0.0, 'mock core')
-            
-        self.assertTrue(ab.getCoresBelow('A', '10') == [])
-        coresBelow = ab.getCoresBelow('A', '8')
-        self.assertFalse(acistr('A8') in coresBelow)
-        self.assertTrue(acistr('A9') in coresBelow)
-        self.assertTrue(acistr('A10') in coresBelow)
-        
-        bcores = ab.getCoresBelow('B', '2')
-        bcbs = [core for core in [acistr(hc) for hc in ['B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10']] if core in bcores]
-        self.assertTrue(len(bcbs) == 8)
-        
-        # OK! Now hook up basic case of TIE and all related, SET and all related
-        
-        
-    def test_builder(self):
-        a1 = aci('A', '1')
-        b1 = aci('B', '1')
-        c1 = aci('C', '1')
-        d1 = aci('D', '1')
-        ab = AffineBuilder()
-        ab.tie(a1, 0.5, b1, 0.25)
-        self.assertTrue(ab.coreHasShift(b1))
-        self.assertTrue(ab.getShift(b1).distance == 0.25)
-        self.assertFalse(ab.coreHasShift(a1))
-          
-        ab.tie(b1, 1.0, c1, 0.5)
-        self.assertTrue(ab.coreHasShift(c1))
-        self.assertTrue(ab.getShift(c1).distance == 0.5)
-          
-        # push a1 down by 0.2 - ensure b1 and c1 are pushed by same distance
-        ab.tie(d1, 0.5, a1, 0.3)
-        self.assertTrue(ab.coreHasShift(a1))
-        self.assertTrue(ab.getShift(a1).distance == 0.2)
-        self.assertTrue(ab.getShift(b1).distance == 0.45)
-        self.assertTrue(ab.getShift(c1).distance == 0.7)
-           
-        # chain 1: d1 -> a1 -> b1 -> c1
-        self.assertTrue(ab.isUpstream(b1, c1))
-        self.assertTrue(ab.isUpstream(a1, c1))
-        self.assertTrue(ab.isUpstream(a1, b1))
-        self.assertTrue(ab.isUpstream(d1, a1))
-        self.assertFalse(ab.isUpstream(b1, a1))
-           
-        # build a separate chain and test upstream-ness
-        # chain 2: a2 -> b2 -> c2 -> d2
-        a2 = aci('A', '2')
-        b2 = aci('B', '2')
-        c2 = aci('C', '2')
-        d2 = aci('D', '2')
-        ab.tie(a2, 0.8, b2, 1.0)
-        self.assertClose(-0.2, ab.getShift(b2).distance)
-        ab.tie(b2, 1.5, c2, 1.4)
-        self.assertClose(0.1, ab.getShift(c2).distance)
-        ab.tie(c2, 1.7, d2, 2.0)
-        self.assertClose(-0.3, ab.getShift(d2).distance)
-           
-        self.assertTrue(ab.isUpstream(a2, b2))
-        self.assertTrue(ab.isUpstream(b2, c2))
-        self.assertTrue(ab.isUpstream(c2, d2))
-        self.assertTrue(ab.isUpstream(a2, d2))
-           
-        # chains 1 and 2 are separate
-        self.assertFalse(ab.isUpstream(a1, b2))
-           
-        # join those chains and test new upstream-ness state
-        self.assertFalse(ab.isUpstream(c1, d2))
-        ab.tie(c1, 1.0, a2, 0.5)
-        self.assertTrue(ab.isUpstream(c1, d2))
-        
-    def test_tie_override_of_set(self):        
-        # confirm TIE overrides SET
-        a1 = aci('A', '1')
-        b1 = aci('B', '1')
-        ab = AffineBuilder()
-        ab.set(a1, 1.0)
-        ab.tie(b1, 1.0, a1, 1.5)
-        shift = ab.getShift(a1)
-        self.assertTrue(isTie(shift))
-        self.assertClose(shift.distance, -0.5)
-        
-    # confirm new TIE correctly replaces existing TIE        
-    def test_tie_override_of_tie(self):
-        # initial TIE
-        a1 = aci('A', '1')
-        b1 = aci('B', '1')
-        ab = AffineBuilder()
-        ab.tie(b1, 1.0, a1, 1.5)
-        shift = ab.getShift(a1)
-        self.assertClose(shift.fromDepth, 1.0)
-        self.assertClose(shift.depth, 1.5)
-        self.assertClose(shift.distance, -0.5)
-        
-        # replace TIE with same fromCore at different depth. Current
-        # TIE shifts A1 by -0.5m
-        ab.tie(b1, 1.2, a1, 1.5) # A1 1.5mcd = 2.0mbsf due to current shift
-        shift = ab.getShift(a1)
-        self.assertTrue(isTie(shift))
-        self.assertClose(shift.fromDepth, 1.2)
-        self.assertClose(shift.depth, 2.0)
-        self.assertClose(shift.distance, -0.8) # shifted a further -0.3m + current -0.5m
-        
-    # confirm a SET can be the top of a TIE chain
-    def test_set_to_tie_chain(self):
-        a1 = aci('A', '1')
-        b1 = aci('B', '1')
-        ab = AffineBuilder()
-        ab.set(a1, 1.0)
-        ab.tie(a1, 1.5, b1, 1.0)
-        self.assertTrue(ab.getShift(b1).fromCore == a1)
-        
-        c1 = aci('C', '1')
-        ab.tie(b1, 2.0, c1, 1.0)
-        self.assertClose(ab.getShift(c1).distance, 1.0)
-        
-        # chain: a1 -> b1 -> c1
-        #ab.printChain(c1)
-        
-        # does adjusting a1 push chain as expected?
-        ab.set(a1, 2.0)
-        self.assertTrue(ab.isUpstream(a1, c1))
-        self.assertClose(ab.getShift(b1).distance, 1.5)
-        self.assertClose(ab.getShift(c1).distance, 2.0)
 
 if __name__ == "__main__":
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestAffineTable)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-    #unittest.main()
+    #suite = unittest.TestLoader().loadTestsFromTestCase(TestAffineTable)
+    #unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main()

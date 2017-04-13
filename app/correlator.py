@@ -3021,9 +3021,6 @@ class AffineController:
 		assert ss.nonempty()
 		self.affine = AffineBuilder.createWithSectionSummary(self.parent.sectionSummary)
 	
-	def implicit(self, hole, core, distance, comment=""):
-		self.affine.addImplicit(aci(hole, core), distance, comment)
-	
 	# shift a single core with method SET
 	def set(self, hole, core, distance, comment=""):
 		self.affine.set(aci(hole, core), distance, comment)
@@ -3042,25 +3039,24 @@ class AffineController:
 				shiftDistance = value
 			self.affine.set(aci(hole, core), shiftDistance)
 			
-	def tie(self, shiftCoreOnly, fromHole, fromCore, fromDepth, hole, core, depth, comment=""):
-		if shiftCoreOnly:
-			# todo: will shifting this core only break relationships? if so, get confirmation from user
-			# todo: add param to shift only single core
-			ci = aci(fromHole, fromCore)
-			#if self.affine.isTie(ci):
-				# 
-			
-			self.affine.tie(aci(fromHole, fromCore), fromDepth, aci(hole, core), depth, comment)
+	def tie(self, coreOnly, fromHole, fromCore, fromDepth, hole, core, depth, comment=""):
+		fromCoreInfo = aci(fromHole, fromCore)
+		coreInfo = aci(hole, core)
+		# adjust movable core's depth for affine
+		depth = depth - self.affine.getShift(coreInfo).distance
+		if coreOnly:
+			#print "hole type = {}, core type = {}".format(type(fromHole), type(fromCore))
+			proceed = True
+			needConfirm, msg = self.affine.needConfirmation(fromCoreInfo, coreInfo, coreOnly=True)
+			if needConfirm:
+				proceed = self.parent.OnShowMessage("Confirm", msg + " Do you want to continue?", 0) == wx.ID_YES
+				if proceed:
+					print "User confirmed break, proceeding!"
+			if proceed:
+				self.affine.tie(coreOnly, fromCoreInfo, fromDepth, coreInfo, depth, comment)
 		else: # shift core and related
-			pass
-			# todo: rework based on new AffineBuilder
-			#coresBelow = self.affine.getCoresBelow(hole, core)
-# 			print "found {} cores below".format(len(coresBelow))
-# 			shiftDistance = fromDepth - depth
-# 			for cb in coresBelow:
-# 				self.affine.adjust(cb, shiftDistance)
-# 			self.affine.tie(aci(fromHole, fromCore), fromDepth, aci(hole, core), depth, comment)
-			# todo: move cores below...part of tie()?
+			# todo: confirm
+			self.affine.tie(coreOnly, fromCoreInfo, fromDepth, coreInfo, depth, comment)
 
 	# return TieShift or SetShift for hole-core combination
 	def getShift(self, hole, core):
@@ -3503,6 +3499,14 @@ class SectionSummaryPool:
 				break
 		return matchingSummary
 	
+	def getSites(self):
+		siteList = []
+		for ss in self.secSumms:
+			ssSites = ss.getSites()
+			for site in ssSites:
+				siteList.append(site)
+		return set(siteList)
+
 	def getHoles(self):
 		holeList = []
 		for ss in self.secSumms:
