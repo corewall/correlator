@@ -4210,32 +4210,24 @@ class DataCanvas(wxBufferedWindow):
 			self.UpdateDrawing()
 
 	def OnChar(self, event):
+		eventCaught = True
 		keyid = event.GetKeyCode()
-
-		#if keyid == 27 :
-		#	self.parent.OnExitButton(1)
 		if keyid == 127 :
 			self.TieData = [] 
 			self.GuideCore = []
-			self.UpdateDrawing()
 		elif keyid == 72 :
 			if self.hideTie == 1 :
 				self.hideTie = 0
 			else : 
 				self.hideTie = 1
-			self.UpdateDrawing()
 		elif keyid == ord("D") :
 			self.pressedkeyD = 1 
-			self.UpdateDrawing()
 		elif keyid == ord("S") :
 			self.pressedkeyS = 1 
-			self.UpdateDrawing()
 		elif keyid == wx.WXK_ALT :
 			self.showGrid = True
-			self.UpdateDrawing()
 		elif keyid == wx.WXK_SHIFT :
 			self.pressedkeyShift = 1 
-			self.UpdateDrawing()
 		elif keyid == wx.WXK_DOWN and self.parent.ScrollMax > 0 :
 			if self.activeTie == -1 and self.activeSPTie == -1 and self.activeSATie == -1:
 				if self.isSecondScroll == 0:
@@ -4253,7 +4245,6 @@ class DataCanvas(wxBufferedWindow):
 				self.UpdateScroll(1)
 			else :
 				self.UPDATE_TIE(False)
-			self.UpdateDrawing()
 		elif keyid == wx.WXK_UP and self.parent.ScrollMax > 0 :
 			if self.activeTie == -1 and self.activeSPTie == -1 and self.activeSATie == -1:
 				if self.isSecondScroll == 0:
@@ -4267,22 +4258,23 @@ class DataCanvas(wxBufferedWindow):
 					self.rulerStartDepth -= self.rulerTickRate
 					if self.rulerStartDepth < 0:
 						self.rulerStartDepth = 0
-					 
 				self.UpdateScroll(1)
 			else :
 				self.UPDATE_TIE(True)
-			self.UpdateDrawing()
 		elif keyid == wx.WXK_LEFT :
 			self.minScrollRange = self.minScrollRange - 15 
 			if self.minScrollRange < 0 :
 				self.minScrollRange = 0
-			self.UpdateDrawing()
 		elif keyid == wx.WXK_RIGHT :
 			self.minScrollRange = self.minScrollRange + 15 
 			if self.minScrollRange > self.parent.HScrollMax :
 				self.minScrollRange = self.parent.HScrollMax 
+		else:
+			eventCaught = False
+			event.Skip()
+			
+		if eventCaught:
 			self.UpdateDrawing()
-		event.Skip()
 
 
 	# called on up/down arrow keyup only (mouse drag handled elsewhere)
