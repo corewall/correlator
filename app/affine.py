@@ -240,7 +240,6 @@ class AffineBuilder:
             deltaDistance = shiftDistance - shift.distance
             relatedCores = self.gatherRelatedCores(core, fromCore)
             self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, shiftDistance, comment))
-            #print "related cores = {}".format(relatedCores)
             for ci in relatedCores:
                 self.affine.adjust(ci, deltaDistance)
         
@@ -310,6 +309,10 @@ class AffineBuilder:
         
         # remove shiftCore from relatedCores!
         relatedCores = [c for c in relatedCores if c != shiftCore]
+        
+        # remove any cores above shiftCore!
+        shiftCoreTop = self._getCoreTop(shiftCore) + self.getShift(shiftCore).distance
+        relatedCores = [c for c in relatedCores if self._getCoreTop(c) + self.getShift(c).distance >= shiftCoreTop]
         return relatedCores
         
     # search core and below for chain cores - add all to chainCores list
@@ -331,6 +334,9 @@ class AffineBuilder:
             return theCore
         else:
             return None
+        
+    def _getCoreTop(self, ci):
+        return self.sectionSummary.getCoreTop(self.site, ci.hole, ci.core)
     
     # get all cores in hole below core by name - not actual position!
     # todo: abstract concept of "below"?

@@ -3081,6 +3081,7 @@ class AffineController:
 		elif isImplicit(shift):
 			return wx.Colour(255, 153, 0) # orange
 		
+	# todo: part of AffineShift and subclasses?
 	def getShiftTypeStr(self, hole, core):
 		shift = self.affine.getShift(aci(hole, str(core)))
 		if isTie(shift):
@@ -3568,6 +3569,14 @@ class SectionSummaryPool:
 	def getCoreRange(self, site, hole, core):
 		ss = self.findSummary(site, hole, core)
 		return ss.getCoreRange(site, hole, core)
+	
+	def getCoreTop(self, site, hole, core):
+		top, bottom = self.getCoreRange(site, hole, core)
+		return top
+	
+	def getCoreBottom(self, site, hole, core):
+		top, bottom = self.getCoreRange(site, hole, core)
+		return bottom
 	
 	def getSectionTop(self, site, hole, core, section):
 		ss = self.findSummary(site, hole, core, section)
