@@ -1985,6 +1985,16 @@ class DataCanvas(wxBufferedWindow):
 							dc.DrawLines(((x, start), (x, stop))) 
 							dc.DrawLines(((x - 5, stop), (x + 5, stop))) 
 
+	# given depth and coredata - list of (depth, datum) pairs - return pair whose depth is closest to searchDepth
+	def findNearestDataPoint(self, coredata, searchDepth):
+		nearest = None
+		mindiff = 1000000
+		for depth, datum in coredata:
+			diff = abs(searchDepth - depth)
+			if diff < mindiff:
+				mindiff = diff
+				nearest = (depth, datum)
+		return nearest
 
 	def DrawCoreGraph(self, dc, index, startX, holeInfo, holedata, smoothed, spliceflag, compositeflag, prev_affine):
 
@@ -2040,7 +2050,18 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawPolygon((tribase3, tribase1, tribase2))
 			# shift distance text, type			
 			dc.DrawText(str(affine), startX - 40, y)
-			dc.DrawText(self.parent.affineManager.getShiftTypeStr(hole, coreno), startX - 32, y - 12)
+			shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole, coreno)
+			dc.DrawText(shiftTypeStr, startX - 32, y - 12)
+			
+			# arrow indicating TIE between cores
+			# for now just draw a dot on datapoint nearest TieShift core's tie depth
+			if shiftTypeStr == "TIE":
+				tieDepth, parentCore = self.parent.affineManager.getTieDepthAndParent(hole, coreno)
+				nearDepth, nearDatum = self.findNearestDataPoint(coreData, tieDepth)
+				tieY = self.getCoord(nearDepth)
+				tieX = nearDatum - self.minRange
+				tieX = (tieX * self.coefRange) + startX 				
+				dc.DrawCircle(tieX, tieY, 3)
 
 		coreColor = self.parent.affineManager.getShiftColor(hole, coreno) if affine != 0 else self.colorDict['mbsf']
 		dc.SetPen(wx.Pen(coreColor, 1))
@@ -3912,6 +3933,7 @@ class DataCanvas(wxBufferedWindow):
 			y1 = movableTie.depth
 			y2 = fixedTie.depth
 			shift = fixedTie.depth - movableTie.depth
+			#print "fixed tie depth = {}, movable tie depth = {}, shift = {}".format()
 			
 			offset = self.parent.compositePanel.GetBestOffset() if actionType == 0 else float(self.parent.compositePanel.GetDepthValue())
 			if actionType == 0 : # to best 

@@ -3047,10 +3047,14 @@ class AffineController:
 			self.affine.set(True, aci(hole, core), shiftDistance)
 		self.updateGUIAffineTable()
 			
+	# fromDepth - MCD depth of tie point on fromCore
+	# depth - MCD depth of tie point on core
 	def tie(self, coreOnly, fromHole, fromCore, fromDepth, hole, core, depth, comment=""):
 		fromCoreInfo = aci(fromHole, fromCore)
 		coreInfo = aci(hole, core)
 		# adjust movable core's depth for affine
+		mcdShiftDist = fromDepth - depth
+		fromDepth = fromDepth - self.affine.getShift(fromCoreInfo).distance
 		depth = depth - self.affine.getShift(coreInfo).distance
 		if coreOnly:
 			#print "hole type = {}, core type = {}".format(type(fromHole), type(fromCore))
@@ -3061,10 +3065,10 @@ class AffineController:
 				if proceed:
 					print "User confirmed break, proceeding!"
 			if proceed:
-				self.affine.tie(coreOnly, fromCoreInfo, fromDepth, coreInfo, depth, comment)
+				self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, comment)
 		else: # shift core and related
 			# todo: confirm
-			self.affine.tie(coreOnly, fromCoreInfo, fromDepth, coreInfo, depth, comment)
+			self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, comment)
 
 		self.updateGUIAffineTable()
 
@@ -3080,6 +3084,12 @@ class AffineController:
 			return wx.Colour(0, 102, 255) # blue
 		elif isImplicit(shift):
 			return wx.Colour(255, 153, 0) # orange
+		
+	# if hole-core combination is a TieShift, return MCD depth of TIE point and AffineCoreInfo of parent core
+	def getTieDepthAndParent(self, hole, core):
+		shift = self.affine.getShift(aci(hole, str(core)))
+		assert isTie(shift)
+		return shift.depth + shift.distance, shift.fromCore
 		
 	# todo: part of AffineShift and subclasses?
 	def getShiftTypeStr(self, hole, core):

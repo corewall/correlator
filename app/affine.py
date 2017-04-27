@@ -48,9 +48,9 @@ class TieShift(AffineShift):
         self.depth = depth # MBSF depth of shifted core's TIE point
 
     def __repr__(self):
-        fmtStr = "TIE from {}@{}mcd to {}@{}mcd ({}mbsf), shifted {}m{}" 
+        fmtStr = "TIE from {}@{}mbsf to {}@{}mbsf ({}mcd), shifted {}m{}" 
         commentStr = " ({})".format(self.comment) if self.comment != "" else ""
-        return fmtStr.format(self.fromCore, self.fromDepth, self.core, self.depth, self.depth - self.distance, self.distance, commentStr)
+        return fmtStr.format(self.fromCore, self.fromDepth, self.core, self.depth, self.depth + self.distance, self.distance, commentStr)
 
 
 class SetShift(AffineShift):
@@ -130,6 +130,11 @@ class AffineTable:
         shifts = [s for s in self.shifts if s.core == core]
         assert len(shifts) <= 1
         return shifts[0] if len(shifts) == 1 else None
+    
+    def getShiftDistance(self, core):
+        shift = self.getShift(core)
+        assert shift is not None
+        return shift.distance
 
     # returns True if core is the top of a chain or chains
     def isChainTop(self, core):
@@ -217,7 +222,7 @@ class AffineBuilder:
     def adjust(self, core, deltaDistance):
         self.affine.getShift(core).adjust(deltaDistance)
      
-    # shift a single core by a given distance (SET) 
+    # shift core(s) by a given distance (SET) 
     def set(self, coreOnly, core, distance, comment=""):
         if coreOnly:
             self.affine.addShift(SetShift(core, distance, comment))
@@ -229,19 +234,23 @@ class AffineBuilder:
             self.affine.addShift(SetShift(core, distance, comment))
             for ci in relatedCores:
                 self.affine.adjust(ci, deltaDistance)            
-    
-    def tie(self, coreOnly, fromCore, fromDepth, core, depth, comment=""):
-        shiftDistance = fromDepth - depth
+
+    # shift core(s) based on a tie between two cores
+    # coreOnly - if True, shift core only, else shift core and all related
+    # mcdShiftDistance - distance between tie points in MCD space
+    # fromCore, fromDepth - core and MBSF depth of tie on fixed core
+    # core, depth - core and MBSF depth of tie on core to be shifted
+    # comment - user comment/annotation of shift
+    def tie(self, coreOnly, mcdShiftDistance, fromCore, fromDepth, core, depth, comment=""):
+        totalShiftDistance = self.affine.getShiftDistance(core) + mcdShiftDistance
         if coreOnly:
-            self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, shiftDistance, comment))
+            self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, comment))
             # need to update any shifts for which this is a from core to be SetShifts...right? Or Implicit?
         else:
-            shift = self.affine.getShift(core)
-            deltaDistance = shiftDistance - shift.distance
             relatedCores = self.gatherRelatedCores(core, fromCore)
-            self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, shiftDistance, comment))
+            self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, comment))
             for ci in relatedCores:
-                self.affine.adjust(ci, deltaDistance)
+                self.affine.adjust(ci, mcdShiftDistance)
         
     # will shifting core have side effects that require user confirmation to proceed?
     # returns tuple of form (confirmation needed [boolean], warning message [string])
