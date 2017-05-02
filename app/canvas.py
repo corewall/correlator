@@ -208,7 +208,6 @@ class DataCanvas(wxBufferedWindow):
 		self.ShowStrat = True
 		self.ShowLog = False 
 		self.WidthsControl = []
-		self.Done = False
 		self.minScrollRange = 0
 		self.smooth_id = 0
 		self.selectedType = ""
@@ -1154,14 +1153,18 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawLines(((self.compositeX, depth), (self.Width, depth)))
 
 
-	def DrawHoleGraph(self, dc, hole, smoothed, prev_type):
+	def DrawHoleGraph(self, dc, hole, smoothed, prevHoleType):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
 		dc.SetTextForeground(self.colorDict['foreground'])
 		dc.SetFont(self.font2)
 
-		startX = self.GetStartX()
+		holeInfo = hole[0]
+		holeType = holeInfo[2]
+		holeName = holeInfo[7]
+		
+		startX = self.GetHoleStartX(holeName, holeType)
 		rangeMax = startX + self.holeWidth
 
 		if self.showHoleGrid == True :
@@ -1173,22 +1176,18 @@ class DataCanvas(wxBufferedWindow):
 				rangeMax = self.splicerX + (self.holeWidth * 2) + 150
 				dc.DrawLines(((rangeMax, self.startDepth - 20), (rangeMax, self.Height)))
 
-		# holeInfo = site, leg, datatype
-		holeInfo = hole[0]
-		#print "holeInfo = {}".format(holeInfo)
-		forcount = holeInfo[8] 
+		holeCoreCount = holeInfo[8] 
 
-		type = holeInfo[2]
-		if type == "Natural Gamma" :
-			type = "NaturalGamma"
+		if holeType == "Natural Gamma" :
+			holeType = "NaturalGamma"
 
 		if smoothed == 5 or smoothed == 6 or smoothed == 7:
-			type = 'log'
+			holeType = 'log'
 			
 		overlapped_flag = False
 		if self.pressedkeyD == 1 :
 			if self.selectedHoleType == holeInfo[2] :
-				if prev_type != type :
+				if prevHoleType != holeType :
 					self.selectedStartX = startX 
 					self.selectedCount = 0 
 				else :
@@ -1201,28 +1200,31 @@ class DataCanvas(wxBufferedWindow):
 					dc.SetBrush(wx.TRANSPARENT_BRUSH)
 
 		smooth_id = -1
-		for r in self.range :
-			if r[0] == type : 
+		for r in self.range:
+			if r[0] == holeType: 
 				self.minRange = r[1]
 				self.maxRange = r[2]
-				if r[3] != 0.0 :
+				if r[3] != 0.0:
 					self.coefRange = self.holeWidth / r[3]
-				else :
+				else:
 					self.coefRange = 0 
 				smooth_id = r[4]
 				self.continue_flag = r[5] 
 				break
 
-		if smoothed == 0 :
-			if smooth_id == 1 :
-				self.coreCount = self.coreCount + forcount 
-				return type 
+		if smoothed == 0 : # unsmoothed data
+			# if range only indicates we're drawing smoothed data, this is
+			# where we abort drawing of unsmoothed data and bail out after
+			# making self.coreCount look as though it's drawn every core
+			if smooth_id == 1:
+				self.coreCount = self.coreCount + holeCoreCount 
+				return holeType 
 		elif smoothed == 3 :
 			if smooth_id == 1 :
 				smoothed = 0
 			elif smooth_id <= 0 :
-				self.coreCount = self.coreCount + forcount 
-				return type 
+				self.coreCount = self.coreCount + holeCoreCount
+				return holeType 
 
 		compositeflag = 1
 		if smoothed != 2 and smoothed < 5 and self.splicerX < rangeMax:
@@ -1233,7 +1235,7 @@ class DataCanvas(wxBufferedWindow):
 
 		len_hole = len(hole) - 1
 		if len_hole == 0 :
-			return type 
+			return holeType 
 
 		if self.LogClue == True and self.LogTieList != [] and ((rangeMax + self.holeWidth) < self.splicerX) :
 			if self.HoleCount >= 0 :
@@ -1303,7 +1305,7 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawText("Leg: " + holeInfo[1] + " Site: " + holeInfo[0] + " Hole: " + holeInfo[7], title_pos, 5)
 			dc.DrawText("Log, Range: " + str(holeInfo[5]) + ":" + str(holeInfo[6]), title_pos, 25)
 
-		return type
+		return holeType
 
 	def PrintHoleSummary(self):
 		print "{} holes in self.HoleData".format(len(self.HoleData))
@@ -1976,7 +1978,10 @@ class DataCanvas(wxBufferedWindow):
 						dc.DrawLines(((x - 5, stop), (x + 5, stop))) 
 					else :
 						#x = self.WidthsControl[hole] + splice_x
-						x = self.WidthsControl[hole] - 22 
+						# todo: get hole min X based on hole name + type using self.GetHoleStartX()
+						# instead of hole index - then self.WidthsControl can become a dict keyed
+						# on hole name + type instead of awkward (holeStartX, holeKey) tuple
+						x = self.WidthsControl[hole][0] - 22 
 						if self.splicerX > (x + 70) :
 							dc.DrawText(label, x, start)
 							x = x + 22 
@@ -2415,7 +2420,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.DrawText(qualityStr, x, self.startDepth + 60) 
 
 		self.minData = coreInfo.minData
-		return (coreInfo.type, coreInfo.holeCount)
+		return (coreInfo.type, coreInfo.hole)
 
 	def DrawHighlight(self, dc):
 		if "HighlightCore" in self.DrawData:
@@ -2646,23 +2651,23 @@ class DataCanvas(wxBufferedWindow):
 		elif self.mode == 4 : 
 			self.statusStr = "Age depth mode		 "
 
-		holeth = -1
-		type = ""
+		holeName = ""
+		holeType = ""
 		for key, data in self.DrawData.items():
 			if key == "MouseInfo":
 				for r in data:
 					coreIndex, x, y, startx, flag = r
 					coreInfo = self.findCoreInfoByIndex(coreIndex)
 					if coreInfo is not None:
-						type, holeth = self.DrawGraphInfo(dc, coreInfo, flag)
-						self.selectedHoleType = type
-						self.DrawMouseInfo(dc, coreInfo, x, y, startx, flag, type)
+						holeType, holeName = self.DrawGraphInfo(dc, coreInfo, flag)
+						self.selectedHoleType = holeType
+						self.DrawMouseInfo(dc, coreInfo, x, y, startx, flag, holeType)
 						self.DrawHighlight(dc)
-			if type != "" :
+			if holeType != "" :
 				break
 		self.parent.statusBar.SetStatusText(self.statusStr)
 
-		self.selectedHoleType = type
+		self.selectedHoleType = holeType
 
 		if self.MousePos is not None :
 			dc.SetBrush(wx.TRANSPARENT_BRUSH)
@@ -2675,8 +2680,8 @@ class DataCanvas(wxBufferedWindow):
 			ycoord = ycoord * self.GetRulerUnitsFactor()
 			ycoord = round(ycoord, 3)
 			if self.MousePos[0] < self.splicerX :
-				if holeth != -1 and self.selectedTie < 0: # tie displays its depth, don't show mouse depth on drag
-					dc.DrawText(str(ycoord), self.WidthsControl[holeth], self.MousePos[1] - 5)
+				if holeName != "" and self.selectedTie < 0: # tie displays its depth, don't show mouse depth on drag
+					dc.DrawText(str(ycoord), self.GetHoleStartX(holeName, holeType), self.MousePos[1] - 5)
 				else :
 					dc.DrawText(str(ycoord), self.compositeX + 3, self.MousePos[1] - 5)
 				if self.showGrid == True :
@@ -3009,6 +3014,19 @@ class DataCanvas(wxBufferedWindow):
 			prevsedrate = sedrate
 			prevagey = agey
 
+	# determine leftmost X for each hole's plot column
+	def InitHoleWidths(self):
+		self.WidthsControl = []
+		baseX = self.compositeX - self.minScrollRange + 50
+		
+		# even if we aren't drawing HoleData (unsmoothed), there will always be HoleData
+		# corresponding to SmoothData, so it's safe to rely on self.HoleData here.  		
+		for holeIndex, holeList in enumerate(self.HoleData):
+			hole = holeList[0] # hole data is nested in an extra list
+			holeKey = hole[0][7] + hole[0][2] # hole name + hole datatype
+			holeX = baseX + holeIndex * (self.holeWidth + 50)
+			# store as a tuple - DrawStratCore() logic still uses index to access value
+			self.WidthsControl.append((holeX, holeKey))
 
 	def DrawMainView(self, dc):
 		self.DrawData["CoreArea"] = [] 
@@ -3022,37 +3040,36 @@ class DataCanvas(wxBufferedWindow):
 
 		self.smooth_id = -1
 		self.ELDapplied = False 
-		self.WidthsControl = [] 
 		self.HoleCount = 0
 		self.coreCount = 0 
 		self.newHoleX = 30.0
-		self.Done = False
 		icount = 0
-		type = ""
+		holeType = ""
+
+		self.InitHoleWidths()
 
 		for data in self.HoleData:
 			for r in data:
 				hole = r 
-				type = self.DrawHoleGraph(dc, hole, 0, type) 
+				holeType = self.DrawHoleGraph(dc, hole, 0, holeType) 
 				self.HoleCount = self.HoleCount + 1 
 			icount = icount + 1
-		self.Done = True
 
 		self.HoleCount = 0
 		self.coreCount = 0 
 		self.newHoleX = 30.0
 		smooth_flag = 3 
 		icount = 0
-		type = ""
+		holeType = ""
 		if len(self.HoleData) == 0 : 
 			smooth_flag = 1 
 		for data in self.SmoothData:
 			for r in data:
 				hole = r 
-				type = self.DrawHoleGraph(dc, hole, smooth_flag, type) 
+				holeType = self.DrawHoleGraph(dc, hole, smooth_flag, holeType) 
 				self.HoleCount = self.HoleCount + 1 
 			icount = icount + 1
-
+			
 		self.HoleCount = -2 
 		# Drawing Black Box for Erasing the Parts
 		dc.SetBrush(wx.Brush(self.colorDict['background']))
@@ -4855,23 +4872,11 @@ class DataCanvas(wxBufferedWindow):
 							return
 						count = 1 
 
-
-	def GetStartX(self):
-		startX = 0 
-		if self.Done == False :
-			if len(self.WidthsControl) == 0 :
-				startX = self.compositeX - self.minScrollRange + 50
-				self.WidthsControl.append(startX)
-				self.WidthsControl.append(startX + self.holeWidth + 50)
-			else :
-				startX = self.WidthsControl[self.HoleCount] 
-				self.WidthsControl.append(startX + self.holeWidth + 50)
-		else :
-			if self.HoleCount < 0 :
-				startX = self.WidthsControl[0] 
-			else : 
-				startX = self.WidthsControl[self.HoleCount]
-		return startX
+	# get leftmost coordinate for given hole name and datatype
+	def GetHoleStartX(self, holeName, holeType):
+		holeStartX = [x[0] for x in self.WidthsControl if x[1] == holeName + holeType]
+		assert len(holeStartX) == 1
+		return holeStartX[0]
 	
 	def DrawDragCore(self, dc):
 		if self.DrawData["DragCore"] != []:
