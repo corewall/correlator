@@ -1229,10 +1229,13 @@ class DataCanvas(wxBufferedWindow):
 		# Draw hole column in Composite Area only if no portion is obscured by splice area.
 		# This is to prevent any drawing of composite cores in splice area because they're
 		# all being drawn on the same canvas
-		# TODO: clip the composite area drawing at the start of the splice area, then last
-		# test "self.splicerX < rangeMax" becomes "self.splicerX < startX"
 		drawComposite = True
-		if smoothed != 2 and smoothed < 5 and self.splicerX < rangeMax:
+		spliceScrollbarLeft = self.splicerX - 50
+		
+		# Clipping region is in effect as long as 'clip' is in scope. Must assign result of
+		# DCClipper() to a variable or it won't work.
+		clip = wx.DCClipper(dc, wx.Region(0, 0, spliceScrollbarLeft, dc.GetSize().height))
+		if smoothed != 2 and smoothed < 5 and spliceScrollbarLeft < startX:
 			drawComposite = False
 
 		rangeMax = startX
