@@ -1212,55 +1212,51 @@ class DataCanvas(wxBufferedWindow):
 				self.continue_flag = r[5] 
 				break
 
-		if smoothed == 0 : # unsmoothed data
+		if smoothed == 0: # unsmoothed data
 			# if range only indicates we're drawing smoothed data, this is
 			# where we abort drawing of unsmoothed data and bail out after
 			# making self.coreCount look as though it's drawn every core
 			if smooth_id == 1:
 				self.coreCount = self.coreCount + holeCoreCount 
 				return holeType 
-		elif smoothed == 3 :
-			if smooth_id == 1 :
+		elif smoothed == 3:
+			if smooth_id == 1:
 				smoothed = 0
-			elif smooth_id <= 0 :
+			elif smooth_id <= 0:
 				self.coreCount = self.coreCount + holeCoreCount
 				return holeType 
 
-		compositeflag = 1
+		# if hole's column in Composite Area isn't obscured by splice area, draw it.
+		drawComposite = True
 		if smoothed != 2 and smoothed < 5 and self.splicerX < rangeMax:
-			compositeflag = 0
+			drawComposite = False
 
 		rangeMax = startX
 		spliceflag = 0 
 
 		len_hole = len(hole) - 1
-		if len_hole == 0 :
+		if len_hole == 0:
 			return holeType 
 
-		if self.LogClue == True and self.LogTieList != [] and ((rangeMax + self.holeWidth) < self.splicerX) :
-			if self.HoleCount >= 0 :
+		if self.LogClue == True and self.LogTieList != [] and ((rangeMax + self.holeWidth) < self.splicerX):
+			if self.HoleCount >= 0:
 				logtie_data = self.LogTieList[self.HoleCount] 
 				points_list = logtie_data[1]
-				depth1 = 0
-				depth2 = 0
 				i = 0
-				for point in points_list : 
-					if i == 0 : 
-						depth1 = point
-						i = 1
-					else : 
-						depth2 = point
+				for pointIndex, point in enumerate(points_list): 
+					if pointIndex % 2 == 1: # draw every other point
 						dc.SetPen(wx.Pen(self.colorDict['mbsf'], 1))
-						y2 = self.startDepth + (depth2 - self.rulerStartDepth) * (self.length / self.gap)
+						y2 = self.startDepth + (point - self.rulerStartDepth) * (self.length / self.gap)
 						dc.DrawLines(((rangeMax, y2), (rangeMax + 15, y2)))
-						i = 0 
-
+		
+		# for each core in hole, draw if visible - determined in self.DrawCoreGraph()
 		affine = 0.0
 		for i in range(len_hole) : 
-			holedata = hole[i + 1] # actually coredata
+			coreInfo = hole[i + 1]
+			# coreInfo indices:
 			# 0:corename, 1:sectionMin, 2:sectionMax, 3:dataMin, 4:dataMax, 5:affine offset,
 			# 6:squish (ELD compression), 7:? (annotation?), 8:'0'?, 9:section depth list, 10:list of depth/data tuples
-			#print "   coredata = {}".format(holedata[:10])
+			#print "   coredata = {}".format(coreInfo[:10])
 
 			if self.CurrentSpliceCore == self.coreCount :
 				spliceflag = 1	
@@ -1272,31 +1268,27 @@ class DataCanvas(wxBufferedWindow):
 				elif self.parent.autoPanel.ApplyFlag == 1 :
 					spliceflag = 2	
 
-			affine = self.DrawCoreGraph(dc, self.coreCount, startX, holeInfo, holedata, smoothed, spliceflag, compositeflag, affine) 
+			affine = self.DrawCoreGraph(dc, self.coreCount, startX, holeInfo, coreInfo, smoothed, spliceflag, drawComposite, affine) 
 
 			if overlapped_flag == True :
-				self.DrawCoreGraph(dc, self.coreCount, self.selectedStartX, holeInfo, holedata, -1, 0, 1, 0.0) 
+				self.DrawCoreGraph(dc, self.coreCount, self.selectedStartX, holeInfo, coreInfo, -1, 0, 1, 0.0) 
 
 			spliceflag = 0 
-			coreData = holedata[10]
-			depthmin, temp = coreData[0]
-			datamax = len(coreData) - 1
-			depthmax, temp = coreData[datamax]
+			coreData = coreInfo[10] # coreData: list of depth/data tuples
+			depthmin = coreData[0][0]
+			depthmax = coreData[-1][0]
 
 			# 	(core, leg, site, hole, holeCore, minData, maxData, minDepth, maxDepth,
 			#	 stretch, type, quality, holeCount):
 			if smoothed == 0 or smoothed == 5 or smoothed == 6: 
-				coreInfo = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], holedata[0], holedata[3], holedata[4], depthmin, depthmax, holedata[6], holeInfo[2], holedata[8], self.HoleCount, holedata[10])
-				self.DrawData["CoreInfo"].append(coreInfo)
+				coreInfoObj = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], coreInfo[0], coreInfo[3], coreInfo[4], depthmin, depthmax, coreInfo[6], holeInfo[2], coreInfo[8], self.HoleCount, coreInfo[10])
+				self.DrawData["CoreInfo"].append(coreInfoObj)
 
 			self.coreCount = self.coreCount + 1
 
 		# DRAWING TITLE
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
-		if compositeflag == 1 and smoothed == 0 :
-			dc.DrawText("Leg: " + holeInfo[1] + " Site: " + holeInfo[0] + " Hole: " + holeInfo[7], rangeMax, 5) 
-			dc.DrawText(holeInfo[2] + ", Range: " + str(holeInfo[5]) + ":" + str(holeInfo[6]), rangeMax, 25)
-		if smoothed == 1 :
+		if (drawComposite and smoothed == 0) or smoothed == 1:
 			dc.DrawText("Leg: " + holeInfo[1] + " Site: " + holeInfo[0] + " Hole: " + holeInfo[7], rangeMax, 5) 
 			dc.DrawText(holeInfo[2] + ", Range: " + str(holeInfo[5]) + ":" + str(holeInfo[6]), rangeMax, 25)
 		if smoothed >= 5 :
@@ -2001,8 +1993,7 @@ class DataCanvas(wxBufferedWindow):
 				nearest = (depth, datum)
 		return nearest
 
-	def DrawCoreGraph(self, dc, index, startX, holeInfo, holedata, smoothed, spliceflag, compositeflag, prev_affine):
-
+	def DrawCoreGraph(self, dc, index, startX, holeInfo, holedata, smoothed, spliceflag, drawComposite, prev_affine):
 		hole = holeInfo[7]
 		coreno = holedata[0]
 		min = holedata[3]
@@ -2023,11 +2014,11 @@ class DataCanvas(wxBufferedWindow):
 		drawing_start = self.rulerStartDepth - 5.0
 		if spliceflag == 1 :
 			drawing_start = self.SPrulerStartDepth - 5.0
-		elif compositeflag == 1 and smoothed == 2 : 
+		elif drawComposite and smoothed == 2 : 
 			drawing_start = self.SPrulerStartDepth - 5.0
 
 		if self.pressedkeyS == 1 :
-			if compositeflag == 1 and smoothed != 2 :
+			if drawComposite and smoothed != 2 :
 				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 				for y in sections :
 					if y >= drawing_start and y <= self.rulerEndDepth :
@@ -2150,7 +2141,7 @@ class DataCanvas(wxBufferedWindow):
 				elif y > self.SPrulerEndDepth:
 					break # no need to continue, this core and all below are out of view
 
-			if compositeflag == 1 :
+			if drawComposite:
 				if smoothed == 2 :
 					if y <= self.SPrulerEndDepth :
 						y = self.startDepth + (y - self.SPrulerStartDepth) * scale
