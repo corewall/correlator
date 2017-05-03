@@ -1350,6 +1350,16 @@ class DataCanvas(wxBufferedWindow):
 					cores.append(core[0])
 		return cores
 	
+	def GetCoreData(self, searchHole, holeType, searchCore):
+		for h in self.HoleData:
+			holeInnerList = h[0]
+			holeInfo = holeInnerList[0]
+			if holeInfo[7] == searchHole and holeInfo[2] == holeType:
+				for coreInfo in holeInnerList[1:]:
+					if coreInfo[0] == searchCore:
+						return coreInfo[10]
+		return None
+	
 	# wrapper to remove affine shifts before handing off to py_correlator.evalcoef(), which
 	# has no knowledge of any affine shifts since they're now managed on the Python side 
 	def EvaluateCorrelation(self, typeA, holeA, coreA, depthA, typeB, holeB, coreB, depthB):
@@ -1987,18 +1997,24 @@ class DataCanvas(wxBufferedWindow):
 							if flag == 0 :
 								dc.DrawLines(((x - 5, start), (x + 5, start))) 
 							dc.DrawLines(((x, start), (x, stop))) 
-							dc.DrawLines(((x - 5, stop), (x + 5, stop))) 
-
-	# given depth and coredata - list of (depth, datum) pairs - return pair whose depth is closest to searchDepth
-	def findNearestDataPoint(self, coredata, searchDepth):
-		nearest = None
-		mindiff = 1000000
-		for depth, datum in coredata:
-			diff = abs(searchDepth - depth)
-			if diff < mindiff:
-				mindiff = diff
-				nearest = (depth, datum)
-		return nearest
+							dc.DrawLines(((x - 5, stop), (x + 5, stop)))
+							
+	# find nearest point in coredata with depth less than searchDepth
+	def nearestDataPointAbove(self, coredata, searchDepth):
+		ptsabove = [pt for pt in coredata if pt[0] <= searchDepth]
+		return max(ptsabove, key=lambda pt:pt[0])
+	
+	# find nearest point in coredata with depth greater than searchDepth
+	def nearestDataPointBelow(self, coredata, searchDepth):
+		ptsbelow = [pt for pt in coredata if pt[0] >= searchDepth]
+		return min(ptsbelow, key=lambda pt:pt[0])
+	
+	# return point interpolated from nearest point above and below
+	def interpolateDataPoint(self, coredata, searchDepth):
+		above = self.nearestDataPointAbove(coredata, searchDepth)
+		below = self.nearestDataPointBelow(coredata, searchDepth)
+		interpDatum = numpy.interp(searchDepth, [above[0], below[0]], [above[1], below[1]])
+		return (searchDepth, interpDatum)
 
 	def DrawCoreGraph(self, dc, index, startX, holeInfo, holedata, smoothed, spliceflag, drawComposite, prev_affine):
 		hole = holeInfo[7]
@@ -2060,11 +2076,21 @@ class DataCanvas(wxBufferedWindow):
 			# for now just draw a dot on datapoint nearest TieShift core's tie depth
 			if shiftTypeStr == "TIE":
 				tieDepth, parentCore = self.parent.affineManager.getTieDepthAndParent(hole, coreno)
-				nearDepth, nearDatum = self.findNearestDataPoint(coreData, tieDepth)
+				nearDepth, nearDatum = self.interpolateDataPoint(coreData, tieDepth)
+				holeType = holeInfo[2]
+				parentCoreData = self.GetCoreData(parentCore.hole, holeType, parentCore.core)
+				if parentCoreData is not None:
+					parentNearDepth, parentNearDatum = self.interpolateDataPoint(parentCoreData, tieDepth)
 				tieY = self.getCoord(nearDepth)
 				tieX = nearDatum - self.minRange
-				tieX = (tieX * self.coefRange) + startX 				
-				dc.DrawCircle(tieX, tieY, 3)
+				tieX = (tieX * self.coefRange) + startX
+				parentY = self.getCoord(parentNearDepth)
+				parentTieX = parentNearDatum - self.minRange
+				parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType)
+				# dot on parent core, arrow to shifted core 				
+				dc.DrawCircle(parentTieX, parentY, 3)
+				arrowDir = 5 if parentTieX > tieX else -5
+				dc.DrawLines(((parentTieX, parentY), (tieX, tieY), (tieX, tieY), (tieX+arrowDir, tieY+5), (tieX, tieY), (tieX+arrowDir, tieY-5)))
 
 		coreColor = self.parent.affineManager.getShiftColor(hole, coreno) if affine != 0 else self.colorDict['mbsf']
 		dc.SetPen(wx.Pen(coreColor, 1))
