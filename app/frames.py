@@ -4091,9 +4091,17 @@ class PreferencesPanel():
 		
 		updateScroll = event is not None
 		self.parent.OnUpdateDepthRange(min, max, updateScroll)
+		
+	def OnShowSectionDepths(self, event):
+		self.parent.Window.showSectionDepths = self.showSectionDepths.IsChecked()
+		self.parent.Window.UpdateDrawing()
 
-	def OnShowAffineShiftArrows(self, event):
-		self.parent.Window.ShiftClue = self.showAffineShiftArrows.IsChecked()
+	def OnShowAffineShiftInfo(self, event):
+		self.parent.Window.showAffineShiftInfo = self.showAffineShiftInfo.IsChecked()
+		self.parent.Window.UpdateDrawing()
+		
+	def OnShowAffineTieArrows(self, event):
+		self.parent.Window.showAffineTieArrows = self.showAffineTieArrows.IsChecked()
 		self.parent.Window.UpdateDrawing()
 		
 	def OnShowLogShiftArrows(self, event):
@@ -4155,9 +4163,17 @@ class PreferencesPanel():
 		vbox_top.Add(grid2, 0, wx.TOP | wx.LEFT, 9)
 		vbox_top.Add(wx.StaticLine(self.mainPanel, -1, size=(buttonsize,1)), 0, wx.TOP | wx.LEFT, 9)
 
-		self.showAffineShiftArrows = wx.CheckBox(self.mainPanel, -1, "Show composite shift arrows")
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftArrows, self.showAffineShiftArrows)
-		vbox_top.Add(self.showAffineShiftArrows, 0, wx.ALL, 5)
+		self.showSectionDepths = wx.CheckBox(self.mainPanel, -1, "Show section boundaries")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowSectionDepths, self.showSectionDepths)
+		vbox_top.Add(self.showSectionDepths, 0, wx.ALL, 5)
+
+		self.showAffineShiftInfo = wx.CheckBox(self.mainPanel, -1, "Show affine shift direction and distance")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftInfo, self.showAffineShiftInfo)
+		vbox_top.Add(self.showAffineShiftInfo, 0, wx.ALL, 5)
+		
+		self.showAffineTieArrows = wx.CheckBox(self.mainPanel, -1, "Show affine tie arrows")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineTieArrows, self.showAffineTieArrows)
+		vbox_top.Add(self.showAffineTieArrows, 0, wx.ALL, 5)		
 
 		self.showLogShiftArrows = wx.CheckBox(self.mainPanel, -1, "Show log shift arrows")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)

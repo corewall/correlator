@@ -1572,11 +1572,17 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("fontstartdepth", self.Window.startDepth, f)
 		self.WritePreferenceItem("scrollsize", self.Window.ScrollSize, f)
 
+		showSectionDepths = 1 if self.Window.showSectionDepths == True else 0
+		self.WritePreferenceItem("showSectionDepths", showSectionDepths, f)
+
 		showlineInt = 1 if self.Window.showHoleGrid == True else 0
 		self.WritePreferenceItem("showline", showlineInt, f)
 
-		shiftclueInt = 1 if self.Window.ShiftClue == True else 0
-		self.WritePreferenceItem("shiftclue", shiftclueInt, f)
+		shiftclueInt = 1 if self.Window.showAffineShiftInfo == True else 0
+		self.WritePreferenceItem("showAffineShiftInfo", shiftclueInt, f)
+		
+		showAffineTieArrows = 1 if self.Window.showAffineTieArrows == True else 0
+		self.WritePreferenceItem("showAffineTieArrows", showAffineTieArrows, f)
 		
 		self.WritePreferenceItem("tab", self.Window.sideNote.GetSelection(), f)
 		self.WritePreferenceItem("path", self.Directory, f)
@@ -2806,13 +2812,23 @@ class MainFrame(wx.Frame):
 					self.Window.showHoleGrid = False 
 					self.optPanel.opt3.SetValue(False)
 
-		if self.config.has_option("applications", "shiftclue"):
-			str_temp = self.config.get("applications", "shiftclue")
+		if self.config.has_option("applications", "showSectionDepths"):
+			str_temp = self.config.get("applications", "showSectionDepths")
 			if len(str_temp) > 0 :
-				showArrows = True if str_temp == '1' else False
-				self.Window.ShiftClue = showArrows 
-				self.optPanel.showAffineShiftArrows.SetValue(showArrows)
+				self.Window.showSectionDepths = True if str_temp == '1' else False 
+				self.optPanel.showSectionDepths.SetValue(self.Window.showSectionDepths)
 
+		if self.config.has_option("applications", "showAffineShiftInfo"):
+			str_temp = self.config.get("applications", "showAffineShiftInfo")
+			if len(str_temp) > 0 :
+				self.Window.showAffineShiftInfo = True if str_temp == '1' else False 
+				self.optPanel.showAffineShiftInfo.SetValue(self.Window.showAffineShiftInfo)
+
+		if self.config.has_option("applications", "showAffineTieArrows"):
+			str_temp = self.config.get("applications", "showAffineTieArrows")
+			if len(str_temp) > 0 :
+				self.Window.showAffineTieArrows = True if str_temp == '1' else False 
+				self.optPanel.showAffineTieArrows.SetValue(self.Window.showAffineTieArrows)
 
 		if self.config.has_option("applications", "scrollsize"):
 			str_temp = self.config.get("applications", "scrollsize")

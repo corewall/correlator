@@ -189,7 +189,9 @@ class DataCanvas(wxBufferedWindow):
 		# brgtodo 6/26/2014: ShiftTieList is populated with new composite shifts only,
 		# but shift arrows still draw correctly without this, even for a new shift. Remove?
 		self.ShiftTieList = []
-		self.ShiftClue = True  # brgtodo 6/25/2014 grab state from checkbox in frames and dump this var
+		self.showAffineShiftInfo = True  # brgtodo 6/25/2014 grab state from checkbox in frames and dump this var
+		self.showAffineTieArrows = True
+		self.showSectionDepths = True
 		self.LogTieList = []
 		self.LogClue = True    # brgtodo ditto
 
@@ -2040,7 +2042,8 @@ class DataCanvas(wxBufferedWindow):
 		elif drawComposite and smoothed == 2 : 
 			drawing_start = self.SPrulerStartDepth - 5.0
 
-		if self.pressedkeyS == 1 :
+		# draw section boundaries
+		if self.pressedkeyS == 1 or self.showSectionDepths:
 			if drawComposite and smoothed != 2 :
 				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 				for y in sections :
@@ -2056,25 +2059,28 @@ class DataCanvas(wxBufferedWindow):
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 			y = self.startDepth + (shiftInfoY - self.rulerStartDepth) * (self.length / self.gap)
 
-			# arrowhead
-			arrowheadAdjust = 8 if affine > 0 else -8
-			arrowY = y + 4
-			tribase1 = wx.Point(startX - 4, arrowY)
-			tribase2 = wx.Point(startX + 4, arrowY)
-			tribase3 = wx.Point(startX, arrowY + arrowheadAdjust)
-			dc.SetBrush(wx.Brush(self.colorDict['foreground']))
-			if affine > 0 :
-				dc.DrawPolygon((tribase3, tribase2, tribase1))
-			else:
-				dc.DrawPolygon((tribase3, tribase1, tribase2))
-			# shift distance text, type			
-			dc.DrawText(str(affine), startX - 40, y)
 			shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole, coreno)
-			dc.DrawText(shiftTypeStr, startX - 32, y - 12)
+
+			# show affine shift direction, distance, and type to left of core, centered on core depth interval
+			if self.showAffineShiftInfo:
+				# arrowhead
+				arrowheadAdjust = 8 if affine > 0 else -8
+				arrowY = y + 4
+				tribase1 = wx.Point(startX - 4, arrowY)
+				tribase2 = wx.Point(startX + 4, arrowY)
+				tribase3 = wx.Point(startX, arrowY + arrowheadAdjust)
+				dc.SetBrush(wx.Brush(self.colorDict['foreground']))
+				if affine > 0 :
+					dc.DrawPolygon((tribase3, tribase2, tribase1))
+				else:
+					dc.DrawPolygon((tribase3, tribase1, tribase2))
+				# shift distance text, type			
+				dc.DrawText(str(affine), startX - 40, y)
+				dc.DrawText(shiftTypeStr, startX - 32, y - 12)
 			
 			# arrow indicating TIE between cores
 			# for now just draw a dot on datapoint nearest TieShift core's tie depth
-			if shiftTypeStr == "TIE":
+			if shiftTypeStr == "TIE" and self.showAffineTieArrows:
 				tieDepth, parentCore = self.parent.affineManager.getTieDepthAndParent(hole, coreno)
 				nearDepth, nearDatum = self.interpolateDataPoint(coreData, tieDepth)
 				holeType = holeInfo[2]
