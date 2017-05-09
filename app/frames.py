@@ -4163,7 +4163,7 @@ class PreferencesPanel():
 		vbox_top.Add(grid2, 0, wx.TOP | wx.LEFT, 9)
 		vbox_top.Add(wx.StaticLine(self.mainPanel, -1, size=(buttonsize,1)), 0, wx.TOP | wx.LEFT, 9)
 
-		self.showSectionDepths = wx.CheckBox(self.mainPanel, -1, "Show section boundaries")
+		self.showSectionDepths = wx.CheckBox(self.mainPanel, -1, "Show sections' depths and numbers")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowSectionDepths, self.showSectionDepths)
 		vbox_top.Add(self.showSectionDepths, 0, wx.ALL, 5)
 

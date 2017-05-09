@@ -2044,12 +2044,14 @@ class DataCanvas(wxBufferedWindow):
 
 		# draw section boundaries
 		if self.pressedkeyS == 1 or self.showSectionDepths:
-			if drawComposite and smoothed != 2 :
+			if drawComposite and smoothed != 2:
 				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-				for y in sections :
-					if y >= drawing_start and y <= self.rulerEndDepth :
+				for sectionNumber, y in enumerate(sections):
+					if y >= drawing_start and y <= self.rulerEndDepth:
 						y = self.startDepth + (y - self.rulerStartDepth) * (self.length / self.gap)
-						dc.DrawLines(((startX, y), (startX + self.holeWidth, y))) 
+						dc.DrawLines(((startX, y), (startX + self.holeWidth, y)))
+						coreSectionStr = "{}-{}".format(coreno, sectionNumber + 1)
+						dc.DrawText(coreSectionStr, startX + 2, y) 
 
 		# draw affine shift arrow and distance centered on core
 		y_depth, x = coreData[0]
