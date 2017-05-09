@@ -264,10 +264,11 @@ class DataCanvas(wxBufferedWindow):
 		self.MousePos = None 
 
 		# Use dictionary so we can name colors - also need a list of names since dictionary is unordered
-		self.colorDictKeys = [ 'mbsf', 'mcd', 'eld', 'smooth', 'splice', 'log', 'mudlineAdjust', \
+		self.colorDictKeys = [ 'mbsf', 'ccsfTie', 'ccsfSet', 'ccsfRel', 'eld', 'smooth', 'splice', 'log', 'mudlineAdjust', \
 								'fixedTie', 'shiftTie', 'paleomag', 'diatom', 'rad', 'foram', \
 								'nano', 'background', 'foreground', 'corrWindow', 'guide' ] 
-		self.colorDict = { 'mbsf': wx.Colour(238, 238, 0), 'mcd': wx.Colour(0, 139, 0), \
+		self.colorDict = { 'mbsf': wx.Colour(238, 238, 0), 'ccsfTie': wx.Colour(0, 139, 0), \
+							'ccsfSet': wx.Colour(0, 102, 255), 'ccsfRel': wx.Colour(255, 153, 0), \
 							'eld': wx.Colour(0, 255, 255), 'smooth': wx.Colour(238, 216, 174), \
 							'splice': wx.Colour(30, 144, 255), 'log': wx.Colour(64, 224, 208), \
 							'mudlineAdjust': wx.Colour(0, 255, 0), 'fixedTie': wx.Colour(139, 0, 0), \
@@ -277,16 +278,6 @@ class DataCanvas(wxBufferedWindow):
 							'background': wx.Colour(0, 0, 0), 'foreground': wx.Colour(255, 255, 255), \
 							'corrWindow': wx.Colour(178, 34, 34), 'guide': wx.Colour(224, 255, 255) }
 		
-		# mbsf, mcd, eld, smooth, splice, log, mudline adjust, fixed tie, shift tie
-		# paleomag, diatom, rad, foram, nano
-		self.colorList = [ wx.Colour(238, 238, 0), wx.Colour(0, 139, 0), \
-			wx.Colour(0, 255, 255), wx.Colour(238, 216, 174), wx.Colour(30, 144, 255), \
-			wx.Colour(64, 224, 208), wx.Colour(0, 255, 0), wx.Colour(139, 0, 0), \
-			wx.Colour(0, 139, 0), wx.Colour(30, 144, 255), wx.Colour(218, 165, 32), \
-			wx.Colour(147, 112, 219), wx.Colour(84, 139, 84), wx.Colour(219, 112, 147), \
-			wx.Colour(0, 0, 0), wx.Colour(255, 255, 255), \
-			wx.Colour(178, 34, 34), wx.Colour(224, 255, 255)] 
-
 		self.overlapcolorList = [ wx.Colour(238, 0, 0), wx.Colour(0, 139, 0), \
 				wx.Colour(0, 255, 255), wx.Colour(238, 216, 174), wx.Colour(30, 144, 255), \
 				wx.Colour(147, 112, 219), wx.Colour(84, 139, 84), wx.Colour(219, 112, 147), \
@@ -2105,7 +2096,7 @@ class DataCanvas(wxBufferedWindow):
 
 		for r in range(len(self.AdjustDepthCore)) :
 			if self.AdjustDepthCore[r] == index :
-				dc.SetPen(wx.Pen(self.colorDict['mcd'], 1))
+				dc.SetPen(wx.Pen(self.colorDict['ccsfTie'], 1))
 
 		log_number = 1;
 		logsmoothed = smoothed
@@ -2513,6 +2504,102 @@ class DataCanvas(wxBufferedWindow):
 		elif line == 3 :
 			y = self.Height - 50
 		dc.DrawText(info, self.splicerX - 250, y)
+	
+	# baseX - x coordinate of rightmost point of legend: the last item's right edge will be at this coordinate
+	# itemList - list of tuples of form (user-facing item name (e.g. "CCSF"), self.colorDict key ("mbsf"))
+	def _drawColorLegend(self, dc, baseX, y, itemList):
+		totalWidth = 0
+		rightPadding = 5
+		for elt in itemList:
+			totalWidth += dc.GetTextExtent(elt[0])[0] + rightPadding
+		startX = baseX - totalWidth
+		
+		for uiName, colorKey in itemList:
+			dc.SetPen(wx.Pen(self.colorDict[colorKey], 1))
+			dc.SetBrush(wx.Brush(self.colorDict[colorKey]))
+			width = dc.GetTextExtent(uiName)[0] + rightPadding
+			dc.DrawRectangle(startX, y, width, self.ScrollSize)
+			dc.DrawText(uiName, startX, y)
+			startX += width
+		
+	def DrawColorLegend(self, dc):
+		if self.MainViewMode == True :
+			paintgap = 50 
+			start = self.Width
+			if self.spliceWindowOn == 1 :
+				start = self.splicerX
+
+			y = self.Height - self.ScrollSize
+			itemList = [('CSF-A','mbsf'), ('CCSF-A TIE','ccsfTie'), ('CCSF-A SET','ccsfSet'), ('CCSF-A REL','ccsfRel'), ('ELD','eld')]
+			self._drawColorLegend(dc, start, y, itemList)
+
+			# todo: use _drawLegendItems() for all color legends
+			if self.spliceWindowOn == 1 :
+				dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
+				dc.SetBrush(wx.Brush(self.colorDict['splice']))
+				paintgap = (self.Width - self.splicerX) / 5.0
+				if paintgap > 50 :
+					paintgap = 50 
+				start = self.splicerX
+				y = self.Height - self.ScrollSize
+				dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
+				dc.DrawText("splice", start, y)
+				start = start + paintgap
+				dc.SetPen(wx.Pen(self.colorDict['log'], 1))
+				dc.SetBrush(wx.Brush(self.colorDict['log']))
+				paintgap = paintgap + paintgap / 2
+				dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
+				dc.DrawText("ELD + log", start, y)
+				start = start + paintgap
+				paintgap = paintgap * 2
+				dc.SetPen(wx.Pen(self.colorDict['mudlineAdjust'], 1))
+				dc.SetBrush(wx.Brush(self.colorDict['mudlineAdjust']))
+				dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
+				dc.DrawText("mudline adjusted log", start, y)
+		else :
+			dc.SetPen(wx.Pen(self.colorDict['paleomag'], 1))
+			dc.SetBrush(wx.Brush(self.colorDict['paleomag']))
+			paintgap = 80 
+			start = self.splicerX - 460
+			y = self.Height - self.ScrollSize
+			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
+			dc.DrawText("paleomag", start, y)
+			start = start + paintgap
+			dc.SetPen(wx.Pen(self.colorDict['diatom'], 1))
+			dc.SetBrush(wx.Brush(self.colorDict['diatom']))
+			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
+			dc.DrawText("diatoms", start, y)
+			start = start + paintgap
+			dc.SetPen(wx.Pen(self.colorDict['rad'], 1))
+			dc.SetBrush(wx.Brush(self.colorDict['rad']))
+			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
+			dc.DrawText("radioloria", start, y)
+			start = start + paintgap
+			dc.SetPen(wx.Pen(self.colorDict['foram'], 1))
+			dc.SetBrush(wx.Brush(self.colorDict['foram']))
+			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
+			dc.DrawText("foraminifera", start, y)
+			start = start + paintgap
+			dc.SetPen(wx.Pen(self.colorDict['nano'], 1))
+			dc.SetBrush(wx.Brush(self.colorDict['nano']))
+			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
+			dc.DrawText("nannofossils", start, y)
+			if self.spliceWindowOn == 1 :
+				dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
+				dc.SetBrush(wx.Brush(self.colorDict['splice']))
+				paintgap = (self.Width - self.splicerX) / 3.0
+				if paintgap > 50 :
+					paintgap = 50 
+				start = self.splicerX
+				y = self.Height - self.ScrollSize
+				dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
+				dc.DrawText("splice", start, y)
+				start = start + paintgap
+				paintgap = paintgap * 2.5 
+				dc.SetPen(wx.Pen(wx.Colour(0, 139, 0), 1))
+				dc.SetBrush(wx.Brush(wx.Colour(0, 139, 0)))
+				dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
+				dc.DrawText("sedimentation rate", start, y)
 
 	def Draw(self, dc):
 		dc.BeginDrawing()
@@ -2568,96 +2655,7 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawRectangle(self.Width - self.ScrollSize - 1, 0, self.ScrollSize, self.Height)
 
 		dc.SetTextForeground(wx.BLACK)
-		if self.MainViewMode == True :
-			dc.SetPen(wx.Pen(self.colorDict['mbsf'], 1))
-			dc.SetBrush(wx.Brush(self.colorDict['mbsf']))
-			paintgap = 50 
-			start = self.Width - 210
-			if self.spliceWindowOn == 1 :
-				start = self.splicerX - 210
-			else :
-				start = start + 45
-
-			y = self.Height - self.ScrollSize
-			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("CSF-A", start, y)
-			start = start + paintgap
-			dc.SetPen(wx.Pen(self.colorDict['mcd'], 1))
-			dc.SetBrush(wx.Brush(self.colorDict['mcd']))
-			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("CCSF-A", start, y)
-			start = start + paintgap
-			dc.SetPen(wx.Pen(self.colorDict['eld'], 1))
-			dc.SetBrush(wx.Brush(self.colorDict['eld']))
-			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("ELD", start, y)
-
-			if self.spliceWindowOn == 1 :
-				dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
-				dc.SetBrush(wx.Brush(self.colorDict['splice']))
-				paintgap = (self.Width - self.splicerX) / 5.0
-				if paintgap > 50 :
-					paintgap = 50 
-				start = self.splicerX
-				y = self.Height - self.ScrollSize
-				dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-				dc.DrawText("splice", start, y)
-				start = start + paintgap
-				dc.SetPen(wx.Pen(self.colorDict['log'], 1))
-				dc.SetBrush(wx.Brush(self.colorDict['log']))
-				paintgap = paintgap + paintgap / 2
-				dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-				dc.DrawText("ELD + log", start, y)
-				start = start + paintgap
-				paintgap = paintgap * 2 
-				dc.SetPen(wx.Pen(self.colorDict['mudlineAdjust'], 1))
-				dc.SetBrush(wx.Brush(self.colorDict['mudlineAdjust']))
-				dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-				dc.DrawText("mudline adjusted log", start, y)
-		else :
-			dc.SetPen(wx.Pen(self.colorDict['paleomag'], 1))
-			dc.SetBrush(wx.Brush(self.colorDict['paleomag']))
-			paintgap = 80 
-			start = self.splicerX - 460
-			y = self.Height - self.ScrollSize
-			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("paleomag", start, y)
-			start = start + paintgap
-			dc.SetPen(wx.Pen(self.colorDict['diatom'], 1))
-			dc.SetBrush(wx.Brush(self.colorDict['diatom']))
-			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("diatoms", start, y)
-			start = start + paintgap
-			dc.SetPen(wx.Pen(self.colorDict['rad'], 1))
-			dc.SetBrush(wx.Brush(self.colorDict['rad']))
-			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("radioloria", start, y)
-			start = start + paintgap
-			dc.SetPen(wx.Pen(self.colorDict['foram'], 1))
-			dc.SetBrush(wx.Brush(self.colorDict['foram']))
-			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("foraminifera", start, y)
-			start = start + paintgap
-			dc.SetPen(wx.Pen(self.colorDict['nano'], 1))
-			dc.SetBrush(wx.Brush(self.colorDict['nano']))
-			dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-			dc.DrawText("nannofossils", start, y)
-			if self.spliceWindowOn == 1 :
-				dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
-				dc.SetBrush(wx.Brush(self.colorDict['splice']))
-				paintgap = (self.Width - self.splicerX) / 3.0
-				if paintgap > 50 :
-					paintgap = 50 
-				start = self.splicerX
-				y = self.Height - self.ScrollSize
-				dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-				dc.DrawText("splice", start, y)
-				start = start + paintgap
-				paintgap = paintgap * 2.5 
-				dc.SetPen(wx.Pen(wx.Colour(0, 139, 0), 1))
-				dc.SetBrush(wx.Brush(wx.Colour(0, 139, 0)))
-				dc.DrawRectangle(start, y, paintgap, self.ScrollSize)
-				dc.DrawText("sedimentation rate", start, y)
+		self.DrawColorLegend(dc)
 
 		# Here's the actual drawing code.
 		for key, data in self.DrawData.items():

@@ -3096,11 +3096,11 @@ class AffineController:
 	def getShiftColor(self, hole, core):
 		shift = self.affine.getShift(aci(hole, str(core)))
 		if isTie(shift):
-			return wx.Colour(0, 139, 0) # green
+			return self.parent.Window.colorDict['ccsfTie']
 		elif isSet(shift):
-			return wx.Colour(0, 102, 255) # blue
+			return self.parent.Window.colorDict['ccsfSet']
 		elif isImplicit(shift):
-			return wx.Colour(255, 153, 0) # orange
+			return self.parent.Window.colorDict['ccsfRel']
 		
 	# if hole-core combination is a TieShift, return MCD depth of TIE point and AffineCoreInfo of parent core
 	def getTieDepthAndParent(self, hole, core):
