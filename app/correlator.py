@@ -2596,10 +2596,11 @@ class MainFrame(wx.Frame):
 		return result
 
 	def LoadPreferencesAndInitDrawData(self, cfgfile, new_flag):
-		self.positions= [ (77,32) , (203,32), (339,32),
-						 (77,152) , (203,152), (339,152),
-						 (77,270) , (203,270), (339,270),
-						 (77,390) , (203,390), (339,390) ]
+		# unused
+# 		self.positions= [ (77,32) , (203,32), (339,32),
+# 						 (77,152) , (203,152), (339,152),
+# 						 (77,270) , (203,270), (339,270),
+# 						 (77,390) , (203,390), (339,390) ]
 
 		DrawData = {}
 
@@ -2607,7 +2608,7 @@ class MainFrame(wx.Frame):
 		self.config.read(cfgfile)
 		
 		scroll_start = self.Window.startDepth * 0.7
-		l = []
+		#l = []
 
 		#self.Width, self.Height = self.GetClientSizeTuple()
 		if self.config.has_option("applications", "width"):
@@ -2662,14 +2663,14 @@ class MainFrame(wx.Frame):
 
 		self.SetPosition((win_x, win_y))
 
-		win_width = self.Width
-		win_height = self.Height
-		#print "[DEBUG] Window Width = " + str(win_width) + " " + str(win_height)
-		if sys.platform != 'win32' :
-			win_height = self.Height + 40
-		else :
-			win_width = win_width + 8
-			win_height = self.Height + 76
+# 		win_width = self.Width
+# 		win_height = self.Height
+# 		#print "[DEBUG] Window Width = " + str(win_width) + " " + str(win_height)
+# 		if sys.platform != 'win32' :
+# 			win_height = self.Height + 40
+# 		else :
+# 			win_width = win_width + 8
+# 			win_height = self.Height + 76
 		
 		# 4/10/2014 brg: init depends on self.DBPath among others...
 		self.dataFrame = dbmanager.DataFrame(self)
@@ -2954,7 +2955,7 @@ class MainFrame(wx.Frame):
 
 		self.dataFrame.OnLOADCONFIG()
 
-		data_loaded = False
+		#data_loaded = False
 		if self.config.has_option("applications", "data"):
 			conf_str = self.config.get("applications", "data")
 			conf_array = conf_str.split()
