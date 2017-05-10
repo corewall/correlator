@@ -753,12 +753,12 @@ class CompositePanel():
 				isRate = dlg.outRate is not None
 				value = dlg.outRate if isRate else dlg.outOffset
 				coreList = dlg.outCoreList
-				self.parent.affineManager.setAll(dlg.outHole, coreList, value, isRate, dlg.outComment)
+				self.parent.affineManager.setAll(dlg.outHole, coreList, value, isRate, dlg.outType, dlg.outComment)
 			else:
-				self.parent.affineManager.set(dlg.outHole, dlg.outCore, dlg.outOffset, dlg.outComment)
+				self.parent.affineManager.set(dlg.outHole, dlg.outCore, dlg.outOffset, dlg.outType, dlg.outComment)
 
 			self.parent.AffineChange = True
-			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
+			#py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
 
 			# todo: notify Corelyzer of change
 			#self.parent.ShiftSectionSend(ciA.hole, ciA.holeCore, shift, opId)

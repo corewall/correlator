@@ -3422,7 +3422,7 @@ class DataFrame(wx.Panel):
 		ret = [] 
 		found, savedTablesItem = self.FindItem(parentItem, 'Saved Tables')
 		if found:
-			affineItem = self.FindSavedTable(savedTablesItem, "AFFINE")
+			affineItem = None#self.FindSavedTable(savedTablesItem, "AFFINE")
 			spliceItem = self.FindSavedTable(savedTablesItem, "SPLICE")
 			eldItem = self.FindSavedTable(savedTablesItem, "ELD")
 

@@ -16,14 +16,18 @@ class AffineError(Exception):
         self.message = message
 
 class AffineShift:
-    def __init__(self, core, distance, comment=""):
+    def __init__(self, core, distance, dataUsed="", comment=""):
         self.core = core # CoreInfo (or AffineCoreInfo) for the shifted core
         self.distance = distance # shift distance (can be 0)
+        self.dataUsed = dataUsed # data type used to create shift
         self.comment = comment # user comment
         
     # adjust current shift by deltaDistance
     def adjust(self, deltaDistance):
         self.distance += deltaDistance
+
+    def typeStr(self):
+        return "NO TYPE - implement typeStr() in child"
 
 # An affine shift resulting from the shift of another core that "pushes" or "pulls"
 # all cores below and/or related cores to maintain spacing of cores. Because the user
@@ -32,17 +36,20 @@ class AffineShift:
 # shifts will usually be replaced with a TIE or SET as they're integrated into
 # the CCSF-A/MCD depth scale.
 class ImplicitShift(AffineShift):
-    def __init__(self, core, distance, comment=""):
-        AffineShift.__init__(self, core, distance, comment)
+    def __init__(self, core, distance, dataUsed="", comment=""):
+        AffineShift.__init__(self, core, distance, dataUsed, comment)
     
     def __repr__(self):
         commentStr = " ({})".format(self.comment) if self.comment != "" else ""
         return "Implicit shift of {} by {}m{}".format(self.core, self.distance, commentStr)
     
+    def typeStr(self):
+        return "REL"
+    
 
 class TieShift(AffineShift):
-    def __init__(self, fromCore, fromDepth, core, depth, distance, comment=""):
-        AffineShift.__init__(self, core, distance, comment)
+    def __init__(self, fromCore, fromDepth, core, depth, distance, dataUsed="", comment=""):
+        AffineShift.__init__(self, core, distance, dataUsed, comment)
         self.fromCore = fromCore # CoreInfo for core to which self.core was tied
         self.fromDepth = fromDepth # MBSF depth of "from" core's TIE point
         self.depth = depth # MBSF depth of shifted core's TIE point
@@ -51,15 +58,21 @@ class TieShift(AffineShift):
         fmtStr = "TIE from {}@{}mbsf to {}@{}mbsf ({}mcd), shifted {}m{}" 
         commentStr = " ({})".format(self.comment) if self.comment != "" else ""
         return fmtStr.format(self.fromCore, self.fromDepth, self.core, self.depth, self.depth + self.distance, self.distance, commentStr)
+    
+    def typeStr(self):
+        return "TIE"
 
 
 class SetShift(AffineShift):
-    def __init__(self, core, distance, comment=""):
-        AffineShift.__init__(self, core, distance, comment)
+    def __init__(self, core, distance, dataUsed="", comment=""):
+        AffineShift.__init__(self, core, distance, dataUsed, comment)
 
     def __repr__(self):
         commentStr = " ({})".format(self.comment) if self.comment != "" else ""
         return "SET: {} shifted {}m{}".format(self.core, self.distance, commentStr)
+    
+    def typeStr(self):
+        return "SET"
     
 def isTie(shift):
     return isinstance(shift, TieShift)
@@ -223,15 +236,15 @@ class AffineBuilder:
         self.affine.getShift(core).adjust(deltaDistance)
      
     # shift core(s) by a given distance (SET) 
-    def set(self, coreOnly, core, distance, comment=""):
+    def set(self, coreOnly, core, distance, dataUsed="", comment=""):
         if coreOnly:
-            self.affine.addShift(SetShift(core, distance, comment))
+            self.affine.addShift(SetShift(core, distance, dataUsed, comment))
         else: # consider related
             fromCore = aci('Z', '666') # bogus core to ensure nothing matches
             shift = self.affine.getShift(core)
             deltaDistance = distance - shift.distance
             relatedCores = self.gatherRelatedCores(core, fromCore)
-            self.affine.addShift(SetShift(core, distance, comment))
+            self.affine.addShift(SetShift(core, distance, dataUsed, comment))
             for ci in relatedCores:
                 self.affine.adjust(ci, deltaDistance)            
 
@@ -241,14 +254,14 @@ class AffineBuilder:
     # fromCore, fromDepth - core and MBSF depth of tie on fixed core
     # core, depth - core and MBSF depth of tie on core to be shifted
     # comment - user comment/annotation of shift
-    def tie(self, coreOnly, mcdShiftDistance, fromCore, fromDepth, core, depth, comment=""):
+    def tie(self, coreOnly, mcdShiftDistance, fromCore, fromDepth, core, depth, dataUsed="", comment=""):
         totalShiftDistance = self.affine.getShiftDistance(core) + mcdShiftDistance
         if coreOnly:
-            self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, comment))
+            self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
             # need to update any shifts for which this is a from core to be SetShifts...right? Or Implicit?
         else:
             relatedCores = self.gatherRelatedCores(core, fromCore)
-            self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, comment))
+            self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
             for ci in relatedCores:
                 self.affine.adjust(ci, mcdShiftDistance)
         

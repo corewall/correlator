@@ -3042,24 +3042,53 @@ class AffineController:
 		self.affine = AffineBuilder.createWithSectionSummary(self.parent.sectionSummary)
 		
 	def save(self, affineFilePath):
-		print "pretending to save affine file {}".format(affineFilePath)
+		print "saving new-fangled affine file {}".format(affineFilePath)
+		affineRows = []
 		shifts = self.affine.getSortedShifts()
 		for hole in self.affine.getSortedHoles():
-			pass
-			# todo: write to file!
-			#for holeShift in [s for s in shifts if s.core.hole == hole]:
-			#	print holeShift
+			cumOff = 0.0
+			for curShift in [s for s in shifts if s.core.hole == hole]:
+				site = self.parent.Window.GetHoleSite(hole)
+				coreType = self.parent.sectionSummary.getCoreType(site, hole, curShift.core.core)
+				csf, dummy = self.parent.sectionSummary.getCoreRange(site, hole, curShift.core.core)
+				csf = round(csf, 3)
+				ccsf = round(csf + curShift.distance, 3)
+				diffOff = round(curShift.distance, 3)
+				cumOff += diffOff
+				try:
+					growthRate = round(ccsf / csf, 3)
+				except ZeroDivisionError:
+					growthRate = 0.0 
+					
+				fixedTieCsf = shiftedTieCsf = ""
+				if isTie(curShift):
+					fixedTieCsf = curShift.fromDepth
+					shiftedTieCsf = curShift.depth
+				
+				series = pandas.Series({'Site':site, 'Hole':hole, 'Core':curShift.core.core, 'Core Type':coreType, \
+										'Depth CSF (m)':csf, 'Depth CCSF (m)':ccsf, 'Cumulative Offset (m)':round(cumOff,3), \
+										'Differential Offset (m)':diffOff, 'Growth Rate':growthRate, 'Shift Type':curShift.typeStr(), \
+										'Fixed Tie CSF':fixedTieCsf, 'Shifted Tie CSF':shiftedTieCsf, \
+										'Data Used':curShift.dataUsed, 'Quality Comment':curShift.comment})
+				
+				affineRows.append(series)
+		if len(affineRows) > 0:
+			df = pandas.DataFrame(columns=tabularImport.AffineFormatNew.req)
+			df = df.append(affineRows, ignore_index=True)
+			#print "{}".format(df)
+			tabularImport.writeToFile(df, affineFilePath)
+			#self.setDirty(False)
 		
 	def updateGUIAffineTable(self):
 		self.parent.compositePanel.UpdateAffineTable()
 	
 	# shift a single core with method SET
-	def set(self, hole, core, distance, comment=""):
-		self.affine.set(False, aci(hole, core), distance, comment)
+	def set(self, hole, core, distance, dataUsed="", comment=""):
+		self.affine.set(False, aci(hole, core), distance, dataUsed, comment)
 		self.updateGUIAffineTable()
 		
 	# shift all cores in a hole with method SET
-	def setAll(self, hole, coreList, value, isPercent, comment=""):
+	def setAll(self, hole, coreList, value, isPercent, dataUsed="", comment=""):
 		site = self.parent.Window.GetHoleSite(hole)
 		cores = self.parent.Window.GetHoleCores(hole)
 		print "got site {} for hole {}".format(site, hole)
@@ -3070,12 +3099,12 @@ class AffineController:
 				shiftDistance = (coreTop * value) - coreTop
 			else:
 				shiftDistance = value
-			self.affine.set(True, aci(hole, core), shiftDistance)
+			self.affine.set(True, aci(hole, core), shiftDistance, dataUsed, comment)
 		self.updateGUIAffineTable()
 			
 	# fromDepth - MCD depth of tie point on fromCore
 	# depth - MCD depth of tie point on core
-	def tie(self, coreOnly, fromHole, fromCore, fromDepth, hole, core, depth, comment=""):
+	def tie(self, coreOnly, fromHole, fromCore, fromDepth, hole, core, depth, dataUsed="", comment=""):
 		fromCoreInfo = aci(fromHole, fromCore)
 		coreInfo = aci(hole, core)
 		# adjust movable core's depth for affine
@@ -3091,10 +3120,10 @@ class AffineController:
 				if proceed:
 					print "User confirmed break, proceeding!"
 			if proceed:
-				self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, comment)
+				self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
 		else: # shift core and related
 			# todo: confirm
-			self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, comment)
+			self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
 
 		self.updateGUIAffineTable()
 
@@ -3120,12 +3149,7 @@ class AffineController:
 	# todo: part of AffineShift and subclasses?
 	def getShiftTypeStr(self, hole, core):
 		shift = self.affine.getShift(aci(hole, str(core)))
-		if isTie(shift):
-			return "TIE"
-		elif isSet(shift):
-			return "SET"
-		elif isImplicit(shift):
-			return "REL"
+		return shift.typeStr()
 	
 	# return shift distance for hole-core
 	def getShiftDistance(self, hole, core):
@@ -3613,6 +3637,10 @@ class SectionSummaryPool:
 	def getCoreBottom(self, site, hole, core):
 		top, bottom = self.getCoreRange(site, hole, core)
 		return bottom
+	
+	def getCoreType(self, site, hole, core):
+		ss = self.findSummary(site, hole, core)
+		return ss.getCoreType(site, hole, core)
 	
 	def getSectionTop(self, site, hole, core, section):
 		ss = self.findSummary(site, hole, core, section)

@@ -41,6 +41,14 @@ class SectionSummary:
             return coremin, coremax
         return None
     
+    # return type of core
+    def getCoreType(self, site, hole, core):
+        cores = self._findCores(site, hole, core)
+        cores = cores[(cores.Section != "CC")] # omit CC section for time being
+        if not cores.empty:
+            return cores.iloc[0]['CoreType']
+        return None    
+    
     def getSites(self):
         return set(self.dataframe['Site'])
     
@@ -130,6 +138,11 @@ AffineFormat = TabularFormat("Affine Table",
                              ['Site', 'Hole', 'Core', 'Core Type', 'Depth CSF (m)', 'Depth CCSF (m)', \
                               'Cumulative Offset (m)', 'Differential Offset (m)', 'Growth Rate', 'Shift Type', \
                               'Data Used', 'Quality Comment'])
+
+AffineFormatNew = TabularFormat("Affine Table New-Fangled",
+                             ['Site', 'Hole', 'Core', 'Core Type', 'Depth CSF (m)', 'Depth CCSF (m)', \
+                              'Cumulative Offset (m)', 'Differential Offset (m)', 'Growth Rate', 'Shift Type', \
+                              'Fixed Tie CSF', 'Shifted Tie CSF', 'Data Used', 'Quality Comment'])
 
 # Splice Interval Table headers: 2.0.2 b8 and earlier
 # brg 1/18/2016: keeping for now, may want to convert from this format
