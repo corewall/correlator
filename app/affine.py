@@ -371,6 +371,15 @@ class AffineBuilder:
         #print "core type = {}, hole type = {}".format(type(core.core), type(core.hole))
         return self.affine.getShift(core)
     
+    # return list of shifts, sorted first by hole, then core
+    def getSortedShifts(self):
+        return sorted(self.affine.shifts, key=lambda x:x.core)
+    
+    # return sorted list of holes represented in affine table
+    def getSortedHoles(self):
+        holeSet = set([x.core.hole for x in self.affine.shifts])
+        return sorted(list(holeSet))
+    
     def isTie(self, core):
         return isTie(self.getShift(core))
     

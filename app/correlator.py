@@ -3041,6 +3041,15 @@ class AffineController:
 		assert ss.nonempty()
 		self.affine = AffineBuilder.createWithSectionSummary(self.parent.sectionSummary)
 		
+	def save(self, affineFilePath):
+		print "pretending to save affine file {}".format(affineFilePath)
+		shifts = self.affine.getSortedShifts()
+		for hole in self.affine.getSortedHoles():
+			pass
+			# todo: write to file!
+			#for holeShift in [s for s in shifts if s.core.hole == hole]:
+			#	print holeShift
+		
 	def updateGUIAffineTable(self):
 		self.parent.compositePanel.UpdateAffineTable()
 	
@@ -3132,7 +3141,7 @@ class AffineController:
 	# get rows for GUI affine table: each tuple is hole+core, shift distance, and shift type
 	def getAffineRows(self):
 		rows = []
-		for shift in self.affine.affine.shifts:
+		for shift in self.affine.getSortedShifts():
 			rows.append((shift.core.GetHoleCoreStr(), str(shift.distance), self.getShiftTypeStr(shift.core.hole, shift.core.core)))
 		return rows
 	

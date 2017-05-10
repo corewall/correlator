@@ -845,9 +845,6 @@ class CompositePanel():
 		if len(affineRows) > self.table.GetNumberRows():
 			self.table.InsertRows(pos=0, numRows=len(affineRows))
 		
-		# sort by hole, then numeric core to avoid lexi sorting e.g. A1, A10, A11
-		# TODO: account for possibility of 'AA' holes
-		affineRows.sort(key=lambda x:(x[0][0], int(x[0][1:])))
 		for rowIndex, ar in enumerate(affineRows):
 			self.table.SetCellValue(rowIndex, 0, ar[0])
 			self.table.SetCellValue(rowIndex, 1, ar[1])
