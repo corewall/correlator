@@ -681,13 +681,14 @@ class CompositePanel():
 			flag = True 
 			if ret == wx.ID_YES :
 				flag = False
-			filename = self.parent.dataFrame.Add_TABLE("AFFINE" , "affine", flag, False, "")
-			py_correlator.saveAttributeFile(filename, 1)
-
-			s = "Save Affine Table: " + filename + "\n"
-			self.parent.logFileptr.write(s)
-			self.parent.OnShowMessage("Information", "Successfully Saved", 1)
-			self.parent.AffineChange = False 
+			affineFilePath = self.parent.dataFrame.Add_TABLE("AFFINE" , "affine", flag, False, "")
+			self.parent.affineManager.save(affineFilePath)
+# 			py_correlator.saveAttributeFile(filename, 1)
+# 
+# 			s = "Save Affine Table: " + filename + "\n"
+# 			self.parent.logFileptr.write(s)
+# 			self.parent.OnShowMessage("Information", "Successfully Saved", 1)
+# 			self.parent.AffineChange = False 
 
 	def OnButtonEnable(self, opt, enable):
 		if opt == 0 : 

@@ -1908,11 +1908,13 @@ class DataFrame(wx.Panel):
 	# given parent node, return a list of all top-level children to get around the
 	# obnoxious "GetFirstChild(), then GetNextChild() for the rest" dance seen
 	# throughout this file
-	def GetChildren(self, parentNode):
+	# - test: a lambda f'n that returns a boolean to filter included children
+	def GetChildren(self, parentNode, test=None):
 		kids = []
 		childNode, cookie = self.tree.GetFirstChild(parentNode)
 		while childNode.IsOk():
-			kids.append(childNode)
+			if test is None or test(childNode):
+				kids.append(childNode)
 			childNode = self.tree.GetNextSibling(childNode)
 		return kids
 	
@@ -3949,9 +3951,12 @@ class DataFrame(wx.Panel):
 				self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
 
 
+	# find "Saved Tables" tree item in site with selected child in items
 	def Update_PROPERTY_ITEM(self, items):
 		self.propertyIdx = None
 		parentItem = None
+		
+		# find site parent for selected tree item (or items? I don't think multiple selection is possible)
 		for item in items :
 			if len(self.tree.GetItemText(item, 8)) > 0 :
 				parentItem = self.tree.GetItemParent(item)
@@ -3965,12 +3970,12 @@ class DataFrame(wx.Panel):
 					parentItem = item
 				break
 
-		if parentItem != None :
+		if parentItem is not None:
 			child = self.FindItem(parentItem, 'Saved Tables')
 			if child[0] == True :
 				self.propertyIdx = child[1]
 
-		if self.propertyIdx == None :
+		if self.propertyIdx is None :
 			self.parent.OnShowMessage("Error", "Could not find Property", 1)
 
 
@@ -4442,7 +4447,16 @@ class DataFrame(wx.Panel):
 		#self.parent.Window.PrintHoleSummary()
 
 		return True
-		
+	
+	# assumes self.propertyIdx has been set to "Saved Tables" by Update_PROPERTY_ITEM()
+	def GetCurrentAffineTable(self):
+		# search property's children for type matching title, e.g. "AFFINE", "SPLICE", or "ELD"
+		curAffinePath = None
+		for tableNode in self.GetChildren(self.propertyIdx, lambda x: self.tree.GetItemText(x, 1) == "AFFINE"):
+			if self.tree.GetItemText(tableNode, 2) == "Enable":
+				curAffinePath = self.tree.GetItemText(tableNode, 8)
+				break
+		return curAffinePath
 
 	def Add_TABLE(self, title, sub_title, updateflag, importflag, source_filename):
 		if importflag == False and len(self.selectBackup) == 0 :
@@ -4455,26 +4469,12 @@ class DataFrame(wx.Panel):
 		else :
 			items = self.tree.GetSelections()
 
+		# override user choice to Update if there's no current affine table - must save a new one
+		# todo: prevent that option in UI
 		self.Update_PROPERTY_ITEM(items)
-		property = self.propertyIdx # property is the "Saved Tables" wxTreeItem for this site
-			
-		# search property's children for type matching title, e.g. "AFFINE", "SPLICE", or "ELD"
-		title_flag = False
-		totalcount = self.tree.GetChildrenCount(property, False)
-		if totalcount > 0 :
-			child = self.tree.GetFirstChild(property)
-			child_item = child[0]
-			if self.tree.GetItemText(child_item, 1) == title and self.tree.GetItemText(child_item, 2) == "Enable" :
-				title_flag = True
-			else :
-				for k in range(1, totalcount) :
-					child_item = self.tree.GetNextSibling(child_item)
-					if self.tree.GetItemText(child_item, 1) == title and self.tree.GetItemText(child_item, 2) == "Enable" :
-						title_flag = True
-						break
-		if title_flag == False :
+		savedTablesNode = self.propertyIdx # property is the "Saved Tables" wxTreeItem for this site
+		if self.GetCurrentAffineTable() is None:
 			updateflag = False
-			#print "[DEBUG] No " + title + " Table is Enable" 
 
 		ith = 0
 		max_ith = 0
@@ -4483,9 +4483,9 @@ class DataFrame(wx.Panel):
 		# if we need to create a new table, find lowest available number for filename: also
 		# Disable all elements since the newly-created table will be Enabled
 		if updateflag == False :
-			totalcount = self.tree.GetChildrenCount(property, False)
+			totalcount = self.tree.GetChildrenCount(savedTablesNode, False)
 			if totalcount > 0 :
-				child = self.tree.GetFirstChild(property)
+				child = self.tree.GetFirstChild(savedTablesNode)
 				child_item = child[0]
 				if self.tree.GetItemText(child_item, 1) == title :
 					temp_filename = self.tree.GetItemText(child_item, 8) 
@@ -4511,9 +4511,11 @@ class DataFrame(wx.Panel):
 		#print "[DEBUG] file index number is " + str(ith)
 
 		filename = ''
-		child = self.FindItemProperty(property, title)
+		child = self.FindItemProperty(savedTablesNode, title)
 		if child[0] == False or updateflag == False :
-			subroot = self.tree.AppendItem(property, "Table" )
+			# Didn't find enabled item of table type being saved ("AFFINE", "SPLICE", or "ELD").
+			# Add a new item of this table type and enable it.
+			subroot = self.tree.AppendItem(savedTablesNode, "Table" )
 			self.tree.SetItemText(subroot, title, 1)
 
 			self.tree.Expand(subroot)
@@ -4543,7 +4545,7 @@ class DataFrame(wx.Panel):
 			dblist_f.write(s)
 			dblist_f.close()
 			fullname = self.parent.DBPath + 'db/' + self.title + '/' + filename
-		else :
+		else : # found enabled item of table type being saved - update it
 			subroot = child[1]
 
 			tempstamp = str(datetime.today())
@@ -4555,7 +4557,7 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(subroot, stamp, 6)
 			self.tree.SetItemText(subroot, self.parent.user, 7)
 
-			parentItem = self.tree.GetItemParent(property)
+			parentItem = self.tree.GetItemParent(savedTablesNode)
 			filename = self.tree.GetItemText(subroot, 8) 
 			self.OnUPDATE_DB_FILE(self.title, parentItem)
 
