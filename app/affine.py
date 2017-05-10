@@ -385,7 +385,21 @@ class AffineCoreInfo:
         
     def GetHoleCoreStr(self):
         return "{}{}".format(self.hole, self.core)
+
+    # 'A' < 'B' < 'AA' < 'AB' < 'BA' < 'BB' ...
+    def _holeLessThan(self, otherHole):
+        assert isinstance(self.hole, str)
+        assert isinstance(otherHole, str)
+        if len(self.hole) == len(otherHole):
+            # use alphabetical comparison if holes are same length  
+            return self.hole.upper() < otherHole.upper()
+        return len(self.hole) < len(otherHole)
     
+    def _coreLessThan(self, otherCore):
+        assert isinstance(self.core, str)
+        assert isinstance(otherCore, str)
+        return int(self.core) < int(otherCore)
+            
     def __repr__(self):
         return self.GetHoleCoreStr()
     
@@ -394,6 +408,13 @@ class AffineCoreInfo:
     
     def __ne__(self, other):
         return self.hole != other.hole or self.core != other.core
+    
+    # support sorting operations
+    def __lt__(self, other):
+        if self.hole != other.hole:
+            return self._holeLessThan(other.hole)
+        else:
+            return self._coreLessThan(other.core)
 
 # convenience method to create AffineCoreInfo
 def aci(hole, core):
@@ -533,6 +554,29 @@ class TestAffine(unittest.TestCase):
         
         # invalid string
         self.assertRaises(InvalidHoleCoreStringError, acistr, "1F")
+        
+    def test_aci_sort(self):
+        a1 = acistr("A1")
+        a2 = acistr("A2")
+        a10 = acistr("A10")
+        b1 = acistr("B1")
+        b2 = acistr("B2")
+        aa1 = acistr("AA1")
+        ab1 = acistr("AB1")
+        ab10 = acistr("AB10")
+        ab11 = acistr("AB11")
+        bb1 = acistr("BB1")
+        self.assertFalse(a1 < a1)
+        self.assertTrue(a1 < a2)
+        self.assertTrue(a1 < a10)
+        self.assertTrue(a2 < a10)
+        self.assertTrue(a1 < b1)
+        self.assertTrue(b1 < b2)
+        self.assertTrue(a1 < aa1)
+        self.assertTrue(aa1 < ab1)
+        self.assertTrue(ab1 < ab10)
+        self.assertTrue(ab10 < ab11)
+        self.assertTrue(ab10 < bb1)
     
     def test_mci_eq(self):
         c1 = aci('A', '1')
@@ -543,5 +587,6 @@ class TestAffine(unittest.TestCase):
 
 if __name__ == "__main__":
     #suite = unittest.TestLoader().loadTestsFromTestCase(TestAffineTable)
-    #unittest.TextTestRunner(verbosity=2).run(suite)
-    unittest.main()
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestAffine)
+    unittest.TextTestRunner(verbosity=2).run(suite)
+    #unittest.main()
