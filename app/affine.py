@@ -10,6 +10,8 @@ import re # to parse combined hole/core strings
 import unittest
 import numpy
 
+import tabularImport
+
 class AffineError(Exception):
     def __init__(self, expression, message):
         self.expression = expression
@@ -101,6 +103,13 @@ class AffineTable:
         affine = cls()
         for c in cores:
             affine.addShift(ImplicitShift(c, 0.0))
+        return affine
+    
+    @classmethod
+    def createWithShifts(cls, shifts):
+        affine = cls()
+        for s in shifts:
+            affine.addShift(s)
         return affine
 
     def __repr__(self):
@@ -224,6 +233,50 @@ class AffineBuilder:
         affineBuilder.sectionSummary = secsumm
         affineBuilder.site = list(secsumm.getSites())[0] # assume a single site!
         return affineBuilder
+    
+    @classmethod
+    def createWithAffineFile(cls, affineFile, secsumm):
+        affineBuilder = cls()
+        affineShifts = []
+        df = tabularImport.readFile(affineFile)
+        tabularImport.forceStringDatatype(['Core'], df)
+        for index, row in df.iterrows():
+            hole, core, diffOff, shiftType, fixedCore, fixedCsf, shiftedCsf, dataUsed, comment = affineBuilder._parseAffineRow(row)
+            shiftedCore = aci(hole, core)
+            if shiftType == "TIE":
+                fromCore = acistr(fixedCore)
+                shift = TieShift(fromCore, fixedCsf, shiftedCore, shiftedCsf, diffOff, dataUsed, comment)
+            elif shiftType == "SET":
+                shift = SetShift(shiftedCore, diffOff, dataUsed, comment)
+            elif shiftType == "REL" or shiftType == "ANCHOR":
+                shift = ImplicitShift(shiftedCore, diffOff, dataUsed, comment)
+            else:
+                raise Exception("Unknown affine shift type {}".format(shiftType))
+            affineShifts.append(shift)
+        
+        affineBuilder.affine = AffineTable.createWithShifts(affineShifts)
+        affineBuilder.sectionSummary = secsumm
+        affineBuilder.site = list(secsumm.getSites())[0] # assume a single site!
+        return affineBuilder
+
+    def _parseAffineRow(self, row):
+        hole = row['Hole']
+        core = row['Core']
+        diffOff = row['Differential Offset (m)']
+        shiftType = row['Shift Type']
+        dataUsed = row['Data Used']
+        comment = row['Quality Comment']
+        
+        fixedCore = fixedCsf = shiftedCsf = ""
+        if shiftType == 'TIE':
+            if 'Fixed Core' in row: # new-style affine table
+                fixedCore = row['Fixed Core']
+                fixedCsf = row['Fixed Tie CSF']
+                shiftedCsf = row['Shifted Tie CSF']
+            else: # older affine with no TIE chain information
+                pass
+        
+        return hole, core, diffOff, shiftType, fixedCore, fixedCsf, shiftedCsf, dataUsed, comment
         
     def __repr__(self):
         return str(self.affine)

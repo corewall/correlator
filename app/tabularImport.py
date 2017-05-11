@@ -142,7 +142,7 @@ AffineFormat = TabularFormat("Affine Table",
 AffineFormatNew = TabularFormat("Affine Table New-Fangled",
                              ['Site', 'Hole', 'Core', 'Core Type', 'Depth CSF (m)', 'Depth CCSF (m)', \
                               'Cumulative Offset (m)', 'Differential Offset (m)', 'Growth Rate', 'Shift Type', \
-                              'Fixed Tie CSF', 'Shifted Tie CSF', 'Data Used', 'Quality Comment'])
+                              'Fixed Core', 'Fixed Tie CSF', 'Shifted Tie CSF', 'Data Used', 'Quality Comment'])
 
 # Splice Interval Table headers: 2.0.2 b8 and earlier
 # brg 1/18/2016: keeping for now, may want to convert from this format

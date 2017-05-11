@@ -4354,8 +4354,17 @@ class DataFrame(wx.Panel):
 			parentItem = titleItem
 
 		self.LoadSectionSummary()
-		# 'load' affine - just generating from section summary at the moment
-		self.parent.affineManager.load(filepath=None) 
+		# todo: infer section summary if needed
+		
+		# load affine table
+		found, savedTablesItem = self.FindItem(parentItem, 'Saved Tables')
+		affinePath = None
+		if found:
+			affineItem = self.FindSavedTable(savedTablesItem, "AFFINE")
+			if affineItem is not None:
+				affineFile = self.tree.GetItemText(affineItem, 8)
+				affinePath = self.CreateFileDBPath(affineFile, savedTablesItem)
+		self.parent.affineManager.load(affinePath)
 
 		self.parent.OnUpdateDepthStep()
 		tableLoaded = [] 

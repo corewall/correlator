@@ -3032,14 +3032,16 @@ class AffineController:
 		
 	def load(self, filepath):
 		if filepath is not None:
-			pass # todo: hookup loading a real affine file!
-		
-		# add entries for any SectionSummary cores not included in just-loaded affine table
-		# (for now, that's everything!)
-		# for now, access current section summary through self.parent - TODO: pass at loadtime and maintain! SpliceController too.
-		ss = self.parent.sectionSummary
-		assert ss.nonempty()
-		self.affine = AffineBuilder.createWithSectionSummary(self.parent.sectionSummary)
+			self.affine = AffineBuilder.createWithAffineFile(filepath, self.parent.sectionSummary)
+			# todo: if there are cores in section summary that aren't in affine, add shifts for them
+			# self.affine = loadedAffine (or whatever)
+		else:
+			# add entries for any SectionSummary cores not included in just-loaded affine table
+			# (for now, that's everything!)
+			# for now, access current section summary through self.parent - TODO: pass at loadtime and maintain! SpliceController too.
+			ss = self.parent.sectionSummary
+			assert ss.nonempty()
+			self.affine = AffineBuilder.createWithSectionSummary(self.parent.sectionSummary)
 		
 	def save(self, affineFilePath):
 		print "saving new-fangled affine file {}".format(affineFilePath)
@@ -3058,17 +3060,18 @@ class AffineController:
 				try:
 					growthRate = round(ccsf / csf, 3)
 				except ZeroDivisionError:
-					growthRate = 0.0 
+					growthRate = 0.0
 					
-				fixedTieCsf = shiftedTieCsf = ""
+				fixedTieCsf = shiftedTieCsf = fixedCore = ""
 				if isTie(curShift):
 					fixedTieCsf = curShift.fromDepth
 					shiftedTieCsf = curShift.depth
+					fixedCore = curShift.fromCore.GetHoleCoreStr()
 				
 				series = pandas.Series({'Site':site, 'Hole':hole, 'Core':curShift.core.core, 'Core Type':coreType, \
 										'Depth CSF (m)':csf, 'Depth CCSF (m)':ccsf, 'Cumulative Offset (m)':round(cumOff,3), \
 										'Differential Offset (m)':diffOff, 'Growth Rate':growthRate, 'Shift Type':curShift.typeStr(), \
-										'Fixed Tie CSF':fixedTieCsf, 'Shifted Tie CSF':shiftedTieCsf, \
+										'Fixed Core':fixedCore, 'Fixed Tie CSF':fixedTieCsf, 'Shifted Tie CSF':shiftedTieCsf, \
 										'Data Used':curShift.dataUsed, 'Quality Comment':curShift.comment})
 				
 				affineRows.append(series)
