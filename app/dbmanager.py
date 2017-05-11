@@ -4393,7 +4393,7 @@ class DataFrame(wx.Panel):
 		logLoaded = False
 		if parentItem is not None:
 			logLoaded = self.OnLOAD_LOG(parentItem)
-			self.parent.OnInitDataUpdate()
+			#self.parent.OnInitDataUpdate()
 			tableLoaded = self.OnLOAD_TABLE(parentItem)
 			self.parent.Window.LogselectedTie = -1 
 			self.parent.Window.activeSATie = -1 
@@ -4420,13 +4420,9 @@ class DataFrame(wx.Panel):
 		self.parent.logFileptr.write("\n")
 		self.parent.LOCK = 0 
 
-		# always load up core data before loading section summary, affine, splice and ELD tables
-		self.parent.UpdateCORE()
-		self.parent.UpdateSMOOTH_CORE()
-		self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
-		
+		# load data into self.parent.Window.HoleData so section summary can be inferred if needed
+		self.parent.UpdateCORE()		
 		self.LoadSectionSummary()
-		# todo: infer section summary if needed
 		
 		# load affine table
 		found, savedTablesItem = self.FindItem(parentItem, 'Saved Tables')
@@ -4437,6 +4433,11 @@ class DataFrame(wx.Panel):
 				affineFile = self.tree.GetItemText(affineItem, 8)
 				affinePath = self.CreateFileDBPath(affineFile, savedTablesItem)
 		self.parent.affineManager.load(affinePath)
+		
+		# now that affine shifts are loaded, reload all data with affine applied
+		self.parent.UpdateCORE()
+		self.parent.UpdateSMOOTH_CORE()
+		self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)		
 		
 		# now load splice and ELD if necessary
 		if tableLoaded != [] :
