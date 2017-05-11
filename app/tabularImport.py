@@ -23,6 +23,14 @@ class SectionSummary:
         forceStringDatatype(stringColumns, dataframe)
         return cls(os.path.basename(filepath), dataframe)
     
+    @classmethod
+    def createWithPandasRows(cls, rows):
+        dataframe = pandas.DataFrame(columns=SectionSummaryFormat.req)
+        dataframe = dataframe.append(rows, ignore_index=True)
+        stringColumns = ['Core', 'Section']
+        forceStringDatatype(stringColumns, dataframe)
+        return cls(os.path.basename("inferred section summary"), dataframe)
+    
     def containsCore(self, site, hole, core):
         cores = self._findCores(site, hole, core)
         return not cores.empty
@@ -111,6 +119,24 @@ class SectionSummary:
         self.checkStrType([site, hole, section])
         section = self._findSection(site, hole, core, section)
         return section.iloc[0][columnName]
+    
+class SectionSummaryRow:
+    def __init__(self, exp, site, hole, core, coreType, section, topDepth, bottomDepth):
+        self.exp = exp
+        self.site = site
+        self.hole = hole
+        self.core = core
+        self.coreType = coreType
+        self.section = section
+        self.topDepth = topDepth
+        self.bottomDepth = bottomDepth
+        
+    def asPandasSeries(self):
+        return pandas.Series({'Exp':self.exp, 'Site':self.site, 'Hole':self.hole, 'Core':self.core, 'CoreType':self.coreType,
+                              'Section':self.section, 'TopDepth':self.topDepth, 'BottomDepth':self.bottomDepth})
+
+    def identity(self):
+        return "{}-{}-{}".format(self.hole, self.core, self.section)
     
 class AffineTable:
     def __init__(self, name, dataframe):

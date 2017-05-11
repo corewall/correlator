@@ -2173,7 +2173,7 @@ class MainFrame(wx.Frame):
 		
 		# find affine shift for core if present
 		#affineStr = ""
-		affineShift = round(self.affineManager.getShiftDistance(holename, coreNum), 3)
+		affineShift = round(self.affineManager.getShiftDistance(holename, coreNum), 3) if self.affineManager.hasShift(holename, coreNum) else 0
 		#affineStr = "affine shift of {}".format(affineShift)
 		#print "Getting data...AffineManager sez {}{} has {}".format(holename, coreNum, affineStr)
 
@@ -3033,8 +3033,6 @@ class AffineController:
 	def load(self, filepath):
 		if filepath is not None:
 			self.affine = AffineBuilder.createWithAffineFile(filepath, self.parent.sectionSummary)
-			# todo: if there are cores in section summary that aren't in affine, add shifts for them
-			# self.affine = loadedAffine (or whatever)
 		else:
 			# add entries for any SectionSummary cores not included in just-loaded affine table
 			# (for now, that's everything!)
@@ -3129,6 +3127,9 @@ class AffineController:
 			self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
 
 		self.updateGUIAffineTable()
+
+	def hasShift(self, hole, core):
+		return self.affine.hasShift(aci(hole, str(core)))
 
 	# return TieShift or SetShift for hole-core combination
 	def getShift(self, hole, core):

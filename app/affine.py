@@ -153,6 +153,9 @@ class AffineTable:
         assert len(shifts) <= 1
         return shifts[0] if len(shifts) == 1 else None
     
+    def hasShift(self, core):
+        return self.getShift(core) is not None
+    
     def getShiftDistance(self, core):
         shift = self.getShift(core)
         assert shift is not None
@@ -430,8 +433,8 @@ class AffineBuilder:
     def isLegalTie(self, fromCore, core):
         return not self.affine.isUpstream(fromCore, core)
         
-    def coreHasShift(self, core):
-        return self.getShift(core) is not None
+    def hasShift(self, core):
+        return self.affine.hasShift(core)
     
     def getShift(self, core):
         #print "core type = {}, hole type = {}".format(type(core.core), type(core.hole))

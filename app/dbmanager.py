@@ -4027,20 +4027,55 @@ class DataFrame(wx.Panel):
 		return self.parent.DBPath +'db/' + siteDir + '/' + filename
 	
 	def LoadSectionSummary(self):
+		print "Loading section summary"
 		secSumms = []
 		siteItem = self.GetSelectedSite()
 		if siteItem is not None:
-			found, secSummItem = self.FindItem(siteItem, "Section Summaries")
-			if found:
+			ssListFound, secSummItem = self.FindItem(siteItem, "Section Summaries")
+			ssLoaded = False
+			if ssListFound:
 				for ssNode in self.GetChildren(secSummItem):
 					ssFilename = self.tree.GetItemText(ssNode, 1)
 					if len(ssFilename) > 0:
 						siteDir = self.GetSelectedSiteName()
 						ssFilepath = self.parent.DBPath +'db/' + siteDir + '/' + ssFilename
 						secSumms.append(tabularImport.SectionSummary.createWithFile(ssFilepath))
-						print "secSumm file [{}] found!".format(ssFilename)
-			else:
-				print "secSumm couldn't be loaded"
+						ssLoaded = True
+						print "Section Summary file [{}] found!".format(ssFilename)
+						
+			if not ssLoaded: # infer section summary from loaded hole data
+				print "secSumm couldn't be loaded, inferring Section Summary from hole data"
+				sectionDict = {}
+				for holeDataList in self.parent.Window.HoleData:
+					holeData = holeDataList[0] # extract from extra list
+					holeInfo = holeData[0] # first elt is a list of hole metadata
+					site, exp, holeName = holeInfo[0], holeInfo[1], holeInfo[7]
+					# for each core, grab section depths
+					for coreData in holeData[1:]:
+						coreName = coreData[0]
+						sections = coreData[9]
+						# because only section tops are available, to infer the bottom of the last section,
+						# grab depth of last tuple in core's data/depth pairs, which should be depth-ordered
+						coreBottom = coreData[10][-1][0]
+						for sectionIndex, sectionTop in enumerate(sections):
+							sectionBottom = sections[sectionIndex + 1] if sectionIndex < len(sections) - 1 else coreBottom
+							ssrow = tabularImport.SectionSummaryRow(exp, site, holeName, coreName, 'X', str(sectionIndex + 1), sectionTop, sectionBottom)
+							
+							# adjust section top and base if current datatype for hole has larger depth
+							# range than previously encountered datatypes for this hole
+							if ssrow.identity() in sectionDict:
+								currow = sectionDict[ssrow.identity()]
+								if ssrow.sectionTop < currow.sectionTop:
+									currow.sectionTop = ssrow.sectionTop
+								if ssrow.sectionBottom > currow.sectionBottom:
+									currow.sectionBottom = ssrow.sectionBottom
+							else:
+								sectionDict[ssrow.identity()] = ssrow
+				ssRows = sorted(list(sectionDict.values()), key=lambda r:(r.hole, int(r.core), r.section))
+				print "Inferred {} section summary rows".format(len(sectionDict))
+				inferredSecSumm = tabularImport.SectionSummary.createWithPandasRows([ssr.asPandasSeries() for ssr in ssRows])
+				secSumms.append(inferredSecSumm)
+				
 		self.parent.sectionSummary.setSummaries(secSumms)
 			
 	def OnLOAD(self):
@@ -4353,19 +4388,6 @@ class DataFrame(wx.Panel):
 			self.parent.Window.range.append(newrange)
 			parentItem = titleItem
 
-		self.LoadSectionSummary()
-		# todo: infer section summary if needed
-		
-		# load affine table
-		found, savedTablesItem = self.FindItem(parentItem, 'Saved Tables')
-		affinePath = None
-		if found:
-			affineItem = self.FindSavedTable(savedTablesItem, "AFFINE")
-			if affineItem is not None:
-				affineFile = self.tree.GetItemText(affineItem, 8)
-				affinePath = self.CreateFileDBPath(affineFile, savedTablesItem)
-		self.parent.affineManager.load(affinePath)
-
 		self.parent.OnUpdateDepthStep()
 		tableLoaded = [] 
 		logLoaded = False
@@ -4398,10 +4420,23 @@ class DataFrame(wx.Panel):
 		self.parent.logFileptr.write("\n")
 		self.parent.LOCK = 0 
 
-		# always load up core data before loading splice		
+		# always load up core data before loading section summary, affine, splice and ELD tables
 		self.parent.UpdateCORE()
 		self.parent.UpdateSMOOTH_CORE()
 		self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
+		
+		self.LoadSectionSummary()
+		# todo: infer section summary if needed
+		
+		# load affine table
+		found, savedTablesItem = self.FindItem(parentItem, 'Saved Tables')
+		affinePath = None
+		if found:
+			affineItem = self.FindSavedTable(savedTablesItem, "AFFINE")
+			if affineItem is not None:
+				affineFile = self.tree.GetItemText(affineItem, 8)
+				affinePath = self.CreateFileDBPath(affineFile, savedTablesItem)
+		self.parent.affineManager.load(affinePath)
 		
 		# now load splice and ELD if necessary
 		if tableLoaded != [] :
