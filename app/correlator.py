@@ -3087,7 +3087,7 @@ class AffineController:
 	
 	# shift a single core with method SET
 	def set(self, hole, core, distance, dataUsed="", comment=""):
-		self.affine.set(False, aci(hole, core), distance, dataUsed, comment)
+		self.affine.set(True, aci(hole, core), distance, dataUsed, comment)
 		self.updateGUIAffineTable()
 		
 	# shift all cores in a hole with method SET
