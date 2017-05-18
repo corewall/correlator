@@ -620,32 +620,12 @@ class CompositePanel():
 
 		# undo panel
 		undoPanel = wx.Panel(self.mainPanel, -1)
-		sizer32 = wx.StaticBoxSizer(wx.StaticBox(undoPanel, -1, 'Undo Options'), orient=wx.VERTICAL)
-		
-		undoSizer = wx.FlexGridSizer(rows=2, cols=2, hgap=5, vgap=5)
-		undoSizer.AddGrowableCol(1)
-				
-		undoSizer.Add(wx.StaticText(undoPanel, -1, 'Previous offset:'), 0, wx.ALIGN_CENTER_VERTICAL)
+		sizer32 = wx.StaticBoxSizer(wx.StaticBox(undoPanel, -1, 'Undo'), orient=wx.VERTICAL)
+		self.undoButton = wx.Button(undoPanel, -1, "Undo Previous Shift")#, size=undoButtonSize)
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoAffineShift, self.undoButton)
+		self.undoButton.Enable(False)
+		sizer32.Add(self.undoButton, 0, wx.EXPAND)
 
-		if platform_name[0] == "Windows" :
-			self.undoButton = wx.Button(undoPanel, -1, "Undo To", size=(135, 30))
-			self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoCore, self.undoButton)
-			self.undoButton.Enable(False)
-			undoSizer.Add(self.undoButton, 0, wx.EXPAND)
-		else :	
-			self.undoButton = wx.Button(undoPanel, -1, "Undo To")#, size=(120, 30))
-			self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoCore, self.undoButton)
-			self.undoButton.Enable(False)
-			undoSizer.Add(self.undoButton, 0, wx.EXPAND)
-
-		undoSizer.Add(wx.StaticText(undoPanel, -1, 'Offset of core above:'), 0, wx.ALIGN_CENTER_VERTICAL)
-		
-		self.aboveButton = wx.Button(undoPanel, -1, "Undo To")
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoCoreAbove, self.aboveButton)
-		self.aboveButton.Enable(False)
-		undoSizer.Add(self.aboveButton, 0, wx.EXPAND)
-
-		sizer32.Add(undoSizer, 0, wx.EXPAND)
 		undoPanel.SetSizer(sizer32)
 		vbox.Add(undoPanel, 0, wx.EXPAND)
 
@@ -694,7 +674,7 @@ class CompositePanel():
 		if opt == 0 : 
 			self.adjustButton.Enable(enable)
 			self.clearButton.Enable(enable)
-			self.aboveButton.Enable(enable)
+			#self.aboveButton.Enable(enable)
 		elif opt == 1:
 			self.undoButton.Enable(enable)
 		else :
@@ -715,11 +695,8 @@ class CompositePanel():
 		self.OnButtonEnable(0, False)
 		self.parent.Window.activeTie = -1
 
-	def OnUndoCore(self, evt):
-		self.parent.OnUndoCore(0)
-
-	def OnUndoCoreAbove(self, evt):
-		self.parent.OnUndoCore(1)
+	def OnUndoAffineShift(self, evt):
+		self.parent.OnUndoAffineShift()
 
 	def OnEvalSettings(self, evt):
 		dlg = dialog.CorrParamsDialog(self.plotNote, self.parent.minDepthStep, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
@@ -850,6 +827,10 @@ class CompositePanel():
 			self.table.SetCellValue(rowIndex, 0, ar[0])
 			self.table.SetCellValue(rowIndex, 1, ar[1])
 			self.table.SetCellValue(rowIndex, 2, ar[2])
+			
+	def UpdateUndoButton(self):
+		enable = self.parent.affineManager.canUndo()
+		self.undoButton.Enable(enable)
 
 	def UpdateEvalStatus(self):
 		roundedDepthStep = int(10000.0 * float(self.parent.depthStep)) / 10000.0

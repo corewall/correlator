@@ -1,4 +1,7 @@
 #!python.exe
+
+import copy
+
 import site # brg 12/4/2013 unused
 import platform
 import os
@@ -622,8 +625,9 @@ class MainFrame(wx.Frame):
 	def OnAdjustCore(self, opt, type):
 		self.Window.OnAdjustCore(opt, type)
 
-	def OnUndoCore(self, opt):
-		self.Window.OnUndoCore(opt)
+	def OnUndoAffineShift(self):
+		self.affineManager.undo()
+		self.UpdateData()
 
 	def OnUpdateDepth(self, depth):
 		self.compositePanel.OnUpdateDepth(depth)
@@ -1069,7 +1073,6 @@ class MainFrame(wx.Frame):
 			py_correlator.openAttributeFile(path, 0)
 			s = "Affine Table: " + path + "\n\n"
 			self.logFileptr.write(s)
-			self.Window.AdjustDepthCore = []
 			#if self.showReportPanel == 1 :
 			#	self.OnUpdateReport() 
 			self.UpdateData()
@@ -1418,7 +1421,6 @@ class MainFrame(wx.Frame):
 
 	def OnClearData(self):
 		py_correlator.cleanData(2)
-		self.Window.AdjustDepthCore = []
 		self.Window.TieData = []
 		self.Window.GuideCore = []
 		self.affineManager.clear()
@@ -1441,7 +1443,6 @@ class MainFrame(wx.Frame):
 	def OnClearComposite(self, event):
 		py_correlator.cleanData(3)
 		self.Window.HoleData = []
-		self.Window.AdjustDepthCore = []
 		self.Window.TieData = []
 		self.Window.GuideCore = []
 		self.UpdateData()
@@ -3025,6 +3026,7 @@ class AffineController:
 	def __init__(self, parent):
 		self.parent = parent # MainFrame - oy, this dependency!
 		self.affine = AffineBuilder() # AffineBuilder for current affine table
+		self.undoStack = [] # track previous AffineBuilder states for undo
 	
 	# remove all shifts
 	def clear(self):
@@ -3080,20 +3082,28 @@ class AffineController:
 			tabularImport.writeToFile(df, affineFilePath)
 			#self.setDirty(False)
 		
-	def updateGUIAffineTable(self):
+	def updateGUI(self):
 		self.parent.compositePanel.UpdateAffineTable()
-	
+		self.parent.compositePanel.UpdateUndoButton()
+		
+	def pushState(self):
+		prevAffine = copy.deepcopy(self.affine)
+		self.undoStack.append(prevAffine)
+		
 	# shift a single core with method SET
 	def set(self, hole, core, distance, dataUsed="", comment=""):
+		self.pushState()
 		self.affine.set(True, aci(hole, core), distance, dataUsed, comment)
-		self.updateGUIAffineTable()
+		self.updateGUI()
 		
 	# shift all cores in a hole with method SET
 	def setAll(self, hole, coreList, value, isPercent, dataUsed="", comment=""):
+		self.pushState()
+		
 		site = self.parent.Window.GetHoleSite(hole)
 		cores = self.parent.Window.GetHoleCores(hole)
-		print "got site {} for hole {}".format(site, hole)
-		print "got cores {} for holes {}".format(cores, hole)
+# 		print "got site {} for hole {}".format(site, hole)
+# 		print "got cores {} for holes {}".format(cores, hole)
 		for core in coreList:
 			if isPercent:
 				coreTop, coreBot = self.parent.sectionSummary.getCoreRange(site, hole, core)
@@ -3101,11 +3111,12 @@ class AffineController:
 			else:
 				shiftDistance = value
 			self.affine.set(True, aci(hole, core), shiftDistance, dataUsed, comment)
-		self.updateGUIAffineTable()
+		self.updateGUI()
 			
 	# fromDepth - MCD depth of tie point on fromCore
 	# depth - MCD depth of tie point on core
 	def tie(self, coreOnly, fromHole, fromCore, fromDepth, hole, core, depth, dataUsed="", comment=""):
+		self.pushState()
 		fromCoreInfo = aci(fromHole, fromCore)
 		coreInfo = aci(hole, core)
 		# adjust movable core's depth for affine
@@ -3126,7 +3137,7 @@ class AffineController:
 			# todo: confirm
 			self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
 
-		self.updateGUIAffineTable()
+		self.updateGUI()
 
 	def hasShift(self, hole, core):
 		return self.affine.hasShift(aci(hole, str(core)))
@@ -3138,11 +3149,14 @@ class AffineController:
 	def getShiftColor(self, hole, core):
 		shift = self.affine.getShift(aci(hole, str(core)))
 		if isTie(shift):
+			print "shift {}, returning green".format(shift)
 			return self.parent.Window.colorDict['ccsfTie']
 		elif isSet(shift):
 			return self.parent.Window.colorDict['ccsfSet']
-		elif isImplicit(shift):
+		elif isImplicit(shift) and shift.distance != 0.0:
 			return self.parent.Window.colorDict['ccsfRel']
+		else:
+			return self.parent.Window.colorDict['mbsf']
 		
 	# if hole-core combination is a TieShift, return MCD depth of TIE point and AffineCoreInfo of parent core
 	def getTieDepthAndParent(self, hole, core):
@@ -3180,6 +3194,15 @@ class AffineController:
 	# moveCore and fixedCore are CoreInfo objects
 	def isLegalTie(self, moveCore, fixedCore):
 		return self.affine.isLegalTie(aci(moveCore.hole, moveCore.holeCore), aci(fixedCore.hole, fixedCore.holeCore))
+	
+	def canUndo(self):
+		return len(self.undoStack) > 0
+	
+	def undo(self):
+		assert self.canUndo()
+		prevAffineBuilder = self.undoStack.pop()
+		self.affine = prevAffineBuilder#self.undoStack.pop()
+		self.updateGUI()
 
 	
 # brgtodo 12/21/2015: still depends on MainFrame 

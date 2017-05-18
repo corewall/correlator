@@ -380,7 +380,6 @@ class DataCanvas(wxBufferedWindow):
 		self.TieData = [] # composite ties
 		self.StratData = []
 		self.UserdefStratData = []
-		self.AdjustDepthCore = []
 		self.GuideCore = []
 		self.SpliceSmoothData = []
 
@@ -578,7 +577,6 @@ class DataCanvas(wxBufferedWindow):
 		self.TieData = []
 		self.SpliceCore = []
 		self.UserdefStratData = []
-		self.AdjustDepthCore = []
 		self.CurrentSpliceCore = -1
 		self.selectedCore = -1
 		self.LogselectedCore = -1
@@ -2034,6 +2032,7 @@ class DataCanvas(wxBufferedWindow):
 			drawing_start = self.SPrulerStartDepth - 5.0
 
 		# draw section boundaries
+		# TODO: use section summary instead of HoleData sections
 		if self.pressedkeyS == 1 or self.showSectionDepths:
 			if drawComposite and smoothed != 2:
 				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
@@ -2091,12 +2090,8 @@ class DataCanvas(wxBufferedWindow):
 				arrowDir = 5 if parentTieX > tieX else -5
 				dc.DrawLines(((parentTieX, parentY), (tieX, tieY), (tieX, tieY), (tieX+arrowDir, tieY+5), (tieX, tieY), (tieX+arrowDir, tieY-5)))
 
-		coreColor = self.parent.affineManager.getShiftColor(hole, coreno) if affine != 0 else self.colorDict['mbsf']
+		coreColor = self.parent.affineManager.getShiftColor(hole, coreno)
 		dc.SetPen(wx.Pen(coreColor, 1))
-
-		for r in range(len(self.AdjustDepthCore)) :
-			if self.AdjustDepthCore[r] == index :
-				dc.SetPen(wx.Pen(self.colorDict['ccsfTie'], 1))
 
 		log_number = 1;
 		logsmoothed = smoothed
@@ -3908,7 +3903,6 @@ class DataCanvas(wxBufferedWindow):
 		if self.parent.showReportPanel == 1 :
 			self.parent.OnUpdateReport()
 
-		self.AdjustDepthCore = []
 		self.parent.UpdateSend()
 		#self.parent.UndoShiftSectionSend()
 		self.parent.UpdateData()
@@ -3936,7 +3930,6 @@ class DataCanvas(wxBufferedWindow):
 			if self.parent.showReportPanel == 1 :
 				self.parent.OnUpdateReport()
 
-			self.AdjustDepthCore = []
 			self.parent.UpdateSend()
 			#self.parent.UndoShiftSectionSend()
 			self.parent.UpdateData()
@@ -3957,7 +3950,6 @@ class DataCanvas(wxBufferedWindow):
 					s = "Composite undo offsets the core above: hole " + coreInfo.hole + " core " + coreInfo.holeCore + ": " + str(datetime.today()) + "\n\n" 
 					self.parent.logFileptr.write(s)
 
-					self.AdjustDepthCore = []
 					self.parent.UpdateData()
 					self.parent.UpdateStratData()
 					self.parent.compositePanel.OnButtonEnable(1, False)
@@ -3996,7 +3988,6 @@ class DataCanvas(wxBufferedWindow):
 			if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, not shiftCoreOnly):
 				return
 
-			self.AdjustDepthCore.append(movableTie.core)
 			self.OnDataChange(movableTie.core, shift)
 			self.parent.compositePanel.OnButtonEnable(0, False)
 			self.parent.compositePanel.OnButtonEnable(1, True)
@@ -4034,41 +4025,6 @@ class DataCanvas(wxBufferedWindow):
 			self.GuideCore = []
 			self.drag = 0 
 			self.UpdateDrawing()
-
-	def OnUndoCore(self, opt):
-		self.parent.compositePanel.OnButtonEnable(1, False)
-		if opt == 0 : # "Previous Offset"
-			py_correlator.undo(1, "X", 0)
-			self.parent.AffineChange = True
-			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
-
-			s = "Composite undo previous offset: " + str(datetime.today()) + "\n\n"
-			self.parent.logFileptr.write(s)
-			#self.parent.UndoShiftSectionSend()
-			self.parent.UpdateSend()
-			self.parent.UpdateData()
-			self.parent.UpdateStratData()
-		else : # "Offset of Core Above"
-			if self.selectedLastTie < 0 :
-				self.selectedLastTie = len(self.TieData) - 1
-			if self.selectedLastTie >= 0 and self.selectedLastTie < len(self.TieData):
-				tie = self.TieData[self.selectedLastTie]
-				coreInfo = self.findCoreInfoByIndex(tie.core)
-
-				if coreInfo != None:
-					py_correlator.undo(2, coreInfo.hole, int(coreInfo.holeCore))
-
-					self.parent.AffineChange = True
-					py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
-
-					s = "Composite undo offsets the core above: hole " + coreInfo.hole + " core " + coreInfo.holeCore + ": " + str(datetime.today()) + "\n\n"
-					self.parent.logFileptr.write(s)
-					self.parent.UpdateData()
-					self.parent.UpdateStratData()
-					self.parent.UpdateSend()
-
-		self.AdjustDepthCore = []
-		self.parent.UpdateData()
 
 	def GetTypeID(self, typeA):
 		type = -1
