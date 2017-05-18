@@ -3,12 +3,11 @@ Routines and classes for loading of tabular data and conversion to target format
 '''
 
 import os
+import unittest
 
 import pandas
 
-#from tabularImport import readFile, forceStringDatatype, TabularFormat
 import tabularImport
-
 
 
 class SectionSummary:
@@ -22,6 +21,19 @@ class SectionSummary:
         stringColumns = ['Core', 'Section']
         tabularImport.forceStringDatatype(stringColumns, dataframe)
         return cls(os.path.basename(filepath), dataframe)
+
+    @classmethod
+    def createWithFiles(cls, fileList):
+        dataframes = []
+        for filepath in fileList:
+            dataframe = tabularImport.readFile(filepath)
+            stringColumns = ['Core', 'Section']
+            tabularImport.forceStringDatatype(stringColumns, dataframe)
+            dataframes.append(dataframe)
+            
+        ssDataframe = pandas.concat(dataframes)
+        
+        return cls(os.path.basename(filepath), ssDataframe)
     
     @classmethod
     def createWithPandasRows(cls, rows):
@@ -138,3 +150,20 @@ class SectionSummaryRow:
     def identity(self):
         return "{}-{}-{}".format(self.hole, self.core, self.section)
     
+
+class TestSectionSummary(unittest.TestCase):
+    def test_ss(self):
+        # todo: move files to test data directory
+        testfiles = ["/Users/bgrivna/Desktop/U1390_{}_Summary.csv".format(hole) for hole in ['A', 'B', 'C']]
+        ss = SectionSummary.createWithFiles(testfiles)
+        self.assertTrue(len(ss.dataframe) == 568)
+        self.assertTrue(list(ss.getSites())[0] == 'U1390')
+        holes = ss.getHoles()
+        self.assertTrue('A' in holes and 'B' in holes and 'C' in holes and 'D' not in holes)
+        self.assertTrue(ss.getSectionTop('U1390', 'B', '17', '1') == 146.6)
+        self.assertTrue(ss.getSectionTop('U1390', 'B', '17', 'CC') == 157.41)
+
+
+if __name__ == "__main__":
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestSectionSummary)
+    unittest.TextTestRunner(verbosity=2).run(suite)
