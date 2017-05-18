@@ -2071,7 +2071,7 @@ class DataFrame(wx.Panel):
 				py_correlator.setDelimiter(FormatDict["Text"])
 
 		return doExport
-                
+
 	
 	# brg 9/9/2014: "Export" affine/splice/ELD etc - just copies internal file to selected location 
 	def OnExportSavedTable(self):
@@ -3569,7 +3569,7 @@ class DataFrame(wx.Panel):
 				# Leg, Site, Mbsf, Mcd, Eld, Age, Sediment Rate, Age Datum, Comment, Type
 				tokens = line.split()
 				if tokens[0] == 'null' :
-					conitnue
+					continue
 				depth = float(tokens[2])
 				mcd = float(tokens[3])
 				eld = float(tokens[4])
@@ -7150,7 +7150,6 @@ class DataFrame(wx.Panel):
 								fout.close()
 							fin.close()
 
-								                               
 		if parentItem != None :
 			prevDataType = self.tree.GetItemText(parentItem, 0)
 			if prevDataType != strdatatype :
@@ -7175,7 +7174,7 @@ class DataFrame(wx.Panel):
 				else :
 					min = float(self.tree.GetItemText(item, 4))
 					max = float(self.tree.GetItemText(item, 5))
-  				for k in range(1, totalcount) :
+				for k in range(1, totalcount) :
 					item = self.tree.GetNextSibling(item)
 					if self.tree.GetItemText(item, 0) != '-Cull Table' :
 						float_min = float(self.tree.GetItemText(item, 4))
@@ -7192,8 +7191,8 @@ class DataFrame(wx.Panel):
 				parentItem = self.tree.GetItemParent(parentItem)
 				self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
 
-	 	self.sideNote.SetSelection(0)
-	 	self.EditRow = -1
+		self.sideNote.SetSelection(0)
+		self.EditRow = -1
 		self.importbtn.SetLabel("Import")
 		self.importbtn.Enable(False)
 
