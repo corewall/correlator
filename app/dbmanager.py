@@ -21,6 +21,9 @@ import dialog
 import tabularImport
 import splice
 import xml_handler
+from sectionSummary import SectionSummary, SectionSummaryRow
+
+
 from model import * # brgtodo 4/24/2014: Remove import *
 
 def opj(path):
@@ -4039,7 +4042,7 @@ class DataFrame(wx.Panel):
 					if len(ssFilename) > 0:
 						siteDir = self.GetSelectedSiteName()
 						ssFilepath = self.parent.DBPath +'db/' + siteDir + '/' + ssFilename
-						secSumms.append(tabularImport.SectionSummary.createWithFile(ssFilepath))
+						secSumms.append(SectionSummary.createWithFile(ssFilepath))
 						ssLoaded = True
 						print "Section Summary file [{}] found!".format(ssFilename)
 						
@@ -4059,7 +4062,7 @@ class DataFrame(wx.Panel):
 						coreBottom = coreData[10][-1][0]
 						for sectionIndex, sectionTop in enumerate(sections):
 							sectionBottom = sections[sectionIndex + 1] if sectionIndex < len(sections) - 1 else coreBottom
-							ssrow = tabularImport.SectionSummaryRow(exp, site, holeName, coreName, 'X', str(sectionIndex + 1), sectionTop, sectionBottom)
+							ssrow = SectionSummaryRow(exp, site, holeName, coreName, 'X', str(sectionIndex + 1), sectionTop, sectionBottom)
 							
 							# adjust section top and base if current datatype for hole has larger depth
 							# range than previously encountered datatypes for this hole
@@ -4073,7 +4076,7 @@ class DataFrame(wx.Panel):
 								sectionDict[ssrow.identity()] = ssrow
 				ssRows = sorted(list(sectionDict.values()), key=lambda r:(r.hole, int(r.core), r.section))
 				print "Inferred {} section summary rows".format(len(sectionDict))
-				inferredSecSumm = tabularImport.SectionSummary.createWithPandasRows([ssr.asPandasSeries() for ssr in ssRows])
+				inferredSecSumm = SectionSummary.createWithPandasRows([ssr.asPandasSeries() for ssr in ssRows])
 				secSumms.append(inferredSecSumm)
 				
 		self.parent.sectionSummary.setSummaries(secSumms)
@@ -5593,7 +5596,7 @@ class DataFrame(wx.Panel):
 							if secSummRoot is not None:
 								ssFile = token[1].strip()
 								ssPath = self.CreateFileDBPath(ssFile, secSummRoot)
-								ss = tabularImport.SectionSummary.createWithFile(ssPath)
+								ss = SectionSummary.createWithFile(ssPath)
 								ssChild = self.tree.AppendItem(secSummRoot, ','.join(ss.getHoles()))
 								if len(token) > 2: # guard against old-style section summary data
 									self.tree.SetItemText(ssChild, ssFile, 1)

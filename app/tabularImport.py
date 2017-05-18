@@ -6,138 +6,13 @@ import os
 import sys
 
 import pandas
-import wx
 import wx.grid
 
 import dialog
+import sectionSummary as ss
+#from sectionSummary import SectionSummary, SectionSummaryFormat
 
-class SectionSummary:
-    def __init__(self, name, dataframe):
-        self.name = name
-        self.dataframe = dataframe
-        
-    @classmethod
-    def createWithFile(cls, filepath):
-        dataframe = readFile(filepath)
-        stringColumns = ['Core', 'Section']
-        forceStringDatatype(stringColumns, dataframe)
-        return cls(os.path.basename(filepath), dataframe)
-    
-    @classmethod
-    def createWithPandasRows(cls, rows):
-        dataframe = pandas.DataFrame(columns=SectionSummaryFormat.req)
-        dataframe = dataframe.append(rows, ignore_index=True)
-        stringColumns = ['Core', 'Section']
-        forceStringDatatype(stringColumns, dataframe)
-        return cls(os.path.basename("inferred section summary"), dataframe)
-    
-    def containsCore(self, site, hole, core):
-        cores = self._findCores(site, hole, core)
-        return not cores.empty
-    
-    def containsSection(self, site, hole, core, section):
-        sections = self._findSection(site, hole, core, section)
-        return not sections.empty
-    
-    # return depth of top of top section, bottom of bottom section
-    def getCoreRange(self, site, hole, core):
-        cores = self._findCores(site, hole, core)
-        cores = cores[(cores.Section != "CC")] # omit CC section for time being
-        if not cores.empty:
-            coremin = cores['TopDepth'].min()
-            coremax = cores['BottomDepth'].max()
-            return coremin, coremax
-        return None
-    
-    # return type of core
-    def getCoreType(self, site, hole, core):
-        cores = self._findCores(site, hole, core)
-        cores = cores[(cores.Section != "CC")] # omit CC section for time being
-        if not cores.empty:
-            return cores.iloc[0]['CoreType']
-        return None    
-    
-    def getSites(self):
-        return set(self.dataframe['Site'])
-    
-    def getHoles(self):
-        return set(self.dataframe['Hole'])
-    
-    def getCores(self, hole):
-        return set(self.dataframe[self.dataframe['Hole'] == hole]['Core'])
-        
-    def getSectionTop(self, site, hole, core, section):
-        return self._getSectionValue(site, hole, core, section, 'TopDepth')
-    
-    def getSectionBot(self, site, hole, core, section):
-        return self._getSectionValue(site, hole, core, section, 'BottomDepth')
-    
-    def getSectionCoreType(self, site, hole, core, section):
-        return self._getSectionValue(site, hole, core, section, 'CoreType')
-    
-    def getSectionAtDepth(self, site, hole, core, depth):
-        sec = self._findSectionAtDepth(site, hole, core, depth)
-        return sec
-    
-    def sectionDepthToTotal(self, site, hole, core, section, secDepth):
-        top = self.getSectionTop(site, hole, core, section)
-        result = top + secDepth / 100.0 # cm to m
-        #print "section depth {} in section {} = {} overall".format(secDepth, section, result)        
-        return result
-    
-    def checkStrType(self, argList):
-        for arg in argList:
-            if not isinstance(arg, str):
-                print "SectionSummary ERROR: encountered non-str query element {}".format(arg)
-    
-    def _findCores(self, site, hole, core):
-        # omitting core here and below since it's an integer at present
-        self.checkStrType([site, hole])
-        df = self.dataframe
-        cores = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core)]
-        if cores.empty:
-            print "SectionSummary: Could not find core {}-{}{}".format(site, hole, core)
-        return cores
 
-    def _findSection(self, site, hole, core, section):
-        self.checkStrType([site, hole, section])
-        df = self.dataframe
-        section = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core) & (df.Section == section)]
-        if section.empty:
-            print "SectionSummary: Could not find {}-{}{}-{}".format(site, hole, core, section)
-        return section
-    
-    def _findSectionAtDepth(self, site, hole, core, depth):
-        self.checkStrType([site, hole])
-        df = self.dataframe
-        section = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core) & (depth >= df.TopDepth) & (depth <= df.BottomDepth)]
-        if not section.empty:
-            return section.iloc[0]['Section']
-        return None    
-    
-    def _getSectionValue(self, site, hole, core, section, columnName):
-        self.checkStrType([site, hole, section])
-        section = self._findSection(site, hole, core, section)
-        return section.iloc[0][columnName]
-    
-class SectionSummaryRow:
-    def __init__(self, exp, site, hole, core, coreType, section, topDepth, bottomDepth):
-        self.exp = exp
-        self.site = site
-        self.hole = hole
-        self.core = core
-        self.coreType = coreType
-        self.section = section
-        self.topDepth = topDepth
-        self.bottomDepth = bottomDepth
-        
-    def asPandasSeries(self):
-        return pandas.Series({'Exp':self.exp, 'Site':self.site, 'Hole':self.hole, 'Core':self.core, 'CoreType':self.coreType,
-                              'Section':self.section, 'TopDepth':self.topDepth, 'BottomDepth':self.bottomDepth})
-
-    def identity(self):
-        return "{}-{}-{}".format(self.hole, self.core, self.section)
-    
 class AffineTable:
     def __init__(self, name, dataframe):
         self.name = name
@@ -157,6 +32,7 @@ class TabularFormat:
 
 MeasurementFormat = TabularFormat("Measurement Data",
                                   ['Exp', 'Site', 'Hole', 'Core', 'CoreType', 'Section', 'TopOffset', 'BottomOffset', 'Depth'])
+
 SectionSummaryFormat = TabularFormat("Section Summary", 
                                      ['Exp', 'Site', 'Hole', 'Core', 'CoreType', 'Section', 'TopDepth', 'BottomDepth'])
 
@@ -190,8 +66,8 @@ CoreExportFormat = TabularFormat("Exported Core Data",
                                   'Data', 'RunNo', 'RawDepth', 'Offset'])
 
 class ImportDialog(wx.Dialog):
-    def __init__(self, parent, id, path, dataframe, goalFormat, allowEmptyCells=True):
-        wx.Dialog.__init__(self, parent, id, size=(800,600), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    def __init__(self, parent, dlgid, path, dataframe, goalFormat, allowEmptyCells=True):
+        wx.Dialog.__init__(self, parent, dlgid, size=(800,600), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
         self.path = path # source file path
         self.dataframe = dataframe # pandas DataFrame read from self.path
@@ -376,7 +252,7 @@ def doImport(parent, goalFormat, path=None, allowEmptyCells=True):
             if dlg.ShowModal() == wx.ID_OK:
                 dataframe = reorderColumns(dlg.dataframe, dlg.reqColMap, goalFormat)
                 name = os.path.basename(dlg.path)
-                secSumm = SectionSummary(name, dataframe)
+                secSumm = ss.SectionSummary(name, dataframe)
     return secSumm, path
 
 def _columnHeadersMatch(chLists):
@@ -413,7 +289,7 @@ def doMultiImport(parent, goalFormat, allowEmptyCells=True):
                 df = parseFile(parent, p, goalFormat, checkcols=True)
                 reorderedDf = reorderColumns(df, dlg.reqColMap, goalFormat)
                 name = os.path.basename(p)
-                secSummMap[p] = SectionSummary(name, reorderedDf)
+                secSummMap[p] = ss.SectionSummary(name, reorderedDf)
 
     return secSummMap
 
@@ -465,21 +341,21 @@ def writeToFile(dataframe, filepath):
     dataframe.to_csv(filepath, index=False)
 
 """ find column names in dataframe matching those required by format """
-def findFormatColumns(dataframe, format):
-    colmap = dict().fromkeys(format.req)
+def findFormatColumns(dataframe, goalFormat):
+    colmap = dict().fromkeys(goalFormat.req)
     for key in colmap.keys():
         if key in dataframe.dtypes.keys():
             colmap[key] = dataframe.columns.get_loc(key)
     return colmap
 
 """ returns new dataframe with columns in order specified by colmap """
-def reorderColumns(dataframe, colmap, format):
+def reorderColumns(dataframe, colmap, goalFormat):
     newmap = {}
     for colName in colmap.keys():
         index = colmap[colName]
         if index is not None:
             newmap[colName] = dataframe.icol(index)
-    df = pandas.DataFrame(newmap, columns=format.req)
+    df = pandas.DataFrame(newmap, columns=goalFormat.req)
     return df
 
 """ strip whitespace from dataframe cells """ 
