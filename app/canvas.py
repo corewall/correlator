@@ -5,6 +5,8 @@
 import platform
 platform_name = platform.uname()
 
+import timeit
+
 import wx 
 import wx.lib.sheet as sheet
 from wx.lib import plot
@@ -2006,8 +2008,13 @@ class DataCanvas(wxBufferedWindow):
 		below = self.nearestDataPointBelow(coredata, searchDepth)
 		interpDatum = numpy.interp(searchDepth, [above[0], below[0]], [above[1], below[1]])
 		return (searchDepth, interpDatum)
-
+	
+	# is given depth in visible range?
+	def depthVisible(self, depth, rangetop, rangebot):
+		return depth >= rangetop and depth <= rangebot
+	
 	def DrawCoreGraph(self, dc, index, startX, holeInfo, holedata, smoothed, spliceflag, drawComposite, prev_affine):
+		site = holeInfo[0]
 		hole = holeInfo[7]
 		coreno = holedata[0]
 		min = holedata[3]
@@ -2030,22 +2037,28 @@ class DataCanvas(wxBufferedWindow):
 			drawing_start = self.SPrulerStartDepth - 5.0
 		elif drawComposite and smoothed == 2 : 
 			drawing_start = self.SPrulerStartDepth - 5.0
-
+			
+		coreTopY, coreBotY = coreData[0][0], coreData[-1][0]
 		# draw section boundaries
-		# TODO: use section summary instead of HoleData sections
 		if self.pressedkeyS == 1 or self.showSectionDepths:
-			if drawComposite and smoothed != 2:
+			if drawComposite and smoothed != 2 and (self.depthVisible(coreTopY, drawing_start, self.rulerEndDepth) or self.depthVisible(coreBotY, drawing_start, self.rulerEndDepth)):
 				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-				for sectionNumber, y in enumerate(sections):
-					if y >= drawing_start and y <= self.rulerEndDepth:
-						y = self.startDepth + (y - self.rulerStartDepth) * (self.length / self.gap)
-						dc.DrawLines(((startX, y), (startX + self.holeWidth, y)))
-						coreSectionStr = "{}-{}".format(coreno, sectionNumber + 1)
-						dc.DrawText(coreSectionStr, startX + 2, y) 
+				shiftDistance = self.parent.affineManager.getShiftDistance(hole, coreno)
+				secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
+				for secIndex, row in enumerate(secrows):
+					top = row.topDepth + shiftDistance
+					bot = row.bottomDepth + shiftDistance
+					y = self.startDepth + (top - self.rulerStartDepth) * (self.length / self.gap)
+					dc.DrawLines(((startX, y), (startX + self.holeWidth, y)))
+					coreSectionStr = "{}-{}".format(coreno, row.section)
+					dc.DrawText(coreSectionStr, startX + 2, y)
+					
+					if secIndex == len(secrows) - 1:
+						ybot = self.startDepth + (bot - self.rulerStartDepth) * (self.length / self.gap)
+						dc.DrawLines(((startX, ybot), (startX + self.holeWidth, ybot)))					
 
 		# draw affine shift arrow and distance centered on core
 		y_depth, x = coreData[0]
-		coreTopY, coreBotY = coreData[0][0], coreData[-1][0]
 		shiftInfoY = coreTopY + (coreBotY - coreTopY) / 2
 		if affine != 0 and y_depth >= drawing_start and y_depth <= self.rulerEndDepth :
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))

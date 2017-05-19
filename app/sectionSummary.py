@@ -9,6 +9,16 @@ import pandas
 
 import tabularImport
 
+# compare section numbers: any integer or 'CC', which is always greatest
+def cmp_section(sec1, sec2):
+    if sec1 == sec2:
+        return 0
+    if sec1 == 'CC':
+        return 1
+    if sec2 == 'CC':
+        return -1
+    return cmp(int(sec1), int(sec2))
+
 
 class SectionSummary:
     def __init__(self, name, dataframe):
@@ -78,6 +88,19 @@ class SectionSummary:
     def getCores(self, hole):
         return set(self.dataframe[self.dataframe['Hole'] == hole]['Core'])
     
+    def getSections(self, hole, core):
+        return set(self.dataframe[(self.dataframe['Hole'] == hole) & (self.dataframe['Core'] == core)]['Section'])
+    
+    # return sorted list of SectionSummaryRows for given hole and core
+    def getSectionRows(self, hole, core):
+        df = self.dataframe[(self.dataframe['Hole'] == hole) & (self.dataframe['Core'] == core)]
+        rows = []
+        for index, row in df.iterrows():
+            if row['Section'] != 'CC':
+                newRow = SectionSummaryRow.createWithPandasSeries(row)
+                rows.append(newRow)
+        return sorted(rows, key=lambda x:x.section, cmp=cmp_section)
+    
     def getCoreTop(self, site, hole, core):
         top, bottom = self.getCoreRange(site, hole, core)
         return top
@@ -85,12 +108,16 @@ class SectionSummary:
     def getCoreBottom(self, site, hole, core):
         top, bottom = self.getCoreRange(site, hole, core)
         return bottom
-        
+    
+    # note: this and getSectionBot() are fairly slow, really bogged down drawing
     def getSectionTop(self, site, hole, core, section):
         return self._getSectionValue(site, hole, core, section, 'TopDepth')
     
     def getSectionBot(self, site, hole, core, section):
         return self._getSectionValue(site, hole, core, section, 'BottomDepth')
+    
+    def getSectionRange(self, site, hole, core, section):
+        return self.getSectionTop(site, hole, core, section), self.getSectionBot(site, hole, core, section)
     
     def getSectionCoreType(self, site, hole, core, section):
         return self._getSectionValue(site, hole, core, section, 'CoreType')
@@ -139,7 +166,9 @@ class SectionSummary:
         self.checkStrType([site, hole, section])
         section = self._findSection(site, hole, core, section)
         return section.iloc[0][columnName]
-    
+
+# todo? SectionSummaryRow in which data is just a pandas series with methods to access
+# each item (e.g. site(), coreType())? Child of SectionSummaryRow "interface" class?
 class SectionSummaryRow:
     def __init__(self, exp, site, hole, core, coreType, section, topDepth, bottomDepth):
         self.exp = exp
@@ -151,6 +180,10 @@ class SectionSummaryRow:
         self.topDepth = topDepth
         self.bottomDepth = bottomDepth
         
+    @classmethod
+    def createWithPandasSeries(cls, row):
+        return cls(['Exp'], row['Site'], row['Hole'], row['Core'], row['CoreType'], row['Section'], row['TopDepth'], row['BottomDepth'])
+        
     def asPandasSeries(self):
         return pandas.Series({'Exp':self.exp, 'Site':self.site, 'Hole':self.hole, 'Core':self.core, 'CoreType':self.coreType,
                               'Section':self.section, 'TopDepth':self.topDepth, 'BottomDepth':self.bottomDepth})
@@ -160,6 +193,20 @@ class SectionSummaryRow:
     
 
 class TestSectionSummary(unittest.TestCase):
+    def test_cmp(self):
+        self.assertTrue(cmp_section('1', '2') == -1)
+        self.assertTrue(cmp_section('1', 'CC') == -1)
+        self.assertTrue(cmp_section('2', '1') == 1)
+        self.assertTrue(cmp_section('CC', 'CC') == 0)
+        
+        secs = ['2', 'CC', '5', '7', '1']
+        sortedSecs = sorted(secs, cmp=cmp_section)
+        self.assertTrue(sortedSecs[0] == '1')
+        self.assertTrue(sortedSecs[1] == '2')
+        self.assertTrue(sortedSecs[2] == '5')
+        self.assertTrue(sortedSecs[3] == '7')
+        self.assertTrue(sortedSecs[4] == 'CC')
+    
     def test_ss(self):
         # todo: move files to test data directory
         testfiles = ["/Users/bgrivna/Desktop/U1390_{}_Summary.csv".format(hole) for hole in ['A', 'B', 'C']]
@@ -175,7 +222,7 @@ class TestSectionSummary(unittest.TestCase):
         self.assertTrue(ss.getSectionTop('U1390', 'B', '17', '1') == 146.6)
         self.assertTrue(ss.getSectionTop('U1390', 'B', '17', 'CC') == 157.41)
         self.assertTrue(ss.getSectionTop('U1390', 'C', '6', '1') == 42.4)
-        self.assertTrue(ss.getSectionTop('U1390', 'C', '6', 'CC') == 52.32)                
+        self.assertTrue(ss.getSectionTop('U1390', 'C', '6', 'CC') == 52.32)
 
 
 if __name__ == "__main__":
