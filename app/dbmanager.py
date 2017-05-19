@@ -4029,11 +4029,47 @@ class DataFrame(wx.Panel):
 		siteDir = self.GetSiteNameForNode(node)
 		return self.parent.DBPath +'db/' + siteDir + '/' + filename
 	
+	# use canvas.HoleData to infer a section summary
+	def InferSectionSummary(self, HoleData):
+		print "secSumm couldn't be loaded, inferring Section Summary from hole data"
+		sectionDict = {}
+		for holeDataList in HoleData:
+			holeData = holeDataList[0] # extract from extra list
+			holeInfo = holeData[0] # first elt is a list of hole metadata
+			site, exp, holeName = holeInfo[0], holeInfo[1], holeInfo[7]
+			# for each core, grab section depths
+			for coreData in holeData[1:]:
+				coreName = coreData[0]
+				sections = coreData[9]
+				# because only section tops are available, to infer the bottom of the last section,
+				# grab depth of last tuple in core's data/depth pairs, which should be depth-ordered
+				coreBottom = coreData[10][-1][0]
+				for sectionIndex, sectionTop in enumerate(sections):
+					sectionBottom = sections[sectionIndex + 1] if sectionIndex < len(sections) - 1 else coreBottom
+					ssrow = SectionSummaryRow(exp, site, holeName, coreName, 'X', str(sectionIndex + 1), sectionTop, sectionBottom)
+					
+					# adjust section top and base if current datatype for hole has larger depth
+					# range than previously encountered datatypes for this hole
+					if ssrow.identity() in sectionDict:
+						currow = sectionDict[ssrow.identity()]
+						if ssrow.sectionTop < currow.sectionTop:
+							currow.sectionTop = ssrow.sectionTop
+						if ssrow.sectionBottom > currow.sectionBottom:
+							currow.sectionBottom = ssrow.sectionBottom
+					else:
+						sectionDict[ssrow.identity()] = ssrow
+		ssRows = sorted(list(sectionDict.values()), key=lambda r:(r.hole, int(r.core), r.section))
+		print "Inferred {} section summary rows".format(len(sectionDict))
+		sectionSummary = SectionSummary.createWithPandasRows([ssr.asPandasSeries() for ssr in ssRows])
+		#secSumms.append(inferredSecSumm)
+		#tabularImport.writeToFile(sectionSummary.dataframe, "/Users/bgrivna/Desktop/inferredSecSumm.csv")
+		return sectionSummary
+		
 	def LoadSectionSummary(self):
-		print "Loading section summary"
-		secSumms = []
+		sectionSummary = None
 		siteItem = self.GetSelectedSite()
 		if siteItem is not None:
+			secSummFiles = []
 			ssListFound, secSummItem = self.FindItem(siteItem, "Section Summaries")
 			ssLoaded = False
 			if ssListFound:
@@ -4042,44 +4078,17 @@ class DataFrame(wx.Panel):
 					if len(ssFilename) > 0:
 						siteDir = self.GetSelectedSiteName()
 						ssFilepath = self.parent.DBPath +'db/' + siteDir + '/' + ssFilename
-						secSumms.append(SectionSummary.createWithFile(ssFilepath))
-						ssLoaded = True
+						secSummFiles.append(ssFilepath)
 						print "Section Summary file [{}] found!".format(ssFilename)
+			if len(secSummFiles) > 0:
+				sectionSummary = SectionSummary.createWithFiles(secSummFiles)
+				ssLoaded = True
 						
-			if not ssLoaded: # infer section summary from loaded hole data
-				print "secSumm couldn't be loaded, inferring Section Summary from hole data"
-				sectionDict = {}
-				for holeDataList in self.parent.Window.HoleData:
-					holeData = holeDataList[0] # extract from extra list
-					holeInfo = holeData[0] # first elt is a list of hole metadata
-					site, exp, holeName = holeInfo[0], holeInfo[1], holeInfo[7]
-					# for each core, grab section depths
-					for coreData in holeData[1:]:
-						coreName = coreData[0]
-						sections = coreData[9]
-						# because only section tops are available, to infer the bottom of the last section,
-						# grab depth of last tuple in core's data/depth pairs, which should be depth-ordered
-						coreBottom = coreData[10][-1][0]
-						for sectionIndex, sectionTop in enumerate(sections):
-							sectionBottom = sections[sectionIndex + 1] if sectionIndex < len(sections) - 1 else coreBottom
-							ssrow = SectionSummaryRow(exp, site, holeName, coreName, 'X', str(sectionIndex + 1), sectionTop, sectionBottom)
-							
-							# adjust section top and base if current datatype for hole has larger depth
-							# range than previously encountered datatypes for this hole
-							if ssrow.identity() in sectionDict:
-								currow = sectionDict[ssrow.identity()]
-								if ssrow.sectionTop < currow.sectionTop:
-									currow.sectionTop = ssrow.sectionTop
-								if ssrow.sectionBottom > currow.sectionBottom:
-									currow.sectionBottom = ssrow.sectionBottom
-							else:
-								sectionDict[ssrow.identity()] = ssrow
-				ssRows = sorted(list(sectionDict.values()), key=lambda r:(r.hole, int(r.core), r.section))
-				print "Inferred {} section summary rows".format(len(sectionDict))
-				inferredSecSumm = SectionSummary.createWithPandasRows([ssr.asPandasSeries() for ssr in ssRows])
-				secSumms.append(inferredSecSumm)
-				
-		self.parent.sectionSummary.setSummaries(secSumms)
+			if not ssLoaded: # no section summary file provided, infer
+				sectionSummary = self.InferSectionSummary(self.parent.Window.HoleData)
+					
+		self.parent.sectionSummary = sectionSummary
+		return ssLoaded
 			
 	def OnLOAD(self):
 		self.propertyIdx = None
@@ -4425,7 +4434,9 @@ class DataFrame(wx.Panel):
 
 		# load data into self.parent.Window.HoleData so section summary can be inferred if needed
 		self.parent.UpdateCORE()		
-		self.LoadSectionSummary()
+		ssFileLoaded = self.LoadSectionSummary()
+		if not ssFileLoaded:
+			self.parent.OnShowMessage("Info", "No section summary file was loaded; a section summary was inferred from hole data.", 1)
 		
 		# load affine table
 		found, savedTablesItem = self.FindItem(parentItem, 'Saved Tables')

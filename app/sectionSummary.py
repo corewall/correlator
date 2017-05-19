@@ -31,7 +31,7 @@ class SectionSummary:
             tabularImport.forceStringDatatype(stringColumns, dataframe)
             dataframes.append(dataframe)
             
-        ssDataframe = pandas.concat(dataframes)
+        ssDataframe = pandas.concat(dataframes, ignore_index=True)
         
         return cls(os.path.basename(filepath), ssDataframe)
     
@@ -77,6 +77,14 @@ class SectionSummary:
     
     def getCores(self, hole):
         return set(self.dataframe[self.dataframe['Hole'] == hole]['Core'])
+    
+    def getCoreTop(self, site, hole, core):
+        top, bottom = self.getCoreRange(site, hole, core)
+        return top
+    
+    def getCoreBottom(self, site, hole, core):
+        top, bottom = self.getCoreRange(site, hole, core)
+        return bottom
         
     def getSectionTop(self, site, hole, core, section):
         return self._getSectionValue(site, hole, core, section, 'TopDepth')
@@ -160,8 +168,14 @@ class TestSectionSummary(unittest.TestCase):
         self.assertTrue(list(ss.getSites())[0] == 'U1390')
         holes = ss.getHoles()
         self.assertTrue('A' in holes and 'B' in holes and 'C' in holes and 'D' not in holes)
+        
+        # test a few sections in each hole
+        self.assertTrue(ss.getSectionTop('U1390', 'A', '5', '3') == 33.33)
+        self.assertTrue(ss.getSectionTop('U1390', 'A', '5', 'CC') == 40.86)
         self.assertTrue(ss.getSectionTop('U1390', 'B', '17', '1') == 146.6)
         self.assertTrue(ss.getSectionTop('U1390', 'B', '17', 'CC') == 157.41)
+        self.assertTrue(ss.getSectionTop('U1390', 'C', '6', '1') == 42.4)
+        self.assertTrue(ss.getSectionTop('U1390', 'C', '6', 'CC') == 52.32)                
 
 
 if __name__ == "__main__":

@@ -71,9 +71,9 @@ class MainFrame(wx.Frame):
 		# make the menu
 		self.SetMenuBar( self.CreateMenu() )
 		
-		self.sectionSummary = SectionSummaryPool() # todo: build "implicit" section summary from Window.HoleData
+		self.sectionSummary = None
 		self.affineManager = AffineController(self)
-		self.spliceManager = SpliceController(self) #splice.SpliceManager(self)
+		self.spliceManager = SpliceController(self)
 
 		self.RawData = ""
 		self.SmoothData = ""
@@ -3037,10 +3037,7 @@ class AffineController:
 			self.affine = AffineBuilder.createWithAffineFile(filepath, self.parent.sectionSummary)
 		else:
 			# add entries for any SectionSummary cores not included in just-loaded affine table
-			# (for now, that's everything!)
-			# for now, access current section summary through self.parent - TODO: pass at loadtime and maintain! SpliceController too.
-			ss = self.parent.sectionSummary
-			assert ss.nonempty()
+			# TODO: seed affine with new items in section summary
 			self.affine = AffineBuilder.createWithSectionSummary(self.parent.sectionSummary)
 		
 	def save(self, affineFilePath):
@@ -3602,95 +3599,6 @@ class SpliceController:
 			else: # single core
 				matches = [i for i in matches if int(i.coreinfo.holeCore) == int(core)]
 		return matches
-		
-
-class SectionSummaryPool:
-	def __init__(self):
-		self.secSumms = []
-		
-	def nonempty(self):
-		return len(self.getHoles()) > 0
-		
-	def setSummaries(self, summaries):
-		self.secSumms = summaries
-		
-	def findSummary(self, site, hole, core, section=None):
-		matchingSummary = None
-		for ss in self.secSumms:
-			if (section is None and ss.containsCore(site, hole, core)) or (section is not None and ss.containsSection(site, hole, core, section)):
-				matchingSummary = ss
-				break
-		return matchingSummary
-	
-	def getSites(self):
-		siteList = []
-		for ss in self.secSumms:
-			ssSites = ss.getSites()
-			for site in ssSites:
-				siteList.append(site)
-		return set(siteList)
-
-	def getHoles(self):
-		holeList = []
-		for ss in self.secSumms:
-			ssHoles = ss.getHoles()
-			for hole in ssHoles:
-				holeList.append(hole)
-		return set(holeList)
-	
-	def getCores(self, hole):
-		coreList = []
-		for ss in self.secSumms:
-			ssCores = ss.getCores(hole)
-			for core in ssCores:
-				coreList.append(core)
-		return set(coreList)
-		
-	def containsCore(self, site, hole, core):
-		return self.findSummary(site, hole, core) is not None
-	
-	def containsSection(self, site, hole, core, section):
-		return self.findSummary(site, hole, core, section) is not None
-	
-	# return depth of top of top section, bottom of bottom section
-	def getCoreRange(self, site, hole, core):
-		ss = self.findSummary(site, hole, core)
-		return ss.getCoreRange(site, hole, core)
-	
-	def getCoreTop(self, site, hole, core):
-		top, bottom = self.getCoreRange(site, hole, core)
-		return top
-	
-	def getCoreBottom(self, site, hole, core):
-		top, bottom = self.getCoreRange(site, hole, core)
-		return bottom
-	
-	def getCoreType(self, site, hole, core):
-		ss = self.findSummary(site, hole, core)
-		return ss.getCoreType(site, hole, core)
-	
-	def getSectionTop(self, site, hole, core, section):
-		ss = self.findSummary(site, hole, core, section)
-		return ss.getSectionTop(site, hole, core, section)
-	
-	def getSectionBot(self, site, hole, core, section):
-		ss = self.findSummary(site, hole, core, section)
-		return ss.getSectionBot(site, hole, core, section)
-	
-	def getSectionCoreType(self, site, hole, core, section):
-		ss = self.findSummary(site, hole, core, section)
-		return ss.getSectionCoreType(site, hole, core, section)
-	
-	def getSectionAtDepth(self, site, hole, core, depth):
-		ss = self.findSummary(site, hole, core)
-		return ss.getSectionAtDepth(site, hole, core, depth)
-	
-	def sectionDepthToTotal(self, site, hole, core, section, secDepth):
-		ss = self.findSummary(site, hole, core, section)
-		top = ss.getSectionTop(site, hole, core, section)
-		result = top + secDepth / 100.0 # cm to m
-		#print "section depth {} in section {} = {} overall".format(secDepth, section, result)		
-		return result
 
 
 class CorrelatorApp(wx.App):
