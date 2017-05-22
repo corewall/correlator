@@ -33,7 +33,7 @@ import frames
 import dbmanager
 import version as vers
 import model
-from affine import AffineBuilder, aci, isTie, isSet, isImplicit
+from affine import AffineBuilder, aci, acistr, isTie, isSet, isImplicit
 import splice
 import tabularImport
 
@@ -3086,54 +3086,53 @@ class AffineController:
 		prevAffine = copy.deepcopy(self.affine)
 		self.undoStack.append(prevAffine)
 		
+	def confirmBreaks(self, fromCoreInfo, coreInfo, coreOnly):
+		confirmed = True
+		if fromCoreInfo is None:
+			fromCoreInfo = aci("ZZ", "9999") # bogus fromCore to ensure no matches
+		needConfirm, msg = self.affine.needConfirmation(fromCoreInfo, coreInfo, coreOnly)
+		if needConfirm:
+			confirmed = self.parent.OnShowMessage("Confirm", msg + "\nDo you want to continue?", 0) == wx.ID_YES
+		return confirmed
+
 	# shift a single core with method SET
 	def set(self, hole, core, distance, dataUsed="", comment=""):
-		self.pushState()
-		self.affine.set(True, aci(hole, core), distance, dataUsed, comment)
-		self.updateGUI()
+		if self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, core), coreOnly=True):
+			self.pushState()
+			self.affine.set(True, aci(hole, core), distance, dataUsed, comment)
+			self.updateGUI()
 		
 	# shift all cores in a hole with method SET
 	def setAll(self, hole, coreList, value, isPercent, dataUsed="", comment=""):
-		self.pushState()
-		
-		site = self.parent.Window.GetHoleSite(hole)
-		cores = self.parent.Window.GetHoleCores(hole)
-# 		print "got site {} for hole {}".format(site, hole)
-# 		print "got cores {} for holes {}".format(cores, hole)
-		for core in coreList:
-			if isPercent:
-				coreTop, coreBot = self.parent.sectionSummary.getCoreRange(site, hole, core)
-				shiftDistance = (coreTop * value) - coreTop
-			else:
-				shiftDistance = value
-			self.affine.set(True, aci(hole, core), shiftDistance, dataUsed, comment)
-		self.updateGUI()
+		if self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, coreList[0]), coreOnly=False):
+			self.pushState()
+			site = self.parent.Window.GetHoleSite(hole)
+			#cores = self.parent.Window.GetHoleCores(hole)
+	# 		print "got site {} for hole {}".format(site, hole)
+	# 		print "got cores {} for holes {}".format(cores, hole)
+			for core in coreList:
+				if isPercent:
+					coreTop, coreBot = self.parent.sectionSummary.getCoreRange(site, hole, core)
+					shiftDistance = (coreTop * value) - coreTop
+				else:
+					shiftDistance = value
+				self.affine.set(False, aci(hole, core), shiftDistance, dataUsed, comment)
+			self.updateGUI()
 			
 	# fromDepth - MCD depth of tie point on fromCore
 	# depth - MCD depth of tie point on core
 	def tie(self, coreOnly, fromHole, fromCore, fromDepth, hole, core, depth, dataUsed="", comment=""):
-		self.pushState()
 		fromCoreInfo = aci(fromHole, fromCore)
 		coreInfo = aci(hole, core)
 		# adjust movable core's depth for affine
 		mcdShiftDist = fromDepth - depth
 		fromDepth = fromDepth - self.affine.getShift(fromCoreInfo).distance
 		depth = depth - self.affine.getShift(coreInfo).distance
-		if coreOnly:
-			#print "hole type = {}, core type = {}".format(type(fromHole), type(fromCore))
-			proceed = True
-			needConfirm, msg = self.affine.needConfirmation(fromCoreInfo, coreInfo, coreOnly=True)
-			if needConfirm:
-				proceed = self.parent.OnShowMessage("Confirm", msg + " Do you want to continue?", 0) == wx.ID_YES
-				if proceed:
-					print "User confirmed break, proceeding!"
-			if proceed:
-				self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
-		else: # shift core and related
-			# todo: confirm
+		
+		if self.confirmBreaks(fromCoreInfo, coreInfo, coreOnly):
+			self.pushState()
 			self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
-
-		self.updateGUI()
+			self.updateGUI()
 
 	def hasShift(self, hole, core):
 		return self.affine.hasShift(aci(hole, str(core)))

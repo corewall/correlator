@@ -303,13 +303,9 @@ class AffineBuilder:
     # shift core(s) by a given distance (SET) 
     def set(self, coreOnly, core, distance, dataUsed="", comment=""):
         if coreOnly:
-            fromCore = aci('Z', '666') # bogus core to ensure nothing matches
-            #relatedCores = self.gatherRelatedCores(core, fromCore)
-            #relatedCores = self.getMovers(core)
+            #fromCore = aci('Z', '666') # bogus core to ensure nothing matches
             deltaDistance = distance - self.affine.getShift(core).distance
             self.affine.addShift(SetShift(core, distance, dataUsed, comment))
-            #for rc in relatedCores:
-            #    self.affine.adjust(rc, deltaDistance)
         else: # consider related
             fromCore = aci('Z', '666') # bogus core to ensure nothing matches
             shift = self.affine.getShift(core)
@@ -335,21 +331,37 @@ class AffineBuilder:
             self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
             for ci in relatedCores:
                 self.affine.adjust(ci, mcdShiftDistance)
-        
+    
+    def formatBreaks(self, breaks):
+        return "\n".join(["- from {} to {}".format(b[0], b[1]) for b in breaks]) + "\n"
+
     # will shifting core have side effects that require user confirmation to proceed?
     # returns tuple of form (confirmation needed [boolean], warning message [string])
     def needConfirmation(self, fromCore, shiftCore, coreOnly):
+        breaks = []
+        msg = "Shifting core {} ".format(shiftCore)
+        msg += "only " if coreOnly else "and related "
+        msg += "will break TIE chain(s):\n"
         if coreOnly:
-            shift = self.affine.getShift(shiftCore)
-            if self.affine.inChain(shiftCore):
-                #print "old fromCore = {}, new = {}".format(shift.fromCore, fromCore)
-                if isTie(shift) and shift.fromCore != fromCore or self.affine.isChainTop(shiftCore):
-            #if self.affine.inChain(core):
-                    return True, "Shifting core {} only will break a TIE chain.".format(shiftCore)
+            breaks = self.findBreaks([shiftCore])
         else:
-            pass
+            relatedCores = self.gatherRelatedCores(fromCore, shiftCore)
+            breaks = self.findBreaks(relatedCores + [shiftCore])
 
-        return False, ""
+        needConfirm = len(breaks) > 0
+        return needConfirm, msg + "{}".format(self.formatBreaks(breaks))
+    
+    def findBreaks(self, movingCores):
+        breaks = [] # list of tuples of form (fromCore, childCore)
+        for core in movingCores:
+            shift = self.getShift(core)
+            if isTie(shift) and shift.fromCore not in movingCores:
+                breaks.append((shift.fromCore, core))
+            if self.affine.getChildren(core) > 0:
+                for child in self.affine.getChildren(core):
+                    if child.core not in movingCores:
+                        breaks.append((core, child.core))
+        return breaks
             
     # gather all cores that will be shifted by "Shift by [shiftCore] and related cores below" action
     # this only makes sense to use for TIE operations.
@@ -402,7 +414,7 @@ class AffineBuilder:
         # only remove cores for which the fixedCore is "closer" (by node count) than shiftCore?
         fromCoreRelatives = [c.core for c in self.affine.getChildren(fromCore) if c.core.hole != shiftCore.hole]
         relatedCores = [c for c in relatedCores if c not in fromCoreRelatives]
-        return set(relatedCores)
+        return list(set(relatedCores))
         
     # search core and below for chain cores - add all to chainCores list
     def _gatherHoleChainCores(self, core, fromCore, chainCores):
@@ -624,24 +636,6 @@ class TestAffineTable(unittest.TestCase):
         # D3 isn't part of any chain
         self.assertTrue(affine.getChainCores(d3) == [])
         
-        # AffineBuilder tests
-        ab = AffineBuilder()
-        ab.affine = affine
-
-        # D3 isn't in a chain and there's nothing below it, thus no related cores
-#         relCores = ab.gatherRelatedCores(d3)
-#         self.assertTrue(relCores == [])
-#         
-#         # chain 1 should gather only itself
-#         relCores = ab.gatherRelatedCores(a1)
-#         self.assertTrue(len(relCores) == 5)
-#         self.assertTrue(elementsInList([a1, a2, b1, b2, c2], relCores))
-#         
-#         # chain 2 should gather itself *and* all chain 1 elements *and* D3 because it's
-#         # a non-chain core below chain elements
-#         relCores = ab.gatherRelatedCores(d1)
-#         self.assertTrue(len(relCores) == 9)
-#         self.assertTrue(elementsInList([a1, a2, b1, b2, c1, c2, d1, d2, d3], relCores))
 
 class TestAffine(unittest.TestCase):
     # use numpy.isclose to deal with tiny floating point discrepancies causing == to return False 
@@ -755,11 +749,9 @@ class TestAffine(unittest.TestCase):
         expectedMovers = acilist(["A3", "A4", "B2", "B3", "B4", "C2", "C3", "C4"])
         self.assertTrue(sameElements(expectedMovers, movers))        
         
-        
-        #self.assertTrue()
 
 if __name__ == "__main__":
-    #suite = unittest.TestLoader().loadTestsFromTestCase(TestAffineTable)
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestAffine)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    for testcase in [TestAffineTable, TestAffine]:
+        suite = unittest.TestLoader().loadTestsFromTestCase(testcase)
+        unittest.TextTestRunner(verbosity=2).run(suite)
     #unittest.main()
