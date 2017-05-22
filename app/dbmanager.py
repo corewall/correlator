@@ -1135,7 +1135,7 @@ class DataFrame(wx.Panel):
 
 				cmd = "tied"
 				if token_size < 10 :
-                                            cmd = "append"
+					cmd = "append"
 				elif token[9].find("APPEND", 0) >= 0 or token[9].find("append", 0) >= 0 :
 					cmd = "append"
 
@@ -1633,7 +1633,7 @@ class DataFrame(wx.Panel):
 			leg = title[0:last]
 			site = title[last+1:max]
 
-		 	tempstamp = str(datetime.today())
+			tempstamp = str(datetime.today())
 			last = tempstamp.find(":", 0)
 			last = tempstamp.find(":", last+1)
 			#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
@@ -1708,7 +1708,7 @@ class DataFrame(wx.Panel):
 				cmd = 'cp \"' + path + '\" \"' + fullname + '\"'
 				os.system(cmd)
 
-		 	tempstamp = str(datetime.today())
+			tempstamp = str(datetime.today())
 			last = tempstamp.find(":", 0)
 			last = tempstamp.find(":", last+1)
 			#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
@@ -2482,7 +2482,7 @@ class DataFrame(wx.Panel):
 		filename = self.parent.DBPath + 'db/' + title + '/datalist.db'
 
 		if type == '*' :
- 			if sys.platform == 'win32' :
+			if sys.platform == 'win32' :
 				workingdir = os.getcwd()
 				os.chdir(self.parent.DBPath + 'db\\' + title)
 				cmd = 'del datalist.db'
@@ -2503,10 +2503,10 @@ class DataFrame(wx.Panel):
 			fout.close()
 			fin.close()
 
- 			if sys.platform == 'win32' :
- 				workingdir = os.getcwd()
- 				os.chdir(self.parent.DBPath + 'db')
- 		 		os.system('del datalist.db')	
+			if sys.platform == 'win32' :
+				workingdir = os.getcwd()
+				os.chdir(self.parent.DBPath + 'db')
+				os.system('del datalist.db')	
 				cmd = 'copy datalist.db.temp datalist.db'
 				os.system(cmd)
 				os.chdir(workingdir)
@@ -2589,10 +2589,10 @@ class DataFrame(wx.Panel):
 		fin.close()
 
 		
- 		if sys.platform == 'win32' :
- 			workingdir = os.getcwd()
- 			os.chdir(self.parent.DBPath + 'db\\' + title)
- 		 	os.system('del datalist.db')	
+		if sys.platform == 'win32' :
+			workingdir = os.getcwd()
+			os.chdir(self.parent.DBPath + 'db\\' + title)
+			os.system('del datalist.db')	
 			cmd = 'rename datalist.db.temp datalist.db'
 			os.system(cmd)
 			os.chdir(workingdir)
@@ -2607,7 +2607,7 @@ class DataFrame(wx.Panel):
 		child = self.FindItem(parentItem, 'Image Data')
 		filename = []
 		path = self.parent.DBPath
- 		if sys.platform == 'win32' :
+		if sys.platform == 'win32' :
 			path += '\\db\\' 
 		else :
 			path += 'db/' 
@@ -2618,13 +2618,13 @@ class DataFrame(wx.Panel):
 			if totalcount > 0 :
 				child = self.tree.GetFirstChild(selectItem)
 				child_item = child[0]
- 				if sys.platform == 'win32' :
+				if sys.platform == 'win32' :
 					filename.append(path + title + '\\' + self.tree.GetItemText(child_item, 8))
 				else :
 					filename.append(path + title + '/' + self.tree.GetItemText(child_item, 8))
 				for k in range(1, totalcount) :
 					child_item = self.tree.GetNextSibling(child_item)
- 					if sys.platform == 'win32' :
+					if sys.platform == 'win32' :
 						filename.append(path + title + '\\' + self.tree.GetItemText(child_item, 8))
 					else :
 						filename.append(path + title + '/' + self.tree.GetItemText(child_item, 8))
@@ -6448,7 +6448,7 @@ class DataFrame(wx.Panel):
 				return line[0:ith-1]
 		return line 
 
-
+	# open data file(s) and display in generic Import spreadsheet
 	def OnOPEN(self):
 		self.importbtn.Enable(True)
 		self.importbtn.SetLabel("Import")
@@ -6564,7 +6564,7 @@ class DataFrame(wx.Panel):
 				delim = ' '
 			
 			self.UpdateDATAHEADER(header, delim)
-	 		self.sideNote.SetSelection(1)
+			self.sideNote.SetSelection(1)
 
 
 	def OnPUBLISH(self, event):
@@ -7744,7 +7744,7 @@ class DataFrame(wx.Panel):
 			item = sub_child[0]
 			min = float(self.tree.GetItemText(item, 4))
 			max = float(self.tree.GetItemText(item, 5))
-  			for k in range(1, totalcount) :
+			for k in range(1, totalcount) :
 				item = self.tree.GetNextSibling(item)
 				float_min = float(self.tree.GetItemText(item, 4))
 				float_max = float(self.tree.GetItemText(item, 5))
@@ -7760,8 +7760,8 @@ class DataFrame(wx.Panel):
 
 			self.OnUPDATE_DB_FILE(leg + "-" + site, subroot)
 
-	 	self.sideNote.SetSelection(0)
-	 	self.EditRow = -1
+		self.sideNote.SetSelection(0)
+		self.EditRow = -1
 		self.importbtn.Enable(False)
 
 
@@ -7858,9 +7858,9 @@ class DataFrame(wx.Panel):
 						continue
 
 					type_last = line_max -1
-                                        if line[type_last] == '\n' :
-                                                line = line[0:type_last]
-                                
+					if line[type_last] == '\n' :
+						line = line[0:type_last]
+
 					popupMenu.Append(idx, "&"+ line)
 					wx.EVT_MENU(popupMenu, idx, self.OnCHANGETYPE)
 					idx = idx + 1
@@ -7898,10 +7898,10 @@ class DataFrame(wx.Panel):
 						self.parent.OnShowMessage("Error", "Hyphen(-) is not allowed", 1)
 					else :
 						if dlg.register.GetValue() == True : 
-                                                        type_last = len(datatype) -1
-                                                        if datatype[type_last] == '\n' :
-                                                                datatype = datatype[0:type_last]
-                                                                        
+							type_last = len(datatype) - 1
+							if datatype[type_last] == '\n' :
+								datatype = datatype[0:type_last]
+
 							# check whether there is same datatype 
 							filename =  self.parent.DBPath + 'tmp/datatypelist.cfg'
 							if os.access(filename, os.F_OK) == False :
