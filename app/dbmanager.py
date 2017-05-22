@@ -24,7 +24,7 @@ import xml_handler
 from sectionSummary import SectionSummary, SectionSummaryRow
 
 
-from model import * # brgtodo 4/24/2014: Remove import *
+#from model import * # brgtodo 4/24/2014: Remove import *
 
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
@@ -5344,7 +5344,7 @@ class DataFrame(wx.Panel):
 
 				sub_f = open(self.parent.DBPath + 'db/' + data_item + '/datalist.db', 'r+')
 
-				curSite = SiteData(data_item)
+				#curSite = SiteData(data_item)
 
 				root = self.tree.AppendItem(self.root, data_item) # site name
 				self.tree.SetItemBold(root, True)
