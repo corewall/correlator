@@ -3041,7 +3041,6 @@ class AffineController:
 			self.affine = AffineBuilder.createWithSectionSummary(self.parent.sectionSummary)
 		
 	def save(self, affineFilePath):
-		print "saving new-fangled affine file {}".format(affineFilePath)
 		affineRows = []
 		shifts = self.affine.getSortedShifts()
 		for hole in self.affine.getSortedHoles():
@@ -3146,7 +3145,6 @@ class AffineController:
 	def getShiftColor(self, hole, core):
 		shift = self.affine.getShift(aci(hole, str(core)))
 		if isTie(shift):
-			print "shift {}, returning green".format(shift)
 			return self.parent.Window.colorDict['ccsfTie']
 		elif isSet(shift):
 			return self.parent.Window.colorDict['ccsfSet']
@@ -3198,7 +3196,7 @@ class AffineController:
 	def undo(self):
 		assert self.canUndo()
 		prevAffineBuilder = self.undoStack.pop()
-		self.affine = prevAffineBuilder#self.undoStack.pop()
+		self.affine = prevAffineBuilder
 		self.updateGUI()
 
 	
