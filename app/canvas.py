@@ -1995,11 +1995,17 @@ class DataCanvas(wxBufferedWindow):
 	# find nearest point in coredata with depth less than searchDepth
 	def nearestDataPointAbove(self, coredata, searchDepth):
 		ptsabove = [pt for pt in coredata if pt[0] <= searchDepth]
+		if len(ptsabove) == 0:
+			print "Couldn't find point above in coredata"
+			return coredata[0]
 		return max(ptsabove, key=lambda pt:pt[0])
 	
 	# find nearest point in coredata with depth greater than searchDepth
 	def nearestDataPointBelow(self, coredata, searchDepth):
 		ptsbelow = [pt for pt in coredata if pt[0] >= searchDepth]
+		if len(ptsbelow) == 0:
+			print "Couldn't find point below in coredata"
+			return coredata[-1]
 		return min(ptsbelow, key=lambda pt:pt[0])
 	
 	# return point interpolated from nearest point above and below
