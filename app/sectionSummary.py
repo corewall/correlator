@@ -28,7 +28,7 @@ class SectionSummary:
     @classmethod
     def createWithFile(cls, filepath):
         dataframe = tabularImport.readFile(filepath)
-        stringColumns = ['Core', 'Section']
+        stringColumns = ['Site', 'Core', 'Section']
         tabularImport.forceStringDatatype(stringColumns, dataframe)
         return cls(os.path.basename(filepath), dataframe)
 
