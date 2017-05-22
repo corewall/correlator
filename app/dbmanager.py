@@ -4046,7 +4046,7 @@ class DataFrame(wx.Panel):
 				coreBottom = coreData[10][-1][0]
 				for sectionIndex, sectionTop in enumerate(sections):
 					sectionBottom = sections[sectionIndex + 1] if sectionIndex < len(sections) - 1 else coreBottom
-					ssrow = SectionSummaryRow(exp, site, holeName, coreName, 'X', str(sectionIndex + 1), sectionTop, sectionBottom)
+					ssrow = SectionSummaryRow(exp, site, holeName, coreName, 'Z', str(sectionIndex + 1), sectionTop, sectionBottom)
 					
 					# adjust section top and base if current datatype for hole has larger depth
 					# range than previously encountered datatypes for this hole
