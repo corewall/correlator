@@ -470,7 +470,7 @@ class DataFrame(wx.Panel):
 			ssRoot = self.tree.GetSelection()
 			
 			for path, secsumm in secSummMap.iteritems():
-				ssNode = self.tree.AppendItem(ssRoot, ','.join(secsumm.getHoles()))
+				ssNode = self.tree.AppendItem(ssRoot, ','.join(sorted(secsumm.getHoles())))
 				self.tree.SetItemText(ssNode, secsumm.name, 1)
 				self.tree.SetItemText(ssNode, self.GetTimestamp(), 6)
 				self.tree.SetItemText(ssNode, self.parent.user, 7)
@@ -5608,7 +5608,7 @@ class DataFrame(wx.Panel):
 								ssFile = token[1].strip()
 								ssPath = self.CreateFileDBPath(ssFile, secSummRoot)
 								ss = SectionSummary.createWithFile(ssPath)
-								ssChild = self.tree.AppendItem(secSummRoot, ','.join(ss.getHoles()))
+								ssChild = self.tree.AppendItem(secSummRoot, ','.join(sorted(ss.getHoles())))
 								if len(token) > 2: # guard against old-style section summary data
 									self.tree.SetItemText(ssChild, ssFile, 1)
 									self.tree.SetItemText(ssChild, token[2].strip(), 6) # timestamp
