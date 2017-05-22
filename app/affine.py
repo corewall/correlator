@@ -305,16 +305,16 @@ class AffineBuilder:
         if coreOnly:
             fromCore = aci('Z', '666') # bogus core to ensure nothing matches
             #relatedCores = self.gatherRelatedCores(core, fromCore)
-            relatedCores = self.getMovers(core)
+            #relatedCores = self.getMovers(core)
             deltaDistance = distance - self.affine.getShift(core).distance
             self.affine.addShift(SetShift(core, distance, dataUsed, comment))
-            for rc in relatedCores:
-                self.affine.adjust(rc, deltaDistance)
+            #for rc in relatedCores:
+            #    self.affine.adjust(rc, deltaDistance)
         else: # consider related
             fromCore = aci('Z', '666') # bogus core to ensure nothing matches
             shift = self.affine.getShift(core)
             deltaDistance = distance - shift.distance
-            relatedCores = self.gatherRelatedCores(core, fromCore)
+            relatedCores = self.gatherRelatedCores(fromCore, core)
             self.affine.addShift(SetShift(core, distance, dataUsed, comment))
             for ci in relatedCores:
                 self.affine.adjust(ci, deltaDistance)            
@@ -331,71 +331,30 @@ class AffineBuilder:
             self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
             # need to update any shifts for which this is a from core to be SetShifts...right? Or Implicit?
         else:
-            relatedCores = self.gatherRelatedCores(core, fromCore)
+            relatedCores = self.gatherRelatedCores(fromCore, core)
             self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
             for ci in relatedCores:
                 self.affine.adjust(ci, mcdShiftDistance)
         
     # will shifting core have side effects that require user confirmation to proceed?
     # returns tuple of form (confirmation needed [boolean], warning message [string])
-    def needConfirmation(self, fromCore, core, coreOnly):
+    def needConfirmation(self, fromCore, shiftCore, coreOnly):
         if coreOnly:
-            shift = self.affine.getShift(core)
-            if self.affine.inChain(core):
+            shift = self.affine.getShift(shiftCore)
+            if self.affine.inChain(shiftCore):
                 #print "old fromCore = {}, new = {}".format(shift.fromCore, fromCore)
-                if isTie(shift) and shift.fromCore != fromCore or self.affine.isChainTop(core):
+                if isTie(shift) and shift.fromCore != fromCore or self.affine.isChainTop(shiftCore):
             #if self.affine.inChain(core):
-                    return True, "Shifting core {} only will break a TIE chain.".format(core)
+                    return True, "Shifting core {} only will break a TIE chain.".format(shiftCore)
         else:
             pass
 
         return False, ""
-
-    # brg 5/21/2017: This approach doesn't work, reverted to gatherRelatedCores() logic, but
-    # keeping this for a single commit in case I want to return to it.
-    #
-    # shiftCore and all below are going to move, we know that.
-    # for every other hole, start from topmost core that falls into the "cores below" definition relative to shiftCore
-    #     for each of those cores, use getChainCores to gather related cores and add those to a list
-    # now remove any of those cores that aren't "cores below"
-    # determine topmost mover for each non-shiftCore hole. it, and all cores below it in hole, are movers.
-    # to find breaks, look for movers with a direct link to a non-mover
-#     def getMovers(self, shiftCore):
-#         movers = self.getCoresBelow(shiftCore)
-#         print "initial movers = {}".format(movers)
-#         chainCores = []
-#         checkShifts = [s for s in self.getSortedShifts() if s.core.hole != shiftCore.hole]
-#         print checkShifts
-#         for shift in checkShifts: 
-#             if isTie(shift) and self.coreIsBelow(shift.core, shiftCore):
-#                 foo = self.affine.getChainCores(shift.core)
-#                 print "foo = []".format(foo)
-#                 chainCores.extend(self.affine.getChainCores(shift.core))
-#                 
-#         print "pre-cull len(chainCores) = {}".format(len(chainCores))
-#         print "chainCores = []".format(chainCores)
-#         chainCores = list(set(chainCores))
-#         print "post-cull len(chainCores) = {}".format(len(chainCores))
-#         
-#         chainCoresBelow = [c for c in chainCores if self.coreIsBelow(c, shiftCore)]
-#         print "post-cull of cores above: len(chainCores) = {}".format(len(chainCoresBelow))
-#         
-#         holes = set([c.hole for c in chainCoresBelow if c.hole != shiftCore.hole])
-#         topHoleCores = []
-#         for h in holes:
-#             topCore = min([int(c.core) for c in chainCoresBelow if c.hole == h])
-#             topHoleCores.append(aci(h, str(topCore)))
-#         print topHoleCores
-#         
-#         for c in topHoleCores:
-#             movers.extend([c] + self.getCoresBelow(c))
-#             
-#         return movers
             
     # gather all cores that will be shifted by "Shift by [shiftCore] and related cores below" action
     # this only makes sense to use for TIE operations.
     # No doubt a more elegant algorithm exists, but this one works!
-    def gatherRelatedCores(self, shiftCore, fromCore):
+    def gatherRelatedCores(self, fromCore, shiftCore):
         topChainCores = {shiftCore.hole: shiftCore} # for each hole encountered (key), track topmost chain core (value)
         chainCores = []
         done = False
@@ -670,19 +629,19 @@ class TestAffineTable(unittest.TestCase):
         ab.affine = affine
 
         # D3 isn't in a chain and there's nothing below it, thus no related cores
-        relCores = ab.gatherRelatedCores(d3)
-        self.assertTrue(relCores == [])
-        
-        # chain 1 should gather only itself
-        relCores = ab.gatherRelatedCores(a1)
-        self.assertTrue(len(relCores) == 5)
-        self.assertTrue(elementsInList([a1, a2, b1, b2, c2], relCores))
-        
-        # chain 2 should gather itself *and* all chain 1 elements *and* D3 because it's
-        # a non-chain core below chain elements
-        relCores = ab.gatherRelatedCores(d1)
-        self.assertTrue(len(relCores) == 9)
-        self.assertTrue(elementsInList([a1, a2, b1, b2, c1, c2, d1, d2, d3], relCores))
+#         relCores = ab.gatherRelatedCores(d3)
+#         self.assertTrue(relCores == [])
+#         
+#         # chain 1 should gather only itself
+#         relCores = ab.gatherRelatedCores(a1)
+#         self.assertTrue(len(relCores) == 5)
+#         self.assertTrue(elementsInList([a1, a2, b1, b2, c2], relCores))
+#         
+#         # chain 2 should gather itself *and* all chain 1 elements *and* D3 because it's
+#         # a non-chain core below chain elements
+#         relCores = ab.gatherRelatedCores(d1)
+#         self.assertTrue(len(relCores) == 9)
+#         self.assertTrue(elementsInList([a1, a2, b1, b2, c1, c2, d1, d2, d3], relCores))
 
 class TestAffine(unittest.TestCase):
     # use numpy.isclose to deal with tiny floating point discrepancies causing == to return False 
@@ -749,25 +708,25 @@ class TestAffine(unittest.TestCase):
         builder = AffineBuilder.createWithSectionSummary(secsumm)
         
         # no existing ties, shift B1 and below
-        movers = builder.gatherRelatedCores(acistr("B1"), acistr("A1"))
+        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         self.assertTrue(sameElements(builder.getCoresBelow(acistr("B1")), movers))
         
         # shift C2 and below
-        movers = builder.gatherRelatedCores(acistr("C2"), acistr("A1"))
+        movers = builder.gatherRelatedCores(acistr("A1"), acistr("C2"))
         self.assertTrue(sameElements(builder.getCoresBelow(acistr("C2")), movers))
         
         # add tie between B3 and C3
-        movers = builder.gatherRelatedCores(acistr("C3"), acistr("B3"))
+        movers = builder.gatherRelatedCores(acistr("B3"), acistr("C3"))
         self.assertTrue(sameElements(builder.getCoresBelow(acistr("C3")), movers))
         builder.tie(False, 0.2, acistr("B3"), 0.3, acistr("C3"), 0.1)
         
         # now shift B1 and below
-        movers = builder.gatherRelatedCores(acistr("B1"), acistr("A1"))
+        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         expectedMovers = acilist(["B2", "B3", "B4", "C3", "C4"])
         self.assertTrue(sameElements(expectedMovers, movers))
         
         # or C1 and below
-        movers = builder.gatherRelatedCores(acistr("C1"), acistr("A1"))
+        movers = builder.gatherRelatedCores(acistr("A1"), acistr("C1"))
         expectedMovers = acilist(["B3", "B4", "C2", "C3", "C4"])
         self.assertTrue(sameElements(expectedMovers, movers))
         
@@ -779,7 +738,7 @@ class TestAffine(unittest.TestCase):
         builder.tie(False, 0.2, acistr("A3"), 2.4, acistr("B3"), 2.2) # push B3 down 0.2 for total shift of 0.4
         
         # now shift B1
-        movers = builder.gatherRelatedCores(acistr("B1"), acistr("A1"))
+        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         #print movers
         expectedMovers = acilist(["A3", "A4", "B2", "B3", "B4", "C1", "C2", "C3", "C4"])
         self.assertTrue(sameElements(expectedMovers, movers))
@@ -792,7 +751,7 @@ class TestAffine(unittest.TestCase):
         builder.tie(False, 0.2, acistr("A3"), 2.4, acistr("B3"), 2.2) # push B3+ down 0.2 for total shift of 0.4
         
         # again, shift B1 - now C1 should remain unmoved
-        movers = builder.gatherRelatedCores(acistr("B1"), acistr("A1"))
+        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         expectedMovers = acilist(["A3", "A4", "B2", "B3", "B4", "C2", "C3", "C4"])
         self.assertTrue(sameElements(expectedMovers, movers))        
         
