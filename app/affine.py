@@ -249,6 +249,7 @@ class AffineBuilder:
         affineShifts = []
         df = tabularImport.readFile(affineFile)
         tabularImport.forceStringDatatype(['Core'], df)
+        shiftedCores = []
         for index, row in df.iterrows():
             hole, core, diffOff, shiftType, fixedCore, fixedCsf, shiftedCsf, dataUsed, comment = affineBuilder._parseAffineRow(row)
             shiftedCore = aci(hole, core)
@@ -261,7 +262,27 @@ class AffineBuilder:
                 shift = ImplicitShift(shiftedCore, diffOff, dataUsed, comment)
             else:
                 raise Exception("Unknown affine shift type {}".format(shiftType))
+            shiftedCores.append(shiftedCore)
             affineShifts.append(shift)
+            
+        # for cores in the section summary but not in the affineFile, add affine shifts
+        # for each, using same shift as nearest core above in affine
+        ssCores = []
+        for h in secsumm.getHoles():
+            cores = [aci(h,c) for c in secsumm.getCores(h)]
+            ssCores.extend(cores)
+        shiftlessCores = [c for c in ssCores if c not in shiftedCores]
+        tmpAffine = AffineTable.createWithShifts(affineShifts)
+        for c in shiftlessCores:
+            coreAbove = findCoreAbove(c, shiftedCores)
+            if coreAbove is not None:
+                distance = tmpAffine.getShiftDistance(coreAbove)
+                seededShift = ImplicitShift(c, distance, dataUsed="", comment="seeded with section summary")
+                affineShifts.append(seededShift)
+                print "Seeded missing affine shift for {} using core above {}".format(c, coreAbove)
+            else:
+                affineShifts.append(ImplicitShift(c, 0.0, dataUsed="", comment="seeded: no core above, no shift"))
+                print "No core above found to seed affine shift for {}, no shift".format(c)
         
         affineBuilder.affine = AffineTable.createWithShifts(affineShifts)
         affineBuilder.sectionSummary = secsumm
@@ -564,6 +585,21 @@ def elementsInList(elts, listToSearch):
 def sameElements(list1, list2):
     union = set().union(list1, list2)
     return len(union) == len(list1) == len(list2)
+
+# - searchCore: AffineCoreInfo to find in coreList
+# - coreList: list of AffineCoreInfos
+# return nearest core in coreList above searchCore, or None if none exists
+def findCoreAbove(searchCore, coreList):
+    coreAbove = None
+    hole = searchCore.hole
+    core = int(searchCore.core)
+    while core > 0:
+        core -= 1
+        if aci(hole, str(core)) in coreList:
+            coreAbove = aci(hole, str(core))
+            break
+    return coreAbove
+
 
 class TestAffineTable(unittest.TestCase):
     def test_chain_funcs(self):
