@@ -461,31 +461,32 @@ class DataFrame(wx.Panel):
 			self.IMPORT_TIME_SERIES()
 
 		self.selectedIdx = None
-
-	def ImportSectionSummary(self):
-		secSummMap = tabularImport.doMultiImport(self, tabularImport.SectionSummaryFormat, allowEmptyCells=False)
-		if len(secSummMap) > 0:
-			# update GUI
-			site = self.GetSelectedSiteName()
-			ssRoot = self.tree.GetSelection()
-			
-			for path, secsumm in secSummMap.iteritems():
-				ssNode = self.tree.AppendItem(ssRoot, ','.join(sorted(secsumm.getHoles())))
+		
+	def AddSectionSummary(self, secsumm, originalPath):
+		siteNode = self.GetSelectedSite()
+		if siteNode is not None:
+			siteName = self.GetSelectedSiteName()
+			ssListFound, secSummItem = self.FindItem(siteNode, "Section Summaries")
+			if ssListFound:
+				ssNode = self.tree.AppendItem(secSummItem, ','.join(sorted(secsumm.getHoles())))
 				self.tree.SetItemText(ssNode, secsumm.name, 1)
 				self.tree.SetItemText(ssNode, self.GetTimestamp(), 6)
 				self.tree.SetItemText(ssNode, self.parent.user, 7)
 				self.tree.SetItemText(ssNode, secsumm.name, 8)
-				self.tree.SetItemText(ssNode, path, 9)
-				self.tree.SetItemText(ssNode, site + '/', 10)
+				self.tree.SetItemText(ssNode, originalPath, 9)
+				self.tree.SetItemText(ssNode, self.GetSelectedSiteName() + '/', 10)
 				
 				# write file
-				sspath = self.parent.DBPath +'db/' + site + '/' + secsumm.name
+				sspath = self.parent.DBPath +'db/' + siteName + '/' + secsumm.name
 				tabularImport.writeToFile(secsumm.dataframe, sspath)
-				
-			# update site DB file and GUI
-			self.OnUPDATE_DB_FILE(site, self.tree.GetItemParent(ssRoot))
-			self.tree.SortChildren(ssRoot)
+				self.OnUPDATE_DB_FILE(siteName, self.tree.GetItemParent(secSummItem))
+				self.tree.SortChildren(secSummItem)
 
+	def ImportSectionSummary(self):
+		secSummMap = tabularImport.doMultiImport(self, tabularImport.SectionSummaryFormat, allowEmptyCells=False)
+		if len(secSummMap) > 0:
+			for path, secsumm in secSummMap.iteritems():
+				self.AddSectionSummary(secsumm, path)
 
 	# get name of parent Site (child of Root node) for current selection in self.tree
 	def GetSelectedSiteName(self):
@@ -7477,7 +7478,7 @@ class DataFrame(wx.Panel):
 		self.importbtn.Enable(False)
 		self.logHole = ""
 
-
+	# import measurement data file(s) in self.paths
 	def OnIMPORT(self, event):
 		if self.importbtn.GetLabel() == "Change" :
 			if self.importType == "LOG" : 
@@ -7597,6 +7598,11 @@ class DataFrame(wx.Panel):
 			subroot = self.tree.AppendItem(self.root,  leg + "-" + site )
 			self.tree.SetItemBold(subroot, True)
 			self.tree.Expand(subroot)
+			
+			# immediately select newly-added site node so an associated IODP section summary
+			# can automatically be added if present (depends on self.GetSelectedSite()) 
+			self.tree.SelectItem(subroot)
+
 			for nodeName in STD_SITE_NODES:
 				self.tree.AppendItem(subroot, nodeName)
 			child = self.tree.AppendItem(subroot, strdatatype)
@@ -7727,10 +7733,23 @@ class DataFrame(wx.Panel):
 				if self.selectedDataType == "?" :
 					self.tree.SetItemText(newline, "Undefined", 1)
 				self.tree.SetItemText(newline, self.selectedDepthType, 13)
-				
 
 				self.parent.OnNewData(None)
-
+				
+				# Measurement data file was successfully imported. Look for associated IODP
+				# Section Summary file and load if found.
+				# IODP measurement data filenames are of format [exp]-[site]-[hole]-[datatype]
+				# IODP Section Summary filenames are of format [exp]-[site]-[hole]_Sections.csv
+				measFileDir, measFileName = os.path.split(self.paths[i])
+				ssFileName = '-'.join(measFileName.split('-')[:3]) + "_Sections.csv"
+				ssFilePath = os.path.join(measFileDir, ssFileName)
+				if os.path.exists(ssFilePath):
+					ssdf, errmsg = tabularImport._parseFile(ssFilePath, tabularImport.SectionSummaryFormat, checkcols=True)
+					if ssdf is not None:
+						ss = SectionSummary(ssFileName, ssdf)
+						self.AddSectionSummary(ss, ssFilePath)
+					else:
+						self.parent.OnShowMessage("Error", "Could not load associated section summary file {}:\n{}".format(ssFileName, errmsg))
 
 		self.parent.logFileptr.write("\n")
 

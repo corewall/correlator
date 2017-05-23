@@ -384,6 +384,7 @@ def selectFiles(parent, goalFormat):
         paths = dlg.GetPaths()
     return paths
 
+# parse file and report errors via GUI message box
 def parseFile(parent, path, goalFormat, checkcols=False):
     dataframe = None
     try:
@@ -402,6 +403,29 @@ def parseFile(parent, path, goalFormat, checkcols=False):
             return None
 
     return dataframe
+
+def _parseFile(path, goalFormat, checkcols=True):
+    errmsg = ""
+    dataframe = None
+    try:
+        dataframe = readFile(path)
+    except:
+        errmsg = "Error reading file: {}".format(sys.exc_info()[1])
+
+    if dataframe is not None and checkcols:
+        dfColumns = dataframe.columns.tolist()
+        fileColCount = len(dfColumns)
+        formatColCount = len(goalFormat.req) 
+        if fileColCount < formatColCount: 
+            errmsg = "File contains fewer columns ({}) than the {} format requires ({})".format(fileColCount, goalFormat.name, formatColCount)
+            dataframe = None
+        missingColumns = [col for col in goalFormat.req if col not in dfColumns]
+        if len(missingColumns) > 0:
+            errmsg = "File is missing columns ({}) required by {} format".format(missingColumns, goalFormat.name)
+            dataframe = None
+
+    return dataframe, errmsg
+
 
 # force pandas column dtype and convert values to object (string)
 def forceStringDatatype(cols, dataframe):
