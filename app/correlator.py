@@ -837,8 +837,9 @@ class MainFrame(wx.Frame):
 
 
 	def CHECK_CHANGES(self):
+		affineChange = self.affineManager.isDirty()
 		spliceChange = self.spliceManager.isDirty()
-		return self.AffineChange or spliceChange or self.EldChange or self.AgeChange or self.TimeChange
+		return affineChange or spliceChange or self.EldChange or self.AgeChange or self.TimeChange
 
 	def OnActivateWindow(self, event):
 		if self.Window.spliceWindowOn == 1 :
@@ -1403,6 +1404,7 @@ class MainFrame(wx.Frame):
 		self.Window.OnInit()
 
 		self.compositePanel.OnInitUI()
+		self.sectionSummary = None # brg?
 		self.affineManager.clear()
 		self.spliceManager.clear()
 		self.spliceIntervalPanel.OnInitUI()
@@ -3027,6 +3029,7 @@ class AffineController:
 		self.parent = parent # MainFrame - oy, this dependency!
 		self.affine = AffineBuilder() # AffineBuilder for current affine table
 		self.undoStack = [] # track previous AffineBuilder states for undo
+		self.dirty = False # has affine state changed since last save?
 	
 	# remove all shifts
 	def clear(self):
@@ -3076,7 +3079,7 @@ class AffineController:
 			df = df.append(affineRows, ignore_index=True)
 			#print "{}".format(df)
 			tabularImport.writeToFile(df, affineFilePath)
-			#self.setDirty(False)
+			self.dirty = False
 		
 	def updateGUI(self):
 		self.parent.compositePanel.UpdateAffineTable()
@@ -3094,12 +3097,16 @@ class AffineController:
 		if needConfirm:
 			confirmed = self.parent.OnShowMessage("Confirm", msg + "\nDo you want to continue?", 0) == wx.ID_YES
 		return confirmed
+	
+	def isDirty(self):
+		return self.dirty
 
 	# shift a single core with method SET
 	def set(self, hole, core, distance, dataUsed="", comment=""):
 		if self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, core), coreOnly=True):
 			self.pushState()
 			self.affine.set(True, aci(hole, core), distance, dataUsed, comment)
+			self.dirty = True
 			self.updateGUI()
 		
 	# shift all cores in a hole with method SET
@@ -3117,6 +3124,7 @@ class AffineController:
 				else:
 					shiftDistance = value
 				self.affine.set(False, aci(hole, core), shiftDistance, dataUsed, comment)
+			self.dirty = True
 			self.updateGUI()
 			
 	# fromDepth - MCD depth of tie point on fromCore
@@ -3132,6 +3140,7 @@ class AffineController:
 		if self.confirmBreaks(fromCoreInfo, coreInfo, coreOnly):
 			self.pushState()
 			self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
+			self.dirty = True
 			self.updateGUI()
 
 	def hasShift(self, hole, core):
@@ -3196,6 +3205,7 @@ class AffineController:
 		assert self.canUndo()
 		prevAffineBuilder = self.undoStack.pop()
 		self.affine = prevAffineBuilder
+		self.dirty = True
 		self.updateGUI()
 
 	

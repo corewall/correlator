@@ -141,12 +141,10 @@ class TopMenuFrame(wx.Frame):
 			self.parent.OnShowMessage("Error", "There is no data loaded", 1)
 			return
 
-		splice_flag = self.parent.spliceManager.isDirty()
-		savedialog = dialog.SaveTableDialog(None, -1, self.parent.AffineChange, splice_flag)
+		savedialog = dialog.SaveTableDialog(None, -1, self.parent.affineManager.isDirty(), self.parent.spliceManager.isDirty())
 		savedialog.Centre()
 		ret = savedialog.ShowModal()
-		affine_flag = savedialog.affineCheck.GetValue()
-		splice_flag = savedialog.spliceCheck.GetValue()
+		
 		eld_flag = savedialog.eldCheck.GetValue()
 		age_flag =  savedialog.ageCheck.GetValue()
 		series_flag = savedialog.seriesCheck.GetValue()
@@ -156,9 +154,10 @@ class TopMenuFrame(wx.Frame):
 		
 		# affine
 		affine_filename = "";
-		if affine_flag == True :
+		if savedialog.affineCheck.GetValue():
 			affine_filename = self.parent.dataFrame.Add_TABLE("AFFINE" , "affine", savedialog.affineUpdate.GetValue(), False, "")
-			py_correlator.saveAttributeFile(affine_filename, 1)
+			self.parent.affineManager.save(affine_filename)
+			#py_correlator.saveAttributeFile(affine_filename, 1)
 
 			s = "Save Affine Table: " + affine_filename + "\n\n"
 			self.parent.logFileptr.write(s)
@@ -654,21 +653,14 @@ class CompositePanel():
 		self.depthField.Enable(enableDepth)
 
 	def OnSAVE(self, event):
-		dlg = dialog.Message3Button(self.parent, "Do you want to create new affine file?")
+		dlg = dialog.Message3Button(self.parent, "Create new affine file?", yesLabel="Create New", okLabel="Update Existing", cancelLabel="Cancel")
 		ret = dlg.ShowModal()
 		dlg.Destroy()
 		if ret == wx.ID_OK or ret == wx.ID_YES :
-			flag = True 
-			if ret == wx.ID_YES :
-				flag = False
-			affineFilePath = self.parent.dataFrame.Add_TABLE("AFFINE" , "affine", flag, False, "")
-			self.parent.affineManager.save(affineFilePath)
-# 			py_correlator.saveAttributeFile(filename, 1)
-# 
-# 			s = "Save Affine Table: " + filename + "\n"
-# 			self.parent.logFileptr.write(s)
-# 			self.parent.OnShowMessage("Information", "Successfully Saved", 1)
-# 			self.parent.AffineChange = False 
+			updateExisting = ret == wx.ID_OK
+			filename = self.parent.dataFrame.Add_TABLE("AFFINE", "affine", updateExisting, False, "")
+			print "Save: updateExisting = {}, filename = {}".format(updateExisting, filename)
+			self.parent.affineManager.save(filename)
 
 	def OnButtonEnable(self, opt, enable):
 		if opt == 0 : 
