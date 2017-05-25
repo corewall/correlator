@@ -251,15 +251,15 @@ class AffineBuilder:
         tabularImport.forceStringDatatype(['Core'], df)
         shiftedCores = []
         for index, row in df.iterrows():
-            hole, core, diffOff, shiftType, fixedCore, fixedCsf, shiftedCsf, dataUsed, comment = affineBuilder._parseAffineRow(row)
+            hole, core, offset, shiftType, fixedCore, fixedCsf, shiftedCsf, dataUsed, comment = affineBuilder._parseAffineRow(row)
             shiftedCore = aci(hole, core)
             if shiftType == "TIE":
                 fromCore = acistr(fixedCore)
-                shift = TieShift(fromCore, fixedCsf, shiftedCore, shiftedCsf, diffOff, dataUsed, comment)
+                shift = TieShift(fromCore, fixedCsf, shiftedCore, shiftedCsf, offset, dataUsed, comment)
             elif shiftType == "SET":
-                shift = SetShift(shiftedCore, diffOff, dataUsed, comment)
+                shift = SetShift(shiftedCore, offset, dataUsed, comment)
             elif shiftType == "REL" or shiftType == "ANCHOR":
-                shift = ImplicitShift(shiftedCore, diffOff, dataUsed, comment)
+                shift = ImplicitShift(shiftedCore, offset, dataUsed, comment)
             else:
                 raise Exception("Unknown affine shift type {}".format(shiftType))
             shiftedCores.append(shiftedCore)
@@ -292,7 +292,7 @@ class AffineBuilder:
     def _parseAffineRow(self, row):
         hole = row['Hole']
         core = row['Core']
-        diffOff = row['Differential Offset (m)']
+        offset = row['Cumulative Offset (m)']
         shiftType = row['Shift Type']
         dataUsed = row['Data Used']
         comment = row['Quality Comment']
@@ -306,7 +306,7 @@ class AffineBuilder:
             else: # older affine with no TIE chain information
                 pass
         
-        return hole, core, diffOff, shiftType, fixedCore, fixedCsf, shiftedCsf, dataUsed, comment
+        return hole, core, offset, shiftType, fixedCore, fixedCsf, shiftedCsf, dataUsed, comment
         
     def __repr__(self):
         return str(self.affine)

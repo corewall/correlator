@@ -3047,15 +3047,15 @@ class AffineController:
 		affineRows = []
 		shifts = self.affine.getSortedShifts()
 		for hole in self.affine.getSortedHoles():
-			cumOff = 0.0
+			previousOffset = None
 			for curShift in [s for s in shifts if s.core.hole == hole]:
 				site = self.parent.Window.GetHoleSite(hole)
 				coreType = self.parent.sectionSummary.getCoreType(site, hole, curShift.core.core)
 				csf, dummy = self.parent.sectionSummary.getCoreRange(site, hole, curShift.core.core)
 				csf = round(csf, 3)
 				ccsf = round(csf + curShift.distance, 3)
-				diffOff = round(curShift.distance, 3)
-				cumOff += diffOff
+				cumOff = round(curShift.distance, 3)
+				diffOff = 0.0 if previousOffset is None else cumOff - previousOffset
 				try:
 					growthRate = round(ccsf / csf, 3)
 				except ZeroDivisionError:
@@ -3069,7 +3069,7 @@ class AffineController:
 				
 				series = pandas.Series({'Site':site, 'Hole':hole, 'Core':curShift.core.core, 'Core Type':coreType, \
 										'Depth CSF (m)':csf, 'Depth CCSF (m)':ccsf, 'Cumulative Offset (m)':round(cumOff,3), \
-										'Differential Offset (m)':diffOff, 'Growth Rate':growthRate, 'Shift Type':curShift.typeStr(), \
+										'Differential Offset (m)':round(diffOff, 3), 'Growth Rate':growthRate, 'Shift Type':curShift.typeStr(), \
 										'Fixed Core':fixedCore, 'Fixed Tie CSF':fixedTieCsf, 'Shifted Tie CSF':shiftedTieCsf, \
 										'Data Used':curShift.dataUsed, 'Quality Comment':curShift.comment})
 				
