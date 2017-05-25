@@ -3075,9 +3075,8 @@ class AffineController:
 				
 				affineRows.append(series)
 		if len(affineRows) > 0:
-			df = pandas.DataFrame(columns=tabularImport.AffineFormatNew.req)
+			df = pandas.DataFrame(columns=tabularImport.AffineFormat.req)
 			df = df.append(affineRows, ignore_index=True)
-			#print "{}".format(df)
 			tabularImport.writeToFile(df, affineFilePath)
 			self.dirty = False
 		

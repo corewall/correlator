@@ -601,6 +601,19 @@ def findCoreAbove(searchCore, coreList):
     return coreAbove
 
 
+def convert_pre_v3_AffineTable(prev3df):
+    for index, row in prev3df.iterrows():
+        print "row shift type = {}".format(row['Shift Type'])
+        if row['Shift Type'] in [numpy.nan, "nan", "TIE", "APPEND", "ANCHOR"]:
+            prev3df.loc[index, "Shift Type"] = "REL"
+    
+    # add empty TIE tracking columns        
+    for index, colname in enumerate(['Fixed Core', 'Fixed Tie CSF', 'Shifted Tie CSF']): 
+        prev3df.insert(index + 10, colname, "")
+    print prev3df
+    return prev3df
+
+
 class TestAffineTable(unittest.TestCase):
     def test_chain_funcs(self):
         a1 = aci('A', '1')
@@ -677,6 +690,10 @@ class TestAffine(unittest.TestCase):
     # use numpy.isclose to deal with tiny floating point discrepancies causing == to return False 
     def assertClose(self, fp1, fp2):
         return self.assertTrue(numpy.isclose(fp1, fp2))
+    
+    def test_convert_pre_v3(self):
+        oldaff, msg = tabularImport._parseFile("/Users/bgrivna/Desktop/prev3affine.affine.csv", tabularImport.AffineFormat_pre_v3, checkcols=True)
+        newaff = convert_pre_v3_AffineTable(oldaff)
     
     def test_acistr(self):
         aci1 = acistr("A1")

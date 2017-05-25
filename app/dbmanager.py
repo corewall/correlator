@@ -21,6 +21,7 @@ import dialog
 import tabularImport
 import splice
 import xml_handler
+from affine import convert_pre_v3_AffineTable
 from sectionSummary import SectionSummary, SectionSummaryRow
 
 
@@ -218,6 +219,8 @@ class DataFrame(wx.Panel):
 		elif opId == 4 :
 			# IMPORT AFFINE TABLE
 			self.OnIMPORT_TABLE("Affine")
+		elif opId == 66: # legacy affine
+			self.OnIMPORT_TABLE("Affine pre v3")
 		elif opId == 5 :
 			# OPEN CORE
 			self.importType = "CORE"
@@ -707,6 +710,10 @@ class DataFrame(wx.Panel):
 
 					popupMenu.Append(17, "&Import ELD table")
 					wx.EVT_MENU(popupMenu, 17, self.OnPOPMENU)
+					
+					popupMenu.AppendSeparator()
+					popupMenu.Append(66, "&Import legacy affine table")
+					wx.EVT_MENU(popupMenu, 66, self.OnPOPMENU)
 
 					#popupMenu.Append(32, "&Import universal cull table")
 					#wx.EVT_MENU(popupMenu, 32, self.OnPOPMENU)
@@ -5881,6 +5888,14 @@ class DataFrame(wx.Panel):
 			dbFilePath = self.Add_TABLE("AFFINE", "affine", False, True, affine.name)
 			tabularImport.writeToFile(affine.dataframe, dbFilePath)
 			self.parent.OnShowMessage("Information", "Successfully imported", 1)
+			
+	def ImportAffineTable_pre_v3(self, sourceFilePath):
+		affine = tabularImport.doAffineImport(self.parent, tabularImport.AffineFormat_pre_v3, sourceFilePath)
+		if affine is not None:
+			affine.dataframe = convert_pre_v3_AffineTable(affine.dataframe)
+			dbFilePath = self.Add_TABLE("AFFINE", "affine", False, True, affine.name)
+			tabularImport.writeToFile(affine.dataframe, dbFilePath)
+			self.parent.OnShowMessage("Information", "Successfully converted and imported legacy affine table", 1)
 
 	def ImportSpliceTable(self, sourceFilePath):
 		sit = tabularImport.doSITImport(self.parent, tabularImport.SITFormat, sourceFilePath)
@@ -5904,8 +5919,9 @@ class DataFrame(wx.Panel):
 		
 		siteflag = False
 		type = '' 
-		if tableType == 'Affine' :
+		if tableType == 'Affine' or tableType == "Affine pre v3":
 			# Affine Table
+			importLegacy = tableType == 'Affine pre v3'
 			opendlg = wx.FileDialog(self, "Select a affine table file", self.parent.Directory, "", "*.*")
 			ret = opendlg.ShowModal()
 			path = opendlg.GetPath()
@@ -5914,8 +5930,11 @@ class DataFrame(wx.Panel):
 			self.parent.Directory = opendlg.GetDirectory()
 			opendlg.Destroy()
 
-			if ret == wx.ID_OK :
-				self.ImportAffineTable(source_filename)
+			if ret == wx.ID_OK:
+				if importLegacy:
+					self.ImportAffineTable_pre_v3(source_filename)
+				else:
+					self.ImportAffineTable(source_filename)
 
 		elif tableType == 'Splice' :
 			# Splice Table

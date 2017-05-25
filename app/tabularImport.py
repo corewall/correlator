@@ -36,12 +36,12 @@ MeasurementFormat = TabularFormat("Measurement Data",
 SectionSummaryFormat = TabularFormat("Section Summary", 
                                      ['Exp', 'Site', 'Hole', 'Core', 'CoreType', 'Section', 'TopDepth', 'BottomDepth'])
 
-AffineFormat = TabularFormat("Affine Table",
+AffineFormat_pre_v3 = TabularFormat("Affine Table pre v3",
                              ['Site', 'Hole', 'Core', 'Core Type', 'Depth CSF (m)', 'Depth CCSF (m)', \
                               'Cumulative Offset (m)', 'Differential Offset (m)', 'Growth Rate', 'Shift Type', \
                               'Data Used', 'Quality Comment'])
 
-AffineFormatNew = TabularFormat("Affine Table New-Fangled",
+AffineFormat = TabularFormat("Affine Table",
                              ['Site', 'Hole', 'Core', 'Core Type', 'Depth CSF (m)', 'Depth CCSF (m)', \
                               'Cumulative Offset (m)', 'Differential Offset (m)', 'Growth Rate', 'Shift Type', \
                               'Fixed Core', 'Fixed Tie CSF', 'Shifted Tie CSF', 'Data Used', 'Quality Comment'])
