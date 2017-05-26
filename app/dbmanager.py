@@ -7692,7 +7692,7 @@ class DataFrame(wx.Panel):
 				self.parent.LOCK = 0	
 				py_correlator.openHoleFile(filename, -1, type, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
 				#HYEJUNG CHANGING NOW
-				self.parent.OnInitDataUpdate()
+				#self.parent.OnInitDataUpdate()
 				### 
 				self.parent.LOCK = 1	
 
