@@ -165,11 +165,11 @@ class BoxDialog(wx.Dialog):
 
 class EditBoxDialog(wx.Dialog):
 	def __init__(self, parent, title):
-		wx.Dialog.__init__(self, parent, -1, title, size=(300, 130), style= wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, -1, title, size=(300, 130), style=wx.STAY_ON_TOP | wx.DEFAULT_DIALOG_STYLE)
 
 		self.Center()
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
-		self.txt = wx.TextCtrl(self, -1, "", size = (270, 25), style=wx.SUNKEN_BORDER )
+		self.txt = wx.TextCtrl(self, -1, "", size=(270, 25), style=wx.SUNKEN_BORDER)
 
 		vbox_top.Add(self.txt, 0, wx.LEFT | wx.TOP | wx.BOTTOM, 15)
 
@@ -180,7 +180,7 @@ class EditBoxDialog(wx.Dialog):
 		grid.Add(cancelBtn, 0, wx.LEFT, 10)
 		vbox_top.Add(grid, 0, wx.LEFT, 50)
 		self.SetSizer(vbox_top)
-		wx.EVT_KEY_UP(self, self.OnCharUp)
+		wx.EVT_KEY_UP(self, self.OnCharUp)		
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
@@ -188,6 +188,9 @@ class EditBoxDialog(wx.Dialog):
 			self.EndModal(wx.ID_OK) 
 		elif keyid == wx.WXK_ESCAPE :
 			self.EndModal(wx.ID_CANCEL) 
+			
+	def getText(self):
+		return self.txt.GetValue()
 
 
 class StratTypeDialog(wx.Dialog):
@@ -1548,3 +1551,21 @@ class OpenFrame(wx.Dialog):
 			self.EndModal(wx.ID_CANCEL)
 		else:
 			event.Skip() # allow unhandled key events to propagate up the chain
+			
+class MockApp(wx.App):
+	def __init__(self):
+		wx.App.__init__(self)
+		self.frame = None
+		
+	def OnInit(self):
+		self.frame = wx.Frame(None, -1, "MockFrame", wx.Point(200,200), size=(200,200))
+		self.SetTopWindow(self.frame)
+		self.frame.Show()
+		return True
+
+if __name__ == "__main__":
+	app = MockApp()
+	dlg = EditBoxDialog(app.frame, "Please Input Text")
+	result = dlg.ShowModal()
+	print "dialog result = {}, text = {}".format(result, dlg.getText())
+	
