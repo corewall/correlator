@@ -3607,17 +3607,15 @@ class SpliceController:
 		return matches
 
 
-# retrieve existing UUID from file or create new UUID if none exists
+# retrieve existing UUID from .correlator/uuid.p, or create new UUID if none exists
 def get_uuid():
 	userUuid = None
 	uuidFile = os.path.join(User_Dir, ".correlator", "uuid.p")
 	if os.path.exists(uuidFile):
 		with open(uuidFile, 'r') as uuidFileStream:
 			userUuid = pickle.load(uuidFileStream)
-			print "found UUID = {}".format(userUuid)
 	else:
 		userUuid = uuid.uuid4()
-		print "no UUID found, creating {}".format(userUuid)
 		with open(uuidFile, 'w+') as uuidFileStream:
 			pickle.dump(userUuid, uuidFileStream)
 	return userUuid
@@ -3626,7 +3624,7 @@ def get_uuid():
 def ping_tracker():
 	userUuid = get_uuid()
 	tracker = UniversalAnalytics.Tracker.create("UA-99979639-1", client_id=userUuid)
-	tracker.send('pageview', 'index.html')
+	tracker.send('pageview', path='launch: UUID={}'.format(userUuid))
 
 
 class CorrelatorApp(wx.App):
