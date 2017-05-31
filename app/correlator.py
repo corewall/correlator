@@ -20,8 +20,9 @@ elif platform_name[5] == "powerpc":
 import wx
 from wx.lib import plot
 import pandas
+import UniversalAnalytics
 
-import random, sys, re, time, ConfigParser, string
+import random, sys, re, time, ConfigParser, string, uuid, pickle
 import getpass
 from datetime import datetime
 
@@ -53,7 +54,6 @@ global_logFile = None
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
 	return apply(os.path.join, tuple(path.split('/')))
-
 
 class MainFrame(wx.Frame):
 	def __init__(self, winsize, user):
@@ -3607,6 +3607,28 @@ class SpliceController:
 		return matches
 
 
+# retrieve existing UUID from file or create new UUID if none exists
+def get_uuid():
+	userUuid = None
+	uuidFile = os.path.join(User_Dir, ".correlator", "uuid.p")
+	if os.path.exists(uuidFile):
+		with open(uuidFile, 'r') as uuidFileStream:
+			userUuid = pickle.load(uuidFileStream)
+			print "found UUID = {}".format(userUuid)
+	else:
+		userUuid = uuid.uuid4()
+		print "no UUID found, creating {}".format(userUuid)
+		with open(uuidFile, 'w+') as uuidFileStream:
+			pickle.dump(userUuid, uuidFileStream)
+	return userUuid
+
+# ping GA launch tracker
+def ping_tracker():
+	userUuid = get_uuid()
+	tracker = UniversalAnalytics.Tracker.create("UA-99979639-1", client_id=userUuid)
+	tracker.send('pageview', 'index.html')
+
+
 class CorrelatorApp(wx.App):
 	def __init__(self, new_version, cfg=myPath+"default.cfg"):
 		self.cfgfile = cfg
@@ -3707,6 +3729,11 @@ if __name__ == "__main__":
 	tempstamp = str(datetime.today())
 	last = tempstamp.find(" ", 0)
 	stamp = tempstamp[0:last] + "-"  
+	
+	# create ~/.correlator dir if none exists
+	configDir = os.path.join(User_Dir, ".correlator")
+	if not os.access(configDir, os.F_OK):
+		os.mkdir(configDir)
 
 	if platform_name[0] == "Windows" :
 		if os.access(User_Dir  + "\\Correlator\\", os.F_OK) == False :
@@ -3774,6 +3801,7 @@ if __name__ == "__main__":
 	global_logFile.write(s)
 
 	ret = py_correlator.initialize("../DATA/current-test")
+	ping_tracker()
 	app = CorrelatorApp(new)
 	app.MainLoop()
 	win_size = app.frame.Width, app.frame.Height
