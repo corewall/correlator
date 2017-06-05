@@ -582,9 +582,12 @@ def elementsInList(elts, listToSearch):
     return allFound
 
 # do list1 and list2 have same elements, independent of their order?
-def sameElements(list1, list2):
+def sameElements(list1, list2, report=False):
     union = set().union(list1, list2)
-    return len(union) == len(list1) == len(list2)
+    same = len(union) == len(list1) == len(list2)
+    if not same and report:
+        print "sameElements(): no match!\nlist1 = {}\nlist2 = {}".format(list1, list2)
+    return same
 
 # - searchCore: AffineCoreInfo to find in coreList
 # - coreList: list of AffineCoreInfos
@@ -603,14 +606,14 @@ def findCoreAbove(searchCore, coreList):
 
 def convert_pre_v3_AffineTable(prev3df):
     for index, row in prev3df.iterrows():
-        print "row shift type = {}".format(row['Shift Type'])
+        #print "row shift type = {}".format(row['Shift Type'])
         if row['Shift Type'] in [numpy.nan, "nan", "TIE", "APPEND", "ANCHOR"]:
             prev3df.loc[index, "Shift Type"] = "REL"
     
     # add empty TIE tracking columns        
     for index, colname in enumerate(['Fixed Core', 'Fixed Tie CSF', 'Shifted Tie CSF']): 
         prev3df.insert(index + 10, colname, "")
-    print prev3df
+    #print prev3df
     return prev3df
 
 
@@ -800,7 +803,24 @@ class TestAffine(unittest.TestCase):
         # again, shift B1 - now C1 should remain unmoved
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         expectedMovers = acilist(["A3", "A4", "B2", "B3", "B4", "C2", "C3", "C4"])
-        self.assertTrue(sameElements(expectedMovers, movers))        
+        self.assertTrue(sameElements(expectedMovers, movers))
+        
+        # tricky scenario 1 - updating A1 > B1 tie
+        secsumm = sectionSummary.SectionSummary.createWithFile('testdata/U1390_reduced_SectionSummary.csv')
+        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_affine1.csv', secsumm)
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
+        expectedMovers = acilist(['A3', 'A4', 'B2', 'B3', 'B4', 'C2', 'C3', 'C4'])
+#         print movers
+#         print "expected = {}".format(expectedMovers)
+        self.assertTrue(sameElements(expectedMovers, movers))
+        
+        # tricky scenario 2 replacing A1 > B1 tie with C1 > B1 should *not* move A2,
+        # which currently happens because we're not considering the fact that A1 is
+        # the old fixed core
+        movers = builder.gatherRelatedCores(acistr('C1'), acistr('B1'))
+        expectedMovers = acilist(['A3', 'A4', 'B2', 'B3', 'B4', 'C2', 'C3', 'C4'])
+        self.assertTrue(sameElements(expectedMovers, movers, True))
+
         
 
 if __name__ == "__main__":
