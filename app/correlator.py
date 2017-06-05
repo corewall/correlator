@@ -3624,7 +3624,7 @@ def get_uuid():
 def ping_tracker():
 	userUuid = get_uuid()
 	tracker = UniversalAnalytics.Tracker.create("UA-99979639-1", client_id=userUuid)
-	tracker.send('pageview', path='launch: UUID={}'.format(userUuid))
+	tracker.send('pageview', path='/', title='launch: UUID={}'.format(userUuid))
 
 
 class CorrelatorApp(wx.App):
