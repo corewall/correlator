@@ -207,7 +207,27 @@ class AffineTable:
         for n in nodes:
             self._walkChain(self.getChildren(n.core), chainCores)
             chainCores.append(n.core)
-    
+            
+    # if there's a chain of ties from core to any member of searchCores that doesn't
+    # involve a core in excluded, return True.
+    # core: AffineCoreInfo of core for which connection is sought
+    # searchCores: list of AffineCoreInfos of cores for which connection with core is sought
+    # excluded: cores that cannot be included in the chain
+    # visited: already-seen cores
+    def isConnected(self, core, searchCores, excluded, visited):
+        if core in excluded:
+            return False
+        if core in searchCores:
+            return True
+        visited.append(core)
+        for childShift in self.getChildren(core):
+            if childShift.core not in visited and self.isConnected(childShift.core, searchCores, excluded, visited):
+                return True
+        parentShift = self.getParent(core)
+        if parentShift is not None and parentShift.core not in visited and self.isConnected(parentShift.core, searchCores, excluded, visited):
+            return True
+        return False
+            
     # get immediate parent of core
     def getParent(self, core):
         shift = None
@@ -383,17 +403,58 @@ class AffineBuilder:
                     if child.core not in movingCores:
                         breaks.append((core, child.core))
         return breaks
+    
+    def gatherRelatedCores(self, fromCore, shiftCore):
+        excludeCores = [fromCore]
+        shift = self.getShift(shiftCore)
+        if isTie(shift) and shift.fromCore != fromCore:
+            excludeCores.append(shift.fromCore)
             
+        # gather all cores in chains related to shiftCore and below 
+        chainCores = []
+        self._gatherHoleChainCores(shiftCore, excludeCores, chainCores)
+        chainCores = list(set(chainCores))
+        
+        # cull any cores above shiftCore
+        shiftCoreTop = self._getCoreTop(shiftCore) + self.getShift(shiftCore).distance
+        chainCores = [c for c in chainCores if self._getCoreTop(c) + self.getShift(c).distance >= shiftCoreTop]
+
+        # Find all chain cores not in shiftCore.hole that are connected to any
+        # core in shiftCore.hole at or below shiftCore. These cores will be shifted.
+        searchCores = self.getCoresBelow(shiftCore) + [shiftCore]
+        offHoleChainCores = []
+        for core in [c for c in chainCores if c.hole != shiftCore.hole]:
+            if self.affine.isConnected(core, searchCores, excludeCores, []):
+                offHoleChainCores.append(core)
+                
+        # offHoleChainCores now contains all chain cores not in shiftCore.hole that will
+        # be shifted. For each hole, find topmost of these cores, then add *all* cores
+        # below the topmost, since they must shift, whether or not they're chain cores.
+        relatedCores = self.getCoresBelow(shiftCore)
+        nonShiftHoles = [h for h in self.getSortedHoles() if h != shiftCore.hole]
+        for hole in nonShiftHoles:
+            topHoleCore = self._topCoreInHole(hole, [c for c in offHoleChainCores if c.hole == hole])
+            if topHoleCore is not None:
+                relatedCoresInHole = self.getCoresBelow(topHoleCore) + [topHoleCore]
+                relatedCores.extend(relatedCoresInHole)
+        
+        return relatedCores
+
     # gather all cores that will be shifted by "Shift by [shiftCore] and related cores below" action
     # this only makes sense to use for TIE operations.
     # No doubt a more elegant algorithm exists, but this one works!
-    def gatherRelatedCores(self, fromCore, shiftCore):
+    def gatherRelatedCores_old(self, fromCore, shiftCore):
         topChainCores = {shiftCore.hole: shiftCore} # for each hole encountered (key), track topmost chain core (value)
+        excludeCores = [fromCore]
+        shifty = self.getShift(shiftCore)
+        if isTie(shifty) and shifty.fromCore != fromCore:
+            excludeCores.append(shifty.fromCore)
+        
         chainCores = []
         done = False
         curCore = shiftCore
         while not done:
-            topCore = self._gatherHoleChainCores(curCore, fromCore, chainCores)
+            topCore = self._gatherHoleChainCores(curCore, excludeCores, chainCores)
             
             # update topChainCores for current hole if needed
             if topCore is not None:
@@ -402,7 +463,7 @@ class AffineBuilder:
                     
             # find a core in chainCores with hole != curCore.hole that's above the current topChainCores
             # value for that hole, if any, and make it the new curCore
-            offHoleCores = [c for c in chainCores if c.hole != curCore.hole and c != fromCore]
+            offHoleCores = [c for c in chainCores if c.hole != curCore.hole and c not in excludeCores]
             offHoles = set(c.hole for c in offHoleCores)
             for hole in offHoles:
                 topOffHoleCore = self._topCoreInHole(hole, offHoleCores)
@@ -438,11 +499,11 @@ class AffineBuilder:
         return list(set(relatedCores))
         
     # search core and below for chain cores - add all to chainCores list
-    def _gatherHoleChainCores(self, core, fromCore, chainCores):
+    def _gatherHoleChainCores(self, core, excludeCores, chainCores):
         foundCores = []
         for c in [core] + self.getCoresBelow(core):
             if c not in chainCores and self.affine.inChain(c):
-                newChainCores = [nc for nc in self.affine.getChainCores(c) if nc != fromCore]
+                newChainCores = [nc for nc in self.affine.getChainCores(c) if nc not in excludeCores]
                 foundCores.extend(newChainCores)
                 chainCores.extend(foundCores)
         
@@ -751,6 +812,39 @@ class TestAffine(unittest.TestCase):
         self.assertTrue(sameElements(list1, list2))
         self.assertFalse(sameElements(list1, list3))
         self.assertFalse(sameElements(list2, list3))
+        
+    def test_connected(self):
+        secsumm = sectionSummary.SectionSummary.createWithFile('testdata/U1390_reduced_SectionSummary.csv')
+        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_affine1.csv', secsumm)
+        
+        self.assertFalse(builder.affine.isConnected(acistr("C1"), [acistr("A1"), acistr("B1")], [], []))
+        
+        # A1 and B1 are connected - commutative
+        self.assertTrue(builder.affine.isConnected(acistr("A1"), [acistr("B1")], [], []))
+        self.assertTrue(builder.affine.isConnected(acistr("B1"), [acistr("A1")], [], []))
+        
+        # A3 is connected to both C2 and C3 via B2...
+        self.assertTrue(builder.affine.isConnected(acistr("A3"), [acistr("C2")], [], []))
+        self.assertTrue(builder.affine.isConnected(acistr("A3"), [acistr("C3")], [], []))
+        
+        # ...but if B2 is excluded, they're not
+        self.assertFalse(builder.affine.isConnected(acistr("A3"), [acistr("C2")], [acistr("B2")], []))
+        self.assertFalse(builder.affine.isConnected(acistr("A3"), [acistr("C3")], [acistr("B2")], []))
+        
+        # connected in the other direction too, i.e. starting from C2 or C3, seeking A3...
+        self.assertTrue(builder.affine.isConnected(acistr("C2"), [acistr("A3")], [], []))
+        self.assertTrue(builder.affine.isConnected(acistr("C3"), [acistr("A3")], [], []))
+        
+        # ...again, unless B2 is excluded
+        self.assertFalse(builder.affine.isConnected(acistr("C2"), [acistr("A3")], [acistr("B2")], []))
+        self.assertFalse(builder.affine.isConnected(acistr("C3"), [acistr("A3")], [acistr("B2")], []))
+        
+        # now create ties from C3 > B3 > A3...
+        builder.tie(True, 0.0, acistr("C3"), 1.0, acistr("B3"), 0.5)
+        builder.tie(True, 0.0, acistr("B3"), 1.0, acistr("A3"), 0.5)
+        
+        # ...which means there's now a path from A3 to C3 that doesn't involve B2 
+        self.assertTrue(builder.affine.isConnected(acistr("A3"), [acistr("C3")], [acistr("B2")], []))
         
     # test related core gathering for "shift core and all related below" operations
     def test_chain(self):
