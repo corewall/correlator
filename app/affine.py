@@ -756,7 +756,7 @@ class TestAffine(unittest.TestCase):
         return self.assertTrue(numpy.isclose(fp1, fp2))
     
     def test_convert_pre_v3(self):
-        oldaff, msg = tabularImport._parseFile("/Users/bgrivna/Desktop/prev3affine.affine.csv", tabularImport.AffineFormat_pre_v3, checkcols=True)
+        oldaff, msg = tabularImport._parseFile("testdata/pre_v3_affine.csv", tabularImport.AffineFormat_pre_v3, checkcols=True)
         newaff = convert_pre_v3_AffineTable(oldaff)
     
     def test_acistr(self):
