@@ -153,6 +153,11 @@ class AffineTable:
     # modify existing shift by deltaDistance
     def adjust(self, core, deltaDistance):
         self.getShift(core).adjust(deltaDistance)
+        
+    # change TieShift or SetShift to ImplicitShift, leaving shift distance unchanged
+    def makeImplicit(self, core):
+        shift = self.getShift(core)
+        self._replace(shift, ImplicitShift(core, shift.distance, shift.dataUsed, shift.comment))
     
     def getShift(self, core):
         shifts = [s for s in self.shifts if s.core == core]
@@ -363,40 +368,32 @@ class AffineBuilder:
     # core, depth - core and MBSF depth of tie on core to be shifted
     # comment - user comment/annotation of shift
     def tie(self, coreOnly, mcdShiftDistance, fromCore, fromDepth, core, depth, dataUsed="", comment=""):
+        breaks = []
         totalShiftDistance = self.affine.getShiftDistance(core) + mcdShiftDistance
         if coreOnly:
             self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
-            # need to update any shifts for which this is a from core to be SetShifts...right? Or Implicit?
+            breaks = self.findBreaks(core, fromCore, [core])
         else:
             relatedCores = self.gatherRelatedCores(fromCore, core)
+            breaks = self.findBreaks(core, fromCore, relatedCores + [core])
             self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
             for ci in relatedCores:
                 self.affine.adjust(ci, mcdShiftDistance)
+                
+        # change shift type of cores with just-broken ties to ImplicitShift
+        for b in breaks:
+            childCore = b[1]
+            if childCore != core: # original tie for core was broken by new tie - don't make implicit!
+                self.affine.makeImplicit(childCore)
     
-    def formatBreaks(self, breaks):
-        return "\n".join(["- from {} to {}".format(b[0], b[1]) for b in breaks]) + "\n"
-
-    # will shifting core have side effects that require user confirmation to proceed?
-    # returns tuple of form (confirmation needed [boolean], warning message [string])
-    def needConfirmation(self, fromCore, shiftCore, coreOnly):
+    # given list of cores to move, determine where ties will be broken and return
+    # list of tuples of form (fromCore, childCore) indicating break locations
+    def findBreaks(self, shiftCore, fromCore, movingCores):
         breaks = []
-        msg = "Shifting core {} ".format(shiftCore)
-        msg += "only " if coreOnly else "and related "
-        msg += "will break TIE chain(s):\n"
-        if coreOnly:
-            breaks = self.findBreaks([shiftCore])
-        else:
-            relatedCores = self.gatherRelatedCores(fromCore, shiftCore)
-            breaks = self.findBreaks(relatedCores + [shiftCore])
-
-        needConfirm = len(breaks) > 0
-        return needConfirm, msg + "{}".format(self.formatBreaks(breaks))
-    
-    def findBreaks(self, movingCores):
-        breaks = [] # list of tuples of form (fromCore, childCore)
         for core in movingCores:
             shift = self.getShift(core)
-            if isTie(shift) and shift.fromCore not in movingCores:
+            if isTie(shift) and shift.fromCore not in movingCores and \
+                (core != shiftCore or fromCore != shift.fromCore): # re-tie with same fromCore isn't a break
                 breaks.append((shift.fromCore, core))
             if self.affine.getChildren(core) > 0:
                 for child in self.affine.getChildren(core):
@@ -404,6 +401,7 @@ class AffineBuilder:
                         breaks.append((core, child.core))
         return breaks
     
+    # gather all cores that will be shifted by "Shift by [shiftCore] and related cores below" action
     def gatherRelatedCores(self, fromCore, shiftCore):
         excludeCores = [fromCore]
         shift = self.getShift(shiftCore)
@@ -418,6 +416,8 @@ class AffineBuilder:
         # cull any cores above shiftCore
         shiftCoreTop = self._getCoreTop(shiftCore) + self.getShift(shiftCore).distance
         chainCores = [c for c in chainCores if self._getCoreTop(c) + self.getShift(c).distance >= shiftCoreTop]
+        
+        # todo? cull any cores above fromCore
 
         # Find all chain cores not in shiftCore.hole that are connected to any
         # core in shiftCore.hole at or below shiftCore. These cores will be shifted.

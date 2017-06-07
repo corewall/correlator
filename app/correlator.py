@@ -3092,10 +3092,29 @@ class AffineController:
 		confirmed = True
 		if fromCoreInfo is None:
 			fromCoreInfo = aci("ZZ", "9999") # bogus fromCore to ensure no matches
-		needConfirm, msg = self.affine.needConfirmation(fromCoreInfo, coreInfo, coreOnly)
+		needConfirm, msg = self.needConfirmation(fromCoreInfo, coreInfo, coreOnly)
 		if needConfirm:
 			confirmed = self.parent.OnShowMessage("Confirm", msg + "\nDo you want to continue?", 0) == wx.ID_YES
 		return confirmed
+	
+	def formatBreaks(self, breaks):
+		return "\n".join(["- from {} to {}".format(b[0], b[1]) for b in breaks]) + "\n"
+
+	# will shifting core have side effects that require user confirmation to proceed?
+	# returns tuple of form (confirmation needed [boolean], warning message [string])
+	def needConfirmation(self, fromCore, shiftCore, coreOnly):
+		breaks = []
+		msg = "Shifting core {} ".format(shiftCore)
+		msg += "only " if coreOnly else "and related "
+		msg += "will break TIE chain(s):\n"
+		if coreOnly:
+			breaks = self.affine.findBreaks(shiftCore, fromCore, [shiftCore])
+		else:
+			relatedCores = self.affine.gatherRelatedCores(fromCore, shiftCore)
+			breaks = self.affine.findBreaks(shiftCore, fromCore, relatedCores + [shiftCore])
+
+		needConfirm = len(breaks) > 0
+		return needConfirm, msg + "{}".format(self.formatBreaks(breaks))	
 	
 	def isDirty(self):
 		return self.dirty
