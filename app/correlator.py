@@ -3039,8 +3039,6 @@ class AffineController:
 		if filepath is not None:
 			self.affine = AffineBuilder.createWithAffineFile(filepath, self.parent.sectionSummary)
 		else:
-			# add entries for any SectionSummary cores not included in just-loaded affine table
-			# TODO: seed affine with new items in section summary
 			self.affine = AffineBuilder.createWithSectionSummary(self.parent.sectionSummary)
 		
 	def save(self, affineFilePath):
@@ -3132,9 +3130,6 @@ class AffineController:
 		if self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, coreList[0]), coreOnly=False):
 			self.pushState()
 			site = self.parent.Window.GetHoleSite(hole)
-			#cores = self.parent.Window.GetHoleCores(hole)
-	# 		print "got site {} for hole {}".format(site, hole)
-	# 		print "got cores {} for holes {}".format(cores, hole)
 			for core in coreList:
 				if isPercent:
 					coreTop, coreBot = self.parent.sectionSummary.getCoreRange(site, hole, core)
@@ -3145,8 +3140,8 @@ class AffineController:
 			self.dirty = True
 			self.updateGUI()
 			
-	# fromDepth - MCD depth of tie point on fromCore
-	# depth - MCD depth of tie point on core
+	# fromDepth - MBSF depth of tie point on fromCore
+	# depth - MBSF depth of tie point on core
 	def tie(self, coreOnly, fromHole, fromCore, fromDepth, hole, core, depth, dataUsed="", comment=""):
 		fromCoreInfo = aci(fromHole, fromCore)
 		coreInfo = aci(hole, core)
@@ -3164,7 +3159,7 @@ class AffineController:
 	def hasShift(self, hole, core):
 		return self.affine.hasShift(aci(hole, str(core)))
 
-	# return TieShift or SetShift for hole-core combination
+	# return shift for hole-core combination
 	def getShift(self, hole, core):
 		return self.affine.getShift(aci(hole, str(core)))
 	
@@ -3207,10 +3202,6 @@ class AffineController:
 		for shift in self.affine.getSortedShifts():
 			rows.append((shift.core.GetHoleCoreStr(), str(shift.distance), self.getShiftTypeStr(shift.core.hole, shift.core.core)))
 		return rows
-	
-	# apply affine shifts to all data
-	def updateCoreData(self):
-		pass
 	
 	# moveCore and fixedCore are CoreInfo objects
 	def isLegalTie(self, moveCore, fixedCore):
