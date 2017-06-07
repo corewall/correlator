@@ -34,7 +34,7 @@ import frames
 import dbmanager
 import version as vers
 import model
-from affine import AffineBuilder, aci, acistr, isTie, isSet, isImplicit
+from affine import AffineBuilder, AffineCoreInfo, aci, isTie, isSet, isImplicit
 import splice
 import tabularImport
 
@@ -3089,7 +3089,7 @@ class AffineController:
 	def confirmBreaks(self, fromCoreInfo, coreInfo, coreOnly):
 		confirmed = True
 		if fromCoreInfo is None:
-			fromCoreInfo = aci("ZZ", "9999") # bogus fromCore to ensure no matches
+			fromCoreInfo = AffineCoreInfo.createBogus() # bogus fromCore to ensure no matches
 		needConfirm, msg = self.needConfirmation(fromCoreInfo, coreInfo, coreOnly)
 		if needConfirm:
 			confirmed = self.parent.OnShowMessage("Confirm", msg + "\nDo you want to continue?", 0) == wx.ID_YES

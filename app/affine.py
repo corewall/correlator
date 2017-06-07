@@ -349,11 +349,10 @@ class AffineBuilder:
     # shift core(s) by a given distance (SET) 
     def set(self, coreOnly, core, distance, dataUsed="", comment=""):
         if coreOnly:
-            #fromCore = aci('Z', '666') # bogus core to ensure nothing matches
             deltaDistance = distance - self.affine.getShift(core).distance
             self.affine.addShift(SetShift(core, distance, dataUsed, comment))
-        else: # consider related
-            fromCore = aci('Z', '666') # bogus core to ensure nothing matches
+        else: # consider related cores
+            fromCore = AffineCoreInfo.createBogus() # SET has no fromCore, use bogus to ensure no matches
             shift = self.affine.getShift(core)
             deltaDistance = distance - shift.distance
             relatedCores = self.gatherRelatedCores(fromCore, core)
@@ -569,6 +568,10 @@ class AffineCoreInfo:
         assert isinstance(core, str)
         self.hole = hole
         self.core = core
+        
+    @classmethod
+    def createBogus(cls):
+        return cls("ZZZ", "-999")
         
     def GetHoleCoreStr(self):
         return "{}{}".format(self.hole, self.core)
