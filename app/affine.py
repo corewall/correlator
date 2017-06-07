@@ -348,17 +348,25 @@ class AffineBuilder:
      
     # shift core(s) by a given distance (SET) 
     def set(self, coreOnly, core, distance, dataUsed="", comment=""):
+        bogusFromCore = AffineCoreInfo.createBogus() # SET has no fromCore, use bogus to ensure no matches
+        breaks = []
         if coreOnly:
+            breaks = self.findBreaks(core, bogusFromCore)
             deltaDistance = distance - self.affine.getShift(core).distance
             self.affine.addShift(SetShift(core, distance, dataUsed, comment))
         else: # consider related cores
-            fromCore = AffineCoreInfo.createBogus() # SET has no fromCore, use bogus to ensure no matches
             shift = self.affine.getShift(core)
             deltaDistance = distance - shift.distance
-            relatedCores = self.gatherRelatedCores(fromCore, core)
+            relatedCores = self.gatherRelatedCores(bogusFromCore, core)
+            breaks = self.findBreaks(core, bogusFromCore, relatedCores)
             self.affine.addShift(SetShift(core, distance, dataUsed, comment))
             for ci in relatedCores:
-                self.affine.adjust(ci, deltaDistance)            
+                if ci != core:
+                    self.affine.adjust(ci, deltaDistance)
+                
+        for b in breaks:
+            childCore = b[1]
+            self.affine.makeImplicit(childCore)
 
     # shift core(s) based on a tie between two cores
     # coreOnly - if True, shift core only, else shift core and all related
@@ -370,11 +378,11 @@ class AffineBuilder:
         breaks = []
         totalShiftDistance = self.affine.getShiftDistance(core) + mcdShiftDistance
         if coreOnly:
+            breaks = self.findBreaks(core, fromCore)
             self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
-            breaks = self.findBreaks(core, fromCore, [core])
         else:
             relatedCores = self.gatherRelatedCores(fromCore, core)
-            breaks = self.findBreaks(core, fromCore, relatedCores + [core])
+            breaks = self.findBreaks(core, fromCore, relatedCores)
             self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
             for ci in relatedCores:
                 self.affine.adjust(ci, mcdShiftDistance)
@@ -387,7 +395,9 @@ class AffineBuilder:
     
     # given list of cores to move, determine where ties will be broken and return
     # list of tuples of form (fromCore, childCore) indicating break locations
-    def findBreaks(self, shiftCore, fromCore, movingCores):
+    def findBreaks(self, shiftCore, fromCore, _movingCores=[]):
+        # use local copy of _movingCores to avoid adding shiftCore to client list
+        movingCores = _movingCores + [shiftCore]
         breaks = []
         for core in movingCores:
             shift = self.getShift(core)

@@ -3106,10 +3106,10 @@ class AffineController:
 		msg += "only " if coreOnly else "and related "
 		msg += "will break TIE chain(s):\n"
 		if coreOnly:
-			breaks = self.affine.findBreaks(shiftCore, fromCore, [shiftCore])
+			breaks = self.affine.findBreaks(shiftCore, fromCore)
 		else:
 			relatedCores = self.affine.gatherRelatedCores(fromCore, shiftCore)
-			breaks = self.affine.findBreaks(shiftCore, fromCore, relatedCores + [shiftCore])
+			breaks = self.affine.findBreaks(shiftCore, fromCore, relatedCores)
 
 		needConfirm = len(breaks) > 0
 		return needConfirm, msg + "{}".format(self.formatBreaks(breaks))	
