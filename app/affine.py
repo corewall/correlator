@@ -363,10 +363,11 @@ class AffineBuilder:
             for ci in relatedCores:
                 if ci != core:
                     self.affine.adjust(ci, deltaDistance)
-                
+
         for b in breaks:
             childCore = b[1]
-            self.affine.makeImplicit(childCore)
+            if childCore != core:
+                self.affine.makeImplicit(childCore)
 
     # shift core(s) based on a tie between two cores
     # coreOnly - if True, shift core only, else shift core and all related
