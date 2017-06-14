@@ -3086,11 +3086,11 @@ class AffineController:
 		prevAffine = copy.deepcopy(self.affine)
 		self.undoStack.append(prevAffine)
 		
-	def confirmBreaks(self, fromCoreInfo, coreInfo, coreOnly):
+	def confirmBreaks(self, fromCoreInfo, coreInfo, coreOnly, setAllOperation=False):
 		confirmed = True
 		if fromCoreInfo is None:
 			fromCoreInfo = AffineCoreInfo.createBogus() # bogus fromCore to ensure no matches
-		needConfirm, msg = self.needConfirmation(fromCoreInfo, coreInfo, coreOnly)
+		needConfirm, msg = self.needConfirmation(fromCoreInfo, coreInfo, coreOnly, setAllOperation)
 		if needConfirm:
 			confirmed = self.parent.OnShowMessage("Confirm", msg + "\nDo you want to continue?", 0) == wx.ID_YES
 		return confirmed
@@ -3100,7 +3100,7 @@ class AffineController:
 
 	# will shifting core have side effects that require user confirmation to proceed?
 	# returns tuple of form (confirmation needed [boolean], warning message [string])
-	def needConfirmation(self, fromCore, shiftCore, coreOnly):
+	def needConfirmation(self, fromCore, shiftCore, coreOnly, setAllOperation=False):
 		breaks = []
 		msg = "Shifting core {} ".format(shiftCore)
 		msg += "only " if coreOnly else "and related "
@@ -3108,7 +3108,7 @@ class AffineController:
 		if coreOnly:
 			breaks = self.affine.findBreaks(shiftCore, fromCore)
 		else:
-			relatedCores = self.affine.gatherRelatedCores(fromCore, shiftCore)
+			relatedCores = self.affine.gatherRelatedCores(fromCore, shiftCore, setAllOperation)
 			breaks = self.affine.findBreaks(shiftCore, fromCore, relatedCores)
 
 		needConfirm = len(breaks) > 0
@@ -3127,7 +3127,7 @@ class AffineController:
 		
 	# shift all cores in a hole with method SET
 	def setAll(self, hole, coreList, value, isPercent, dataUsed="", comment=""):
-		if self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, coreList[0]), coreOnly=False):
+		if self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, coreList[0]), coreOnly=False, setAllOperation=True):
 			self.pushState()
 			site = self.parent.Window.GetHoleSite(hole)
 			for core in coreList:

@@ -357,7 +357,7 @@ class AffineBuilder:
         else: # consider related cores
             shift = self.affine.getShift(core)
             deltaDistance = distance - shift.distance
-            relatedCores = self.gatherRelatedCores(bogusFromCore, core)
+            relatedCores = self.gatherRelatedCores(bogusFromCore, core, setAllOperation=True)
             breaks = self.findBreaks(core, bogusFromCore, relatedCores)
             self.affine.addShift(SetShift(core, distance, dataUsed, comment))
             for ci in relatedCores:
@@ -411,42 +411,73 @@ class AffineBuilder:
                         breaks.append((core, child.core))
         return breaks
     
+    def getOffHoleFromCores(self, cores, shiftHole):
+        shiftHoleCores = [c for c in cores if c.hole == shiftHole]
+        offHoleFromCores = []
+        for c in [c for c in cores if c.hole != shiftHole]:
+            kids = self.affine.getChildren(c)
+            for k in kids:
+                if k.core in shiftHoleCores:
+                    offHoleFromCores.append(c)
+                    break
+        return offHoleFromCores
+        #return [c for c in cores if c not in offHoleFromCores]
+    
     # gather all cores that will be shifted by "Shift by [shiftCore] and related cores below" action
-    def gatherRelatedCores(self, fromCore, shiftCore):
+    def gatherRelatedCores(self, fromCore, shiftCore, setAllOperation=False):
         excludeCores = [fromCore]
         shift = self.getShift(shiftCore)
         if isTie(shift) and shift.fromCore != fromCore:
             excludeCores.append(shift.fromCore)
             
-        # gather all cores in chains related to shiftCore and below 
-        chainCores = []
-        self._gatherHoleChainCores(shiftCore, excludeCores, chainCores)
-        chainCores = list(set(chainCores))
+        # shiftCore and all cores below in shiftCore.hole are going to shift: find all
+        # chain cores related to those cores.
+        chainCores = self._gatherHoleChainCores(shiftCore, excludeCores, knownChainCores=[])
+        
+        # now find all other chain cores affected by shiftCore's shift by gathering
+        # chain cores related to topmost core in chainCores for each hole != shiftCore.hole
+        done = False
+        nonShiftHoles = [h for h in self.sectionSummary.getHoles() if h != shiftCore.hole]
+        while not done:
+            newChainCores = []
+            for hole in nonShiftHoles:
+                # topmost chainCore in hole is going to shift - find any chain cores
+                # related to it or any core below it in hole
+                topChainCore = self._topCoreInHole(hole, chainCores)
+                if topChainCore is not None:
+                    newChainCores.extend(self._gatherHoleChainCores(topChainCore, excludeCores, knownChainCores=chainCores))
+            if len(newChainCores) == 0: # no new chain cores were found, we're done!
+                done = True
+            else: # found new chain cores, add them and repeat the process
+                chainCores.extend(newChainCores)
+        
+        # if this is a SET and related below operation, any TIEs in hole below shiftCore should be
+        # broken before considering related cores
+        if setAllOperation:
+            offHoleFromCores = self.getOffHoleFromCores(chainCores, shiftCore.hole)
+            chainCores = [c for c in chainCores if c not in offHoleFromCores]
         
         # cull any cores above shiftCore
         shiftCoreTop = self._getCoreTop(shiftCore) + self.getShift(shiftCore).distance
         chainCores = [c for c in chainCores if self._getCoreTop(c) + self.getShift(c).distance >= shiftCoreTop]
         
-        # todo? cull any cores above fromCore
-
-        # Find all chain cores not in shiftCore.hole that are connected to any
-        # core in shiftCore.hole at or below shiftCore. These cores will be shifted.
-        searchCores = self.getCoresBelow(shiftCore) + [shiftCore]
-        offHoleChainCores = []
-        for core in [c for c in chainCores if c.hole != shiftCore.hole]:
-            if self.affine.isConnected(core, searchCores, excludeCores, []):
-                offHoleChainCores.append(core)
-                
-        # offHoleChainCores now contains all chain cores not in shiftCore.hole that will
-        # be shifted. For each hole, find topmost of these cores, then add *all* cores
-        # below the topmost, since they must shift, whether or not they're chain cores.
-        relatedCores = self.getCoresBelow(shiftCore)
-        nonShiftHoles = [h for h in self.getSortedHoles() if h != shiftCore.hole]
+        # cull any cores above fromCore - fromCore can't move, so nothing above it can move
+        if fromCore != AffineCoreInfo.createBogus():
+            fromCoreTop = self._getCoreTop(fromCore) + self.getShift(fromCore).distance
+            coresAboveFrom = [c for c in chainCores if c.hole == fromCore.hole and self._getCoreTop(c) + self.getShift(c).distance < fromCoreTop]
+            for core in coresAboveFrom:
+                chainCores.remove(core)        
+        
         for hole in nonShiftHoles:
-            topHoleCore = self._topCoreInHole(hole, [c for c in offHoleChainCores if c.hole == hole])
-            if topHoleCore is not None:
-                relatedCoresInHole = self.getCoresBelow(topHoleCore) + [topHoleCore]
-                relatedCores.extend(relatedCoresInHole)
+            topChainCore = self._topCoreInHole(hole, chainCores)
+            if topChainCore is not None:
+                coreAndBelow = [topChainCore] + self.getCoresBelow(topChainCore)
+                chainCores.extend(coreAndBelow)
+            
+        chainCores.extend(self.getCoresBelow(shiftCore))
+        if shiftCore in chainCores: # remove shiftCore from relatedCores
+            chainCores.remove(shiftCore)
+        relatedCores = list(set(chainCores))
         
         return relatedCores
 
@@ -509,7 +540,7 @@ class AffineBuilder:
         return list(set(relatedCores))
         
     # search core and below for chain cores - add all to chainCores list
-    def _gatherHoleChainCores(self, core, excludeCores, chainCores):
+    def _gatherHoleChainCores_old(self, core, excludeCores, chainCores):
         foundCores = []
         for c in [core] + self.getCoresBelow(core):
             if c not in chainCores and self.affine.inChain(c):
@@ -518,6 +549,19 @@ class AffineBuilder:
                 chainCores.extend(foundCores)
         
         return self._topCoreInHole(core.hole, foundCores)
+    
+    # return list of cores in chains related to core and below in core.hole
+    # core - gather chain cores for this core and all cores below in its hole
+    # excludeCores - cores to be excluded from the list
+    # knownChainCores - chain cores that have already been discovered, to be excluded from list
+    def _gatherHoleChainCores(self, core, excludeCores, knownChainCores):
+        foundCores = []
+        for c in [core] + self.getCoresBelow(core):
+            if c not in knownChainCores and self.affine.inChain(c):
+                newChainCores = [nc for nc in self.affine.getChainCores(c) if nc not in excludeCores]
+                foundCores.extend(newChainCores)
+        
+        return list(set(foundCores))    
         
     # return topmost core in coreList found in hole, otherwise None
     def _topCoreInHole(self, hole, coreList):
@@ -827,6 +871,10 @@ class TestAffine(unittest.TestCase):
         self.assertFalse(sameElements(list1, list3))
         self.assertFalse(sameElements(list2, list3))
         
+    def test_bogus(self):
+        bogusCore = AffineCoreInfo.createBogus()
+        self.assertTrue(bogusCore == AffineCoreInfo.createBogus())
+        
     def test_connected(self):
         secsumm = sectionSummary.SectionSummary.createWithFile('testdata/U1390_reduced_SectionSummary.csv')
         builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_affine1.csv', secsumm)
@@ -899,7 +947,7 @@ class TestAffine(unittest.TestCase):
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         #print movers
         expectedMovers = acilist(["A3", "A4", "B2", "B3", "B4", "C1", "C2", "C3", "C4"])
-        self.assertTrue(sameElements(expectedMovers, movers))
+        self.assertTrue(sameElements(expectedMovers, movers, True))
         
         # reset, tie B2 > C2 instead of B1 > C1 as above: ties A1 > B1, B2 > C2, B2 > A3, A3 > B3
         builder.reset()
@@ -928,7 +976,60 @@ class TestAffine(unittest.TestCase):
         movers = builder.gatherRelatedCores(acistr('C1'), acistr('B1'))
         expectedMovers = acilist(['A3', 'A4', 'B2', 'B3', 'B4', 'C2', 'C3', 'C4'])
         self.assertTrue(sameElements(expectedMovers, movers, True))
+        
+        # scenario 1
+        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_scenario1.csv', secsumm)
+        
+        # TIE of B1
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
+        expectedMovers = acilist(['A2', 'A3', 'A4', 'B2', 'B3', 'B4', 'C3', 'C4'])
+        self.assertTrue(sameElements(expectedMovers, movers, True))
+        
+        # SET of B1 should break A1 > B1 and A2 > B2 ties, leaving A cores unmoved
+        bogusFromCore = AffineCoreInfo.createBogus()
+        movers = builder.gatherRelatedCores(bogusFromCore, acistr('B1'), setAllOperation=True)
+        expectedMovers = acilist(['B2', 'B3', 'B4', 'C3', 'C4'])
+        self.assertTrue(sameElements(expectedMovers, movers, True))
+        
+        # scenario 2
+        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_scenario2.csv', secsumm)        
 
+        # TIE of B1
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
+        expectedMovers = acilist(['A4', 'B2', 'B3', 'B4', 'C3', 'C4'])
+        self.assertTrue(sameElements(expectedMovers, movers, True))
+        
+        # SET of B1
+        movers = builder.gatherRelatedCores(bogusFromCore, acistr('B1'), setAllOperation=True)
+        expectedMovers = acilist(['A4', 'B2', 'B3', 'B4', 'C3', 'C4'])
+        self.assertTrue(sameElements(expectedMovers, movers, True))
+        
+        # scenario 3
+        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_scenario3.csv', secsumm)
+         
+        # TIE of B1
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
+        expectedMovers = acilist(['A2', 'A3', 'A4', 'B2', 'B3', 'B4', 'C3', 'C4'])
+        self.assertTrue(sameElements(expectedMovers, movers, True))
+         
+        # SET of B1
+        movers = builder.gatherRelatedCores(bogusFromCore, acistr('B1'), setAllOperation=True)
+        expectedMovers = acilist(['A4', 'B2', 'B3', 'B4', 'C3', 'C4'])
+        self.assertTrue(sameElements(expectedMovers, movers, True))
+
+        # scenario 4
+        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_scenario4.csv', secsumm)
+         
+        # TIE from C2 to B1
+        movers = builder.gatherRelatedCores(acistr('C2'), acistr('B1'))
+        expectedMovers = acilist(['B2', 'B3', 'B4'])
+        self.assertTrue(sameElements(expectedMovers, movers, True))
+         
+        # SET of B1
+        movers = builder.gatherRelatedCores(bogusFromCore, acistr('B1'), setAllOperation=True)
+        expectedMovers = acilist(['B2', 'B3', 'B4', 'C1', 'C2', 'C3', 'C4'])
+        self.assertTrue(sameElements(expectedMovers, movers, True))
+        
         
 
 if __name__ == "__main__":
