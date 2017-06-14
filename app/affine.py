@@ -424,6 +424,7 @@ class AffineBuilder:
         #return [c for c in cores if c not in offHoleFromCores]
     
     # gather all cores that will be shifted by "Shift by [shiftCore] and related cores below" action
+    # note: result excludes shiftCore itself!
     def gatherRelatedCores(self, fromCore, shiftCore, setAllOperation=False):
         excludeCores = [fromCore]
         shift = self.getShift(shiftCore)
