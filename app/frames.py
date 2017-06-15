@@ -3214,15 +3214,15 @@ class FilterPanel():
 		self.mainPanel.Bind(wx.EVT_CHOICE, self.SetUNIT, self.unitscmd)
 		grid2.Add(self.unitscmd, (1,2), flag=wx.ALIGN_CENTER_VERTICAL)
 
-		if platform_name[0] == "Windows" :	
-			grid2.Add(wx.StaticText(panel2, -1, "Display	         "), 0, wx.RIGHT | wx.LEFT, 5)
-		else :
+		if platform_name[0] == "Windows":
+			grid2.Add(wx.StaticText(panel2, -1, "Display	         "), (2,0), flag=wx.RIGHT | wx.LEFT, border=5)
+		else:
 			grid2.Add(wx.StaticText(panel2, -1, "Display"), (2,0), flag=wx.RIGHT, border=5)
 		self.plotcmd = wx.Choice(panel2, -1, (0,0), (180, -1), ("UnsmoothedOnly", "SmoothedOnly", "Smoothed&Unsmoothed"))
 		self.plotcmd.SetForegroundColour(wx.BLACK)
-		if platform_name[0] == "Windows" :			
-			grid2.Add(self.plotcmd, 0, wx.RIGHT, 10)
-		else :
+		if platform_name[0] == "Windows":
+			grid2.Add(self.plotcmd, (2,1), span=(1,2))
+		else:
 			grid2.Add(self.plotcmd, (2,1), span=(1,2))
 
 		sizer2.Add(grid2)
@@ -3240,13 +3240,13 @@ class FilterPanel():
 		self.smundoBtn = wx.Button(self.mainPanel, -1, "Undo", size=(120, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUNDOSmooth, self.smundoBtn)
 		#self.smundoBtn.Enable(False)
-		if platform_name[0] == "Windows" :	
+		if platform_name[0] == "Windows":
 			gridApply2.Add(self.smundoBtn, 0, wx.LEFT, 20)
-		else :
-			gridApply2.Add(self.smundoBtn, 0, wx.LEFT, 10)		
+		else:
+			gridApply2.Add(self.smundoBtn, 0, wx.LEFT, 10)
 		vbox_top.Add(gridApply2, 0, wx.LEFT, 10)
 
-		panel3 = wx.Panel (self.mainPanel, -1)
+		panel3 = wx.Panel(self.mainPanel, -1)
 		sizer3 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Cull'), orient=wx.VERTICAL)
 
 		grid3 = wx.FlexGridSizer(2, 2)
