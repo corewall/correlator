@@ -471,8 +471,20 @@ class DataFrame(wx.Panel):
 			siteName = self.GetSelectedSiteName()
 			ssListFound, secSummItem = self.FindItem(siteNode, "Section Summaries")
 			if ssListFound:
-				ssNode = self.tree.AppendItem(secSummItem, ','.join(sorted(secsumm.getHoles())))
-				self.tree.SetItemText(ssNode, secsumm.name, 1)
+				ssNode = None
+				
+				# check for existing SectionSummary node with database filename == secsumm.name
+				curSecSummNodes = self.GetChildren(secSummItem)
+				for cssNode in curSecSummNodes:
+					if self.tree.GetItemText(cssNode, 8) == secsumm.name:
+						ssNode = cssNode # node exists, update it
+						break
+				
+				if ssNode is None: # no SectionSummary node with this database filename exists, create one
+					ssNode = self.tree.AppendItem(secSummItem, ','.join(sorted(secsumm.getHoles())))
+					self.tree.SetItemText(ssNode, secsumm.name, 1)
+
+				# update metadata
 				self.tree.SetItemText(ssNode, self.GetTimestamp(), 6)
 				self.tree.SetItemText(ssNode, self.parent.user, 7)
 				self.tree.SetItemText(ssNode, secsumm.name, 8)
