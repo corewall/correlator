@@ -178,10 +178,9 @@ class DataCanvas(wxBufferedWindow):
 		## calling wxBufferedWindow.__init__, as it will call the Draw
 		## function.
 
-		self.bitmaps = {}
-		self.font1 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD) # never used!
-		self.font2 = wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD)
-		self.font3 = wx.Font(9, wx.SWISS, wx.NORMAL, wx.BOLD) # used only once!
+		stdFontSize = 9 if platform_name[0] == "Windows" else 12 # 12 point too large on Windows, just right on Mac
+		self.stdFont = wx.Font(stdFontSize, wx.SWISS, wx.NORMAL, wx.BOLD)
+		self.ageFont = wx.Font(9, wx.SWISS, wx.NORMAL, wx.BOLD) # used only for drawing label in age depth model points
 					
 		self.parent = parent
 		self.DrawData = {}
@@ -922,7 +921,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
 		dc.SetTextForeground(self.colorDict['foreground'])
-		dc.SetFont(self.font2)
+		dc.SetFont(self.stdFont)
 
 		self.rulerHeight = self.Height - self.startAgeDepth
 
@@ -1069,7 +1068,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
 		dc.SetTextForeground(self.colorDict['foreground'])
-		dc.SetFont(self.font2)
+		dc.SetFont(self.stdFont)
 
 		rulerUnitsStr = " (" + self.GetRulerUnitsStr() + ")"
 		if self.timeseries_flag == False :
@@ -1151,7 +1150,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
 		dc.SetTextForeground(self.colorDict['foreground'])
-		dc.SetFont(self.font2)
+		dc.SetFont(self.stdFont)
 
 		holeInfo = hole[0]
 		holeType = holeInfo[2]
@@ -2439,7 +2438,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
 		dc.SetTextForeground(self.colorDict['foreground'])
-		dc.SetFont(self.font2)
+		dc.SetFont(self.stdFont)
 		dc.SetPen(wx.Pen(wx.Colour(0, 255, 0), 1))
 
 		x = self.splicerX - 270
@@ -2471,7 +2470,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
 		dc.SetTextForeground(self.colorDict['foreground'])
-		dc.SetFont(self.font2)
+		dc.SetFont(self.stdFont)
 
 		ycoord = self.getDepth(y) if x < self.splicerX else self.getSpliceDepth(y)
 		unroundedYcoord = ycoord
@@ -2508,7 +2507,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
 		dc.SetTextForeground(self.colorDict['foreground'])
-		dc.SetFont(self.font2)
+		dc.SetFont(self.stdFont)
 		dc.SetPen(wx.Pen(wx.Colour(0, 255, 0), 1))
 		y = 0
 		if line == 1 :
@@ -2718,7 +2717,7 @@ class DataCanvas(wxBufferedWindow):
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 			dc.SetTextBackground(self.colorDict['background'])
 			dc.SetTextForeground(self.colorDict['foreground'])
-			#dc.SetFont( self.font2 )
+			#dc.SetFont(self.stdFont)
 			ycoord = self.MousePos[1]
 			ycoord = self.getDepth(ycoord) if self.MousePos[0] < self.splicerX else self.getSpliceDepth(ycoord)
 			ycoord = ycoord * self.GetRulerUnitsFactor()
@@ -2763,7 +2762,7 @@ class DataCanvas(wxBufferedWindow):
 			preY = y 
 
 		# Draw Age DOTs
-		dc.SetFont(self.font3)
+		dc.SetFont(self.ageFont)
 		self.DrawData["CoreArea"] = []
 		index = 0
 		for data in self.StratData :

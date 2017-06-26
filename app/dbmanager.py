@@ -471,8 +471,20 @@ class DataFrame(wx.Panel):
 			siteName = self.GetSelectedSiteName()
 			ssListFound, secSummItem = self.FindItem(siteNode, "Section Summaries")
 			if ssListFound:
-				ssNode = self.tree.AppendItem(secSummItem, ','.join(sorted(secsumm.getHoles())))
-				self.tree.SetItemText(ssNode, secsumm.name, 1)
+				ssNode = None
+				
+				# check for existing SectionSummary node with database filename == secsumm.name
+				curSecSummNodes = self.GetChildren(secSummItem)
+				for cssNode in curSecSummNodes:
+					if self.tree.GetItemText(cssNode, 8) == secsumm.name:
+						ssNode = cssNode # node exists, update it
+						break
+				
+				if ssNode is None: # no SectionSummary node with this database filename exists, create one
+					ssNode = self.tree.AppendItem(secSummItem, ','.join(sorted(secsumm.getHoles())))
+					self.tree.SetItemText(ssNode, secsumm.name, 1)
+
+				# update metadata
 				self.tree.SetItemText(ssNode, self.GetTimestamp(), 6)
 				self.tree.SetItemText(ssNode, self.parent.user, 7)
 				self.tree.SetItemText(ssNode, secsumm.name, 8)
@@ -4075,7 +4087,7 @@ class DataFrame(wx.Panel):
 		if len(items) > 0 :
 			self.parent.OnNewData(None)
 		else :
-			self.parent.OnShowMessage("Error", "Please, select data", 1)
+			self.parent.OnShowMessage("Error", "A site item or subitem must be selected to load data", 1)
 			return False
 
 		if self.parent.Window.HoleData != [] :
@@ -4094,21 +4106,21 @@ class DataFrame(wx.Panel):
 		previousType = "" 
 		previousItem = None 
 		count_load = 0
-		for selectItem in items :
-			if self.tree.GetItemText(selectItem, 0) == "Root" :
-				self.parent.OnShowMessage("Error", "Root is not allowed to select", 1)
+		for selectItem in items:
+			if self.tree.GetItemText(selectItem, 0) == "Root":
+				self.parent.OnShowMessage("Error", "Cannot load Root item: select a site item or subitem.", 1)
 				return False
-			elif self.tree.GetItemText(selectItem, 0) == "Saved Tables" :
+			elif self.tree.GetItemText(selectItem, 0) == "Saved Tables":
 				self.parent.OnShowMessage("Error", "Table is not allowed to select", 1)
 				return False
-			else :
+			else:
 				# if there is no subItem, then this function returns "" back
 				#self.parent.CurrentDataNo = selectrows[0]
 
 				self.parent.logFileptr.write("Load Files: \n")
 
 				# hole node
-				if len(self.tree.GetItemText(selectItem, 8)) > 0 :
+				if len(self.tree.GetItemText(selectItem, 8)) > 0:
 					parentItem = self.tree.GetItemParent(selectItem)
 					type = self.tree.GetItemText(parentItem, 0)
 					if universal_cull_item == None :
@@ -4119,36 +4131,38 @@ class DataFrame(wx.Panel):
 					# since multiple selection is impossible thus previousType will == "" when
 					# we reach this point. Strangely, that's for the best since loading a cull
 					# table before loading data results in a C++ side crash (because dataptr is NULL).
-					if previousType != "" and previousType != type and count_load > 0 :
-						ret = self.OnLOAD_CULLTABLE(parentItem, type)
-						if ret == "" :
-							self.OnLOAD_UCULLTABLE(universal_cull_item, type)
+					if previousType != "" and previousType != type and count_load > 0:
+						assert False # should never reach this line due to above
+# 						ret = self.OnLOAD_CULLTABLE(parentItem, type)
+# 						if ret == "" :
+# 							self.OnLOAD_UCULLTABLE(universal_cull_item, type)
+# 
+# 						smooth = -1
+# 						smooth_data = self.tree.GetItemText(previousItem, 12)
+# 						if smooth_data != "" :
+# 							smooth_array = smooth_data.split()
+# 							if "UnsmoothedOnly" == smooth_array[2] :
+# 								smooth = 0 
+# 							elif "SmoothedOnly" == smooth_array[2] :
+# 								smooth = 1 
+# 							elif "Smoothed&Unsmoothed" == smooth_array[2] :
+# 								smooth = 2 
+# 							if smooth_array[1] == "Depth(cm)" :
+# 								py_correlator.smooth(type, int(smooth_array[0]), 2)
+# 							else :
+# 								py_correlator.smooth(type, int(smooth_array[0]), 1)
+# 
+# 						continue_flag = True 
+# 						if self.tree.GetItemText(previousItem, 1) == "Discrete" :
+# 							continue_flag = False 
+# 
+# 						min = float(self.tree.GetItemText(previousItem, 4))
+# 						max = float(self.tree.GetItemText(previousItem, 5))
+# 						coef = max - min
+# 						newrange = previousType, min, max, coef, smooth, continue_flag
+# 						self.parent.Window.range.append(newrange)
 
-						smooth = -1
-						smooth_data = self.tree.GetItemText(previousItem, 12)
-						if smooth_data != "" :
-							smooth_array = smooth_data.split()
-							if "UnsmoothedOnly" == smooth_array[2] :
-								smooth = 0 
-							elif "SmoothedOnly" == smooth_array[2] :
-								smooth = 1 
-							elif "Smoothed&Unsmoothed" == smooth_array[2] :
-								smooth = 2 
-							if smooth_array[1] == "Depth(cm)" :
-								py_correlator.smooth(type, int(smooth_array[0]), 2)
-							else :
-								py_correlator.smooth(type, int(smooth_array[0]), 1)
-
-						continue_flag = True 
-						if self.tree.GetItemText(previousItem, 1) == "Discrete" :
-							continue_flag = False 
-
-						min = float(self.tree.GetItemText(previousItem, 4))
-						max = float(self.tree.GetItemText(previousItem, 5))
-						coef = max - min
-						newrange = previousType, min, max, coef, smooth, continue_flag
-						self.parent.Window.range.append(newrange)
-
+					# load data for a single hole+datatype pair 
 					if self.tree.GetItemText(selectItem, 2) == "Enable" and self.tree.GetItemText(selectItem, 0) != "-Cull Table" :
 						if self.OnLOAD_ITEM(selectItem) == 0 :
 							self.parent.OnNewData(None)
