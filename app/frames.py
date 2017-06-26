@@ -1404,7 +1404,7 @@ class SpliceIntervalPanel():
 		panel.SetSizer(psz)
 
 		# interval table, evaluation graph tabs
-		self.note = wx.Notebook(self.mainPanel, -1)
+		self.note = wx.Notebook(panel, -1)
 		
 		# interval table
 		gridPanel = wx.Panel(self.note, -1)
