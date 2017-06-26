@@ -556,16 +556,16 @@ class MainFrame(wx.Frame):
 		self.Window.UpdateDrawing()
 
 	def SETTextSizeUp(self, evt):
-		size = self.Window.font2.GetPointSize() + 1
-		self.Window.font2.SetPointSize(size)
+		size = self.Window.stdFont.GetPointSize() + 1
+		self.Window.stdFont.SetPointSize(size)
 		
 		self.Window.startDepth = self.Window.startDepth + 5
 		self.Window.startAgeDepth = self.Window.startAgeDepth + 5
 		self.Window.UpdateDrawing()
 		
 	def SETTextSizeDown(self, evt):
-		size = self.Window.font2.GetPointSize() - 1
-		self.Window.font2.SetPointSize(size)
+		size = self.Window.stdFont.GetPointSize() - 1
+		self.Window.stdFont.SetPointSize(size)
 		
 		self.Window.startDepth = self.Window.startDepth - 5
 		self.Window.startAgeDepth = self.Window.startAgeDepth -5		
@@ -1571,7 +1571,7 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("tiedotsize", self.Window.tieDotSize, f)
 		self.WritePreferenceItem("tiewidth", self.Window.tieline_width, f)
 		self.WritePreferenceItem("splicewindow", self.Window.spliceWindowOn, f)
-		#self.WritePreferenceItem("fontsize", self.Window.font2.GetPointSize(), f) # see 11/2/2013 brg
+		#self.WritePreferenceItem("fontsize", self.Window.stdFont.GetPointSize(), f) # see 11/2/2013 brg
 		self.WritePreferenceItem("fontstartdepth", self.Window.startDepth, f)
 		self.WritePreferenceItem("scrollsize", self.Window.ScrollSize, f)
 
@@ -2797,7 +2797,7 @@ class MainFrame(wx.Frame):
 		#	str_temp = self.config.get("applications", "fontsize")
 		#	if len(str_temp) > 0 :
 		#		conf_value = int ( str_temp )
-		#		self.Window.font2.SetPointSize(conf_value)
+		#		self.Window.stdFont.SetPointSize(conf_value)
 			
 		if self.config.has_option("applications", "fontstartdepth"):
 			str_temp = self.config.get("applications", "fontstartdepth")
