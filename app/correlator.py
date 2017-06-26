@@ -885,8 +885,6 @@ class MainFrame(wx.Frame):
 			comboBox.Append("Log")
 
 		comboBox.SetSelection(prevSelected)
-		if platform_name[0] == "Windows":
-			comboBox.SetValue(comboBox.GetString(prevSelected))
 
 		return prevSelected
 
