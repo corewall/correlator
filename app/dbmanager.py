@@ -4035,10 +4035,10 @@ class DataFrame(wx.Panel):
 					# range than previously encountered datatypes for this hole
 					if ssrow.identity() in sectionDict:
 						currow = sectionDict[ssrow.identity()]
-						if ssrow.sectionTop < currow.sectionTop:
-							currow.sectionTop = ssrow.sectionTop
-						if ssrow.sectionBottom > currow.sectionBottom:
-							currow.sectionBottom = ssrow.sectionBottom
+						if ssrow.topDepth < currow.topDepth:
+							currow.topDepth = ssrow.topDepth
+						if ssrow.bottomDepth > currow.bottomDepth:
+							currow.bottomDepth = ssrow.bottomDepth
 					else:
 						sectionDict[ssrow.identity()] = ssrow
 		ssRows = sorted(list(sectionDict.values()), key=lambda r:(r.hole, int(r.core), r.section))
