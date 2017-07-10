@@ -2089,24 +2089,25 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawText(shiftTypeStr, startX - 32, y - 12)
 			
 			# arrow indicating TIE between cores
-			# for now just draw a dot on datapoint nearest TieShift core's tie depth
 			if shiftTypeStr == "TIE" and self.showAffineTieArrows:
 				tieDepth, parentCore = self.parent.affineManager.getTieDepthAndParent(hole, coreno)
-				nearDepth, nearDatum = self.interpolateDataPoint(coreData, tieDepth)
 				holeType = holeInfo[2]
 				parentCoreData = self.GetCoreData(parentCore.hole, holeType, parentCore.core)
 				if parentCoreData is not None:
-					parentNearDepth, parentNearDatum = self.interpolateDataPoint(parentCoreData, tieDepth)
-				tieY = self.getCoord(nearDepth)
-				tieX = nearDatum - self.minRange
-				tieX = (tieX * self.coefRange) + startX
-				parentY = self.getCoord(parentNearDepth)
-				parentTieX = parentNearDatum - self.minRange
-				parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType)
-				# dot on parent core, arrow to shifted core 				
-				dc.DrawCircle(parentTieX, parentY, 3)
-				arrowDir = 5 if parentTieX > tieX else -5
-				dc.DrawLines(((parentTieX, parentY), (tieX, tieY), (tieX, tieY), (tieX+arrowDir, tieY+5), (tieX, tieY), (tieX+arrowDir, tieY-5)))
+					nearDepth, nearDatum = self.interpolateDataPoint(coreData, tieDepth)
+					parentCoreData = self.GetCoreData(parentCore.hole, holeType, parentCore.core)
+					if parentCoreData is not None:
+						parentNearDepth, parentNearDatum = self.interpolateDataPoint(parentCoreData, tieDepth)
+					tieY = self.getCoord(nearDepth)
+					tieX = nearDatum - self.minRange
+					tieX = (tieX * self.coefRange) + startX
+					parentY = self.getCoord(parentNearDepth)
+					parentTieX = parentNearDatum - self.minRange
+					parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType)
+					# dot on parent core, arrow to shifted core 				
+					dc.DrawCircle(parentTieX, parentY, 3)
+					arrowDir = 5 if parentTieX > tieX else -5
+					dc.DrawLines(((parentTieX, parentY), (tieX, tieY), (tieX, tieY), (tieX+arrowDir, tieY+5), (tieX, tieY), (tieX+arrowDir, tieY-5)))
 
 		coreColor = self.parent.affineManager.getShiftColor(hole, coreno)
 		dc.SetPen(wx.Pen(coreColor, 1))
