@@ -929,7 +929,8 @@ class ColorTableDialog(wx.Dialog):
 
 	def _makeColorPicker(self, parent, cpid):
 		# force a reasonable width, otherwise controls are needlessly wide on Windows
-		return wx.ColourPickerCtrl(parent, id=cpid, size=(50,-1))
+		cpsize = (50,-1) if platform_name[0] == "Windows" else wx.DefaultSize 
+		return wx.ColourPickerCtrl(parent, id=cpid, size=cpsize)
 	
 	def updateItem(self):
 		if self.initiated == 0 :
