@@ -725,205 +725,212 @@ class AltSpliceDialog(wx.Dialog):
 
 class ColorTableDialog(wx.Dialog):
 	def __init__(self, parent):
-		wx.Dialog.__init__(self, parent, -1, "Color Set", size=(480, 480),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
+		wx.Dialog.__init__(self, parent, -1, "Color Set", style=wx.DEFAULT_DIALOG_STYLE)
 		self.colorList = []
 		self.overlapcolorList = []
 		self.initiated = 0
 		self.parent = parent
+		self.CustomIndex = 5
 
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
 
 		panel1 = wx.Panel(self, -1)
 		sizer1 = wx.StaticBoxSizer(wx.StaticBox(panel1, -1, 'Color set'), orient=wx.VERTICAL)
-		self.colorSet = wx.ComboBox(panel1, -1, "Custom", (0,0), (270,-1), ("ODP", "Corporate", "Maritime", "Earth", "Santa Fe", "Custom"), wx.CB_DROPDOWN)
+		self.colorSet = wx.Choice(panel1, -1, choices=["ODP", "Corporate", "Maritime", "Earth", "Santa Fe", "Custom"])
 		self.colorSet.SetForegroundColour(wx.BLACK)
-		self.Bind(wx.EVT_COMBOBOX, self.SetColorSet, self.colorSet)
-		self.colorSet.SetEditable(False)
+		self.colorSet.SetSelection(self.CustomIndex)
+		self.Bind(wx.EVT_CHOICE, self.SetColorSet, self.colorSet)
 		sizer1.Add(self.colorSet)
 		panel1.SetSizer(sizer1)
 		vbox_top.Add(panel1, 0, wx.TOP | wx.LEFT, 9)
 
 		panel2 = wx.Panel(self, -1)
-		grid1 = wx.GridSizer(1, 2)
+		grid1 = wx.BoxSizer(wx.HORIZONTAL)
 
-		sizer2 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'Customize color'), orient=wx.VERTICAL)
-		grid2 = wx.FlexGridSizer(10, 4)
-		self.colorPicker01 = wx.ColourPickerCtrl(panel2, 1)
+		sizer2 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'Customize color'), orient=wx.HORIZONTAL)
+		# left column
+		grid2a = wx.FlexGridSizer(10, 2)
+		grid2a.SetFlexibleDirection(wx.HORIZONTAL)
+		grid2a.AddGrowableCol(1)
+		
+		# right column
+		grid2b = wx.FlexGridSizer(10, 2)
+		grid2b.SetFlexibleDirection(wx.HORIZONTAL)
+		grid2b.AddGrowableCol(1)
+		
+		self.colorPicker01 = self._makeColorPicker(panel2, 1)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker01)
-		grid2.Add(self.colorPicker01)
-		
-		if platform_name[0] == "Windows" :	
-			grid2.Add(wx.StaticText(panel2, -1, 'CSF             '))	
-		else :
-			grid2.Add(wx.StaticText(panel2, -1, 'CSF'))
+		grid2a.Add(self.colorPicker01, 0, wx.RIGHT, 5)
+		grid2a.Add(wx.StaticText(panel2, -1, 'CSF'))
 
-		self.colorPicker02 = wx.ColourPickerCtrl(panel2, 2)
+		self.colorPicker02 = self._makeColorPicker(panel2, 2)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker02)
-		grid2.Add(self.colorPicker02, 0, wx.LEFT, 10)
-		if platform_name[0] == "Windows" :		
-			grid2.Add(wx.StaticText(panel2, -1, 'CCSF TIE           '))
-		else :
-			grid2.Add(wx.StaticText(panel2, -1, 'CCSF TIE'))
+		grid2b.Add(self.colorPicker02, 0, wx.RIGHT, 5)
+		grid2b.Add(wx.StaticText(panel2, -1, 'CCSF TIE'))
 
-		self.colorPicker03 = wx.ColourPickerCtrl(panel2, 3)
+		self.colorPicker03 = self._makeColorPicker(panel2, 3)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker03)
-		grid2.Add(self.colorPicker03)
-		grid2.Add(wx.StaticText(panel2, -1, 'CCSF SET'))
+		grid2a.Add(self.colorPicker03)
+		grid2a.Add(wx.StaticText(panel2, -1, 'CCSF SET'))
 		
-		self.colorPicker04 = wx.ColourPickerCtrl(panel2, 4)
+		self.colorPicker04 = self._makeColorPicker(panel2, 4)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker04)
-		grid2.Add(self.colorPicker04, 0, wx.LEFT, 10)
-		grid2.Add(wx.StaticText(panel2, -1, 'CCSF REL'))
+		grid2b.Add(self.colorPicker04)
+		grid2b.Add(wx.StaticText(panel2, -1, 'CCSF REL'))
 			
-		self.colorPicker05 = wx.ColourPickerCtrl(panel2, 5)
+		self.colorPicker05 = self._makeColorPicker(panel2, 5)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker05)
-		grid2.Add(self.colorPicker05)
-		grid2.Add(wx.StaticText(panel2, -1, 'eld'))
+		grid2a.Add(self.colorPicker05)
+		grid2a.Add(wx.StaticText(panel2, -1, 'eld'))
 
-		self.colorPicker06 = wx.ColourPickerCtrl(panel2, 6)
+		self.colorPicker06 = self._makeColorPicker(panel2, 6)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker06)
-		grid2.Add(self.colorPicker06, 0, wx.LEFT, 10)
-		grid2.Add(wx.StaticText(panel2, -1, 'Smooth'))
+		grid2b.Add(self.colorPicker06)
+		grid2b.Add(wx.StaticText(panel2, -1, 'Smooth'))
 
-		self.colorPicker07 = wx.ColourPickerCtrl(panel2, 7)
+		self.colorPicker07 = self._makeColorPicker(panel2, 7)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker07)
-		grid2.Add(self.colorPicker07)
-		grid2.Add(wx.StaticText(panel2, -1, 'splice'))
+		grid2a.Add(self.colorPicker07)
+		grid2a.Add(wx.StaticText(panel2, -1, 'splice'))
 
-		self.colorPicker08 = wx.ColourPickerCtrl(panel2, 8)
+		self.colorPicker08 = self._makeColorPicker(panel2, 8)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker08)
-		grid2.Add(self.colorPicker08, 0, wx.LEFT, 10)
-		grid2.Add(wx.StaticText(panel2, -1, 'log'))
+		grid2b.Add(self.colorPicker08)
+		grid2b.Add(wx.StaticText(panel2, -1, 'log'))
 
-		self.colorPicker09 = wx.ColourPickerCtrl(panel2, 9)
+		self.colorPicker09 = self._makeColorPicker(panel2, 9)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker09)
-		grid2.Add(self.colorPicker09)
-		grid2.Add(wx.StaticText(panel2, -1, 'mudline adjust'))
+		grid2a.Add(self.colorPicker09)
+		grid2a.Add(wx.StaticText(panel2, -1, 'mudline adjust'))
 
-		self.colorPicker10 = wx.ColourPickerCtrl(panel2, 10)
+		self.colorPicker10 = self._makeColorPicker(panel2, 10)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker10)
-		grid2.Add(self.colorPicker10, 0, wx.LEFT, 10)
-		grid2.Add(wx.StaticText(panel2, -1, 'fixed tie'))
+		grid2b.Add(self.colorPicker10)
+		grid2b.Add(wx.StaticText(panel2, -1, 'fixed tie'))
 
-		self.colorPicker11 = wx.ColourPickerCtrl(panel2, 11)
+		self.colorPicker11 = self._makeColorPicker(panel2, 11)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker11)
-		grid2.Add(self.colorPicker11)
-		grid2.Add(wx.StaticText(panel2, -1, 'shift tie'))
+		grid2a.Add(self.colorPicker11)
+		grid2a.Add(wx.StaticText(panel2, -1, 'shift tie'))
 
-		self.colorPicker12 = wx.ColourPickerCtrl(panel2, 12)
+		self.colorPicker12 = self._makeColorPicker(panel2, 12)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker12)
-		grid2.Add(self.colorPicker12, 0, wx.LEFT, 10)
-		grid2.Add(wx.StaticText(panel2, -1, 'paleomag'))
+		grid2b.Add(self.colorPicker12)
+		grid2b.Add(wx.StaticText(panel2, -1, 'paleomag'))
 
-		self.colorPicker13 = wx.ColourPickerCtrl(panel2, 13)
+		self.colorPicker13 = self._makeColorPicker(panel2, 13)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker13)
-		grid2.Add(self.colorPicker13)
-		grid2.Add(wx.StaticText(panel2, -1, 'diatom'))
+		grid2a.Add(self.colorPicker13)
+		grid2a.Add(wx.StaticText(panel2, -1, 'diatom'))
 
-		self.colorPicker14 = wx.ColourPickerCtrl(panel2, 14)
+		self.colorPicker14 = self._makeColorPicker(panel2, 14)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker14)
-		grid2.Add(self.colorPicker14, 0, wx.LEFT, 10)
-		grid2.Add(wx.StaticText(panel2, -1, 'rad'))
+		grid2b.Add(self.colorPicker14)
+		grid2b.Add(wx.StaticText(panel2, -1, 'rad'))
 
-		self.colorPicker15 = wx.ColourPickerCtrl(panel2, 15)
+		self.colorPicker15 = self._makeColorPicker(panel2, 15)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker15)
-		grid2.Add(self.colorPicker15)
-		grid2.Add(wx.StaticText(panel2, -1, 'foram'))
+		grid2a.Add(self.colorPicker15)
+		grid2a.Add(wx.StaticText(panel2, -1, 'foram'))
 
-		self.colorPicker16 = wx.ColourPickerCtrl(panel2, 16)
+		self.colorPicker16 = self._makeColorPicker(panel2, 16)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker16)
-		grid2.Add(self.colorPicker16, 0, wx.LEFT, 10)
-		grid2.Add(wx.StaticText(panel2, -1, 'nano'))
+		grid2b.Add(self.colorPicker16)
+		grid2b.Add(wx.StaticText(panel2, -1, 'nano'))
 
-		self.colorPicker17 = wx.ColourPickerCtrl(panel2, 17)
+		self.colorPicker17 = self._makeColorPicker(panel2, 17)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker17)
-		grid2.Add(self.colorPicker17)
-		grid2.Add(wx.StaticText(panel2, -1, 'background'))
+		grid2a.Add(self.colorPicker17)
+		grid2a.Add(wx.StaticText(panel2, -1, 'background'))
 
-		self.colorPicker18 = wx.ColourPickerCtrl(panel2, 18)
+		self.colorPicker18 = self._makeColorPicker(panel2, 18)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker18)
-		grid2.Add(self.colorPicker18, 0, wx.LEFT, 10)
-		grid2.Add(wx.StaticText(panel2, -1, 'labels'))
+		grid2b.Add(self.colorPicker18)
+		grid2b.Add(wx.StaticText(panel2, -1, 'labels'))
 
-		self.colorPicker19 = wx.ColourPickerCtrl(panel2, 19)
+		self.colorPicker19 = self._makeColorPicker(panel2, 19)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker19)
-		grid2.Add(self.colorPicker19)
-		grid2.Add(wx.StaticText(panel2, -1, 'cor. window'))
+		grid2a.Add(self.colorPicker19)
+		grid2a.Add(wx.StaticText(panel2, -1, 'cor. window'))
 
-		self.colorPicker20 = wx.ColourPickerCtrl(panel2, 20)
+		self.colorPicker20 = self._makeColorPicker(panel2, 20)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeColor, self.colorPicker20)
-		grid2.Add(self.colorPicker20, 0, wx.LEFT, 10)
-		grid2.Add(wx.StaticText(panel2, -1, 'guide'))
+		grid2b.Add(self.colorPicker20)
+		grid2b.Add(wx.StaticText(panel2, -1, 'guide'))
 
-		sizer2.Add(grid2)
-		grid1.Add(sizer2)
+		sizer2.Add(grid2a)
+		sizer2.Add(grid2b, 0, wx.LEFT, 10)
+		grid1.Add(sizer2, 0)
 
 		sizer3 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'Overlapped hole color'), orient=wx.VERTICAL)
 		grid3 = wx.FlexGridSizer(10, 2)
 		# 9/17/2012 brg: start holePicker IDs at 101 to avoid collision with colorPicker IDs
-		self.holePicker01 = wx.ColourPickerCtrl(panel2, 101)
+		self.holePicker01 = self._makeColorPicker(panel2, 101)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker01)
-		grid3.Add(self.holePicker01, 0, wx.LEFT, 5)
-		grid3.Add(wx.StaticText(panel2, -1, '1st hole             '))
-		self.holePicker02 = wx.ColourPickerCtrl(panel2, 102)
+		grid3.Add(self.holePicker01, 0, wx.LEFT | wx.RIGHT, 5)
+		grid3.Add(wx.StaticText(panel2, -1, '1st hole'))
+		self.holePicker02 = self._makeColorPicker(panel2, 102)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker02)
 		grid3.Add(self.holePicker02, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '2nd hole'))
-		self.holePicker03 = wx.ColourPickerCtrl(panel2, 103)
+		self.holePicker03 = self._makeColorPicker(panel2, 103)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker03)
 		grid3.Add(self.holePicker03, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '3rd hole'))
-		self.holePicker04 = wx.ColourPickerCtrl(panel2, 104)
+		self.holePicker04 = self._makeColorPicker(panel2, 104)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker04)
 		grid3.Add(self.holePicker04, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '4th hole'))
-		self.holePicker05 = wx.ColourPickerCtrl(panel2, 105)
+		self.holePicker05 = self._makeColorPicker(panel2, 105)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker05)
 		grid3.Add(self.holePicker05, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '5th hole'))
-		self.holePicker06 = wx.ColourPickerCtrl(panel2, 106)
+		self.holePicker06 = self._makeColorPicker(panel2, 106)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker06)
 		grid3.Add(self.holePicker06, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '6th hole'))
-		self.holePicker07 = wx.ColourPickerCtrl(panel2, 107)
+		self.holePicker07 = self._makeColorPicker(panel2, 107)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker07)
 		grid3.Add(self.holePicker07, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '7th hole'))
-		self.holePicker08 = wx.ColourPickerCtrl(panel2, 108)
+		self.holePicker08 = self._makeColorPicker(panel2, 108)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker08)
 		grid3.Add(self.holePicker08, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '8th hole'))
-		self.holePicker09 = wx.ColourPickerCtrl(panel2, 109)
+		self.holePicker09 = self._makeColorPicker(panel2, 109)
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeHoleColor, self.holePicker09)
 		grid3.Add(self.holePicker09, 0, wx.LEFT, 5)
 		grid3.Add(wx.StaticText(panel2, -1, '9th hole'))
 		sizer3.Add(grid3)
 
-		grid1.Add(sizer3, 0, wx.LEFT, 30)
+		grid1.Add(sizer3, 0, wx.LEFT, 10)
 		panel2.SetSizer(grid1)
 		vbox_top.Add(panel2, 0, wx.TOP | wx.LEFT, 9)
 
-
-		grid4 = wx.FlexGridSizer(1, 2)
-		applyBtn = wx.Button(self, -1, "Apply", size=(120, 30))
+		grid4 = wx.BoxSizer(wx.HORIZONTAL)
+		applyBtn = wx.Button(self, -1, "Apply")
 		self.Bind(wx.EVT_BUTTON, self.OnApplyColor, applyBtn)
-		grid4.Add(applyBtn, 0, wx.LEFT, 100)		
+		grid4.Add(applyBtn, 0)
 
-		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Dismiss", size=(120, 30))
+		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Dismiss")
 		grid4.Add(cancelBtn, 0, wx.LEFT, 25)		
 
-		vbox_top.Add(grid4, 0, wx.LEFT | wx.TOP, 0)
+		vbox_top.Add(grid4, 0, wx.ALL | wx.CENTER, 10)
 
 		self.SetSizer(vbox_top)
+		self.Fit()
 		self.updateItem()
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
 		if keyid == wx.WXK_ESCAPE :
-			self.EndModal(wx.ID_CANCEL) 
+			self.EndModal(wx.ID_CANCEL)
 
-
+	def _makeColorPicker(self, parent, cpid):
+		# force a reasonable width, otherwise controls are needlessly wide on Windows
+		return wx.ColourPickerCtrl(parent, id=cpid, size=(50,-1))
+	
 	def updateItem(self):
 		if self.initiated == 0 :
 			self.colorPicker01.SetColour(self.parent.Window.colorDict['mbsf'])
@@ -969,38 +976,39 @@ class ColorTableDialog(wx.Dialog):
 		# paleomag, diatom, rad, foram, nano
 		#"ODP", "Corporate", "Maritime", "Earth", "Santa Fe", "Custom"
 		self.colorList = []
-		if self.colorSet.GetValue() == "ODP" :
+		currentColorSet = self.colorSet.GetStringSelection()
+		if currentColorSet == "ODP" :
 			self.colorList = [ wx.Colour(255, 215, 0), wx.Colour(0, 139, 0), \
 			wx.Colour(0, 102, 255), wx.Colour(255, 153, 0), \
 			wx.Colour(127, 255, 212), wx.Colour(255, 246, 143), wx.Colour(30, 144, 255), \
 			wx.Colour(255, 0, 0), wx.Colour(155, 48, 255), wx.Colour(139, 0, 0), \
 			wx.Colour(0, 139, 0), wx.Colour(139, 0, 0), wx.Colour(173, 255, 47), \
 			wx.Colour(255, 255, 255), wx.Colour(255, 140, 0), wx.Colour(0, 245, 255), wx.Colour(0, 0, 0), wx.Colour(255, 255, 255), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
-		elif self.colorSet.GetValue() == "Corporate" :
+		elif currentColorSet == "Corporate" :
 			self.colorList = [ wx.Colour(34, 139, 34), wx.Colour(0, 0, 255), wx.Colour(0, 0, 255), wx.Colour(0, 0, 255), \
 			wx.Colour(0, 255, 255), wx.Colour(205, 133, 63), wx.Colour(139, 76, 57), \
 			wx.Colour(125, 38, 205), wx.Colour(105, 139, 105), wx.Colour(139, 0, 0), \
 			wx.Colour(0, 139, 0), wx.Colour(30, 144, 255), wx.Colour(255, 255, 255), \
 			wx.Colour(143, 188, 143), wx.Colour(255, 20, 147), wx.Colour(72, 61, 139), wx.Colour(220, 220, 220), wx.Colour(0, 0, 0), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
-		elif self.colorSet.GetValue() == "Maritime" :
+		elif currentColorSet == "Maritime" :
 			self.colorList = [ wx.Colour(60, 179, 113), wx.Colour(250, 128, 114), wx.Colour(250, 128, 114), wx.Colour(250, 128, 114), \
 			wx.Colour(72, 61, 139), wx.Colour(92, 92, 92), wx.Colour(25, 25, 112), \
 			wx.Colour(125, 38, 205), wx.Colour(255, 99, 71), wx.Colour(255, 0, 0), \
 			wx.Colour(0, 255, 0), wx.Colour(255, 0, 0), wx.Colour(0, 255, 0), \
 			wx.Colour(255, 255, 255), wx.Colour(255, 192, 203), wx.Colour(191, 239, 255), wx.Colour(102, 205, 170), wx.Colour(54, 100, 139), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
-		elif self.colorSet.GetValue() == "Earth" :
+		elif currentColorSet == "Earth" :
 			self.colorList = [ wx.Colour(112, 128, 144), wx.Colour(85, 107, 47), wx.Colour(85, 107, 47), wx.Colour(85, 107, 47), \
 			wx.Colour(0, 255, 255), wx.Colour(150, 150, 150), wx.Colour(135, 206, 235), \
 			wx.Colour(238, 130, 238), wx.Colour(165, 42, 42), wx.Colour(255, 0, 0), \
 			wx.Colour(0, 255, 0), wx.Colour(0, 0, 255), wx.Colour(0, 255, 127), \
 			wx.Colour(255, 255, 255), wx.Colour(255, 105, 180), wx.Colour(165, 42, 42), wx.Colour(255, 222, 173), wx.Colour(165, 42, 42), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
-		elif self.colorSet.GetValue() == "Santa Fe" :
+		elif currentColorSet == "Santa Fe" :
 			self.colorList = [ wx.Colour(0, 100, 0), wx.Colour(99, 184, 255), wx.Colour(99, 184, 255), wx.Colour(99, 184, 255), \
 			wx.Colour(0, 255, 255), wx.Colour(255, 228, 225), wx.Colour(255, 105, 180), \
 			wx.Colour(160, 32, 240), wx.Colour(255, 192, 203), wx.Colour(255, 0, 0), \
 			wx.Colour(0, 255, 0), wx.Colour(255, 0, 0), wx.Colour(255, 255, 255), \
 			wx.Colour(155, 205, 155), wx.Colour(255, 20, 147), wx.Colour(100, 149, 237), wx.Colour(205, 85, 85), wx.Colour(255, 231, 186), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
-		elif self.colorSet.GetValue() == "Custom" :
+		elif currentColorSet == "Custom" :
 			for key in self.parent.Window.colorDictKeys :
 				self.colorList.append(self.parent.Window.colorDict[key])
 
@@ -1059,7 +1067,7 @@ class ColorTableDialog(wx.Dialog):
 			self.overlapcolorList.insert(idx, self.holePicker09.GetColour())
 
 	def ChangeColor(self, event):
-		self.colorSet.SetStringSelection("Custom")
+		self.colorSet.SetSelection(self.CustomIndex)
 		idx = event.GetId() - 1
 		self.colorList.pop(idx)
 		if idx == 0 :
