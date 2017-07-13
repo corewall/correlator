@@ -24,9 +24,6 @@ import xml_handler
 from affine import convert_pre_v3_AffineTable
 from sectionSummary import SectionSummary, SectionSummaryRow
 
-
-#from model import * # brgtodo 4/24/2014: Remove import *
-
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
 	return apply(os.path.join, tuple(path.split('/')))
@@ -4175,7 +4172,7 @@ class DataFrame(wx.Panel):
 
 				else : # not hole node, other types?
 					type = self.tree.GetItemText(selectItem, 0)
-					if type.find("-", 0) == -1 : # if non-site node, appears to be holeset
+					if type.find("-", 0) == -1: # if non-site node, appears to be measurement data node (e.g. NaturalGamma)
 						parentItem = self.tree.GetItemParent(selectItem)
 						if universal_cull_item == None :
 							universal_cull_item = self.Find_UCULL(parentItem) 
@@ -7705,9 +7702,7 @@ class DataFrame(wx.Panel):
 			else :
 				self.parent.LOCK = 0	
 				py_correlator.openHoleFile(filename, -1, type, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
-				#HYEJUNG CHANGING NOW
-				#self.parent.OnInitDataUpdate()
-				### 
+				self.parent.OnInitDataUpdate()
 				self.parent.LOCK = 1	
 
 				s = "Import Core Data: " + filename + "\n"
