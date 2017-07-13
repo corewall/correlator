@@ -3886,8 +3886,6 @@ class PreferencesPanel():
 	def OnRegisterHole(self, holename):
 		self.all.Append(holename)
 		self.all.SetSelection(self.prevSelected)
-		if platform_name[0] == "Windows"  :
-			self.all.SetValue(self.all.GetString(self.prevSelected))	
 
 	def OnToolbarWindow(self, event):
 		if self.tool.IsChecked() == True : 

@@ -278,6 +278,7 @@ class DataCanvas(wxBufferedWindow):
 							'foram': wx.Colour(84, 139, 84), 'nano': wx.Colour(219, 112, 147), \
 							'background': wx.Colour(0, 0, 0), 'foreground': wx.Colour(255, 255, 255), \
 							'corrWindow': wx.Colour(178, 34, 34), 'guide': wx.Colour(224, 255, 255) }
+		assert len(self.colorDictKeys) == len(self.colorDict)
 		
 		self.overlapcolorList = [ wx.Colour(238, 0, 0), wx.Colour(0, 139, 0), \
 				wx.Colour(0, 255, 255), wx.Colour(238, 216, 174), wx.Colour(30, 144, 255), \
