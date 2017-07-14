@@ -3639,13 +3639,12 @@ class CorrelatorApp(wx.App):
 	def __init__(self, new_version, cfg=myPath+"default.cfg"):
 		self.cfgfile = cfg
 		self.new = new_version
-		self.showSplash = False
+		self.showSplash = True
 		wx.App.__init__(self,0)
 		
 	def OnInit(self):
 		user = getpass.getuser()
 		if self.showSplash:
-			#if platform_name[0] != "Windows" :
 			openframe = dialog.OpenFrame(None, -1, user, vers.ShortVersion)
 			openframe.Centre()
 			ret =  openframe.ShowModal()
