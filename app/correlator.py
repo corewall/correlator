@@ -37,6 +37,7 @@ import model
 from affine import AffineBuilder, AffineCoreInfo, aci, isTie, isSet, isImplicit
 import splice
 import tabularImport
+import tracker
 
 app = None 
 User_Dir = os.path.expanduser("~")
@@ -3614,25 +3615,11 @@ class SpliceController:
 				matches = [i for i in matches if int(i.coreinfo.holeCore) == int(core)]
 		return matches
 
-
-# retrieve existing UUID from .correlator/uuid.p, or create new UUID if none exists
-def get_uuid():
-	userUuid = None
-	uuidFile = os.path.join(User_Dir, ".correlator", "uuid.p")
-	if os.path.exists(uuidFile):
-		with open(uuidFile, 'r') as uuidFileStream:
-			userUuid = pickle.load(uuidFileStream)
-	else:
-		userUuid = uuid.uuid4()
-		with open(uuidFile, 'w+') as uuidFileStream:
-			pickle.dump(userUuid, uuidFileStream)
-	return userUuid
-
 # ping GA launch tracker
 def ping_tracker():
-	userUuid = get_uuid()
-	tracker = UniversalAnalytics.Tracker.create("UA-99979639-1", client_id=userUuid)
-	tracker.send('pageview', path='/', title='launch: UUID={}'.format(userUuid))
+	uuidPath = os.path.join(User_Dir, ".correlator", "uuid.p")
+	gatracker = tracker.Tracker(uuidPath, ["UA", "99979639", "1"])
+	gatracker.ping()
 
 
 class CorrelatorApp(wx.App):
