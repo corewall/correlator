@@ -2046,7 +2046,7 @@ class DataCanvas(wxBufferedWindow):
 			
 		coreTopY, coreBotY = coreData[0][0], coreData[-1][0]
 		# draw section boundaries
-		if self.pressedkeyS == 1 or self.showSectionDepths:
+		if self.parent.sectionSummary and (self.pressedkeyS == 1 or self.showSectionDepths):
 			if drawComposite and smoothed != 2 and (self.depthVisible(coreTopY, drawing_start, self.rulerEndDepth) or self.depthVisible(coreBotY, drawing_start, self.rulerEndDepth)):
 				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 				shiftDistance = self.parent.affineManager.getShiftDistance(hole, coreno) if self.parent.affineManager.hasShift(hole, coreno) else 0
