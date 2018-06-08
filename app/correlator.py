@@ -3793,7 +3793,7 @@ if __name__ == "__main__":
 	global_logFile.write(s)
 
 	ret = py_correlator.initialize("../DATA/current-test")
-	ping_tracker()
+	#ping_tracker()
 	app = CorrelatorApp(new)
 	app.MainLoop()
 	win_size = app.frame.Width, app.frame.Height
