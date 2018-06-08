@@ -69,6 +69,8 @@ class SectionSummary:
             coremin = cores['TopDepth'].min()
             coremax = cores['BottomDepth'].max()
             return coremin, coremax
+        else:
+            print "getCoreRange(): Couldn't find cores for site {} hole {} core {}".format(site, hole, core)
         return None
     
     # return type of core
@@ -77,7 +79,9 @@ class SectionSummary:
         cores = cores[(cores.Section != "CC")] # omit CC section for time being
         if not cores.empty:
             return cores.iloc[0]['CoreType']
-        return None    
+        else:
+            print "getCoreType(): Couldn't find cores for site {} hole {} core {}".format(site, hole, core)
+        return None
     
     def getSites(self):
         return set(self.dataframe['Site'])
@@ -86,7 +90,7 @@ class SectionSummary:
         return set(self.dataframe['Hole'])
     
     def getCores(self, hole):
-        return set(self.dataframe[self.dataframe['Hole'] == hole]['Core'])
+        return set(self.dataframe[(self.dataframe['Hole'] == hole) & (self.dataframe['Section'] != "CC")]['Core'])
     
     def getSections(self, hole, core):
         return set(self.dataframe[(self.dataframe['Hole'] == hole) & (self.dataframe['Core'] == core)]['Section'])

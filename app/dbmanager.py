@@ -4063,11 +4063,13 @@ class DataFrame(wx.Panel):
 			if len(secSummFiles) > 0:
 				sectionSummary = SectionSummary.createWithFiles(secSummFiles)
 				ssLoaded = True
+				print "loaded {} Section Summary files".format(len(secSummFiles))
 						
 			if not ssLoaded: # no section summary file provided, infer
 				sectionSummary = self.InferSectionSummary(self.parent.Window.HoleData)
 					
 		self.parent.sectionSummary = sectionSummary
+		print self.parent.sectionSummary.dataframe
 		return ssLoaded
 			
 	def OnLOAD(self):
