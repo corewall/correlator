@@ -7636,6 +7636,7 @@ class DataFrame(wx.Panel):
 				measFileDir, measFileName = os.path.split(self.paths[i])
 				ssFileName = '-'.join(measFileName.split('-')[:3]) + "_Sections.csv"
 				ssFilePath = os.path.join(measFileDir, ssFileName)
+				print "Seeking Section Summary file named {} for auto-import...".format(ssFilePath)
 				if os.path.exists(ssFilePath):
 					ssdf, errmsg = tabularImport._parseFile(ssFilePath, tabularImport.SectionSummaryFormat, checkcols=True)
 					if ssdf is not None:
@@ -7643,6 +7644,8 @@ class DataFrame(wx.Panel):
 						self.AddSectionSummary(ss, ssFilePath)
 					else:
 						self.parent.OnShowMessage("Error", "Could not load associated section summary file {}:\n{}".format(ssFileName, errmsg))
+				else:
+					print "No Section Summary file named {} found for auto-import.".format(ssFilePath)
 
 		self.parent.logFileptr.write("\n")
 
