@@ -713,12 +713,12 @@ class MainFrame(wx.Frame):
 		for i in range(numleadLag) : 
 			last = coef.find(",", start)
 			if start == last :
-				break;
+				break
 			depth = float(coef[start:last])
 			start = last +1
 			last = coef.find(",", start)
 			if start == last :
-				break;
+				break
 			value = float(coef[start:last])
 
 			if max < value :
@@ -754,12 +754,12 @@ class MainFrame(wx.Frame):
 		for i in range(numleadLag) : 
 			last = coef.find(",", start)
 			if start == last :
-				break;
+				break
 			depth = float(coef[start:last])
 			start = last +1
 			last = coef.find(",", start)
 			if start == last :
-				break;
+				break
 			value = float(coef[start:last])
 			l.append( (depth, value) ) 
 			start = last +1
