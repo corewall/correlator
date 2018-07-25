@@ -571,6 +571,7 @@ class DataFrame(wx.Panel):
 	def SelectTREE(self, event):
 		pos = event.GetPosition()
 		idx, flags, col = self.tree.HitTest(pos)
+		self.tree.SelectItem(idx)
 		if col >= 0 :
 			self.selectedIdx = idx
 			popupMenu = wx.Menu()
