@@ -3569,7 +3569,7 @@ class DataFrame(wx.Panel):
 					type = ret[1]
 
 				strItem = ""
-				bm0 = int(100.00 * float(depth)) / 100.00;
+				bm0 = int(100.00 * float(depth)) / 100.00
 				str_ba = str(bm0)
 				max_ba = len(str_ba)
 				start_ba = str_ba.find('.', 0)
@@ -3581,7 +3581,7 @@ class DataFrame(wx.Panel):
 					else :
 						strItem = str(bm0) + "\t"
 
-					bm0 = int(100.00 * float(mcd)) / 100.00;
+					bm0 = int(100.00 * float(mcd)) / 100.00
 					str_ba = str(bm0)
 					max_ba = len(str_ba)
 					start_ba = str_ba.find('.', 0)
@@ -3609,7 +3609,7 @@ class DataFrame(wx.Panel):
 					else :
 						strItem = str(bm0) + " \t"
 
-					bm0 = int(100.00 * float(mcd)) / 100.00;
+					bm0 = int(100.00 * float(mcd)) / 100.00
 					str_ba = str(bm0)
 					max_ba = len(str_ba)
 					start_ba = str_ba.find('.', 0)
@@ -3700,7 +3700,7 @@ class DataFrame(wx.Panel):
 								i += 1
 								rate = py_correlator.getMcdRate(depth)
 								mcd = depth * rate
-								mcd = int(100.0 * float(mcd)) / 100.0;
+								mcd = int(100.0 * float(mcd)) / 100.0
 								age = float(temp_line[i])
 								i += 1
 								name = temp_line[i]
@@ -3722,7 +3722,7 @@ class DataFrame(wx.Panel):
 					i += 1
 					rate = py_correlator.getMcdRate(depth)
 					mcd = depth * rate
-					mcd = int(100.0 * float(mcd)) / 100.0;
+					mcd = int(100.0 * float(mcd)) / 100.0
 					age = float(tokens[i])
 					i += 1
 					name = tokens[i]
@@ -5939,7 +5939,7 @@ class DataFrame(wx.Panel):
 			opendlg = wx.FileDialog(self, "Select a affine table file", self.parent.Directory, "", "*.*")
 			ret = opendlg.ShowModal()
 			path = opendlg.GetPath()
-			filename = opendlg.GetFilename();
+			filename = opendlg.GetFilename()
 			source_filename = path
 			self.parent.Directory = opendlg.GetDirectory()
 			opendlg.Destroy()
@@ -5956,7 +5956,7 @@ class DataFrame(wx.Panel):
 			ret = opendlg.ShowModal()
 			path = opendlg.GetPath()
 			self.parent.Directory = opendlg.GetDirectory()
-			filename = opendlg.GetFilename();
+			filename = opendlg.GetFilename()
 			source_filename = path
 			opendlg.Destroy()
 
@@ -5969,7 +5969,7 @@ class DataFrame(wx.Panel):
 			ret = opendlg.ShowModal()
 			path = opendlg.GetPath()
 			self.parent.Directory = opendlg.GetDirectory()
-			filename = opendlg.GetFilename();
+			filename = opendlg.GetFilename()
 			source_filename = path 
 			opendlg.Destroy()
 
@@ -7202,8 +7202,8 @@ class DataFrame(wx.Panel):
 		self.parent.LOCK = 0
 		py_correlator.openLogFile(path + filename, selected)
 		min, max = py_correlator.getRange("Log")
-		min = int(100.0 * float(min)) / 100.0;
-		max = int(100.0 * float(max)) / 100.0;
+		min = int(100.0 * float(min)) / 100.0
+		max = int(100.0 * float(max)) / 100.0
 
 		#ret = py_correlator.getData(5)
 		#if ret != "" :
@@ -7356,8 +7356,8 @@ class DataFrame(wx.Panel):
 			self.parent.LOCK = 0
 			py_correlator.openLogFile(path + filename, selected)
 			min, max = py_correlator.getRange("Log")
-			min = int(100.0 * float(min)) / 100.0;
-			max = int(100.0 * float(max)) / 100.0;
+			min = int(100.0 * float(min)) / 100.0
+			max = int(100.0 * float(max)) / 100.0
 
 			self.parent.OnInitDataUpdate()
 
@@ -7581,7 +7581,7 @@ class DataFrame(wx.Panel):
 				max = len(modifiedLine)
 				s = ""
 				if max <= MAX_COLUMN :
-					continue;
+					continue
 				if modifiedLine[MAX_COLUMN].find("null", 0) >= 0 :
 					continue
 				else :

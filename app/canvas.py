@@ -968,7 +968,7 @@ class DataCanvas(wxBufferedWindow):
 			if x > self.compositeX and x < maxsize :
 				dc.DrawLines(((x, y1), (x, y2)))
 				dc.DrawText(str(pos), x - 10, y3)
-			pos = pos + self.ageXGap;
+			pos = pos + self.ageXGap
 			x = self.compositeX + ((pos - self.minAgeRange) * self.ageLength)
 
 		# Draw ruler on splicer space
@@ -1042,7 +1042,7 @@ class DataCanvas(wxBufferedWindow):
 	# Given rulerRange (in meters), return a suitable rate of depth scale tick marks (in meters).
 	def CalcTickRate(self, rulerRange):
 		result = 1.0
-		exp = 5;
+		exp = 5
 		while True:
 			bigTens = pow(10, exp)
 			halfBigTens = bigTens / 2.0
@@ -1086,7 +1086,7 @@ class DataCanvas(wxBufferedWindow):
 
 		# Draw depth scale ticks
 		self.rulerHeight = self.Height - self.startDepth
-		rulerRange = (self.rulerHeight / self.length) * 2;
+		rulerRange = (self.rulerHeight / self.length) * 2
 		self.rulerTickRate = self.CalcTickRate(rulerRange)
 
 		unitAdjFactor = self.GetRulerUnitsFactor()
@@ -1602,7 +1602,7 @@ class DataCanvas(wxBufferedWindow):
 							if depth != 0.0 :
 								y = (ba * y) / depth
 								#self.prevDepth = depth
-								y = int(100.0 * y) / 100.0;
+								y = int(100.0 * y) / 100.0
 							else :
 								#y = (ba * y) / self.prevDepth
 								y = 0.0
@@ -1783,7 +1783,7 @@ class DataCanvas(wxBufferedWindow):
 						if self.PreviewLog[0] == -1 :
 							y = y + self.PreviewLog[3]
 						elif y >= self.PreviewLog[0] and y <= self.PreviewLog[1] :
-							#(m_eld - m_b) * m_rate + m_b;
+							#(m_eld - m_b) * m_rate + m_b
 							y = (y - self.PreviewLog[0]) * self.PreviewLog[2] + self.PreviewLog[0]		
 							self.PreviewB = y
 							self.PreviewOffset = y - r[0]
@@ -1837,7 +1837,7 @@ class DataCanvas(wxBufferedWindow):
 					if self.PreviewLog[0] == -1 :
 						y = y + self.PreviewLog[3]
 					elif y >= self.PreviewLog[0] and y <= self.PreviewLog[1] :
-						#(m_eld - m_b) * m_rate + m_b;
+						#(m_eld - m_b) * m_rate + m_b
 						y = (y - self.PreviewLog[0]) * self.PreviewLog[2] + self.PreviewLog[0]		
 						self.PreviewB = y
 						self.PreviewOffset = y - r[0]
@@ -2113,7 +2113,7 @@ class DataCanvas(wxBufferedWindow):
 		coreColor = self.parent.affineManager.getShiftColor(hole, coreno)
 		dc.SetPen(wx.Pen(coreColor, 1))
 
-		log_number = 1;
+		log_number = 1
 		logsmoothed = smoothed
 
 		if smoothed == 3 :
@@ -3042,7 +3042,7 @@ class DataCanvas(wxBufferedWindow):
 			dc.SetPen(wx.Pen(wx.Colour(0, 139, 0), 1))
 			sedx = sx + width + sedrate_width + sedrate * sedrate_size
 
-			tempsedx = int(100.0 * float(sedrate)) / 100.0;
+			tempsedx = int(100.0 * float(sedrate)) / 100.0
 			dc.DrawText(str(tempsedx), sedx + 5, prevy + 5)
 
 			dc.DrawLines(((sedx, prevy), (sedx, sy)))
@@ -3405,8 +3405,8 @@ class DataCanvas(wxBufferedWindow):
 			l.append((x, y, coreInfo.core, 0, -1, -1, depth, self.splicerX, id, depth))
 			self.LogTieData.append(l)
 
-			rey1 = int(100.0 * float(depth)) / 100.0;
-			rey2 = int(100.0 * float(depthB)) / 100.0;
+			rey1 = int(100.0 * float(depth)) / 100.0
+			rey2 = int(100.0 * float(depthB)) / 100.0
 			info = holeA + " " + str(coreA) + " " + str(rey2) + "\t [TieTo] Log " + str(rey1)
 			self.parent.AddTieInfo(info, rey2)
 
@@ -3643,8 +3643,8 @@ class DataCanvas(wxBufferedWindow):
 					self.LogAutoMode = 0
 					self.parent.autoPanel.OnButtonEnable(0, False)
 		
-				rey1 = int(100.0 * float(y1)) / 100.0;
-				rey2 = int(100.0 * float(y2)) / 100.0;
+				rey1 = int(100.0 * float(y1)) / 100.0
+				rey2 = int(100.0 * float(y2)) / 100.0
 				#info = str(holeA) + " " + str(coreA) + " " +str(rey2) + "\t [TieTo] Log " +str(rey1)
 				info = annot_str + " " + str(rey2) + "\t [TieTo] Log " + str(rey1)
 				if preTieNo != tieNo :
@@ -5035,7 +5035,7 @@ class DataCanvas(wxBufferedWindow):
 			for r in data:
 				order, hole, name, label, start, stop, rawstart, rawstop, age, type = r 
 				strItem = ""
-				bm0 = int(100.0 * float(rawstart)) / 100.0;
+				bm0 = int(100.0 * float(rawstart)) / 100.0
 				str_ba = str(bm0)
 				max_ba = len(str_ba)
 				start_ba = str_ba.find('.', 0)
@@ -5046,7 +5046,7 @@ class DataCanvas(wxBufferedWindow):
 				else :
 					strItem = strItem + str(bm0) + space_bar + "\t"
 
-				bm = int(100.0 * float(start)) / 100.0;
+				bm = int(100.0 * float(start)) / 100.0
 				str_ba = str(bm)
 				max_ba = len(str_ba)
 				start_ba = str_ba.find('.', 0)
@@ -5057,7 +5057,7 @@ class DataCanvas(wxBufferedWindow):
 				else :
 					strItem += str(bm) + space_bar + "\t" + str(bm) + space_bar + " \t"
 
-				ba = int(1000.0 * float(age)) / 1000.0;
+				ba = int(1000.0 * float(age)) / 1000.0
 				str_ba = str(ba)
 				max_ba = len(str_ba)
 				start_ba = str_ba.find('.', 0)
@@ -5173,7 +5173,7 @@ class DataCanvas(wxBufferedWindow):
 						type = "handpick" 
 
 				strItem = ""
-				bm0 = int(100.00 * float(rawstart)) / 100.00;
+				bm0 = int(100.00 * float(rawstart)) / 100.00
 				str_ba = str(bm0)
 				max_ba = len(str_ba)
 				start_ba = str_ba.find('.', 0)
@@ -5187,7 +5187,7 @@ class DataCanvas(wxBufferedWindow):
 					else :
 						strItem = strItem + str(bm0) + "\t"
 
-					bm = int(100.00 * float(start)) / 100.00;
+					bm = int(100.00 * float(start)) / 100.00
 					str_ba = str(bm)
 					max_ba = len(str_ba)
 					start_ba = str_ba.find('.', 0)
@@ -5198,7 +5198,7 @@ class DataCanvas(wxBufferedWindow):
 					else :
 						strItem += str(bm) + "\t" + str(bm) + "\t"
 
-					ba = int(1000.00 * float(age)) / 1000.00;
+					ba = int(1000.00 * float(age)) / 1000.00
 					str_ba = str(ba)
 					max_ba = len(str_ba)
 					start_ba = str_ba.find('.', 0)
@@ -5216,7 +5216,7 @@ class DataCanvas(wxBufferedWindow):
 					else :
 						strItem = strItem + str(bm0) + " \t"
 
-					bm = int(100.00 * float(start)) / 100.00;
+					bm = int(100.00 * float(start)) / 100.00
 					str_ba = str(bm)
 					max_ba = len(str_ba)
 					start_ba = str_ba.find('.', 0)
@@ -5227,7 +5227,7 @@ class DataCanvas(wxBufferedWindow):
 					else :
 						strItem += str(bm) + " \t" + str(bm) + " \t"
 
-					ba = int(1000.00 * float(age)) / 1000.00;
+					ba = int(1000.00 * float(age)) / 1000.00
 					str_ba = str(ba)
 					max_ba = len(str_ba)
 					start_ba = str_ba.find('.', 0)
@@ -5298,7 +5298,7 @@ class DataCanvas(wxBufferedWindow):
 
 			self.grabScrollB = 0
 			self.UpdateDrawing()
-			return ;
+			return 
 
 		if self.grabScrollC == 1 :
 			scroll_start = self.compositeX
@@ -5320,7 +5320,7 @@ class DataCanvas(wxBufferedWindow):
 
 			self.grabScrollC = 0
 			self.UpdateDrawing()
-			return ;
+			return 
 
 		if pos[0] >= self.splicerX :
 			if self.grabCore >= 0 :
@@ -5941,7 +5941,7 @@ class DataCanvas(wxBufferedWindow):
 		if self.grabScrollA == 1 :
 			self.UpdateScrollA(pos)
 			self.UpdateDrawing()
-			return ;
+			return 
 
 		if self.grabScrollB == 1 :
 			scroll_start = self.startDepth * 0.7
@@ -5963,7 +5963,7 @@ class DataCanvas(wxBufferedWindow):
 			if self.MainViewMode == True :
 				self.SPrulerStartDepth = int(self.parent.ScrollMax * rate * 100.0) / 100.0
 			self.UpdateDrawing()
-			return ;
+			return 
 
 		if self.grabScrollC == 1 :
 			scroll_start = self.compositeX
@@ -5986,7 +5986,7 @@ class DataCanvas(wxBufferedWindow):
 				self.minAgeRange = self.maxAgeRange * rate
 
 			self.UpdateDrawing()
-			return ;
+			return 
 
 		if self.MainViewMode == True :
 			self.OnMainMotion(event)

@@ -153,7 +153,7 @@ class TopMenuFrame(wx.Frame):
 			return
 		
 		# affine
-		affine_filename = "";
+		affine_filename = ""
 		if savedialog.affineCheck.GetValue():
 			affine_filename = self.parent.dataFrame.Add_TABLE("AFFINE" , "affine", savedialog.affineUpdate.GetValue(), False, "")
 			self.parent.affineManager.save(affine_filename)
@@ -745,7 +745,7 @@ class CompositePanel():
 			self.parent.Window.UpdateDrawing()
 
 	def OnUpdateDepth(self, data):
-		depth = int(10000.0 * float(data)) / 10000.0;
+		depth = int(10000.0 * float(data)) / 10000.0
 		self.depthField.SetValue(str(depth))
 
 	# brgtodo 9/4/2014: only called from this module, and always to set "empty" data:
@@ -1253,7 +1253,7 @@ class SplicePanel():
 		self.parent.Update()
 
 	def OnUpdateDepth(self, data):
-		depth_value = int(10000.0 * float(data)) / 10000.0;
+		depth_value = int(10000.0 * float(data)) / 10000.0
 		self.depth.SetValue(str(depth_value))
 
 	def UpdateEvalStatus(self):
@@ -1945,7 +1945,7 @@ class AutoPanel():
 				if str_list == "Splice" :
 					py_correlator.setCorrelate(str_list, "", squishstart, squishend, self.squishinterval, depthstart, depthend, self.depthinterval, depth_step)
 					ratio = py_correlator.getRatio(str_list, str_list)
-					ratio_str = int(1000.00 * float(ratio)) / 1000.00;
+					ratio_str = int(1000.00 * float(ratio)) / 1000.00
 					self.valueD2.SetValue(str(ratio_str))
 				else :
 					end = str_list.find(" ", 0)
@@ -1955,7 +1955,7 @@ class AutoPanel():
 					datatype = str_list[start:end]
 					py_correlator.setCorrelate(holename, datatype, squishstart, squishend, self.squishinterval, depthstart, depthend, self.depthinterval, depth_step)
 					ratio = py_correlator.getRatio(holename, datatype)
-					ratio_str = int(1000.00 * float(ratio)) / 1000.00;
+					ratio_str = int(1000.00 * float(ratio)) / 1000.00
 					self.valueD2.SetValue(str(ratio_str))
 				if self.spliceFlag == 0 : 
 					self.parent.Window.autocoreNo.append(i)
@@ -1999,7 +1999,7 @@ class AutoPanel():
 		index = 0 
 		for data in self.sortDataList :
 			rate, b, x, y = data
-			rate = int(100.0 * float(rate)) / 100.0;
+			rate = int(100.0 * float(rate)) / 100.0
 			result_txt = "r = " + str(rate) + " n = " + str(b) + " (" + str(index+1) + ")"	 
 			self.resultList.InsertItems([result_txt], index)	 
 			index = index + 1
@@ -2418,7 +2418,7 @@ class ELDPanel():
 		self.crText.SetLabel("Step: {} | Window: {} | Lead/Lag: {}".format(roundedDepthStep, self.parent.winLength, self.parent.leadLag))
 		
 	def OnUpdateDepth(self, data):
-		depthstep = int(10000.0 * float(data)) / 10000.0;
+		depthstep = int(10000.0 * float(data)) / 10000.0
 		self.depth.SetValue(str(depthstep))
 
 	def OnUpdateData(self, data, bestdata):
@@ -2798,10 +2798,10 @@ class AgeDepthPanel():
 		rate = py_correlator.getMcdRate(pickdepth)
 		if self.parent.Window.mbsfDepthPlot == 0 : 
 			pickdepth = (1.0 / rate) * pickmcd
-			pickdepth = int(100.0 * pickdepth) / 100.0;
+			pickdepth = int(100.0 * pickdepth) / 100.0
 		else :
 			pickmcd = rate * pickdepth
-			pickmcd = int(100.0 * pickmcd) / 100.0;
+			pickmcd = int(100.0 * pickmcd) / 100.0
                 strItem = ""
 		str_ba = str(pickdepth)
 		max_ba = len(str_ba)
@@ -2841,7 +2841,7 @@ class AgeDepthPanel():
 			self.parent.Window.maxAgeRange = int(pickage) + 2
 			self.maxAge.SetValue(str(self.parent.Window.maxAgeRange))
 
-		ba = int(1000.0 * float(pickage)) / 1000.0;
+		ba = int(1000.0 * float(pickage)) / 1000.0
 		str_ba = str(ba)
 		max_ba = len(str_ba)
 		start_ba = str_ba.find('.', 0)
@@ -2893,7 +2893,7 @@ class AgeDepthPanel():
 
 	def SetORIGIN(self, evt):
 		pickdepth = float(self.depth.GetValue())
-		pickdepth = int(100.0 * pickdepth) / 100.0;
+		pickdepth = int(100.0 * pickdepth) / 100.0
 		str_ba = str(pickdepth)
 		max_ba = len(str_ba)
 		start_ba = str_ba.find('.', 0)
@@ -2909,7 +2909,7 @@ class AgeDepthPanel():
 			strItem = str(pickdepth) + space_bar + "\t"  + str(pickdepth) + space_bar + "\t" + str(pickdepth) + space_bar + "\t"
 
 		pickage = float(self.age.GetValue())
-		pickage = int(1000.0 * pickage) / 1000.0;
+		pickage = int(1000.0 * pickage) / 1000.0
 		pickname = 'X'
 
 		str_ba = str(pickage)
@@ -3382,7 +3382,7 @@ class FilterPanel():
 
 # 	def OnRegisterClear(self):
 # 		if self.locked == False :
-# 			self.prevSelected = self.all.GetCurrentSelection();
+# 			self.prevSelected = self.all.GetCurrentSelection()
 # 			if self.prevSelected == -1 :
 # 				self.prevSelected = 0			
 # 			self.all.Clear()
