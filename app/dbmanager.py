@@ -7,6 +7,7 @@ import platform
 platform_name = platform.uname()
 
 import shutil
+import pandas
 
 import wx 
 import wx.gizmos as gizmos
@@ -969,8 +970,10 @@ class DataFrame(wx.Panel):
 				applied = "affine"
 
 			if dlg.splice.GetValue() == True and splice_item is not None:
-				self.LoadSectionSummary()
 				self.parent.UpdateCORE() # depend on correlator.HoleData to export splice
+				ssLoaded = self.LoadSectionSummary()
+				if not ssLoaded:
+					return
 				
 				splicePath = path + self.tree.GetItemText(splice_item, 8)
 				if self.parent.spliceManager.canApplyAffine(splicePath):
@@ -1925,6 +1928,21 @@ class DataFrame(wx.Panel):
 			self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
 
 			self.parent.OnShowMessage("Information", "Successfully imported", 1)
+
+	# Return list of all currently-loaded cores. Each element of list
+	# is a tuple of strings: (site, hole, core)
+	def GetLoadedCores(self, HoleData):
+		loadedCores = []
+		for holeDataList in HoleData:
+			holeData = holeDataList[0] # extract from extra list
+			holeInfo = holeData[0] # first elt is a list of hole metadata
+			site, exp, holeName = holeInfo[0], holeInfo[1], holeInfo[7]
+			for coreData in holeData[1:]:
+				coreName = coreData[0]
+				coreTuple = (site, holeName, coreName)
+				if coreTuple not in loadedCores: # omit duplicate cores from other datatypes
+					loadedCores.append(coreTuple)
+		return loadedCores
 
 	# given parent node, return a list of all top-level children to get around the
 	# obnoxious "GetFirstChild(), then GetNextChild() for the rest" dance seen
@@ -3001,7 +3019,7 @@ class DataFrame(wx.Panel):
 			ssFilename = self.tree.GetItemText(ssNode, 8)
 			ssSourcePath = self.tree.GetItemText(ssNode, 9)
 			ssDbPath = self.tree.GetItemText(ssNode, 10)
-			if ssName != "": # brgbrg write
+			if ssName != "":
 				ssLine = '\nsecsumm: {}: {}: {}: {}: {}: {}\n'.format(ssName, ssTime, ssUser, ssFilename, ssSourcePath, ssDbPath)
 				fileOut.write(ssLine)
 
@@ -4010,24 +4028,27 @@ class DataFrame(wx.Panel):
 		siteDir = self.GetSiteNameForNode(node)
 		return self.parent.DBPath +'db/' + siteDir + '/' + filename
 	
-	# use canvas.HoleData to infer a section summary
-	def InferSectionSummary(self, HoleData):
-		print "secSumm couldn't be loaded, inferring Section Summary from hole data"
+	# use canvas.HoleData to infer a section summary row for the specified site, hole, core combination
+	def InferSectionSummaryRows(self, HoleData, site, hole, core):
 		sectionDict = {}
 		for holeDataList in HoleData:
 			holeData = holeDataList[0] # extract from extra list
 			holeInfo = holeData[0] # first elt is a list of hole metadata
-			site, exp, holeName = holeInfo[0], holeInfo[1], holeInfo[7]
-			# for each core, grab section depths
+			hd_site, hd_exp, hd_hole = holeInfo[0], holeInfo[1], holeInfo[7]
+			if not (hd_site == site and hd_hole == hole):
+				continue
 			for coreData in holeData[1:]:
-				coreName = coreData[0]
+				hd_core = coreData[0]
+				if not hd_core == core:
+					continue
+
 				sections = coreData[9]
 				# because only section tops are available, to infer the bottom of the last section,
 				# grab depth of last tuple in core's data/depth pairs, which should be depth-ordered
 				coreBottom = coreData[10][-1][0]
 				for sectionIndex, sectionTop in enumerate(sections):
 					sectionBottom = sections[sectionIndex + 1] if sectionIndex < len(sections) - 1 else coreBottom
-					ssrow = SectionSummaryRow(exp, site, holeName, coreName, 'Z', str(sectionIndex + 1), sectionTop, sectionBottom)
+					ssrow = SectionSummaryRow(hd_exp, hd_site, hd_hole, hd_core, 'Z', str(sectionIndex + 1), sectionTop, sectionBottom)
 					
 					# adjust section top and base if current datatype for hole has larger depth
 					# range than previously encountered datatypes for this hole
@@ -4039,14 +4060,14 @@ class DataFrame(wx.Panel):
 							currow.bottomDepth = ssrow.bottomDepth
 					else:
 						sectionDict[ssrow.identity()] = ssrow
+
 		ssRows = sorted(list(sectionDict.values()), key=lambda r:(r.hole, int(r.core), r.section))
 		print "Inferred {} section summary rows".format(len(sectionDict))
-		sectionSummary = SectionSummary.createWithPandasRows([ssr.asPandasSeries() for ssr in ssRows])
-		#secSumms.append(inferredSecSumm)
-		#tabularImport.writeToFile(sectionSummary.dataframe, "/Users/bgrivna/Desktop/inferredSecSumm.csv")
-		return sectionSummary
+		return ssRows
 		
-	def LoadSectionSummary(self):
+	# Load all Section Summary files for the current site, aggregating them
+	# into the returned SectionSummary object.
+	def LoadSectionSummaryFiles(self):
 		sectionSummary = None
 		siteItem = self.GetSelectedSite()
 		if siteItem is not None:
@@ -4063,15 +4084,58 @@ class DataFrame(wx.Panel):
 						print "Section Summary file [{}] found!".format(ssFilename)
 			if len(secSummFiles) > 0:
 				sectionSummary = SectionSummary.createWithFiles(secSummFiles)
-				ssLoaded = True
-				print "loaded {} Section Summary files".format(len(secSummFiles))
-						
-			if not ssLoaded: # no section summary file provided, infer
-				sectionSummary = self.InferSectionSummary(self.parent.Window.HoleData)
-					
-		self.parent.sectionSummary = sectionSummary
-		print self.parent.sectionSummary.dataframe
-		return ssLoaded
+		return sectionSummary
+
+	# Load Section Summary files and optionally infer Section Summary data for cores
+	# found in self.parent.Window.HoleData that aren't included in Section Summary files
+	def LoadSectionSummary(self):
+		# load files
+		sectionSummary = self.LoadSectionSummaryFiles()
+
+		# confirm that all HoleData cores are present in section summary
+		loadedCores = self.GetLoadedCores(self.parent.Window.HoleData)
+		missingCores = []
+		for site, hole, core in loadedCores:
+			if not sectionSummary or not sectionSummary.containsCore(site, hole, core):
+				missingCores.append((site, hole, core))
+
+		success = True
+		if len(missingCores) == 0: # all cores present, success
+			self.parent.sectionSummary = sectionSummary
+		else: # missing cores, attempt to infer if option is enabled
+			missingStr = ','.join(["{}{}".format(h,c) for s,h,c in missingCores])
+			if self.parent.GetPref('inferSectionSummary'):
+				inferredRows = []
+				failedInferredCores = []
+				for site, hole, core in missingCores:
+					ssrows = self.InferSectionSummaryRows(self.parent.Window.HoleData, site, hole, core)
+					if len(ssrows) == 0:
+						hcstr = "{}{}".format(hole, core)
+						print "Couldn't infer Section Summary rows for {}{}".format(hcstr)
+						failedInferredCores.append(hcstr)
+					else:
+						inferredRows += ssrows
+
+				# add inferred rows to existing sectionSummary
+				if len(inferredRows) > 0:
+					inferredSS = SectionSummary.createWithPandasRows([row.asPandasSeries() for row in inferredRows])
+					if sectionSummary:
+						combinedDF = pandas.concat([sectionSummary.dataframe, inferredSS.dataframe], ignore_index=True)
+						sectionSummary = SectionSummary("inferred", combinedDF)
+					else:
+						sectionSummary = inferredSS
+
+				if len(failedInferredCores) == 0: # ensure all missing cores were inferred
+					self.parent.sectionSummary = sectionSummary
+					self.parent.OnShowMessage("Info", "Section summary data was inferred for cores {}.".format(missingStr), 1)
+				else:
+					self.parent.OnShowMessage("Error", "Section summary data could not be loaded or inferred for cores {}.".format(','.join(failedInferredCores)), 1)
+					success = False
+			else:
+				self.parent.OnShowMessage("Error", "No section summary data was found for cores {}.\nData cannot be loaded.".format(missingStr), 1)				
+				success = False
+
+		return success
 			
 	def OnLOAD(self):
 		self.propertyIdx = None
@@ -4418,10 +4482,13 @@ class DataFrame(wx.Panel):
 		self.parent.LOCK = 0 
 
 		# load data into self.parent.Window.HoleData so section summary can be inferred if needed
-		self.parent.UpdateCORE()		
+		self.parent.UpdateCORE()
+
 		ssFileLoaded = self.LoadSectionSummary()
 		if not ssFileLoaded:
-			self.parent.OnShowMessage("Info", "No section summary file was loaded; a section summary was inferred from hole data.", 1)
+			self.parent.OnNewData(None)
+			self.parent.Window.UpdateDrawing()
+			return
 		
 		# load affine table
 		found, savedTablesItem = self.FindItem(parentItem, 'Saved Tables')
@@ -4436,7 +4503,7 @@ class DataFrame(wx.Panel):
 		# now that affine shifts are loaded, reload all data with affine applied
 		self.parent.UpdateCORE()
 		self.parent.UpdateSMOOTH_CORE()
-		self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)		
+		self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)	
 		
 		# now load splice and ELD if necessary
 		if tableLoaded != [] :
