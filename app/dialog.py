@@ -1468,6 +1468,43 @@ class DepthRangeDialog(wx.Dialog):
 		self.EndModal(wx.ID_OK)
 
 
+class ApplicationPreferencesDialog(wx.Dialog):
+	def __init__(self, parent, prefs):
+		wx.Dialog.__init__(self, parent, -1, "Correlator Preferences", size=(200,200), style=wx.CAPTION)
+
+		self.prefsMap = prefs
+
+		panel = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Data Loading Options"))
+		self.inferSectionSummary = wx.CheckBox(self, -1, "Infer Section Summary if none is provided")
+		panel.Add(self.inferSectionSummary)
+		
+		buttonPanel = wx.Panel(self, -1)
+		buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.cancelButton = wx.Button(buttonPanel, wx.ID_CANCEL, "Cancel")
+		self.okButton = wx.Button(buttonPanel, wx.ID_OK, "OK")
+		self.okButton.SetDefault()
+		self.Bind(wx.EVT_BUTTON, self.OnOK, self.okButton)
+		buttonSizer.Add(self.cancelButton, 0, wx.ALL, 5)
+		buttonSizer.Add(self.okButton, 0, wx.ALL, 5)
+		buttonPanel.SetSizer(buttonSizer)
+
+		dlgSizer = wx.BoxSizer(wx.VERTICAL)
+		dlgSizer.Add(panel, wx.ALL, 10)
+		dlgSizer.Add(buttonPanel, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
+		self.SetSizerAndFit(dlgSizer)
+		self.InitPrefs(prefs)
+
+	def InitPrefs(self, prefs):
+		self.inferSectionSummary.SetValue(self.prefsMap['inferSectionSummary'])
+
+	def UpdatePrefs(self):
+		self.prefsMap['inferSectionSummary'] = self.inferSectionSummary.IsChecked()
+
+	def OnOK(self, evt):
+		self.UpdatePrefs()
+		self.EndModal(wx.ID_OK)
+
+
 class AboutDialog(wx.Dialog):
 	def __init__(self, parent, version) :
 		wx.Dialog.__init__(self, parent, -1, "About Correlator " + version, size=(500, 330), style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)

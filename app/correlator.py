@@ -38,8 +38,10 @@ from affine import AffineBuilder, AffineCoreInfo, aci, isTie, isSet, isImplicit
 import splice
 import tabularImport
 import tracker
+import prefs
 
-app = None 
+app = None
+Prefs = None
 User_Dir = os.path.expanduser("~")
 
 myPath = User_Dir  + "/Documents/Correlator/" + vers.BaseVersion + "/"
@@ -209,6 +211,9 @@ class MainFrame(wx.Frame):
 				return  True
 		return False
 
+	def GetPref(self, prefkey, default=""):
+		return Prefs.get(prefkey, default)
+
 	def CreateMenu(self):
 		self.statusBar.SetStatusText('Done')
 
@@ -220,6 +225,9 @@ class MainFrame(wx.Frame):
 		self.Bind(wx.EVT_MENU, self.OnNewData, miFileNew)
 
 		menuFile.AppendSeparator()
+
+		prefsItem = menuFile.Append(wx.ID_PREFERENCES, "&Preferences...\tCTRL+,", "Application preferences")
+		self.Bind(wx.EVT_MENU, self.OnPreferences, prefsItem)
 
 		#self.miFileDB = menuFile.Append(-1, "&Access Database\tCtrl-E", "Access database")
 
@@ -331,7 +339,12 @@ class MainFrame(wx.Frame):
 		# bind keystrokes to the frame
 		# self.Bind(wx.EVT_KEY_DOWN, self.OnKeyEvent)
 		return menuBar
-		
+	
+	def OnPreferences(self, event):
+		dlg = dialog.ApplicationPreferencesDialog(self, Prefs.getAll())
+		if dlg.ShowModal() == wx.ID_OK:
+			Prefs.setAll(dlg.prefsMap)
+			Prefs.write()
 
 	def OnIMPORT_DATA(self, event):
 		opendlg = wx.DirDialog(self, "Select Repository Directory to Import", myPath)
@@ -3726,6 +3739,12 @@ if __name__ == "__main__":
 	configDir = os.path.join(User_Dir, ".correlator")
 	if not os.access(configDir, os.F_OK):
 		os.mkdir(configDir)
+
+	# check for preferences file, if none create default
+	prefsPath = os.path.join(configDir, "prefs.pk")
+	Prefs = prefs.Prefs(prefsPath)
+	if not Prefs.get("inferSectionSummary", None):
+		Prefs.set("inferSectionSummary", False)
 
 	if platform_name[0] == "Windows" :
 		if os.access(User_Dir  + "\\Correlator\\", os.F_OK) == False :
