@@ -659,7 +659,7 @@ class MainFrame(wx.Frame):
 
 	def OnUpdateDepthStep(self):
 		self.depthStep = py_correlator.getAveDepStep()
-		self.minDepthStep = int(10000.0 * float(self.depthStep)) / 10000.0;
+		self.minDepthStep = int(10000.0 * float(self.depthStep)) / 10000.0
 
 		self.compositePanel.OnUpdatePlots()
 		self.splicePanel.OnUpdate()
@@ -1135,7 +1135,7 @@ class MainFrame(wx.Frame):
 					filename = self.dataFrame.OnGET_IMAGE_FILENAME()
 					for name in filename :
 						cmd = "load_lims_table\t" + name + "\n"
-						self.client.send(cmd);
+						self.client.send(cmd)
 						#print "[DEBUG] send to Corelyzer : "  + str(cmd)
 
 					# load_core JULIAN
@@ -1146,14 +1146,14 @@ class MainFrame(wx.Frame):
 					#print "[DEBUG] send to Corelyzer : "  + str(cmd)
 					self.client.send(cmd)
 
-					#client.send("load_lims_table\t/Users/julian/Desktop/CRDownloader-data/1239/holeBC.dat\n");
+					#client.send("load_lims_table\t/Users/julian/Desktop/CRDownloader-data/1239/holeBC.dat\n")
 					# self.client.send("show_depth_range\t"+str(self.Window.rulerStartDepth)+"\t"+str(self.Window.rulerEndDepth)+"\n")
 					# self.client.send("jump_to_depth\t"+str(self.Window.rulerStartDepth)+"\n")
 					#print "[DEBUG] " + str(self.Window.rulerStartDepth) + "\t" + str(self.Window.rulerEndDepth)
 					_depth = (self.Window.rulerStartDepth + self.Window.rulerEndDepth) / 2.0
 					self.client.send("show_depth_range\t" + str(_depth-0.7) + "\t" + str(_depth+0.7) + "\n")
 
-				self.miConnection.SetText("Close Connection to Corelyzer");
+				self.miConnection.SetText("Close Connection to Corelyzer")
 				return True 
 		else :
 			if self.Window.HoleData != [] :
@@ -1167,7 +1167,7 @@ class MainFrame(wx.Frame):
 				print "[DEBUG] Disconnect to the corelyzer"
 			self.client.close()
 			self.client = None
-			self.miConnection.SetText("Connect to Corelyzer");
+			self.miConnection.SetText("Connect to Corelyzer")
 			print "[DEBUG] Close connection to Corelyzer"
 			self.OnShowMessage("Information", "Close connection to Corelyzer", 1)
 			return False 
