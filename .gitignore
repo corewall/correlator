@@ -2,6 +2,8 @@
 .svn
 .DS_Store
 *.[ao]
+*.pyc
+*~
 
 # ignored directories
 app/.eggs/
