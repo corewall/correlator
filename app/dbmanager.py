@@ -218,25 +218,24 @@ class DataFrame(wx.Panel):
 			self.selectedDataType = ""
 			self.selectedDepthType = ""
 			self.OnOPEN()
-		elif opId == 6 :
-			# DELETE 
+		elif opId == 6: # delete
 			self.OnDELETE()
-		elif opId == 7 :
+		elif opId == 7:
 			self.OnUPDATE()
-		elif opId == 9 :
+		elif opId == 9:
 			# IMPORT CULL TABLE
 			self.OnIMPORT_CULLTABLE(False)
 		elif opId == 10: # Disable
 			self.EnableTreeItem(self.selectedIdx, False)
 		elif opId == 11: # Enable
 			self.EnableTreeItem(self.selectedIdx, True)
-		elif opId == 12 :
+		elif opId == 12:
 			# IMPORT LOG 
 			self.importType = "LOG"
 			self.selectedDataType = ""
 			self.selectedDepthType = ""
 			self.OnOPEN_LOG()
-		elif opId == 13 :
+		elif opId == 13:
 			# EDIT LOG
 			self.importType = "LOG"
 			self.selectedDataType = ""
@@ -371,8 +370,7 @@ class DataFrame(wx.Panel):
 			item = self.tree.GetItemParent(self.selectedIdx)
 			self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
 			self.parent.Window.UpdateDATATYPE(self.tree.GetItemText(self.selectedIdx, 0), True)
-		elif opId == 28 :
-			# VIEW SESSION LOG FILE
+		elif opId == 28 : # view session report
 			filename = 'log/' + self.tree.GetItemText(self.selectedIdx, 1)
 			if filename != "" :
 				log = False
@@ -383,7 +381,7 @@ class DataFrame(wx.Panel):
 				self.ViewDataFile(filename)
 				if log == True :
 					self.parent.OnReOpenLog()
-		elif opId == 29 :
+		elif opId == 29 : # delete selected session report
 			deleted_flag = False
 			selections = self.tree.GetSelections()
 			ret = self.parent.OnShowMessage("About", "Do you want to delete?", 2)
@@ -406,8 +404,7 @@ class DataFrame(wx.Panel):
 						self.tree.Delete(select)
 			if deleted_flag == True :
 				self.parent.OnShowMessage("Information", "Successfully deleted", 1)
-		elif opId == 30 :
-			# EMPTY
+		elif opId == 30 : # empty session reports
 			ret = self.parent.OnShowMessage("About", "Do you want to make it Empty?", 2)
 			if ret == wx.ID_OK : 
 				if sys.platform == 'win32' :
@@ -6653,7 +6650,7 @@ class DataFrame(wx.Panel):
 
 		self.parent.OnShowMessage("Information", "All files are published", 1)
 
-
+	# update a single measurement data file
 	def OnUPDATEDATA(self, selectItem, datatype):
 		source = self.tree.GetItemText(selectItem, 9)
 		xml_flag = source.find(".xml", 0)
@@ -6730,6 +6727,8 @@ class DataFrame(wx.Panel):
 		self.parent.LOCK = 1
 		self.parent.OnNewData(None)
 
+		self.AutoImportSectionSummary(source) # update section summary
+
 		self.tree.SetItemText(selectItem, str(self.parent.min), 4)
 		self.tree.SetItemText(selectItem, str(self.parent.max), 5)
 
@@ -6739,17 +6738,16 @@ class DataFrame(wx.Panel):
 
 	def OnUPDATE(self):
 		selectItem = self.selectedIdx
-		if len(self.tree.GetItemText(selectItem, 8)) > 0 :
-			# normal file
+		if len(self.tree.GetItemText(selectItem, 8)) > 0: # single file
 			parentItem = self.tree.GetItemParent(selectItem)
 			type = self.tree.GetItemText(parentItem, 0)
 			if type != "-Cull Table" :
 				self.OnUPDATEDATA(selectItem, type)
 				parentItem = self.tree.GetItemParent(parentItem)
 				self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
-		else  :
+		else:
 			type = self.tree.GetItemText(selectItem, 0)
-			if type.find("-", 0) == -1 :
+			if type.find("-", 0) == -1 : # data type
 				# type 
 				totalcount = self.tree.GetChildrenCount(selectItem, False)
 				if totalcount > 0 :
@@ -6763,8 +6761,7 @@ class DataFrame(wx.Panel):
 							self.OnUPDATEDATA(child_item, type)
 				parentItem = self.tree.GetItemParent(selectItem)
 				self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
-			else :
-				# leg-site
+			else: # leg-site
 				totalcount = self.tree.GetChildrenCount(selectItem, False)
 				if totalcount > 0 :
 					child = self.tree.GetFirstChild(selectItem)
@@ -6880,7 +6877,8 @@ class DataFrame(wx.Panel):
 
 		self.parent.OnNewData(None)
 
-
+	# update all data??? how does this differ from OnUPDATEDATA()?
+	# appears to be related to Editing of measurement data and log data
 	def OnUPDATE_DATA(self):
 		if self.currentIdx == [] : 
 			return
@@ -7401,6 +7399,26 @@ class DataFrame(wx.Panel):
 		self.importbtn.Enable(False)
 		self.logHole = ""
 
+	# When measurement data is imported or updated, attempt to find and load
+	# corresponding section summary data. IODP format and naming expected.
+	# IODP measurement data filenames are named [exp]-[site]-[hole]-[datatype]
+	# IODP Section Summary filenames are named [exp]-[site]-[hole]_Sections.csv
+	# mdpath - path to imported measurement data file
+	def AutoImportSectionSummary(self, mdpath):
+		measFileDir, measFileName = os.path.split(mdpath)
+		ssFileName = '-'.join(measFileName.split('-')[:3]) + "_Sections.csv"
+		ssFilePath = os.path.join(measFileDir, ssFileName)
+		print "Seeking Section Summary file named {} for auto-import...".format(ssFilePath)
+		if os.path.exists(ssFilePath):
+			ssdf, errmsg = tabularImport._parseFile(ssFilePath, tabularImport.SectionSummaryFormat, checkcols=True)
+			if ssdf is not None:
+				ss = SectionSummary(ssFileName, ssdf)
+				self.AddSectionSummary(ss, ssFilePath)
+			else:
+				self.parent.OnShowMessage("Error", "Could not load associated section summary file {}:\n{}".format(ssFileName, errmsg))
+		else:
+			print "No Section Summary file named {} found for auto-import.".format(ssFilePath)		
+
 	# import measurement data file(s) in self.paths
 	def OnIMPORT(self, event):
 		if self.importbtn.GetLabel() == "Change" :
@@ -7656,24 +7674,7 @@ class DataFrame(wx.Panel):
 				self.tree.SetItemText(newline, self.selectedDepthType, 13)
 
 				self.parent.OnNewData(None)
-				
-				# Measurement data file was successfully imported. Look for associated IODP
-				# Section Summary file and load if found.
-				# IODP measurement data filenames are of format [exp]-[site]-[hole]-[datatype]
-				# IODP Section Summary filenames are of format [exp]-[site]-[hole]_Sections.csv
-				measFileDir, measFileName = os.path.split(self.paths[i])
-				ssFileName = '-'.join(measFileName.split('-')[:3]) + "_Sections.csv"
-				ssFilePath = os.path.join(measFileDir, ssFileName)
-				print "Seeking Section Summary file named {} for auto-import...".format(ssFilePath)
-				if os.path.exists(ssFilePath):
-					ssdf, errmsg = tabularImport._parseFile(ssFilePath, tabularImport.SectionSummaryFormat, checkcols=True)
-					if ssdf is not None:
-						ss = SectionSummary(ssFileName, ssdf)
-						self.AddSectionSummary(ss, ssFilePath)
-					else:
-						self.parent.OnShowMessage("Error", "Could not load associated section summary file {}:\n{}".format(ssFileName, errmsg))
-				else:
-					print "No Section Summary file named {} found for auto-import.".format(ssFilePath)
+				self.AutoImportSectionSummary(self.paths[i])
 
 		self.parent.logFileptr.write("\n")
 
