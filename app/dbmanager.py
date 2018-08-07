@@ -150,7 +150,6 @@ class DataFrame(wx.Panel):
 		fpsizer = wx.BoxSizer(wx.VERTICAL)
 		fpsizer.Add(self.fileText, 1, wx.EXPAND)
 		self.filePanel.SetSizer(fpsizer)
-		self.sideNote.AddPage(self.filePanel, 'Data File')
 
 		self.dataPanel.SetColLabelValue(0, "Data Type")
 		self.dataPanel.SetColSize(0, 150)
@@ -169,14 +168,7 @@ class DataFrame(wx.Panel):
 		opId = event.GetId()
 		if opId == 1:
 			self.ImportSectionSummary()
-		elif opId == 2: # View File
-			filepath = self.parent.DBPath + 'db/' + self.GetSelectedSiteName() + '/' + self.tree.GetItemText(self.selectedIdx, 1)
-			self.fileText.Clear()
-			self.fileText.LoadFile(filepath)
-			self.sideNote.SetSelection(2)
-		elif opId == 3: # Delete
-			self.DeleteSecSummFile()
-				
+
 	def DeleteSecSummFile(self, event=None):
 		secsummname = self.tree.GetItemText(self.selectedIdx, 1)
 		ret = self.parent.OnShowMessage("Information", "Are you sure you want to delete {}?".format(secsummname), 2)
@@ -195,6 +187,10 @@ class DataFrame(wx.Panel):
 		item = self.tree.GetItemParent(item)
 		self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
 
+	def ViewDataFile(self, filepath):
+		dlg = dialog.ViewDataFileDialog(self, filepath, filepath)
+		dlg.ShowModal()
+
 	# handles all of the many many many right-click commands in Data Manager
 	def OnPOPMENU(self, event):
 		opId = event.GetId()
@@ -205,9 +201,7 @@ class DataFrame(wx.Panel):
 			filename = self.tree.GetItemText(self.selectedIdx, 8)
 			if filename != "" :
 				filename = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + filename
-				self.fileText.Clear()
-				self.fileText.LoadFile(filename)
-				self.sideNote.SetSelection(2)
+				self.ViewDataFile(filename)
 		elif opId == 3 : # EDIT CORE
 			self.importType = "CORE"
 			self.importLabel = []
@@ -386,9 +380,7 @@ class DataFrame(wx.Panel):
 					self.parent.logFileptr.close()
 					log = True 
 				filename = self.parent.DBPath + filename
-				self.fileText.Clear()
-				self.fileText.LoadFile(filename)
-				self.sideNote.SetSelection(2)
+				self.ViewDataFile(filename)
 				if log == True :
 					self.parent.OnReOpenLog()
 		elif opId == 29 :
@@ -554,17 +546,8 @@ class DataFrame(wx.Panel):
 		assert "Client failed to provide legit sub-site node"
 	
 	def MakeSectionSummaryPopup(self, popupMenu):
-		#secsumm_name = self.tree.GetItemText(self.selectedIdx, 1)
-		#if secsumm_name == "":
 		popupMenu.Append(1, "&Import Section Summary File(s)...")
 		wx.EVT_MENU(popupMenu, 1, self.OnSecSummMenu)
-# 		else:
-# 			popupMenu.Append(2, "&View")
-# 			#path = self.parent.DBPath + 'db/' + self.GetSelectedSiteName() + '/' + secsumm_name
-# 			wx.EVT_MENU(popupMenu, 2, self.OnSecSummMenu)
-# 			popupMenu.Append(3, "&Delete")
-# 			wx.EVT_MENU(popupMenu, 3, self.OnSecSummMenu)
-
 
 	# build appropriate right-click menu based on selection type - rather than pulling
 	# text strings from the View to determine what's what, we should be asking the Model!

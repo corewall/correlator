@@ -131,6 +131,41 @@ class Message3Button(wx.Dialog):
 			self.EndModal(wx.ID_CANCEL) 
 
 
+# Dialog with a multi-line text control for viewing files in raw text
+class ViewDataFileDialog(wx.Dialog):
+	def __init__(self, parent, title, filepath):
+		wx.Dialog.__init__(self, parent, -1, title, size=(600,400), style=wx.RESIZE_BORDER | wx.CLOSE_BOX)
+
+		# text panel
+		self.filePanel = wx.Panel(self, -1)
+		self.fileText = wx.TextCtrl(self.filePanel, -1, "[File contents]", style=wx.TE_MULTILINE|wx.TE_READONLY|wx.VSCROLL|wx.TE_WORDWRAP)
+		self.fileText.SetEditable(False)
+		fixedWidthFont = wx.Font(14, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+		self.fileText.SetFont(fixedWidthFont)
+
+		# close button
+		self.closeButton = wx.Button(self.filePanel, -1, "Close")
+		self.closeButton.SetDefault()
+		self.Bind(wx.EVT_BUTTON, self.OnClose, self.closeButton)
+
+		# layout
+		fpsizer = wx.BoxSizer(wx.VERTICAL)		
+		fpsizer.Add(self.fileText, 1, wx.EXPAND)
+		fpsizer.Add(self.closeButton, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
+		self.filePanel.SetSizer(fpsizer)
+		self.fileText.LoadFile(filepath)
+
+		# events
+		wx.EVT_CHAR_HOOK(self, self.OnKey)
+
+	def OnClose(self, evt):
+		self.EndModal(wx.ID_OK)
+
+	def OnKey(self, evt):
+		if evt.GetKeyCode() == wx.WXK_ESCAPE:
+			self.EndModal(wx.ID_OK)
+
+
 class BoxDialog(wx.Dialog):
 	def __init__(self, parent, title):
 		wx.Dialog.__init__(self, parent, -1, title, size=(300, 130), style= wx.STAY_ON_TOP)
