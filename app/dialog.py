@@ -47,32 +47,32 @@ def MessageDialog(parent, title, msg, nobutton):
 
 class MessageDialogOLD(wx.Dialog):
 	def __init__(self, parent, title, msg, nobutton):
-		if title == "About" or title == "Help" : 
+		if title == "About" or title == "Help": 
 			wx.Dialog.__init__(self, parent, -1, title, size=(330, 130), style= wx.STAY_ON_TOP)
-		else :
+		else:
 			wx.Dialog.__init__(self, parent, -1, title, size=(330, 110), style= wx.STAY_ON_TOP)
 
 		self.Center()
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
 		panel1 = wx.Panel(self, -1, style = wx.WANTS_CHARS)
 		sizer = wx.FlexGridSizer(1, 2)
-		if title == "Error" : 
+		if title == "Error": 
 			bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/ErrorCircle-32x32.png'))
 			sizer.Add(bmp, 0, wx.LEFT | wx.TOP, 9)
-		elif title == "Information" or title == "Help" :
+		elif title == "Information" or title == "Help":
 			bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/about-32x32.png'))
 			sizer.Add(bmp, 0, wx.LEFT | wx.TOP, 9)
-		elif title == "About" :
+		elif title == "About":
 			bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/help-32x32.png'))
 			sizer.Add(bmp, 0, wx.LEFT | wx.TOP, 9)
 		sizer.Add(wx.StaticText(panel1, -1, msg), 0, wx.LEFT | wx.TOP | wx.BOTTOM, 15)
 		panel1.SetSizer(sizer)
 		vbox_top.Add(panel1)
 
-		if nobutton == 1 :
+		if nobutton == 1:
 			okBtn = wx.Button(self, wx.ID_OK, "OK")
 			vbox_top.Add(okBtn, 0, wx.LEFT, 110)
-		else :
+		else:
 			grid = wx.GridSizer(1,2)
 			okBtn = wx.Button(self, wx.ID_OK, "OK")
 			grid.Add(okBtn)
@@ -87,7 +87,7 @@ class MessageDialogOLD(wx.Dialog):
 	# 9/17/2013 brg: Seems we only need to handle enter for Okay, escape
 	# is automatically handled by wx.Dialog
 	def OnCharUp(self,event):
-		if event.GetKeyCode() == wx.WXK_RETURN :
+		if event.GetKeyCode() == wx.WXK_RETURN:
 			self.EndModal(wx.ID_OK)
 		else:
 			event.Skip()
@@ -125,9 +125,9 @@ class Message3Button(wx.Dialog):
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_RETURN :
+		if keyid == wx.WXK_RETURN:
 			self.EndModal(wx.ID_OK) 
-		elif keyid == wx.WXK_ESCAPE :
+		elif keyid == wx.WXK_ESCAPE:
 			self.EndModal(wx.ID_CANCEL) 
 
 
@@ -193,9 +193,9 @@ class BoxDialog(wx.Dialog):
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_RETURN :
+		if keyid == wx.WXK_RETURN:
 			self.EndModal(wx.ID_OK) 
-		elif keyid == wx.WXK_ESCAPE :
+		elif keyid == wx.WXK_ESCAPE:
 			self.EndModal(wx.ID_CANCEL) 
 
 class EditBoxDialog(wx.Dialog):
@@ -219,9 +219,9 @@ class EditBoxDialog(wx.Dialog):
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_RETURN :
+		if keyid == wx.WXK_RETURN:
 			self.EndModal(wx.ID_OK) 
-		elif keyid == wx.WXK_ESCAPE :
+		elif keyid == wx.WXK_ESCAPE:
 			self.EndModal(wx.ID_CANCEL) 
 			
 	def getText(self):
@@ -251,9 +251,9 @@ class StratTypeDialog(wx.Dialog):
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_RETURN :
+		if keyid == wx.WXK_RETURN:
 			self.EndModal(wx.ID_OK) 
-		elif keyid == wx.WXK_ESCAPE :
+		elif keyid == wx.WXK_ESCAPE:
 			self.EndModal(wx.ID_CANCEL) 
 
 
@@ -264,18 +264,18 @@ class ClearDataDialog(wx.Dialog):
 		self.parent = parent
 
 		vbox = wx.BoxSizer(wx.VERTICAL)
-		vbox.Add(wx.StaticText(self, -1, "Select Type to Clear :"), 0, wx.LEFT | wx.TOP, 9)
+		vbox.Add(wx.StaticText(self, -1, "Select Type to Clear:"), 0, wx.LEFT | wx.TOP, 9)
 		self.fileList = wx.ListBox(self, -1, (0,0), (265,250), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB)	 
 		vbox.Add(self.fileList, 0, wx.LEFT | wx.TOP, 9)
 
 		n = list.GetCount()
 		types = ""
-		for i in range(n) :
+		for i in range(n):
 			types = list.GetString(i)
-			if types[0:3] == "All" :
+			if types[0:3] == "All":
 				self.fileList.Append(list.GetString(i))
 
-		if self.fileList.GetCount() > 0 :	
+		if self.fileList.GetCount() > 0:	
 			self.fileList.Select(0)
 		self.fileList.SetForegroundColour(wx.BLACK)
 
@@ -295,21 +295,21 @@ class ClearDataDialog(wx.Dialog):
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_RETURN :
+		if keyid == wx.WXK_RETURN:
 			self.EndModal(wx.ID_OK) 
-		elif keyid == wx.WXK_ESCAPE :
+		elif keyid == wx.WXK_ESCAPE:
 			self.EndModal(wx.ID_CANCEL) 
 
 	def OnClearData(self, event):
 		ret = 0
 		size = self.fileList.GetCount()
-		for i in range(size) :
-			if self.fileList.IsSelected(i) == True :
-				if i == 0 : 
+		for i in range(size):
+			if self.fileList.IsSelected(i) == True:
+				if i == 0: 
 					self.parent.OnNewData(None)
-				elif i == 1 and size == 2 :
+				elif i == 1 and size == 2:
 					self.parent.OnNewData(None)
-				else :
+				else:
 					py_correlator.cleanDataType(self.fileList.GetString(i))
 					self.fileList.Delete(i)
 				break	
@@ -403,7 +403,7 @@ class AgeListDialog(wx.Dialog):
 		self.selectedNo =  -1 
 
 		idx = 0
-		for age in active_list :
+		for age in active_list:
 			self.ageList.InsertItems([str(age)], idx)
 			idx += 1
 
@@ -413,14 +413,14 @@ class AgeListDialog(wx.Dialog):
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_RETURN :
+		if keyid == wx.WXK_RETURN:
 			self.EndModal(wx.ID_OK) 
-		elif keyid == wx.WXK_ESCAPE :
+		elif keyid == wx.WXK_ESCAPE:
 			self.EndModal(wx.ID_CANCEL) 
 
-	def OnSelect(self, event) :
-		for i in range(self.ageList.GetCount()) :
-			if self.ageList.IsSelected(i) == True :
+	def OnSelect(self, event):
+		for i in range(self.ageList.GetCount()):
+			if self.ageList.IsSelected(i) == True:
 				self.selectedNo = i 
 				return
 
@@ -469,9 +469,9 @@ class SaveTableDialog(wx.Dialog):
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_RETURN :
+		if keyid == wx.WXK_RETURN:
 			self.EndModal(wx.ID_OK) 
-		elif keyid == wx.WXK_ESCAPE :
+		elif keyid == wx.WXK_ESCAPE:
 			self.EndModal(wx.ID_CANCEL) 
 
 class OkButtonPanel(wx.Panel):
@@ -688,21 +688,21 @@ class ExportCoreDialog(wx.Dialog):
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_ESCAPE :
+		if keyid == wx.WXK_ESCAPE:
 			self.EndModal(wx.ID_CANCEL) 
 
-	def OnSPLICE(self, event) :
+	def OnSPLICE(self, event):
 		ret = self.splice.GetValue()
 
 		self.affine.SetValue(ret)
 
-	def OnELD(self, event) :
+	def OnELD(self, event):
 		ret = self.eld.GetValue()
 
 		self.affine.SetValue(ret)
 		#self.splice.SetValue(ret)
 
-	def OnAGE(self, event) :
+	def OnAGE(self, event):
 		ret = self.age.GetValue()
 		self.affine.SetValue(ret)
 
@@ -727,17 +727,17 @@ class AltSpliceDialog(wx.Dialog):
 		parent.dataFrame.Update_PROPERTY_ITEM(parent.dataFrame.selectBackup)
 		property = parent.dataFrame.propertyIdx
 		totalcount = parent.dataFrame.tree.GetChildrenCount(property, False)
-		if totalcount > 0 :
+		if totalcount > 0:
 			child = parent.dataFrame.tree.GetFirstChild(property)
 			child_item = child[0]
-			if parent.dataFrame.tree.GetItemText(child_item, 1) == "SPLICE" :
+			if parent.dataFrame.tree.GetItemText(child_item, 1) == "SPLICE":
 				filename = parent.dataFrame.tree.GetItemText(child_item, 8)
 				self.splice.Append(filename)
-			for k in range(1, totalcount) :
+			for k in range(1, totalcount):
 				child_item = parent.dataFrame.tree.GetNextSibling(child_item)
-				if parent.dataFrame.tree.GetItemText(child_item, 1) == "SPLICE" :
+				if parent.dataFrame.tree.GetItemText(child_item, 1) == "SPLICE":
 					self.splice.Append(parent.dataFrame.tree.GetItemText(child_item, 8))
-		if self.splice.GetCount() > 0 :
+		if self.splice.GetCount() > 0:
 			self.splice.Select(0)
 
 		self.selectedType = "" 
@@ -749,10 +749,10 @@ class AltSpliceDialog(wx.Dialog):
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_ESCAPE :
+		if keyid == wx.WXK_ESCAPE:
 			self.EndModal(wx.ID_CANCEL) 
 
-	def OnSELECT(self, event) :
+	def OnSELECT(self, event):
 		self.selectedSplice = self.splice.GetStringSelection()
 		self.selectedType = self.all.GetStringSelection() 
 		self.EndModal(wx.ID_OK) 
@@ -959,7 +959,7 @@ class ColorTableDialog(wx.Dialog):
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_ESCAPE :
+		if keyid == wx.WXK_ESCAPE:
 			self.EndModal(wx.ID_CANCEL)
 
 	def _makeColorPicker(self, parent, cpid):
@@ -968,7 +968,7 @@ class ColorTableDialog(wx.Dialog):
 		return wx.ColourPickerCtrl(parent, id=cpid, size=cpsize)
 	
 	def updateItem(self):
-		if self.initiated == 0 :
+		if self.initiated == 0:
 			self.colorPicker01.SetColour(self.parent.Window.colorDict['mbsf'])
 			self.colorPicker02.SetColour(self.parent.Window.colorDict['ccsfTie'])
 			self.colorPicker03.SetColour(self.parent.Window.colorDict['ccsfSet'])
@@ -1000,10 +1000,10 @@ class ColorTableDialog(wx.Dialog):
 			self.holePicker08.SetColour(self.parent.Window.overlapcolorList[7])
 			self.holePicker09.SetColour(self.parent.Window.overlapcolorList[8])
 
-			for key in self.parent.Window.colorDictKeys :
+			for key in self.parent.Window.colorDictKeys:
 				self.colorList.append(self.parent.Window.colorDict[key])
 
-			for i in range(9) :
+			for i in range(9):
 				self.overlapcolorList.insert(i, self.parent.Window.overlapcolorList[i])
 			self.initiated = 1
 
@@ -1013,39 +1013,39 @@ class ColorTableDialog(wx.Dialog):
 		#"ODP", "Corporate", "Maritime", "Earth", "Santa Fe", "Custom"
 		self.colorList = []
 		currentColorSet = self.colorSet.GetStringSelection()
-		if currentColorSet == "ODP" :
+		if currentColorSet == "ODP":
 			self.colorList = [ wx.Colour(255, 215, 0), wx.Colour(0, 139, 0), \
 			wx.Colour(0, 102, 255), wx.Colour(255, 153, 0), \
 			wx.Colour(127, 255, 212), wx.Colour(255, 246, 143), wx.Colour(30, 144, 255), \
 			wx.Colour(255, 0, 0), wx.Colour(155, 48, 255), wx.Colour(139, 0, 0), \
 			wx.Colour(0, 139, 0), wx.Colour(139, 0, 0), wx.Colour(173, 255, 47), \
 			wx.Colour(255, 255, 255), wx.Colour(255, 140, 0), wx.Colour(0, 245, 255), wx.Colour(0, 0, 0), wx.Colour(255, 255, 255), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
-		elif currentColorSet == "Corporate" :
+		elif currentColorSet == "Corporate":
 			self.colorList = [ wx.Colour(34, 139, 34), wx.Colour(0, 0, 255), wx.Colour(0, 0, 255), wx.Colour(0, 0, 255), \
 			wx.Colour(0, 255, 255), wx.Colour(205, 133, 63), wx.Colour(139, 76, 57), \
 			wx.Colour(125, 38, 205), wx.Colour(105, 139, 105), wx.Colour(139, 0, 0), \
 			wx.Colour(0, 139, 0), wx.Colour(30, 144, 255), wx.Colour(255, 255, 255), \
 			wx.Colour(143, 188, 143), wx.Colour(255, 20, 147), wx.Colour(72, 61, 139), wx.Colour(220, 220, 220), wx.Colour(0, 0, 0), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
-		elif currentColorSet == "Maritime" :
+		elif currentColorSet == "Maritime":
 			self.colorList = [ wx.Colour(60, 179, 113), wx.Colour(250, 128, 114), wx.Colour(250, 128, 114), wx.Colour(250, 128, 114), \
 			wx.Colour(72, 61, 139), wx.Colour(92, 92, 92), wx.Colour(25, 25, 112), \
 			wx.Colour(125, 38, 205), wx.Colour(255, 99, 71), wx.Colour(255, 0, 0), \
 			wx.Colour(0, 255, 0), wx.Colour(255, 0, 0), wx.Colour(0, 255, 0), \
 			wx.Colour(255, 255, 255), wx.Colour(255, 192, 203), wx.Colour(191, 239, 255), wx.Colour(102, 205, 170), wx.Colour(54, 100, 139), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
-		elif currentColorSet == "Earth" :
+		elif currentColorSet == "Earth":
 			self.colorList = [ wx.Colour(112, 128, 144), wx.Colour(85, 107, 47), wx.Colour(85, 107, 47), wx.Colour(85, 107, 47), \
 			wx.Colour(0, 255, 255), wx.Colour(150, 150, 150), wx.Colour(135, 206, 235), \
 			wx.Colour(238, 130, 238), wx.Colour(165, 42, 42), wx.Colour(255, 0, 0), \
 			wx.Colour(0, 255, 0), wx.Colour(0, 0, 255), wx.Colour(0, 255, 127), \
 			wx.Colour(255, 255, 255), wx.Colour(255, 105, 180), wx.Colour(165, 42, 42), wx.Colour(255, 222, 173), wx.Colour(165, 42, 42), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
-		elif currentColorSet == "Santa Fe" :
+		elif currentColorSet == "Santa Fe":
 			self.colorList = [ wx.Colour(0, 100, 0), wx.Colour(99, 184, 255), wx.Colour(99, 184, 255), wx.Colour(99, 184, 255), \
 			wx.Colour(0, 255, 255), wx.Colour(255, 228, 225), wx.Colour(255, 105, 180), \
 			wx.Colour(160, 32, 240), wx.Colour(255, 192, 203), wx.Colour(255, 0, 0), \
 			wx.Colour(0, 255, 0), wx.Colour(255, 0, 0), wx.Colour(255, 255, 255), \
 			wx.Colour(155, 205, 155), wx.Colour(255, 20, 147), wx.Colour(100, 149, 237), wx.Colour(205, 85, 85), wx.Colour(255, 231, 186), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
-		elif currentColorSet == "Custom" :
-			for key in self.parent.Window.colorDictKeys :
+		elif currentColorSet == "Custom":
+			for key in self.parent.Window.colorDictKeys:
 				self.colorList.append(self.parent.Window.colorDict[key])
 
 		# 9/12/2012 brgtodo: list of colorPickers?
@@ -1083,78 +1083,78 @@ class ColorTableDialog(wx.Dialog):
 	def ChangeHoleColor(self, event):
 		idx = event.GetId() - 101 # see 9/17/2012 brg
 		self.overlapcolorList.pop(idx)
-		if idx == 0 :
+		if idx == 0:
 			self.overlapcolorList.insert(idx, self.holePicker01.GetColour())
-		elif idx == 1 :
+		elif idx == 1:
 			self.overlapcolorList.insert(idx, self.holePicker02.GetColour())
-		elif idx == 2 :
+		elif idx == 2:
 			self.overlapcolorList.insert(idx, self.holePicker03.GetColour())
-		elif idx == 3 :
+		elif idx == 3:
 			self.overlapcolorList.insert(idx, self.holePicker04.GetColour())
-		elif idx == 4 :
+		elif idx == 4:
 			self.overlapcolorList.insert(idx, self.holePicker05.GetColour())
-		elif idx == 5 :
+		elif idx == 5:
 			self.overlapcolorList.insert(idx, self.holePicker06.GetColour())
-		elif idx == 6 :
+		elif idx == 6:
 			self.overlapcolorList.insert(idx, self.holePicker07.GetColour())
-		elif idx == 7 :
+		elif idx == 7:
 			self.overlapcolorList.insert(idx, self.holePicker08.GetColour())
-		elif idx == 8 :
+		elif idx == 8:
 			self.overlapcolorList.insert(idx, self.holePicker09.GetColour())
 
 	def ChangeColor(self, event):
 		self.colorSet.SetSelection(self.CustomIndex)
 		idx = event.GetId() - 1
 		self.colorList.pop(idx)
-		if idx == 0 :
+		if idx == 0:
 			self.colorList.insert(idx, self.colorPicker01.GetColour())
-		elif idx == 1 :
+		elif idx == 1:
 			self.colorList.insert(idx, self.colorPicker02.GetColour())
-		elif idx == 2 :
+		elif idx == 2:
 			self.colorList.insert(idx, self.colorPicker03.GetColour())
-		elif idx == 3 :
+		elif idx == 3:
 			self.colorList.insert(idx, self.colorPicker04.GetColour())
-		elif idx == 4 :
+		elif idx == 4:
 			self.colorList.insert(idx, self.colorPicker05.GetColour())
-		elif idx == 5 :
+		elif idx == 5:
 			self.colorList.insert(idx, self.colorPicker06.GetColour())
-		elif idx == 6 :
+		elif idx == 6:
 			self.colorList.insert(idx, self.colorPicker07.GetColour())
-		elif idx == 7 :
+		elif idx == 7:
 			self.colorList.insert(idx, self.colorPicker08.GetColour())
-		elif idx == 8 :
+		elif idx == 8:
 			self.colorList.insert(idx, self.colorPicker09.GetColour())
-		elif idx == 9 :
+		elif idx == 9:
 			self.colorList.insert(idx, self.colorPicker10.GetColour())
-		elif idx == 10 :
+		elif idx == 10:
 			self.colorList.insert(idx, self.colorPicker11.GetColour())
-		elif idx == 11 :
+		elif idx == 11:
 			self.colorList.insert(idx, self.colorPicker12.GetColour())
-		elif idx == 12 :
+		elif idx == 12:
 			self.colorList.insert(idx, self.colorPicker13.GetColour())
-		elif idx == 13 :
+		elif idx == 13:
 			self.colorList.insert(idx, self.colorPicker14.GetColour())
-		elif idx == 14 :
+		elif idx == 14:
 			self.colorList.insert(idx, self.colorPicker15.GetColour())
-		elif idx == 15 :
+		elif idx == 15:
 			self.colorList.insert(idx, self.colorPicker16.GetColour())
-		elif idx == 16 :
+		elif idx == 16:
 			self.colorList.insert(idx, self.colorPicker17.GetColour())
-		elif idx == 17 :
+		elif idx == 17:
 			self.colorList.insert(idx, self.colorPicker18.GetColour())
-		elif idx == 18 :
+		elif idx == 18:
 			self.colorList.insert(idx, self.colorPicker19.GetColour())
-		elif idx == 19 :
+		elif idx == 19:
 			self.colorList.insert(idx, self.colorPicker20.GetColour())
 
 	def OnApplyColor(self, event):
 		i = 0
-		for key in self.parent.Window.colorDictKeys :
+		for key in self.parent.Window.colorDictKeys:
 			self.parent.Window.colorDict[key] = self.colorList[i]
 			i = i + 1
 
 		self.parent.Window.overlapcolorList = []
-		for i in range(9) :
+		for i in range(9):
 			self.parent.Window.overlapcolorList.insert(i, self.overlapcolorList[i])
 		self.parent.Window.UpdateDrawing()
 
@@ -1541,7 +1541,7 @@ class ApplicationPreferencesDialog(wx.Dialog):
 
 
 class AboutDialog(wx.Dialog):
-	def __init__(self, parent, version) :
+	def __init__(self, parent, version):
 		wx.Dialog.__init__(self, parent, -1, "About Correlator " + version, size=(500, 330), style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
 
 		desctext = "Correlator facilitates the adjustment of core depth data drilled in a multi-hole scenario by usually correlating measured whole-core (GRA, MSLP, PWC, #NGR) or half-core (RSC) sensor data across holes using an optimized cross-correlation approach."
@@ -1566,7 +1566,7 @@ class AboutDialog(wx.Dialog):
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_ESCAPE :
+		if keyid == wx.WXK_ESCAPE:
 			self.EndModal(wx.ID_CANCEL) 
 
 
@@ -1592,14 +1592,14 @@ class OpenFrame(wx.Dialog):
 		self.version = version
 		wx.StaticText(self, -1, 'COMPOSITE, SPLICE, CORE-LOG INTEGRATION, AGE MODEL', (60, 30))
 
-		wx.StaticText(self, -1, 'User Name : ', (250, 220))
+		wx.StaticText(self, -1, 'User Name: ', (250, 220))
 		self.name = wx.TextCtrl(self, -1, user, (340, 220), size=(150, 25))
 
 		okBtn = wx.Button(panel, -1, "Start", (500, 213), size=(80, 30))
 		self.Bind(wx.EVT_BUTTON, self.OnSTART, okBtn)
 
 		self.user = user
-		if platform_name[0] == "Windows" :
+		if platform_name[0] == "Windows":
 			cancelBtn = wx.Button(panel, wx.ID_CANCEL, "Cancel", (580, 213), size=(80, 30))
 
 		wx.HyperlinkCtrl(self, -1, 'Go to Correlator Web', 'http://www.corewall.org', (60, 300))
@@ -1610,7 +1610,7 @@ class OpenFrame(wx.Dialog):
 		wx.EVT_KEY_DOWN(self.name, self.OnPanelChar)
 		panel.Bind(wx.EVT_CHAR, self.OnPanelChar)
 
-	def OnABOUT(self, event) :
+	def OnABOUT(self, event):
 		dlg = AboutDialog(self, self.version)
 		dlg.Centre()
 		dlg.ShowModal()
@@ -1620,15 +1620,15 @@ class OpenFrame(wx.Dialog):
 		self.user = self.name.GetValue()
 		self.EndModal(wx.ID_OK)
 
-	def OnSTART(self, event) :
+	def OnSTART(self, event):
 		self.OnOK()
 
 	# Close on Escape, continue on Enter
 	def OnPanelChar(self, event):
 		keyid = event.GetKeyCode()
-		if keyid == 13 : # ENTER
+		if keyid == 13: # ENTER
 			self.OnOK()
-		elif keyid == 27 : # ESC 
+		elif keyid == 27: # ESC 
 			self.EndModal(wx.ID_CANCEL)
 		else:
 			event.Skip() # allow unhandled key events to propagate up the chain
