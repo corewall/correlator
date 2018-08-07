@@ -219,8 +219,7 @@ class DataFrame(wx.Panel):
 			self.OnIMPORT_TABLE("Affine")
 		elif opId == 66: # legacy affine
 			self.OnIMPORT_TABLE("Affine pre v3")
-		elif opId == 5 :
-			# OPEN CORE
+		elif opId == 5 : # import measurement data
 			self.importType = "CORE"
 			self.selectedDataType = ""
 			self.selectedDepthType = ""
@@ -2256,7 +2255,7 @@ class DataFrame(wx.Panel):
 
 			if title == back_title :
 				if type == "*" or back_type == "*" or type == back_type :
-					ret = self.parent.OnShowMessage("Information", "Loaded Data will be clear.", 2)
+					ret = self.parent.OnShowMessage("Information", "Loaded data will be cleared. Continue?", 2)
 					if ret == wx.ID_OK :
 						self.parent.OnNewData(None)
 						self.selectBackup = []
@@ -2276,35 +2275,21 @@ class DataFrame(wx.Panel):
 					self.parent.OnShowMessage("Error", "There is no data to delete", 1)
 					return
 
-				ret = self.parent.OnShowMessage("About", "Do you want to delete all?", 2)
+				ret = self.parent.OnShowMessage("About", "Do you want to delete all data?", 2)
 				if ret == wx.ID_OK :
 					self.OnDELETEALL()
 					return
 				break
 
-			if label == "Saved Tables" :
-				self.parent.OnShowMessage("Error", "You can not delete Table", 1)
-				break
-			if label == "Downhole Log Data" :
-				self.parent.OnShowMessage("Error", "You can not delete Log", 1)
-				break
-			if label == "Stratigraphy" :
-				self.parent.OnShowMessage("Error", "You can not delete Stratigraphy", 1)
-				break
-			if label == "Age Models" :
-				self.parent.OnShowMessage("Error", "You can not delete Age Models", 1)
-				break
-			if label == "Image Data" :
-				self.parent.OnShowMessage("Error", "You can not delete Image Data", 1)
+			if label in STD_SITE_NODES:
+				self.parent.OnShowMessage("Error", "{} can not be deleted.".format(label), 1)
 				break
 
 			if idx == 0 :
-				if label == "Table" :
-					label = self.tree.GetItemText(selectItem, 1) + " Table"
-				elif label == "Model" :
-					label = self.tree.GetItemText(selectItem, 1) + " Model"
+				if label == "Table" or label == "Model":
+					label = self.tree.GetItemText(selectItem, 8) # filename
 				else :
-					label = self.tree.GetItemText(selectItem, 1)
+					label = self.tree.GetItemText(selectItem, 0) # site name or data type
 
 				ret = self.parent.OnShowMessage("About", "Do you want to delete " + label + "?", 2)
 				if ret == wx.ID_OK :
@@ -2315,7 +2300,6 @@ class DataFrame(wx.Panel):
 			parentItem = self.tree.GetItemParent(selectItem)
 
 			if len(self.tree.GetItemText(selectItem, 8)) > 0 :
-				
 				hole = self.tree.GetItemText(selectItem, 0)
 				type = self.tree.GetItemText(parentItem, 0)
 				titleItem = self.tree.GetItemParent(parentItem)
@@ -2328,16 +2312,7 @@ class DataFrame(wx.Panel):
 						start = hole.find('.', 0)
 						self.UpdateRANGE(hole[0:start], titleItem)
 					level = 0 
-				elif type == 'Downhole Log Data' :
-					level = 0 
-					hole = self.tree.GetItemText(selectItem, 8)
-				elif type == 'Stratigraphy' :
-					level = 0 
-					hole = self.tree.GetItemText(selectItem, 8)
-				elif type == 'Age Models' :
-					level = 0 
-					hole = self.tree.GetItemText(selectItem, 8)
-				elif type == 'Image Data' :
+				elif type in ['Downhole Log Data', 'Stratigraphy', 'Age Models', 'Image Data']:
 					level = 0 
 					hole = self.tree.GetItemText(selectItem, 8)
 				else :
