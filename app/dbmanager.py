@@ -7406,7 +7406,7 @@ class DataFrame(wx.Panel):
 				ss = SectionSummary(ssFileName, ssdf)
 				self.AddSectionSummary(ss, ssFilePath)
 			else:
-				self.parent.OnShowMessage("Error", "Could not load associated section summary file {}:\n{}".format(ssFileName, errmsg))
+				self.parent.OnShowMessage("Error", "Could not load associated section summary file {}:\n{}".format(ssFileName, errmsg), 1)
 		else:
 			print "No Section Summary file named {} found for auto-import.".format(ssFilePath)		
 
