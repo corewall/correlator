@@ -1355,34 +1355,34 @@ class EvalPlotPanel(wx.Panel):
 		self.crText.SetLabel("Step: {} | Window: {} | Lead/Lag: {}".format(roundedDepthStep, self.winLength, self.leadLag))
 		
 	def OnUpdateData(self, data, bestdata):
-		line = plot.PolyLine(data, legend='', colour='red', width =2) 
+		line = plot.PolyLine(data, legend='', colour='red', width=2)
 		self.polylines.append(line)
 		if bestdata != [] : 
-			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width =5) 
+			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width=5)
 			self.polylines.append(bestline)
 
 	def OnAddFirstData(self, data, bestdata, best):
-		line = plot.PolyLine(data, legend='', colour='red', width =2) 
+		line = plot.PolyLine(data, legend='', colour='red', width=2)
 		self.polylines.append(line)
 		if bestdata != [] : 
-			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width =5) 
+			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width=5)
 			self.polylines.append(bestline)
 
 	def OnAddData(self, data):
-		line = plot.PolyLine(data, legend='', colour='grey', width =2) 
+		line = plot.PolyLine(data, legend='', colour='grey', width=2)
 		self.polylines.append(line)
 
 	def OnUpdateDrawing(self): # called by client to redraw
 		# update axes
 		xdata = [ (-self.leadLag, 0), (0, 0), (self.leadLag, 0) ]
-		self.xaxes = plot.PolyLine(xdata, legend='', colour='black', width =2)
-		ydata = [ (0, -1),( 0, 1) ]
-		self.yaxes = plot.PolyLine(ydata, legend='', colour='black', width =2)
+		self.xaxes = plot.PolyLine(xdata, legend='', colour='black', width=2)
+		ydata = [ (0, -1),(0, 1) ]
+		self.yaxes = plot.PolyLine(ydata, legend='', colour='black', width=2)
 		self.polylines.append(self.xaxes)
 		self.polylines.append(self.yaxes)
 		
 		gc = plot.PlotGraphics(self.polylines, '', 'depth (m)', 'correlation coef (r)')
-		self.evalPlot.Draw(gc, xAxis = (-self.leadLag , self.leadLag), yAxis = (-1, 1))
+		self.evalPlot.Draw(gc, xAxis=(-self.leadLag , self.leadLag), yAxis=(-1, 1))
 		self.polylines = []
 
 
