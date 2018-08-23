@@ -3995,13 +3995,9 @@ class DataCanvas(wxBufferedWindow):
 			#print "fixed tie depth = {}, movable tie depth = {}, shift = {}".format()
 			
 			offset = self.parent.compositePanel.GetBestOffset() if actionType == 0 else float(self.parent.compositePanel.GetDepthValue())
-			if actionType == 0: # to best 
+			if actionType == 0: # adjust to reflect best offset
 				y1 = y1 + offset
-				shift = shift + offset 
-			elif actionType == 2: # to given
-				# ERROR - HYEJUNG
-				y1 = y2 - offset
-				shift = offset
+				shift = shift + offset
 
 			ciA = self.findCoreInfoByIndex(movableTie.core)
 			ciB = self.findCoreInfoByIndex(fixedTie.core)
@@ -4039,6 +4035,12 @@ class DataCanvas(wxBufferedWindow):
 				self.TieData = []
 				
 				self.UpdateShiftedSpliceIntervals(ciA.hole, ciA.holeCore, not shiftCoreOnly)
+
+			if actionType == 0: # update graph to reflect best correlation
+				corr = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), fixedTie.depth, ciB.type, ciB.hole, int(ciB.holeCore), y1)
+				if corr != "":
+					self.parent.OnAddFirstGraph(corr, fixedTie.depth, y1)
+					self.parent.OnUpdateGraph()
 
 			self.selectedTie = -1
 			self.activeTie = -1
@@ -4352,7 +4354,7 @@ class DataCanvas(wxBufferedWindow):
 				testret = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), depth2, ciB.type, ciB.hole, int(ciB.holeCore), depth)
 				if testret != "":
 					self.parent.OnAddFirstGraph(testret, depth2, depth)
- 
+
 				typeA = ciA.type # needed since we don't want to modify ciA's type
 				for data_item in self.range:
 					if data_item[0] == "Natural Gamma" and ciA.type == "NaturalGamma":
@@ -4363,7 +4365,7 @@ class DataCanvas(wxBufferedWindow):
 						testret = self.EvaluateCorrelation(data_item[0], ciA.hole, int(ciA.holeCore), depth2, data_item[0], ciB.hole, int(ciB.holeCore), depth)
 						if testret != "":
 							self.parent.OnAddGraph(testret, depth2, depth)
- 
+
 				self.parent.OnUpdateGraph()
 
 
@@ -6057,7 +6059,7 @@ class DataCanvas(wxBufferedWindow):
 					return
 			
 			self.parent.OnUpdateGraph()
-	
+
 	def OnMainMotion(self, event):
 		if self.showMenu == True:
 			return
@@ -6135,7 +6137,7 @@ class DataCanvas(wxBufferedWindow):
 			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
 			# brg 2/22/2017: stifle evaluation graph for now - want to move
 			# to Python side but not a priority at the moment
- 			if ciA.hole != None and ciB.hole != None and flag == 1:
+			if ciA.hole != None and ciB.hole != None and flag == 1:
 				testret = self.EvaluateCorrelation(ciB.type, ciB.hole, int(ciB.holeCore), y2, ciA.type, ciA.hole, int(ciA.holeCore), y1)
 				if testret != "":
 					data = self.TieData[self.selectedTie]
@@ -6143,7 +6145,8 @@ class DataCanvas(wxBufferedWindow):
 					data.depth = y1
 					self.parent.OnUpdateDepth(shift)
 					self.parent.OnAddFirstGraph(testret, y2, y1)
- 
+
+				# update evaluation plot for datatypes other than the type being shifted
 				for data_item in self.range:
 					typeA = ciA.type
 					if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma":

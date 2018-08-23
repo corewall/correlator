@@ -742,7 +742,7 @@ class MainFrame(wx.Frame):
 			if start >= len_max:
 				break
 
-		bestdata = [ (best, -0.05),( best, 0.05) ]
+		bestdata = [ (best, -0.05), (best, 0.05) ] # best correlation
 
 		if len(l) <= 1:
 			l = [ (-1.0, -1.0), (0, 0), (1.0, 1.0) ]

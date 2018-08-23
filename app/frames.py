@@ -569,7 +569,7 @@ class CompositePanel():
 		
 		self.OnUpdatePlots()
 
-		# Panel 3
+		# affected cores and action type panel
 		panel3 = wx.Panel(self.mainPanel, -1)
 
 		sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'TIE Shift Options'), orient=wx.VERTICAL)
@@ -577,16 +577,16 @@ class CompositePanel():
 		self.applyCore.SetSelection(0)
 		sizer31.Add(self.applyCore, 0, wx.EXPAND | wx.BOTTOM, 5)
 		
-		# type depth panel
 		tdpSizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.actionType = wx.Choice(panel3, -1, choices=["To tie", "To best correlation", "By given amount (m):"])
+		self.actionType = wx.Choice(panel3, -1, choices=["To tie", "To best correlation"])
 		self.actionType.SetSelection(0)
-		self.depthField = wx.TextCtrl(panel3, -1)
+		# hardcode width to prevent 'm' label being pushed too far right
+		self.depthField = wx.TextCtrl(panel3, -1, size=(80,-1))
+		self.depthField.Enable(False)
 		tdpSizer.Add(self.actionType, 0, wx.RIGHT, 5)
 		tdpSizer.Add(self.depthField)
+		tdpSizer.Add(wx.StaticText(panel3, -1, 'm'))
 		sizer31.Add(tdpSizer, 0, wx.EXPAND | wx.TOP, 5)
-		
-		self.mainPanel.Bind(wx.EVT_CHOICE, self.UpdateDepthField, self.actionType)
 		
 		commentSizer = wx.BoxSizer(wx.HORIZONTAL)
 		commentSizer.Add(wx.StaticText(panel3, -1, "Comment:"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
@@ -627,11 +627,6 @@ class CompositePanel():
 
 		undoPanel.SetSizer(sizer32)
 		vbox.Add(undoPanel, 0, wx.EXPAND)
-
-		buttonsize = 130
-		if platform_name[0] == "Windows" :
-			buttonsize = 145
-			
 		vbox.Add(wx.StaticText(self.mainPanel, -1, '* Right-click tie for context menu', (5, 5)), 0, wx.BOTTOM, 5)
 
 		self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine Table", size =(150, 30))
@@ -640,18 +635,12 @@ class CompositePanel():
 		self.saveButton.Enable(False)
 
 		self.mainPanel.SetSizer(vbox)
-		
-		self.UpdateDepthField()
 
 	def OnInitUI(self):
 		self.adjustButton.Enable(False)
 		self.clearButton.Enable(False)
 		self.undoButton.Enable(False)
 		
-	def UpdateDepthField(self, evt=None):
-		enableDepth = (self.actionType.GetSelection() == 2) # "By given amount"
-		self.depthField.Enable(enableDepth)
-
 	def OnSAVE(self, event):
 		dlg = dialog.Message3Button(self.parent, "Create new affine file?", yesLabel="Create New", okLabel="Update Existing", cancelLabel="Cancel")
 		ret = dlg.ShowModal()
@@ -677,7 +666,7 @@ class CompositePanel():
 
 	def OnAdjust(self, evt):
 		adjustCoreOnly = (self.applyCore.GetSelection() == 1) # 0 = this core and all below, 1 = this core only
-		self.parent.OnAdjustCore(adjustCoreOnly, self.GetShiftType())
+		self.parent.OnAdjustCore(adjustCoreOnly, self.GetActionType())
 
 		self.parent.Window.activeTie = -1
 		self.UpdateGrowthPlot()
@@ -759,14 +748,16 @@ class CompositePanel():
 			self.polyline_list.append(bestline)
 
 	# 9/18/2013 brg: Identical to OnUpdateData() above... and in SplicePanel
+	# plot correlation for datatype with which tie is being made
 	def OnAddFirstData(self, data, bestdata, best):
-		self.bestOffset = best 
+		self.bestOffset = best
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
 		self.polyline_list.append(line)
 		if bestdata != [] : 
 			bestline = plot.PolyLine(bestdata, legend='', colour='blue', width =5) 
 			self.polyline_list.append(bestline)
 
+	# plot correlation for datatypes with which tie is *not* being made
 	def OnAddData(self, data):
 		line = plot.PolyLine(data, legend='', colour='grey', width =2) 
 		self.polyline_list.append(line)
@@ -841,15 +832,12 @@ class CompositePanel():
 	def GetBestOffset(self):
 		return self.bestOffset
 	
-	# shiftType values do not correspond to order in self.actionType list
-	def GetShiftType(self):
-		shiftType = 0 # To best correlation
+	def GetActionType(self):
+		actionType = 0 # To best correlation
 		actionStr = self.actionType.GetStringSelection()
 		if actionStr == "To tie":
-			shiftType = 1
-		elif actionStr == "By given amount (m):":
-			shiftType = 2
-		return shiftType
+			actionType = 1
+		return actionType
 	
 	def GetComment(self):
 		return self.comment.GetValue()
