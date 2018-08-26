@@ -3060,6 +3060,11 @@ class AffineController:
 			previousOffset = None
 			for curShift in [s for s in shifts if s.core.hole == hole]:
 				site = self.parent.Window.GetHoleSite(hole)
+				if not site:
+					# If data for hole isn't loaded, grab site from section summary.
+					# We assume a single site is loaded at a time in Correlator.
+					ssSites = self.parent.sectionSummary.getSites()
+					site = list(ssSites)[0]
 				coreType = self.parent.sectionSummary.getCoreType(site, hole, curShift.core.core)
 				csf, dummy = self.parent.sectionSummary.getCoreRange(site, hole, curShift.core.core)
 				csf = round(csf, 3)
