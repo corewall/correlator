@@ -6,6 +6,9 @@ import site # brg 12/4/2013 unused
 import platform
 import os
 import socket
+import sys
+import traceback
+
 platform_name = platform.uname()
 if platform_name[5] == "i386":
 	os.system('sh swap_intel_library')
@@ -3731,6 +3734,17 @@ class CorrelatorApp(wx.App):
 
 		return True
 
+
+def reportUnhandledException(exc_type, exc_value, exc_traceback):
+	err_msg = 'Correlator encountered an error:\n'
+	err_msg += '\n'.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+	err_msg += 'Unhandled Exception'
+	dlg = wx.MessageDialog(None, err_msg, 'Exception', wx.OK | wx.ICON_ERROR)
+	dlg.ShowModal()
+	dlg.Destroy()
+
+# override default unhandled exception handling - report error via GUI
+sys.excepthook = reportUnhandledException
 
 if __name__ == "__main__":
 
