@@ -330,11 +330,18 @@ def doSITImport(parent, goalFormat, path=None):
                 sit = SpliceIntervalTable(name, dataframe)
     return sit
 
-
 def readFile(filepath):
     srcfile = open(filepath, 'rU')
     dataframe = pandas.read_csv(srcfile, sep=None, skipinitialspace=True, engine='python')
     srcfile.close()
+    return dataframe
+
+# pandas call to open Correlator's space-delimited file format
+def readCorrelatorDataFile(filename):
+    datfile = open(filename, 'rU')
+    headers = ["Exp", "Site", "Hole", "Core", "CoreType", "Section", "TopOffset", "BottomOffset", "Depth", "Data", "RunNo"]
+    dataframe = pandas.read_csv(datfile, header=None, index_col=False, names=headers, sep=" ", skipinitialspace=True, comment="#", engine='python')
+    datfile.close()
     return dataframe
 
 def writeToFile(dataframe, filepath):

@@ -179,7 +179,12 @@ class DataFrame(wx.Panel):
 		self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
 
 	def ViewDataFile(self, filepath):
-		dlg = dialog.ViewDataFileDialog(self, filepath, filepath)
+		if filepath[-4:] == ".dat": # Correlator-saved data file
+			df = tabularImport.readCorrelatorDataFile(filepath)
+		else:
+			df = tabularImport.readFile(filepath)
+		print df
+		dlg = dialog.ViewDataFileDialog(self, title=filepath, dataframe=df)
 		dlg.ShowModal()
 
 	# handles all of the many many many right-click commands in Data Manager

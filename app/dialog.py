@@ -5,7 +5,8 @@
 import platform
 platform_name = platform.uname()
 
-import wx 
+import wx
+import wx.grid
 import wx.lib.sheet as sheet
 from wx.lib import plot
 import random, sys, os, re, time, ConfigParser, string
@@ -133,15 +134,15 @@ class Message3Button(wx.Dialog):
 
 # Dialog with a multi-line text control for viewing files in raw text
 class ViewDataFileDialog(wx.Dialog):
-	def __init__(self, parent, title, filepath):
+	def __init__(self, parent, title, dataframe):
 		wx.Dialog.__init__(self, parent, -1, title, size=(600,400), style=wx.RESIZE_BORDER | wx.CLOSE_BOX)
 
-		# text panel
+		self.dataframe = dataframe
+
+		# table
 		self.filePanel = wx.Panel(self, -1)
-		self.fileText = wx.TextCtrl(self.filePanel, -1, "[File contents]", style=wx.TE_MULTILINE|wx.TE_READONLY|wx.VSCROLL|wx.TE_WORDWRAP)
-		self.fileText.SetEditable(False)
-		fixedWidthFont = wx.Font(14, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
-		self.fileText.SetFont(fixedWidthFont)
+		self.table = wx.grid.Grid(self.filePanel, -1)
+		self.table.DisableDragRowSize()
 
 		# close button
 		self.closeButton = wx.Button(self.filePanel, -1, "Close")
@@ -150,13 +151,28 @@ class ViewDataFileDialog(wx.Dialog):
 
 		# layout
 		fpsizer = wx.BoxSizer(wx.VERTICAL)		
-		fpsizer.Add(self.fileText, 1, wx.EXPAND)
+		fpsizer.Add(self.table, 1, wx.EXPAND)
 		fpsizer.Add(self.closeButton, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
 		self.filePanel.SetSizer(fpsizer)
-		self.fileText.LoadFile(filepath)
+
+		self._populateTable()
 
 		# events
 		wx.EVT_CHAR_HOOK(self, self.OnKey)
+
+	def _populateTable(self):
+		self.table.CreateGrid(len(self.dataframe), len(self.dataframe.columns.tolist()))
+		self.table.EnableEditing(False)
+
+		# populate headers if any
+		for colidx, name in enumerate(self.dataframe.columns.tolist()):
+			if name is not None:
+				self.table.SetColLabelValue(colidx, name)
+
+		# populate cells
+		for ridx, row in enumerate(self.dataframe.itertuples()):
+			for cidx in range(0, len(row) - 1):
+				self.table.SetCellValue(ridx, cidx, str(row[cidx + 1])) # skip leading index column
 
 	def OnClose(self, evt):
 		self.EndModal(wx.ID_OK)
