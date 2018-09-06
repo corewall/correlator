@@ -5714,14 +5714,15 @@ class DataCanvas(wxBufferedWindow):
 
 								ciA = self.findCoreInfoByIndex(self.guideCore)
 								ciB = self.findCoreInfoByIndex(movableTie.core)
-								if ciA != None and ciA.hole == ciB.hole:
-									# can't create composite tie on same hole, remove movable tie and notify user
-									del self.TieData[-1]
-									self.parent.OnShowMessage("Error", "Composite ties cannot be made in the same hole", 1)
+								if ciA is not None and ciA.hole == ciB.hole:
+									self.parent.OnShowMessage("Error", "Composite ties cannot be made in the same hole.", 1)
+									self.ClearCompositeTies()
+									self.UpdateDrawing()
 									return
 								elif not self.parent.affineManager.isLegalTie(ciB, ciA):
-									del self.TieData[-1]
 									self.parent.OnShowMessage("Error", "Core {}{} is upstream in the tie chain.".format(ciB.hole, ciB.holeCore), 1)
+									self.ClearCompositeTies()
+									self.UpdateDrawing()									
 									return
 								else:
 									self.activeCore = self.selectedCore
