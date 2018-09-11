@@ -490,7 +490,7 @@ class AffineBuilder:
         foundCores = []
         for c in [core] + self.getCoresBelow(core):
             if c not in knownChainCores and self.affine.inChain(c):
-                newChainCores = [nc for nc in self.affine.getChainCores(c) if nc not in excludeCores]
+                newChainCores = [nc for nc in self.affine.getChainCores(c) if nc not in excludeCores and nc not in knownChainCores]
                 foundCores.extend(newChainCores)
         
         return list(set(foundCores))    
