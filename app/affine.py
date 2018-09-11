@@ -199,6 +199,15 @@ class AffineTable:
     # count immediate descendants of core
     def countChildren(self, core):
         return len(self.getChildren(core))
+
+    # get all descendants of core
+    def getDescendants(self, core):
+        descs = []
+        self._walkChain([core], descs)
+        return descs
+
+    def countDescendants(self, core):
+        return len(self.getDescendants(core))
     
     # return list of all AffineCoreIds that are part of core's TIE chain (if any), including core itself
     def getChainCores(self, core):
@@ -374,6 +383,7 @@ class AffineBuilder:
     # mcdShiftDistance - distance between tie points in MCD space
     # fromCore, fromDepth - core and MBSF depth of tie on fixed core
     # core, depth - core and MBSF depth of tie on core to be shifted
+    # dataUsed - data type used to create shift
     # comment - user comment/annotation of shift
     def tie(self, coreOnly, mcdShiftDistance, fromCore, fromDepth, core, depth, dataUsed="", comment=""):
         breaks = []
@@ -715,7 +725,17 @@ class TestAffineTable(unittest.TestCase):
         self.assertTrue(affine.countChildren(c2) == 1) # B2
         self.assertTrue(affine.countChildren(b2) == 0)
         self.assertTrue(affine.countChildren(d3) == 0)
-        
+
+        # countDescendants()
+        self.assertTrue(affine.countDescendants(a1) == 3)
+        self.assertTrue(affine.countDescendants(a2) == 0)
+        self.assertTrue(affine.countDescendants(b1) == 3)
+        self.assertTrue(affine.countDescendants(b2) == 0)
+        self.assertTrue(affine.countDescendants(c1) == 1)
+        self.assertTrue(affine.countDescendants(c2) == 1)
+        self.assertTrue(affine.countDescendants(d1) == 2)
+        self.assertTrue(affine.countDescendants(d2) == 0)
+
         # getParent()
         self.assertTrue(affine.getParent(a1) is None)
         self.assertTrue(affine.getParent(b1).core == a1)
