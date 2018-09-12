@@ -49,7 +49,9 @@ class ImplicitShift(AffineShift):
     def typeStr(self):
         return "REL"
     
-
+# An affine shift resulting from the alignment of a point on the core to be shifted
+# with a point on fromCore, which will remain fixed. The most desirable type of shift,
+# as it typically results from a strong visual or measured correlation between two holes.
 class TieShift(AffineShift):
     def __init__(self, fromCore, fromDepth, core, depth, distance, dataUsed="", comment=""):
         AffineShift.__init__(self, core, distance, dataUsed, comment)
@@ -65,7 +67,10 @@ class TieShift(AffineShift):
     def typeStr(self):
         return "TIE"
 
-
+# An affine shift in which the user selects a specific offset distance for a core
+# or cores. SetShifts are typically used when a TieShift cannot be made due to 
+# disrupted sediment (e.g. by drilling), or the total absence of sediment in another
+# hole to which to create a TieShift.
 class SetShift(AffineShift):
     def __init__(self, core, distance, dataUsed="", comment=""):
         AffineShift.__init__(self, core, distance, dataUsed, comment)
@@ -259,6 +264,9 @@ class AffineTable:
         return shift
 
 
+# Wraps AffineTable in logic that manages inter-core effects of SET and TIE operations
+# on a core 'and related cores', maintaining chains where possible and noting where breaks
+# will occur for a given shift.
 class AffineBuilder:
     def __init__(self):
         self.affine = AffineTable() # AffineTable representing the current affine state
