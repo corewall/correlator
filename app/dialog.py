@@ -132,7 +132,7 @@ class Message3Button(wx.Dialog):
 			self.EndModal(wx.ID_CANCEL) 
 
 
-# Dialog with a multi-line text control for viewing files in raw text
+# Dialog with a wx.Grid widget for viewing tabular data
 class ViewDataFileDialog(wx.Dialog):
 	def __init__(self, parent, title, dataframe):
 		wx.Dialog.__init__(self, parent, -1, title, size=(600,400), style=wx.RESIZE_BORDER | wx.CLOSE_BOX)
@@ -173,6 +173,9 @@ class ViewDataFileDialog(wx.Dialog):
 		for ridx, row in enumerate(self.dataframe.itertuples()):
 			for cidx in range(0, len(row) - 1):
 				self.table.SetCellValue(ridx, cidx, str(row[cidx + 1])) # skip leading index column
+
+		self.table.AutoSize() # resize columns to fit header+data...bogs things down with large files
+		self.SetClientSize(self.table.GetSize()) # fit dialog to table
 
 	def OnClose(self, evt):
 		self.EndModal(wx.ID_OK)
