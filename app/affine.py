@@ -422,6 +422,9 @@ class AffineBuilder:
             childCore = b[1]
             if childCore != core: # original tie for core was broken by new tie - don't make implicit!
                 self.affine.makeImplicit(childCore)
+
+    def makeImplicit(self, core):
+        self.affine.makeImplicit(core)
     
     # given list of cores to move, determine where ties will be broken and return
     # list of tuples of form (fromCore, childCore) indicating break locations

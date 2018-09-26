@@ -544,7 +544,10 @@ class CompositePanel():
 		for colidx, label in enumerate(["Core", "Shift", "Type"]):
 			self.table.SetColLabelValue(colidx, label)
 		self.table.SetSelectionMode(wx.grid.Grid.SelectRows)
+		self.breakTieButton = wx.Button(atPanel, -1, "Break TIE")
+		self.breakTieButton.Enable(False)
 		atsz.Add(self.table, 1, wx.EXPAND)
+		atsz.Add(self.breakTieButton, 0, wx.ALIGN_CENTER | wx.ALL, 5)
 		atPanel.SetSizer(atsz)
 		self.atPanel = atPanel		
 
@@ -552,7 +555,10 @@ class CompositePanel():
 		self.plotNote.AddPage(self.grPanel, "Growth Rate")
 		self.plotNote.AddPage(self.atPanel, "Shifts")
 		
+		# event handling
 		self.grPanel.Bind(wx.EVT_BUTTON, self.OnGrowthSettings, gpSettingsBtn)
+		self.atPanel.Bind(wx.EVT_BUTTON, self.OnBreakTie, self.breakTieButton)
+		self.atPanel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnShiftsTableSelection, self.table)
 
 		# add Notebook to main panel
 		self.plotNote.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectPlotNote)
@@ -566,7 +572,6 @@ class CompositePanel():
 		self.xaxes = plot.PolyLine(xdata, legend='', colour='black', width =2)
 		ydata = [ (0, -1),( 0, 1) ]
 		self.yaxes = plot.PolyLine(ydata, legend='', colour='black', width =2)
-		
 		self.OnUpdatePlots()
 
 		# affected cores and action type panel
@@ -701,6 +706,15 @@ class CompositePanel():
 			self.parent.optPanel.max_depth.SetValue(str(dlg.outMax))
 			self.parent.optPanel.slider2.SetValue(1)
 			self.parent.OnUpdateDepthRange(dlg.outMin, dlg.outMax)
+
+	def OnBreakTie(self, evt):
+		row = self.table.GetSelectedRows()[0] # only one row can be selected
+		corestr = str(self.table.GetCellValue(row, 0)) # str() to convert from Unicode, col 0 is core
+		self.parent.affineManager.breakTie(corestr)
+
+	def OnShiftsTableSelection(self, evt):
+		shiftType = self.table.GetCellValue(evt.GetRow(), 2) # col 2 is shift type
+		self.breakTieButton.Enable(shiftType == "TIE")
 
 	def OnProject(self, evt):
 		dlg = dialog.ProjectDialog(self.parent)

@@ -37,7 +37,7 @@ import frames
 import dbmanager
 import version as vers
 import model
-from affine import AffineBuilder, AffineCoreInfo, aci, isTie, isSet, isImplicit
+from affine import AffineBuilder, AffineCoreInfo, aci, acistr, isTie, isSet, isImplicit
 import splice
 import tabularImport
 import tracker
@@ -3175,6 +3175,15 @@ class AffineController:
 			self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
 			self.dirty = True
 			self.updateGUI()
+
+	def breakTie(self, coreStr):
+		core = acistr(coreStr)
+		if self.affine.hasShift(core) and isTie(self.affine.getShift(core)):
+			self.pushState()
+			self.affine.makeImplicit(core)
+			self.dirty = True
+			self.updateGUI()
+			self.parent.Window.UpdateDrawing()
 
 	def hasShift(self, hole, core):
 		return self.affine.hasShift(aci(hole, str(core)))
