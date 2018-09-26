@@ -71,16 +71,9 @@ class DataFrame(wx.Panel):
 		self.Bind(wx.EVT_BUTTON, self.OnIMPORT, self.importbtn)
 		self.importbtn.Enable(False)
 
-		# 1/8/2014 brgtodo: What is the point of the Dismiss button??? It just hides the data manager, f'nality
-		# more usefully implemented in the "Go to Display/Data Manager" button in the toolbar. Why would a user
-		# want to just hide the Data Manager?  Strong candidate for removal.
-		self.okbtn = wx.Button(self.pathPanel, -1, "Dismiss")
-		self.Bind(wx.EVT_BUTTON, self.OnDISMISS, self.okbtn)
-
 		pathPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
 		pathPanelSizer.Add(self.PathTxt, 1, wx.LEFT | wx.RIGHT, 5)
 		pathPanelSizer.Add(self.importbtn, 0, wx.LEFT | wx.RIGHT, 5)
-		pathPanelSizer.Add(self.okbtn, 0, wx.LEFT | wx.RIGHT, 5)
 		self.pathPanel.SetSizer(pathPanelSizer)
 
 		self.SetSizer(wx.BoxSizer(wx.VERTICAL))
@@ -88,7 +81,6 @@ class DataFrame(wx.Panel):
 		self.GetSizer().Add(self.pathPanel, 0, wx.EXPAND | wx.BOTTOM, 5)
 
 		self.treeListPanel = wx.Panel(self.sideNote, -1)
-		#self.treeListPanel = wx.Panel(self, -1)
 
 		self.tree = gizmos.TreeListCtrl(self.treeListPanel, -1, style = wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT)
 		self.tree.AddColumn(" ")
@@ -5628,11 +5620,6 @@ class DataFrame(wx.Panel):
 		root_f.close()
 		self.tree.SortChildren(self.root)
 		self.tree.Expand(self.root)
-
-
-	def OnDISMISS(self, event):
-		self.Show(False)
-		self.parent.Window.SetFocusFromKbd()
 
 	def changeFORMAT(self, filename, ith):
 		# change format
