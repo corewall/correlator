@@ -3153,8 +3153,6 @@ class FilterPanel():
 		# Filter Range
 		vbox_top.Add(wx.StaticText(self.mainPanel, -1, "Set Filter Range : "), 0, wx.LEFT | wx.TOP, 9)
 		buttonsize = 290
-		if platform_name[0] == "Windows" :
-			buttonsize = 280		
 		self.all = wx.Choice(self.mainPanel, -1, (0,0), (buttonsize,-1))
 		self.all.SetForegroundColour(wx.BLACK)
 		vbox_top.Add(self.all, 0, wx.LEFT | wx.TOP, 9)
@@ -3196,22 +3194,12 @@ class FilterPanel():
 		smoothSizer = wx.StaticBoxSizer(wx.StaticBox(smoothPanel, -1, 'Smooth'), orient=wx.VERTICAL)
 		smoothParamsSizer = wx.GridBagSizer(3, 3)
 		
-		if platform_name[0] == "Windows" :			
-			smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Type"), (0,0), flag=wx.LEFT | wx.RIGHT, border=5)
-		else :
-			smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Type"), (0,0), flag=wx.RIGHT, border=5)
+		smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Type"), (0,0), flag=wx.RIGHT, border=5)
 				
 		self.smoothcmd = wx.Choice(smoothPanel, -1, (0,0), (180, -1), ("None", "Gaussian"))
 		self.smoothcmd.SetForegroundColour(wx.BLACK)
-		if platform_name[0] == "Windows" :		
-			smoothParamsSizer.Add(self.smoothcmd, (0,1), span=(1,2), flag=wx.RIGHT, border=5)
-		else :
-			smoothParamsSizer.Add(self.smoothcmd, (0,1), span=(1,2))
-					
-		if platform_name[0] == "Windows" :		
-			smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Width"), (1,0), flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, border=5)
-		else :
-			smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Width"), (1,0), flag=wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, border=5)
+		smoothParamsSizer.Add(self.smoothcmd, (0,1), span=(1,2))					
+		smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Width"), (1,0), flag=wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, border=5)
 		
 		self.width = wx.TextCtrl(smoothPanel, -1, "9", size=(60, 25), style=wx.SUNKEN_BORDER)
 		smoothParamsSizer.Add(self.width, (1,1), flag=wx.BOTTOM, border=3)
@@ -3221,16 +3209,10 @@ class FilterPanel():
 		self.mainPanel.Bind(wx.EVT_CHOICE, self.SetUNIT, self.unitscmd)
 		smoothParamsSizer.Add(self.unitscmd, (1,2), flag=wx.ALIGN_CENTER_VERTICAL)
 
-		if platform_name[0] == "Windows":
-			smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Display	         "), (2,0), flag=wx.RIGHT | wx.LEFT, border=5)
-		else:
-			smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Display"), (2,0), flag=wx.RIGHT, border=5)
+		smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Display"), (2,0), flag=wx.RIGHT, border=5)
 		self.plotcmd = wx.Choice(smoothPanel, -1, (0,0), (180, -1), ("UnsmoothedOnly", "SmoothedOnly", "Smoothed&Unsmoothed"))
 		self.plotcmd.SetForegroundColour(wx.BLACK)
-		if platform_name[0] == "Windows":
-			smoothParamsSizer.Add(self.plotcmd, (2,1), span=(1,2))
-		else:
-			smoothParamsSizer.Add(self.plotcmd, (2,1), span=(1,2))
+		smoothParamsSizer.Add(self.plotcmd, (2,1), span=(1,2))
 		smoothSizer.Add(smoothParamsSizer, 1, wx.BOTTOM, 10)
 
 		smoothBtnPanel = wx.Panel(smoothPanel, -1)
@@ -3263,10 +3245,7 @@ class FilterPanel():
 		self.valueD = wx.TextCtrl(cullPanel, -1, "5.0", size=(80, 25), style=wx.SUNKEN_BORDER )
 		grid3.Add(self.valueD, 0, wx.RIGHT, 9)
 		grid3.Add(wx.StaticText(cullPanel, -1, "cm from each core top "), 0, wx.BOTTOM, 9)
-		if platform_name[0] == "Windows" :	
-			cullSizer.Add(grid3, 0, wx.BOTTOM | wx.LEFT, 9)
-		else :
-			cullSizer.Add(grid3, 0, wx.BOTTOM, 9)
+		cullSizer.Add(grid3, 0, wx.BOTTOM, 9)
 
 		grid31 = wx.FlexGridSizer(2, 4)
 		grid31.Add(wx.StaticText(cullPanel, -1, ""), 0, wx.RIGHT, 3)
@@ -3291,25 +3270,19 @@ class FilterPanel():
 		self.orCheck = wx.CheckBox(cullPanel, -1, ' ')
 		grid31.Add(self.orCheck, 0, wx.BOTTOM, 15)
 
-		wx.StaticText(cullPanel, -1, "data value", (20, 110))
-		if platform_name[0] == "Windows" :	
-			cullSizer.Add(grid31, 0, wx.LEFT, 9)
-		else :		
-			cullSizer.Add(grid31)
+		# manually position "data value" static text
+		dataValuePos = (5, 100) if platform_name[0] == "Windows" else (20, 100)
+		wx.StaticText(cullPanel, -1, "data value", dataValuePos)
+
+		cullSizer.Add(grid31)
 
 		buttonsize = 180
-		if platform_name[0] == "Windows" :	
-			buttonsize = 140
-			
 		grid32 = wx.FlexGridSizer(1, 2)
 		self.optcmd = wx.Choice(cullPanel, -1, (0,0), (buttonsize, -1), ("Use all cores", "Use cores numbered <="))
 		grid32.Add(self.optcmd, 0, wx.RIGHT, 5)
 		self.valueE = wx.TextCtrl(cullPanel, -1, "999", size=(80, 25), style=wx.SUNKEN_BORDER )
 		grid32.Add(self.valueE, 0, wx.BOTTOM, 9)
-		if platform_name[0] == "Windows" :		
-			cullSizer.Add(grid32, 0, wx.LEFT, 9)
-		else :
-			cullSizer.Add(grid32)
+		cullSizer.Add(grid32)
 
 		cullPanel.SetSizer(cullSizer)
 
