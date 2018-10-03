@@ -3138,197 +3138,195 @@ class FilterPanel():
 		self.locked = False
 		self.prevSelected = 0
 		self.addItemsInFrame()
-		
+
+		# init undo members
+		self.deciUndo = [ "All Holes", "1" ]
+		self.deciBackup = [ "All Holes", "1" ]
+		self.smBackup = []
+		self.smUndo = []
+		self.cullBackup = [ "All Holes", False, "5.0", ">", "9999.99", True, "<", "-9999.99", False, "Use all cores", "999" ]
+		self.cullUndo = [ "All Holes", False, "5.0", ">", "9999.99", True, "<", "-9999.99", False, "Use all cores", "999" ]
+
 	def addItemsInFrame(self):
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
 
+		# Filter Range
 		vbox_top.Add(wx.StaticText(self.mainPanel, -1, "Set Filter Range : "), 0, wx.LEFT | wx.TOP, 9)
-
 		buttonsize = 290
 		if platform_name[0] == "Windows" :
-			buttonsize = 280
-			
+			buttonsize = 280		
 		self.all = wx.Choice(self.mainPanel, -1, (0,0), (buttonsize,-1))
 		self.all.SetForegroundColour(wx.BLACK)
 		vbox_top.Add(self.all, 0, wx.LEFT | wx.TOP, 9)
 		self.mainPanel.Bind(wx.EVT_CHOICE, self.SetTYPE, self.all)
 
-		panel1 = wx.Panel (self.mainPanel, -1)
-		sizer1 = wx.StaticBoxSizer(wx.StaticBox(panel1, -1, 'Decimate'), orient=wx.HORIZONTAL)
-		
-		if platform_name[0] == "Windows" :		
-			sizer1.Add(wx.StaticText(panel1, -1, "Use every      "), 0, wx.TOP | wx.LEFT | wx.RIGHT, 5)
-			self.decimate = wx.TextCtrl(panel1, -1, "1", size=(80, 25), style=wx.SUNKEN_BORDER )
-			sizer1.Add(self.decimate, 0, wx.RIGHT, 5)
-			sizer1.Add(wx.StaticText(panel1, -1, " points              "), 0, wx.TOP | wx.RIGHT, 5)
-		else :
-			sizer1.Add(wx.StaticText(panel1, -1, "Use every      "), 0, wx.RIGHT, 5)
-			self.decimate = wx.TextCtrl(panel1, -1, "1", size=(80, 25), style=wx.SUNKEN_BORDER )
-			sizer1.Add(self.decimate, 0, wx.RIGHT, 5)
-			sizer1.Add(wx.StaticText(panel1, -1, " points          "), 0, wx.RIGHT, 5)
-		panel1.SetSizer(sizer1)
-		vbox_top.Add(panel1, 0, wx.BOTTOM | wx.LEFT | wx.TOP, 9)
+		# Decimate
+		decPanel = wx.Panel(self.mainPanel, -1)
+		decSizer = wx.StaticBoxSizer(wx.StaticBox(decPanel, -1, 'Decimate'), orient=wx.VERTICAL)
 
-		gridApply1 = wx.GridSizer(1, 2)
-		deciBtn = wx.Button(self.mainPanel, -1, "Apply", size=(120, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDecimate, deciBtn)
-		gridApply1.Add(deciBtn)
+		decValPanel = wx.Panel(decPanel, -1)
+		self.decimate = wx.TextCtrl(decValPanel, -1, "1", size=(80, 25), style=wx.SUNKEN_BORDER)
+		dvSizer = wx.BoxSizer(wx.HORIZONTAL)
+		dvSizer.Add(wx.StaticText(decValPanel,  -1, "Use every"), 0, wx.LEFT | wx.RIGHT, 5)
+		dvSizer.Add(self.decimate, 0, wx.RIGHT, 5)
+		dvSizer.Add(wx.StaticText(decValPanel,  -1, "points"), 0, wx.LEFT | wx.RIGHT, 5)
+		decValPanel.SetSizer(dvSizer)
 
-		self.deciUndo = [ "All Holes", "1" ]
-		self.deciBackup = [ "All Holes", "1" ]
-		self.deciundoBtn = wx.Button(self.mainPanel, -1, "Undo", size=(120, 30))
+		decBtnPanel = wx.Panel(decPanel, -1)
+		decBtnSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+		decApply = wx.Button(decBtnPanel, -1, "Apply", size=(120, 30))
+		decPanel.Bind(wx.EVT_BUTTON, self.OnDecimate, decApply)
+
+		self.deciundoBtn = wx.Button(decBtnPanel, -1, "Undo", size=(120, 30))
 		self.deciundoBtn.Enable(False)
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUNDODecimate, self.deciundoBtn)
-		if platform_name[0] == "Windows" :	
-			gridApply1.Add(self.deciundoBtn, 0, wx.LEFT, 20)
-		else :
-			gridApply1.Add(self.deciundoBtn, 0, wx.LEFT, 10)
+		decPanel.Bind(wx.EVT_BUTTON, self.OnUNDODecimate, self.deciundoBtn)
 
-		vbox_top.Add(gridApply1, 0, wx.LEFT, 10)
+		decBtnSizer.Add(decApply, 0)
+		decBtnSizer.Add(self.deciundoBtn, 0)
+		decBtnPanel.SetSizer(decBtnSizer)
 
+		decSizer.Add(decValPanel, 1, wx.EXPAND)
+		decSizer.Add(decBtnPanel, 1, wx.EXPAND)
+		decPanel.SetSizer(decSizer)
+		vbox_top.Add(decPanel, 0, wx.TOP | wx.EXPAND, 5)
 
-		panel2 = wx.Panel (self.mainPanel, -1)
-		sizer2 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'Smooth'), orient=wx.VERTICAL)
-		grid2 = wx.GridBagSizer(3, 3)
+		# Smoothing
+		smoothPanel = wx.Panel (self.mainPanel, -1)
+		smoothSizer = wx.StaticBoxSizer(wx.StaticBox(smoothPanel, -1, 'Smooth'), orient=wx.VERTICAL)
+		smoothParamsSizer = wx.GridBagSizer(3, 3)
 		
 		if platform_name[0] == "Windows" :			
-			grid2.Add(wx.StaticText(panel2, -1, "Type"), (0,0), flag=wx.LEFT | wx.RIGHT, border=5)
+			smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Type"), (0,0), flag=wx.LEFT | wx.RIGHT, border=5)
 		else :
-			grid2.Add(wx.StaticText(panel2, -1, "Type"), (0,0), flag=wx.RIGHT, border=5)
+			smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Type"), (0,0), flag=wx.RIGHT, border=5)
 				
-		self.smoothcmd = wx.Choice(panel2, -1, (0,0), (180, -1), ("None", "Gaussian"))
+		self.smoothcmd = wx.Choice(smoothPanel, -1, (0,0), (180, -1), ("None", "Gaussian"))
 		self.smoothcmd.SetForegroundColour(wx.BLACK)
 		if platform_name[0] == "Windows" :		
-			grid2.Add(self.smoothcmd, (0,1), span=(1,2), flag=wx.RIGHT, border=5)
+			smoothParamsSizer.Add(self.smoothcmd, (0,1), span=(1,2), flag=wx.RIGHT, border=5)
 		else :
-			grid2.Add(self.smoothcmd, (0,1), span=(1,2))
+			smoothParamsSizer.Add(self.smoothcmd, (0,1), span=(1,2))
 					
 		if platform_name[0] == "Windows" :		
-			grid2.Add(wx.StaticText(panel2, -1, "Width"), (1,0), flag=wx.LEFT | wx.RIGHT, border=5)
+			smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Width"), (1,0), flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, border=5)
 		else :
-			grid2.Add(wx.StaticText(panel2, -1, "Width"), (1,0), flag=wx.RIGHT, border=5)
+			smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Width"), (1,0), flag=wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, border=5)
 		
-		self.width = wx.TextCtrl(panel2, -1, "9", size=(60, 25), style=wx.SUNKEN_BORDER)
-		grid2.Add(self.width, (1,1), flag=wx.BOTTOM, border=3)
+		self.width = wx.TextCtrl(smoothPanel, -1, "9", size=(60, 25), style=wx.SUNKEN_BORDER)
+		smoothParamsSizer.Add(self.width, (1,1), flag=wx.BOTTOM, border=3)
 
-		self.unitscmd = wx.Choice(panel2, -1, choices=["Points", "Depth(cm)"])
+		self.unitscmd = wx.Choice(smoothPanel, -1, choices=["Points", "Depth(cm)"])
 		self.unitscmd.SetForegroundColour(wx.BLACK)
 		self.mainPanel.Bind(wx.EVT_CHOICE, self.SetUNIT, self.unitscmd)
-		grid2.Add(self.unitscmd, (1,2), flag=wx.ALIGN_CENTER_VERTICAL)
+		smoothParamsSizer.Add(self.unitscmd, (1,2), flag=wx.ALIGN_CENTER_VERTICAL)
 
 		if platform_name[0] == "Windows":
-			grid2.Add(wx.StaticText(panel2, -1, "Display	         "), (2,0), flag=wx.RIGHT | wx.LEFT, border=5)
+			smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Display	         "), (2,0), flag=wx.RIGHT | wx.LEFT, border=5)
 		else:
-			grid2.Add(wx.StaticText(panel2, -1, "Display"), (2,0), flag=wx.RIGHT, border=5)
-		self.plotcmd = wx.Choice(panel2, -1, (0,0), (180, -1), ("UnsmoothedOnly", "SmoothedOnly", "Smoothed&Unsmoothed"))
+			smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Display"), (2,0), flag=wx.RIGHT, border=5)
+		self.plotcmd = wx.Choice(smoothPanel, -1, (0,0), (180, -1), ("UnsmoothedOnly", "SmoothedOnly", "Smoothed&Unsmoothed"))
 		self.plotcmd.SetForegroundColour(wx.BLACK)
 		if platform_name[0] == "Windows":
-			grid2.Add(self.plotcmd, (2,1), span=(1,2))
+			smoothParamsSizer.Add(self.plotcmd, (2,1), span=(1,2))
 		else:
-			grid2.Add(self.plotcmd, (2,1), span=(1,2))
+			smoothParamsSizer.Add(self.plotcmd, (2,1), span=(1,2))
+		smoothSizer.Add(smoothParamsSizer, 1, wx.BOTTOM, 10)
 
-		sizer2.Add(grid2)
-		panel2.SetSizer(sizer2)
-		vbox_top.Add(panel2, 0, wx.BOTTOM | wx.TOP | wx.LEFT | wx.EXPAND, 9)
-
-		gridApply2 = wx.GridSizer(1, 2)
-		smBtn = wx.Button(self.mainPanel, -1, "Apply", size=(120, 30))
+		smoothBtnPanel = wx.Panel(smoothPanel, -1)
+		smoothBtnSizer = wx.BoxSizer(wx.HORIZONTAL)
+		
+		smBtn = wx.Button(smoothBtnPanel, -1, "Apply", size=(120, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSmooth, smBtn)
-		gridApply2.Add(smBtn)
-
-		self.smBackup = []
-		self.smUndo = []
-
-		self.smundoBtn = wx.Button(self.mainPanel, -1, "Undo", size=(120, 30))
+		self.smundoBtn = wx.Button(smoothBtnPanel, -1, "Undo", size=(120, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUNDOSmooth, self.smundoBtn)
-		#self.smundoBtn.Enable(False)
-		if platform_name[0] == "Windows":
-			gridApply2.Add(self.smundoBtn, 0, wx.LEFT, 20)
-		else:
-			gridApply2.Add(self.smundoBtn, 0, wx.LEFT, 10)
-		vbox_top.Add(gridApply2, 0, wx.LEFT, 10)
+		smoothBtnSizer.Add(smBtn)
+		smoothBtnSizer.Add(self.smundoBtn)
+		smoothBtnPanel.SetSizer(smoothBtnSizer)
+		smoothSizer.Add(smoothBtnPanel)
 
-		panel3 = wx.Panel(self.mainPanel, -1)
-		sizer3 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Cull'), orient=wx.VERTICAL)
+		smoothPanel.SetSizer(smoothSizer)
+		vbox_top.Add(smoothPanel, 0, wx.TOP | wx.EXPAND, 5)
+
+		# Culling
+		cullPanel = wx.Panel(self.mainPanel, -1)
+		cullSizer = wx.StaticBoxSizer(wx.StaticBox(cullPanel, -1, 'Cull'), orient=wx.VERTICAL)
 
 		grid3 = wx.FlexGridSizer(2, 2)
-		self.nocull = wx.RadioButton(panel3, -1, "No cull", style=wx.RB_GROUP)
+		self.nocull = wx.RadioButton(cullPanel, -1, "No cull", style=wx.RB_GROUP)
 		self.nocull.SetValue(True)
 		grid3.Add(self.nocull)
-		self.cull = wx.RadioButton(panel3, -1, "Use parameters ")
+		self.cull = wx.RadioButton(cullPanel, -1, "Use parameters ")
 		self.cull.SetValue(False)
 		grid3.Add(self.cull, 0, wx.BOTTOM, 15)
 
-		self.valueD = wx.TextCtrl(panel3, -1, "5.0", size=(80, 25), style=wx.SUNKEN_BORDER )
+		self.valueD = wx.TextCtrl(cullPanel, -1, "5.0", size=(80, 25), style=wx.SUNKEN_BORDER )
 		grid3.Add(self.valueD, 0, wx.RIGHT, 9)
-		grid3.Add(wx.StaticText(panel3, -1, "cm from each core top "), 0, wx.BOTTOM, 9)
+		grid3.Add(wx.StaticText(cullPanel, -1, "cm from each core top "), 0, wx.BOTTOM, 9)
 		if platform_name[0] == "Windows" :	
-			sizer3.Add(grid3, 0, wx.BOTTOM | wx.LEFT, 9)
+			cullSizer.Add(grid3, 0, wx.BOTTOM | wx.LEFT, 9)
 		else :
-			sizer3.Add(grid3, 0, wx.BOTTOM, 9)
-
+			cullSizer.Add(grid3, 0, wx.BOTTOM, 9)
 
 		grid31 = wx.FlexGridSizer(2, 4)
-		grid31.Add(wx.StaticText(panel3, -1, ""), 0, wx.RIGHT, 3)
-		self.cmd = wx.Choice(panel3, -1, (0,0), (50,-1), ("<", ">"))
+		grid31.Add(wx.StaticText(cullPanel, -1, ""), 0, wx.RIGHT, 3)
+		self.cmd = wx.Choice(cullPanel, -1, (0,0), (50,-1), ("<", ">"))
 		self.cmd.SetForegroundColour(wx.BLACK)
 
 		grid31.Add(self.cmd, 0, wx.RIGHT, 9)
-		self.valueA = wx.TextCtrl(panel3, -1, "9999.99", size=(80, 25), style=wx.SUNKEN_BORDER )
+		self.valueA = wx.TextCtrl(cullPanel, -1, "9999.99", size=(80, 25), style=wx.SUNKEN_BORDER )
 		grid31.Add(self.valueA, 0, wx.RIGHT, 9)
 
-		self.onlyCheck = wx.CheckBox(panel3, -1, ' ')
+		self.onlyCheck = wx.CheckBox(cullPanel, -1, ' ')
 		self.onlyCheck.SetValue(True)
 		self.onlyCheck.Enable(False)
 		grid31.Add(self.onlyCheck, 0, wx.BOTTOM, 9)
 
-		grid31.Add(wx.StaticText(panel3, -1, "                     "), 0, wx.RIGHT, 3)
-		self.signcmd = wx.Choice(panel3, -1, (0,0), (50,-1), ("<", ">")) 
+		grid31.Add(wx.StaticText(cullPanel, -1, "                     "), 0, wx.RIGHT, 3)
+		self.signcmd = wx.Choice(cullPanel, -1, (0,0), (50,-1), ("<", ">")) 
 		self.signcmd.SetForegroundColour(wx.BLACK)
 		grid31.Add(self.signcmd, 0, wx.RIGHT, 9)
-		self.valueB = wx.TextCtrl(panel3, -1, "-9999.99", size=(80, 25), style=wx.SUNKEN_BORDER )
+		self.valueB = wx.TextCtrl(cullPanel, -1, "-9999.99", size=(80, 25), style=wx.SUNKEN_BORDER )
 		grid31.Add(self.valueB, 0, wx.RIGHT, 9)
-		self.orCheck = wx.CheckBox(panel3, -1, ' ')
+		self.orCheck = wx.CheckBox(cullPanel, -1, ' ')
 		grid31.Add(self.orCheck, 0, wx.BOTTOM, 15)
 
-		wx.StaticText(panel3, -1, "data value", (20, 110))
+		wx.StaticText(cullPanel, -1, "data value", (20, 110))
 		if platform_name[0] == "Windows" :	
-			sizer3.Add(grid31, 0, wx.LEFT, 9)
+			cullSizer.Add(grid31, 0, wx.LEFT, 9)
 		else :		
-			sizer3.Add(grid31)
+			cullSizer.Add(grid31)
 
 		buttonsize = 180
 		if platform_name[0] == "Windows" :	
 			buttonsize = 140
 			
 		grid32 = wx.FlexGridSizer(1, 2)
-		self.optcmd = wx.Choice(panel3, -1, (0,0), (buttonsize, -1), ("Use all cores", "Use cores numbered <="))
+		self.optcmd = wx.Choice(cullPanel, -1, (0,0), (buttonsize, -1), ("Use all cores", "Use cores numbered <="))
 		grid32.Add(self.optcmd, 0, wx.RIGHT, 5)
-		self.valueE = wx.TextCtrl(panel3, -1, "999", size=(80, 25), style=wx.SUNKEN_BORDER )
+		self.valueE = wx.TextCtrl(cullPanel, -1, "999", size=(80, 25), style=wx.SUNKEN_BORDER )
 		grid32.Add(self.valueE, 0, wx.BOTTOM, 9)
 		if platform_name[0] == "Windows" :		
-			sizer3.Add(grid32, 0, wx.LEFT, 9)
+			cullSizer.Add(grid32, 0, wx.LEFT, 9)
 		else :
-			sizer3.Add(grid32)
+			cullSizer.Add(grid32)
 
-		panel3.SetSizer(sizer3)
-		vbox_top.Add(panel3, 0, wx.BOTTOM | wx.TOP | wx.LEFT , 9)
+		cullPanel.SetSizer(cullSizer)
 
-		gridApply3 = wx.GridSizer(1, 2)
-		cullBtn = wx.Button(self.mainPanel, -1, "Apply", size=(120, 30))
+		cullBtnPanel = wx.Panel(cullPanel, -1)
+		cullBtn = wx.Button(cullBtnPanel, -1, "Apply", size=(120, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCull, cullBtn)
-		gridApply3.Add(cullBtn)
-
-		self.cullBackup = [ "All Holes", False, "5.0", ">", "9999.99", True, "<", "-9999.99", False, "Use all cores", "999" ]
-		self.cullUndo = [ "All Holes", False, "5.0", ">", "9999.99", True, "<", "-9999.99", False, "Use all cores", "999" ]
-		self.cullundoBtn = wx.Button(self.mainPanel, -1, "Undo", size=(120, 30))
+		self.cullundoBtn = wx.Button(cullBtnPanel, -1, "Undo", size=(120, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUNDOCull, self.cullundoBtn)
 		self.cullundoBtn.Enable(False)
-		if platform_name[0] == "Windows" :	
-			gridApply3.Add(self.cullundoBtn, 0, wx.LEFT, 20)	
-		else :			
-			gridApply3.Add(self.cullundoBtn, 0, wx.LEFT, 10)	
-		vbox_top.Add(gridApply3, 0, wx.LEFT, 10)
+
+		cullBtnSizer = wx.BoxSizer(wx.HORIZONTAL)
+		cullBtnSizer.Add(cullBtn)
+		cullBtnSizer.Add(self.cullundoBtn)
+		cullBtnPanel.SetSizer(cullBtnSizer)
+		cullSizer.Add(cullBtnPanel)
+
+		vbox_top.Add(cullPanel, 0, wx.TOP | wx.EXPAND, 5)
 
 		self.mainPanel.SetSizer(vbox_top)
 
