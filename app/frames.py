@@ -85,7 +85,6 @@ class TopMenuFrame(wx.Frame):
 		wx.EVT_CLOSE(self, self.OnHide)
 
 	def OnHide(self, event):
-		self.parent.optPanel.tool.SetValue(False)
 		self.Show(False)
 		self.parent.mitool.Check(False)
 		self.parent.Window.SetFocusFromKbd()
@@ -695,16 +694,16 @@ class CompositePanel():
 				self.parent.Window.OnUpdateTie(1)
 				
 	def OnGrowthSettings(self, evt):
-		min = self.parent.optPanel.min_depth.GetValue()
-		max = self.parent.optPanel.max_depth.GetValue()
+		min = self.parent.optPanel.depthRangeMin.GetValue()
+		max = self.parent.optPanel.depthRangeMax.GetValue()
 		dlg = dialog.DepthRangeDialog(self.plotNote, min, max)
 		pos = self.grText.GetScreenPositionTuple()
 		dlg.SetPosition(pos)
 		if dlg.ShowModal() == wx.ID_OK:
 			self.parent.optPanel.depthmax = dlg.outMax	# update mirrored prefs GUI (brgtodo 9/6/2014 gross)
-			self.parent.optPanel.min_depth.SetValue(str(dlg.outMin))
-			self.parent.optPanel.max_depth.SetValue(str(dlg.outMax))
-			self.parent.optPanel.slider2.SetValue(1)
+			self.parent.optPanel.depthRangeMin.SetValue(str(dlg.outMin))
+			self.parent.optPanel.depthRangeMax.SetValue(str(dlg.outMax))
+			self.parent.optPanel.depthZoomSlider.SetValue(1)
 			self.parent.OnUpdateDepthRange(dlg.outMin, dlg.outMax)
 
 	def OnBreakTie(self, evt):
@@ -3857,19 +3856,11 @@ class PreferencesPanel():
 		self.depthmax = 20.0
 
 	def OnRegisterHole(self, holename):
-		self.all.Append(holename)
-		self.all.SetSelection(self.prevSelected)
+		self.variableChoice.Append(holename)
+		self.variableChoice.SetSelection(self.prevSelected)
 
-	def OnToolbarWindow(self, event):
-		if self.tool.IsChecked() == True : 
-			self.parent.topMenu.Show(True)
-			self.parent.mitool.Check(True)
-		else :
-			self.parent.topMenu.Show(False)
-			self.parent.mitool.Check(False)
-		
 	def OnActivateWindow(self, event):
-		if self.opt1.IsChecked() == True : 
+		if self.showSpliceWindow.IsChecked() == True : 
 			self.parent.OnActivateWindow(1)
 			self.parent.misecond.Check(True)
 		else :
@@ -3877,7 +3868,7 @@ class PreferencesPanel():
 			self.parent.misecond.Check(False)
 
 	def OnActivateScroll(self, event):
-		if self.opt2.IsChecked() == True : 
+		if self.indSpliceScroll.IsChecked() == True : 
 			self.parent.SetSecondScroll(1)
 			self.parent.miscroll.Check(True)
 		else :
@@ -3888,27 +3879,25 @@ class PreferencesPanel():
 		pass
 
 	def OnUPDATEMinMax(self, selection, min, max):
-		n = self.all.GetCount()
+		n = self.variableChoice.GetCount()
 		for i in range(n) :
-			if self.all.GetString(i) == selection :
-				self.all.SetSelection(i)
-				self.min.SetValue(min)
-				self.max.SetValue(max)
+			if self.variableChoice.GetString(i) == selection :
+				self.variableChoice.SetSelection(i)
+				self.varMin.SetValue(min)
+				self.varMax.SetValue(max)
 				self.OnChangeMinMax(1)
 				return
 
-
 	def OnUPDATEWidth(self):
-		type = self.all.GetStringSelection()
+		type = self.variableChoice.GetStringSelection()
 		idx = self.slider1.GetValue() - 10
 		holeWidth = 300 + (idx * 10)
 		self.parent.Window.holeWidth = holeWidth 
 		self.parent.Window.spliceHoleWidth = holeWidth
 		self.parent.Window.logHoleWidth = holeWidth 
 
-
 	def SetTYPE(self, event):
-		type = self.all.GetStringSelection()
+		type = self.variableChoice.GetStringSelection()
 
 		if type  == 'All Holes' :
 			print "[DEBUG] SET All Holes"
@@ -3925,10 +3914,10 @@ class PreferencesPanel():
 
 		ret = self.parent.Window.GetMINMAX(type)
 		if ret != None :
-			self.min.SetValue(str(ret[0]))
-			self.max.SetValue(str(ret[1]))
+			self.varMin.SetValue(str(ret[0]))
+			self.varMax.SetValue(str(ret[1]))
 
-	# convert self.all string ("All Susceptibility") to type string ("Susceptibility")
+	# convert self.variableChoice string ("All Susceptibility") to type string ("Susceptibility")
 	def _FixListTypeStr(self, type):
 		if type.find("All ") == 0:
 			type = type[4:]
@@ -3940,10 +3929,10 @@ class PreferencesPanel():
 			type = "log"
 		return type
 	
-	# get all hole types in self.all - no splice or log
+	# get all hole types in self.variableChoice - no splice or log
 	def _GetHoleTypes(self):
 		result = []
-		for str in self.all.GetStrings():
+		for str in self.variableChoice.GetStrings():
 			print str
 			if str.find("All ") != -1 and str != "All Holes":
 				result.append(self._FixListTypeStr(str))
@@ -3953,7 +3942,7 @@ class PreferencesPanel():
 	# list if All Holes is selected, otherwise selected non-Log/Splice type
 	def _GetApplyList(self, allowSpliceAndLog=False):
 		result = []
-		curType = self.all.GetStringSelection()
+		curType = self.variableChoice.GetStringSelection()
 		if curType == "All Holes":
 			result = self._GetHoleTypes()
 		elif (curType != "Log" and curType != "Spliced Records") or allowSpliceAndLog:
@@ -3961,9 +3950,9 @@ class PreferencesPanel():
 		return result
 	
 	def OnChangeMinMax(self, event):
-		type = self.all.GetStringSelection()
-		minRange = float(self.min.GetValue())
-		maxRange = float(self.max.GetValue())
+		type = self.variableChoice.GetStringSelection()
+		minRange = float(self.varMin.GetValue())
+		maxRange = float(self.varMax.GetValue())
 
 		if type == 'Log' :
 			self.parent.Window.UpdateRANGE("log", minRange, maxRange)
@@ -3990,13 +3979,8 @@ class PreferencesPanel():
 		self.parent.Window.rulerUnits = self.unitsPopup.GetStringSelection()
 		self.parent.Window.UpdateDrawing()
 
-	# 9/12/2012 brgtodo: rename slider2 to something meaningful,
-	# update tie edit fields when slider moves  
 	def OnRulerOneScale(self, event):
-		# 1 --> 400 
-		# start -> 62 : 60 + (idx * 2) 
-		#idx = self.slider2.GetValue() - 10
-		idx = self.slider2.GetValue()
+		idx = self.depthZoomSlider.GetValue()
 
 		#self.parent.Window.length = 60 + (idx * 2)
 		min = self.parent.Window.rulerStartDepth
@@ -4009,7 +3993,6 @@ class PreferencesPanel():
 			return
 		self.parent.Window.UpdateDrawing()
 
-
 	def OnTieShiftScale(self, event):
 		self.parent.Window.shift_range = float(self.tie_shift.GetValue())
 
@@ -4020,16 +4003,16 @@ class PreferencesPanel():
 		dlg.Destroy()
 
 	def OnShowLine(self, event):
-		self.parent.Window.showHoleGrid = self.opt3.GetValue()
+		self.parent.Window.showHoleGrid = self.showPlotLines.GetValue()
 		self.parent.Window.UpdateDrawing()
 
 	def OnDepthViewAdjust(self, event):
-		min = float(self.min_depth.GetValue())
-		max = float(self.max_depth.GetValue())
+		min = float(self.depthRangeMin.GetValue())
+		max = float(self.depthRangeMax.GetValue())
 		if min >= max :
 			return
 		self.depthmax = max
-		self.slider2.SetValue(1)
+		self.depthZoomSlider.SetValue(1)
 		
 		updateScroll = event is not None
 		self.parent.OnUpdateDepthRange(min, max, updateScroll)
@@ -4053,156 +4036,139 @@ class PreferencesPanel():
 	def addItemsInFrame(self):
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
 	
-		unitsPanel = wx.Panel(self.mainPanel, -1)
-		unitsSizer = wx.FlexGridSizer(1, 2)
+		# General view settings
+		viewPanel = wx.Panel(self.mainPanel, -1)
+		viewSizer = wx.StaticBoxSizer(wx.StaticBox(viewPanel, -1, "General view settings"), orient=wx.VERTICAL)
+
+		self.showSpliceWindow = wx.CheckBox(viewPanel, -1, 'Show Splice/Log window partition')
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnActivateWindow, self.showSpliceWindow)
+		self.indSpliceScroll = wx.CheckBox(viewPanel, -1, 'Independent Splice/Log scrollbar')
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnActivateScroll, self.indSpliceScroll)
+		self.indSpliceScroll.SetValue(False)
+		self.showPlotLines = wx.CheckBox(viewPanel, -1, 'Show lines between plot tracks')
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLine, self.showPlotLines)
+		self.showPlotLines.SetValue(True)
+		self.showSectionDepths = wx.CheckBox(viewPanel, -1, "Show section boundaries and numbers")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowSectionDepths, self.showSectionDepths)
+		self.showAffineShiftInfo = wx.CheckBox(viewPanel, -1, "Show core shift direction and distance")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftInfo, self.showAffineShiftInfo)
+		self.showAffineTieArrows = wx.CheckBox(viewPanel, -1, "Show core tie arrows")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineTieArrows, self.showAffineTieArrows)
+		self.showLogShiftArrows = wx.CheckBox(viewPanel, -1, "Show log shift arrows")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)
+
+		viewSizer.Add(self.showSpliceWindow, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.indSpliceScroll, 0, wx.LEFT, 20)
+		viewSizer.Add(self.showSectionDepths, 0, wx.TOP | wx.BOTTOM, 5)		
+		viewSizer.Add(self.showAffineShiftInfo, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.showAffineTieArrows, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.showLogShiftArrows, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)		
+		viewPanel.SetSizer(viewSizer)
+		vbox_top.Add(viewPanel, 0, wx.BOTTOM | wx.EXPAND, 10)
+
+		# Depth Scale
+		depthScalePanel = wx.Panel(self.mainPanel, -1)
+		depthScaleSizer = wx.StaticBoxSizer(wx.StaticBox(depthScalePanel, -1, 'Depth Scale'), orient=wx.VERTICAL)
+
+		unitsPanel = wx.Panel(depthScalePanel, -1)
+		unitsSizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.unitsPopup = wx.Choice(unitsPanel, -1, choices=('m','cm','mm'), size=(-1,24))
 		self.unitsPopup.SetSelection(0)
 		self.mainPanel.Bind(wx.EVT_CHOICE, self.OnChangeRulerUnits, self.unitsPopup)
-		unitsSizer.Add(wx.StaticText(unitsPanel, -1, "Depth units: "), flag=wx.ALIGN_CENTER_VERTICAL)
-		unitsSizer.Add(self.unitsPopup, flag=wx.ALIGN_CENTER_VERTICAL)
+		unitsSizer.Add(wx.StaticText(unitsPanel, -1, "Units"), flag=wx.ALIGN_CENTER_VERTICAL)
+		unitsSizer.Add(self.unitsPopup, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 10)
+		unitsSizer.Add(wx.StaticText(unitsPanel, -1, "m, cm, mm"), 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
 		unitsPanel.SetSizer(unitsSizer)
-		vbox_top.Add(unitsPanel, 0, wx.LEFT | wx.BOTTOM | wx.TOP, 9)
+		depthScaleSizer.Add(unitsPanel, 0, wx.BOTTOM, 10)
 
-		grid1 = wx.FlexGridSizer(1, 2)
-		self.opt1 = wx.CheckBox(self.mainPanel, -1, 'Splice/Log window', (10, 10))
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnActivateWindow, self.opt1)
-		grid1.Add(self.opt1)
+		depthRangePanel = wx.Panel(depthScalePanel, -1)
+		depthRangeSizer = wx.BoxSizer(wx.HORIZONTAL)
+		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, "Interval"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 15)
+		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, 'min'), 0, wx.ALIGN_CENTER_VERTICAL)
+		self.depthRangeMin = wx.TextCtrl(depthRangePanel, -1, "11.0", size=(50,-1))
+		depthRangeSizer.Add(self.depthRangeMin, 0, wx.LEFT, 5)
+		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, 'max'), 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
+		self.depthRangeMax = wx.TextCtrl(depthRangePanel, -1, "25.0", size=(50, -1))
+		depthRangeSizer.Add(self.depthRangeMax, 0, wx.LEFT, 5)
 
-		self.tool = wx.CheckBox(self.mainPanel, -1, 'Toolbar window', (10, 10))
-		self.tool.SetValue(True)
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnToolbarWindow, self.tool)
-		grid1.Add(self.tool, 0, wx.LEFT, 5)
-		vbox_top.Add(grid1, 0, wx.LEFT, 9)
+		depthRangePanel.SetSizer(depthRangeSizer)
+		depthScaleSizer.Add(depthRangePanel, 0, wx.BOTTOM, 5)
 
-		buttonsize = 300
-		if platform_name[0] == "Windows" :
-			buttonsize = 285
-			
-		vbox_top.Add(wx.StaticLine(self.mainPanel, -1, size=(buttonsize,1)), 0, wx.TOP | wx.LEFT, 9)
+		depthScaleApply = wx.Button(depthScalePanel, -1, "Apply Interval")
+		depthScaleSizer.Add(depthScaleApply, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDepthViewAdjust, depthScaleApply)
 
-		grid2 = wx.FlexGridSizer(1, 2)
-		self.opt2 = wx.CheckBox(self.mainPanel, -1, 'Second scroll', (10, 10))
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnActivateScroll, self.opt2)
-		grid2.Add(self.opt2)
-		self.opt2.SetValue(False)
+		depthSliderPanel = wx.Panel(depthScalePanel, -1)
+		depthSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.depthZoomSlider = wx.Slider(depthSliderPanel, -1, 1, 1, 10)
+		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnRulerOneScale, self.depthZoomSlider)
+		depthSliderSizer.Add(wx.StaticText(depthSliderPanel, -1, "Zoom"))
+		depthSliderSizer.Add(self.depthZoomSlider, 1, wx.EXPAND | wx.LEFT, 15)
+		depthSliderPanel.SetSizer(depthSliderSizer)
+		depthScaleSizer.Add(depthSliderPanel, 0, wx.EXPAND)
 
-		self.opt3 = wx.CheckBox(self.mainPanel, -1, 'Show Line', (10, 10))
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLine, self.opt3)
-		self.opt3.SetValue(True)
-		if platform_name[0] == "Windows" :
-			grid2.Add(self.opt3, 0, wx.LEFT, 35)
-		else :		
-			grid2.Add(self.opt3, 0, wx.LEFT, 15)
+		depthScalePanel.SetSizer(depthScaleSizer)
+		vbox_top.Add(depthScalePanel, 0, wx.BOTTOM | wx.EXPAND, 10)
 
-		#self.opt3 = wx.CheckBox(self.mainPanel, -1, 'Text on Tie', (10, 10))
-		#self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnActivateText, self.opt3)
-		#self.opt3.SetValue(True)
-		#if platform_name[0] == "Windows" :
-		#	grid2.Add(self.opt3, 0, wx.LEFT, 35)
-		#else :		
-		#	grid2.Add(self.opt3, 0, wx.LEFT, 15)
+		# Keyboard up/down arrow shift distance
+		kbShiftPanel = wx.Panel(self.mainPanel, -1)
+		kbShiftSizer = wx.StaticBoxSizer(wx.StaticBox(kbShiftPanel, -1, 'Keyboard Shift'), orient=wx.VERTICAL)
+		kbsSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.tie_shift = wx.TextCtrl(kbShiftPanel, -1, "0.0", size=(50,-1))
+		kbsSizer.Add(self.tie_shift)
+		kbsSizer.Add(wx.StaticText(kbShiftPanel, -1, "m per up/down key"), 0, wx.ALIGN_CENTER_VERTICAL)
 
-		vbox_top.Add(grid2, 0, wx.TOP | wx.LEFT, 9)
-		vbox_top.Add(wx.StaticLine(self.mainPanel, -1, size=(buttonsize,1)), 0, wx.TOP | wx.LEFT, 9)
+		kbsApply = wx.Button(kbShiftPanel, -1, "Apply")
+		kbsSizer.Add(kbsApply, 0, wx.LEFT, 12)
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnTieShiftScale, kbsApply)
+		kbShiftSizer.Add(kbsSizer)
+		kbShiftPanel.SetSizer(kbShiftSizer)
+		vbox_top.Add(kbShiftPanel, 0, wx.BOTTOM | wx.EXPAND, 10)
 
-		self.showSectionDepths = wx.CheckBox(self.mainPanel, -1, "Show sections' depths and numbers")
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowSectionDepths, self.showSectionDepths)
-		vbox_top.Add(self.showSectionDepths, 0, wx.ALL, 5)
+		# Variable Scale
+		varScalePanel = wx.Panel(self.mainPanel, -1)
+		varScaleSizer = wx.StaticBoxSizer(wx.StaticBox(varScalePanel, -1, 'Display Range'), orient=wx.VERTICAL)
 
-		self.showAffineShiftInfo = wx.CheckBox(self.mainPanel, -1, "Show affine shift direction and distance")
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftInfo, self.showAffineShiftInfo)
-		vbox_top.Add(self.showAffineShiftInfo, 0, wx.ALL, 5)
-		
-		self.showAffineTieArrows = wx.CheckBox(self.mainPanel, -1, "Show affine tie arrows")
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineTieArrows, self.showAffineTieArrows)
-		vbox_top.Add(self.showAffineTieArrows, 0, wx.ALL, 5)		
+		self.variableChoice = wx.Choice(varScalePanel, -1, (0,0), (270,-1), (""))
+		varScalePanel.Bind(wx.EVT_CHOICE, self.SetTYPE, self.variableChoice)
 
-		self.showLogShiftArrows = wx.CheckBox(self.mainPanel, -1, "Show log shift arrows")
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)
-		vbox_top.Add(self.showLogShiftArrows, 0, wx.ALL, 5)
+		varSizer = wx.BoxSizer(wx.HORIZONTAL)
+		varSizer.Add(wx.StaticText(varScalePanel, -1, "Variable"))
+		varSizer.Add(self.variableChoice, 1, wx.LEFT | wx.EXPAND, 5)
+		varScaleSizer.Add(varSizer,  0, wx.BOTTOM, 10)
 
-		panel1 = wx.Panel(self.mainPanel, -1)
-		sizer1 = wx.StaticBoxSizer(wx.StaticBox(panel1, -1, 'Display Range'), orient=wx.VERTICAL)
+		varRangeSizer = wx.BoxSizer(wx.HORIZONTAL)
+		varRangeSizer.Add(wx.StaticText(varScalePanel, -1, "Range"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 15)
 
-		self.all = wx.Choice(panel1, -1, (0,0), (270,-1), (""))
-		panel1.Bind(wx.EVT_CHOICE, self.SetTYPE, self.all)
+		varRangeSizer.Add(wx.StaticText(varScalePanel, -1, "min"), 0, wx.ALIGN_CENTER_VERTICAL)
+		self.varMin = wx.TextCtrl(varScalePanel, -1, "0", size=(50,-1))
+		varRangeSizer.Add(self.varMin, 0, wx.LEFT, 5)
+		varRangeSizer.Add(wx.StaticText(varScalePanel, -1, "max"), 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
+		self.varMax = wx.TextCtrl(varScalePanel, -1, "20", size=(50,-1))
+		varRangeSizer.Add(self.varMax, 0, wx.LEFT, 5)
 
-		self.all.SetForegroundColour(wx.BLACK)
-		sizer1.Add(self.all, 0, wx.TOP, 5)
+		varScaleSizer.Add(varRangeSizer, 0, wx.BOTTOM, 5)
+		varApply = wx.Button(varScalePanel, -1, "Apply Range")
+		varScaleSizer.Add(varApply, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnChangeMinMax, varApply)
 
-		grid1range = wx.FlexGridSizer(4, 2)
-		grid1range.Add(wx.StaticText(panel1, -1, "Variable minimum: "), 0, wx.TOP, 5)
-		self.min = wx.TextCtrl(panel1, -1, "0", size=(80, 25), style=wx.SUNKEN_BORDER)
-		grid1range.Add(self.min, 0, wx.LEFT | wx.TOP, 5)
+		self.slider1 = wx.Slider(varScalePanel, -1, 10, 1, 20)
+		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangeWidth, self.slider1)
+		varSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
+		varSliderSizer.Add(wx.StaticText(varScalePanel, -1, "Zoom"))
+		varSliderSizer.Add(self.slider1, 1, wx.EXPAND)
+		varSliderSizer.Add(wx.StaticText(varScalePanel, -1, "Width*2"))
 
-		grid1range.Add(wx.StaticText(panel1, -1, "Variable maximum: "), 0, wx.TOP, 5)
-		self.max = wx.TextCtrl(panel1, -1, "20", size=(80, 25), style=wx.SUNKEN_BORDER)
-		grid1range.Add(self.max, 0, wx.LEFT | wx.TOP, 5)
-		widthBtn = wx.Button(panel1, -1, "Apply", size=(110, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnChangeMinMax, widthBtn)
-		grid1range.Add(widthBtn, 0, wx.TOP, 9)
-		widthundoBtn = wx.Button(panel1, -1, "Undo", size=(110, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoMinMax, widthundoBtn)
-		grid1range.Add(widthundoBtn, 0, wx.TOP | wx.LEFT, 9)
-		widthundoBtn.Enable(False)
+		varScaleSizer.Add(varSliderSizer, 0, wx.EXPAND)
 
-		if platform_name[0] == "Windows" :
-			grid1range.Add(wx.StaticText(panel1, -1, "Axis width: "), 0, wx.TOP, 10)
-			grid1range.Add(wx.StaticText(panel1, -1, ""), 0, wx.BOTTOM, 25)
+		varScalePanel.SetSizer(varScaleSizer)
+		vbox_top.Add(varScalePanel, 0, wx.BOTTOM | wx.EXPAND, 10)
 
-			self.slider1 = wx.Slider(panel1, -1, 10, 1, 20, (90, 165), (150, -1))
-			self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangeWidth, self.slider1)
-			sizer1.Add(grid1range, 0, wx.LEFT | wx.TOP, 5)
-		else :
-			grid1range.Add(wx.StaticText(panel1, -1, "Axis width: "), 0, wx.TOP, 8)
-			grid1range.Add(wx.StaticText(panel1, -1, ""), 0, wx.TOP, 10)
-
-			self.slider1 = wx.Slider(panel1, -1, 10, 1, 20, (100, 165), (150, -1))
-			self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangeWidth, self.slider1)
-			sizer1.Add(grid1range, 0, wx.LEFT | wx.TOP, 5)
-
-		panel1.SetSizer(sizer1)
-		vbox_top.Add(panel1, 0, wx.TOP | wx.LEFT | wx.BOTTOM, 9)
-		
-		panel2 = wx.Panel(self.mainPanel, -1)
-		sizer2 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'Ruler Depth Scale'), orient=wx.VERTICAL)
-		self.slider2 = wx.Slider(panel2, -1, 1, 1, 10, size=(270, -1))
-		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnRulerOneScale, self.slider2)
-		sizer2.Add(self.slider2, 0, flag=wx.EXPAND)
-		grid21 = wx.FlexGridSizer(1, 5)
-		grid21.Add(wx.StaticText(panel2, -1, 'min:'))
-		self.min_depth = wx.TextCtrl(panel2, -1, "0.0", size =(50, 25), style=wx.SUNKEN_BORDER | wx.TE_PROCESS_ENTER)
-		grid21.Add(self.min_depth, 0, wx.LEFT, 5)
-		grid21.Add(wx.StaticText(panel2, -1, 'max:'), 0, wx.LEFT, 5)
-		self.max_depth = wx.TextCtrl(panel2, -1, "20.0", size =(50, 25), style=wx.SUNKEN_BORDER | wx.TE_PROCESS_ENTER)
-		grid21.Add(self.max_depth, 0, wx.LEFT, 5)
-		sizer2.Add(grid21)
-		testbtn = wx.Button(panel2, -1, "Apply", size=(60,25))
-		grid21.Add(testbtn, 0, wx.LEFT, 10)
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDepthViewAdjust, testbtn)
-
-		panel2.SetSizer(sizer2)
-		#vbox_top.Add(panel2, 0, wx.TOP | wx.LEFT, 9)
-		vbox_top.Add(panel2, 0, wx.LEFT, 9)
-		
-		panel6 = wx.Panel(self.mainPanel, -1)
-		sizer6 = wx.StaticBoxSizer(wx.StaticBox(panel6, -1, 'Keyboard Tie Shift Depth Scale'), orient=wx.VERTICAL)
-		grid61 = wx.FlexGridSizer(1, 3)
-		grid61.Add(wx.StaticText(panel6, -1, 'In meters'), 0, wx.RIGHT, 9)
-		self.tie_shift = wx.TextCtrl(panel6, -1, "0.0", size =(100, 25), style=wx.SUNKEN_BORDER | wx.TE_PROCESS_ENTER)
-		grid61.Add(self.tie_shift)
-
-		testbtn = wx.Button(panel6, -1, "Apply", size=(60,25))
-		grid61.Add(testbtn, 0, wx.LEFT, 12)
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnTieShiftScale, testbtn)
-		sizer6.Add(grid61)
-		panel6.SetSizer(sizer6)
-		vbox_top.Add(panel6, 0, wx.LEFT | wx.TOP, 9)
-
-
-		testbtn = wx.Button(self.mainPanel, -1, "Change Color Set", size=(290,25))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnChangeColor, testbtn)
-		vbox_top.Add(testbtn, 0, wx.LEFT | wx.TOP, 9)
+		# Color Set
+		colorButton = wx.Button(self.mainPanel, -1, "Change Color Set", size=(290,25))
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnChangeColor, colorButton)
+		vbox_top.Add(colorButton, 0)
 
 		self.mainPanel.SetSizer(vbox_top)
 

@@ -499,12 +499,7 @@ class MainFrame(wx.Frame):
 				break
 
 	def SHOWToolbar(self, event):
-		if self.mitool.IsChecked() == False:
-			self.optPanel.tool.SetValue(False)
-			self.topMenu.Show(False)
-		else:
-			self.optPanel.tool.SetValue(True)
-			self.topMenu.Show(True)
+		self.topMenu.Show(self.mitools.IsChecked())
 
 	def SETPlotMode(self, event):
 		if self.miplot.IsChecked() == False:
@@ -865,23 +860,23 @@ class MainFrame(wx.Frame):
 			self.Window.spliceWindowOn = 0
 			self.Window.splicerBackX = self.Window.splicerX
 			self.Window.splicerX = self.Window.Width + 45 
-			self.optPanel.opt1.SetValue(False)
-			self.optPanel.opt2.Enable(False)
+			self.optPanel.showSpliceWindow.SetValue(False)
+			self.optPanel.indSpliceScroll.Enable(False)
 		else:
 			self.Window.isSecondScroll = self.Window.isSecondScrollBackup 
 			self.Window.spliceWindowOn = 1 
 			self.Window.splicerX = self.Window.splicerBackX
-			self.optPanel.opt1.SetValue(True)
-			self.optPanel.opt2.Enable(True)
+			self.optPanel.showSpliceWindow.SetValue(True)
+			self.optPanel.indSpliceScroll.Enable(True)
 		self.Window.UpdateDrawing()
 
 	def SetSecondScroll(self, event):
 		if self.Window.isSecondScroll == 1: 
 			self.Window.isSecondScroll = 0 
-			self.optPanel.opt2.SetValue(False)
+			self.optPanel.indSpliceScroll.SetValue(False)
 		else:
 			self.Window.isSecondScroll = 1 
-			self.optPanel.opt2.SetValue(True)
+			self.optPanel.indSpliceScroll.SetValue(True)
 
 
 	def RebuildComboBox(self, comboBox, typeNames, hasSpliceData, hasLogData):
@@ -919,7 +914,7 @@ class MainFrame(wx.Frame):
 					typeNames.append(holeData[holeIdx][0][0][2])
 
 			self.filterPanel.prevSelected = self.RebuildComboBox(self.filterPanel.all, typeNames, hasSpliceData, hasLogData)
-			self.optPanel.prevSelected = self.RebuildComboBox(self.optPanel.all, typeNames, hasSpliceData, hasLogData)
+			self.optPanel.prevSelected = self.RebuildComboBox(self.optPanel.variableChoice, typeNames, hasSpliceData, hasLogData)
 
 
 	def UpdateSECTION(self):
@@ -1578,9 +1573,9 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("secondstartdepth", self.Window.SPrulerStartDepth, f)
 		self.WritePreferenceItem("datawidth", self.optPanel.slider1.GetValue(), f)
 		self.WritePreferenceItem("rulerunits", self.Window.GetRulerUnitsStr(), f)
-		self.WritePreferenceItem("rulerscale", self.optPanel.slider2.GetValue(), f)
+		self.WritePreferenceItem("rulerscale", self.optPanel.depthZoomSlider.GetValue(), f)
 
-		rulerRangeStr = str(self.optPanel.min_depth.GetValue()) + " " + str(self.optPanel.max_depth.GetValue())
+		rulerRangeStr = str(self.optPanel.depthRangeMin.GetValue()) + " " + str(self.optPanel.depthRangeMax.GetValue())
 		self.WritePreferenceItem("rulerrange", rulerRangeStr, f)
 
 		self.WritePreferenceItem("tiedotsize", self.Window.tieDotSize, f)
@@ -2742,15 +2737,15 @@ class MainFrame(wx.Frame):
 			conf_str = self.config.get("applications", "rulerrange")
 			if len(conf_str) > 0:
 				conf_array = conf_str.split()
-				self.optPanel.min_depth.SetValue(conf_array[0])
-				self.optPanel.max_depth.SetValue(conf_array[1])
+				self.optPanel.depthRangeMin.SetValue(conf_array[0])
+				self.optPanel.depthRangeMax.SetValue(conf_array[1])
 				self.optPanel.OnDepthViewAdjust(None)
 
 		if self.config.has_option("applications", "rulerscale"):
 			str_temp = self.config.get("applications", "rulerscale")
 			if len(str_temp) > 0:
 				conf_value = int ( str_temp )
-				self.optPanel.slider2.SetValue(conf_value)
+				self.optPanel.depthZoomSlider.SetValue(conf_value)
 				self.optPanel.OnRulerOneScale(None)
 
 		if self.config.has_option("applications", "shiftrange"):
@@ -2780,10 +2775,10 @@ class MainFrame(wx.Frame):
 				conf_value = int ( str_temp )
 			if conf_value == 0:
 				self.Window.isSecondScroll = 0 
-				self.optPanel.opt2.SetValue(False)
+				self.optPanel.indSpliceScroll.SetValue(False)
 			else:
 				self.Window.isSecondScroll =1 
-				self.optPanel.opt2.SetValue(True)
+				self.optPanel.indSpliceScroll.SetValue(True)
 
 		if self.config.has_option("applications", "colors"):
 			conf_str = self.config.get("applications", "colors") 
@@ -2826,10 +2821,10 @@ class MainFrame(wx.Frame):
 			if len(str_temp) > 0:
 				if str_temp == "1":
 					self.Window.showHoleGrid = True 
-					self.optPanel.opt3.SetValue(True)
+					self.optPanel.showPlotLines.SetValue(True)
 				else:
 					self.Window.showHoleGrid = False 
-					self.optPanel.opt3.SetValue(False)
+					self.optPanel.showPlotLines.SetValue(False)
 
 		if self.config.has_option("applications", "showSectionDepths"):
 			str_temp = self.config.get("applications", "showSectionDepths")
