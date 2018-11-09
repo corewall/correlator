@@ -498,16 +498,17 @@ class AffineBuilder:
             offHoleFromCores = builder.getOffHoleFromCores(chainCores, shiftCore.hole)
             chainCores = [c for c in chainCores if c not in offHoleFromCores]
         
-        # cull any cores above shiftCore
+        # cull cores from any hole that are above shiftCore
         shiftCoreTop = builder._getCoreTop(shiftCore) + builder.getShift(shiftCore).distance
         chainCores = [c for c in chainCores if builder._getCoreTop(c) + builder.getShift(c).distance >= shiftCoreTop]
         
-        # cull any cores above fromCore - fromCore can't move, so nothing above it can move
+        # Cull cores in same hole as, and above, fromCore.
+        # fromCore can't move, so nothing above it can move
         if fromCore != AffineCoreInfo.createBogus():
             fromCoreTop = builder._getCoreTop(fromCore) + builder.getShift(fromCore).distance
             coresAboveFrom = [c for c in chainCores if c.hole == fromCore.hole and builder._getCoreTop(c) + builder.getShift(c).distance < fromCoreTop]
             for core in coresAboveFrom:
-                chainCores.remove(core)        
+                chainCores.remove(core)
         
         for hole in nonShiftHoles:
             topChainCore = builder._topCoreInHole(hole, chainCores)
@@ -910,12 +911,12 @@ class TestAffine(unittest.TestCase):
         
         # now shift B1 and below
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
-        expectedMovers = acilist(["B2", "B3", "B4", "C3", "C4"])
+        expectedMovers = acilist(["B2", "B3", "B4", "B5", "C3", "C4", "C5"])
         self.assertTrue(sameElements(expectedMovers, movers))
         
         # or C1 and below
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("C1"))
-        expectedMovers = acilist(["B3", "B4", "C2", "C3", "C4"])
+        expectedMovers = acilist(["B3", "B4", "B5", "C2", "C3", "C4", "C5"])
         self.assertTrue(sameElements(expectedMovers, movers))
         
         # reset: ties A1 > B1, B1 > C1, B2 > A3, A3 > B3
@@ -928,7 +929,7 @@ class TestAffine(unittest.TestCase):
         # now shift B1
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         #print movers
-        expectedMovers = acilist(["A3", "A4", "B2", "B3", "B4", "C1", "C2", "C3", "C4"])
+        expectedMovers = acilist(["A3", "A4", "A5", "B2", "B3", "B4", "B5", "C1", "C2", "C3", "C4", "C5"])
         self.assertTrue(sameElements(expectedMovers, movers, True))
         
         # reset, tie B2 > C2 instead of B1 > C1 as above: ties A1 > B1, B2 > C2, B2 > A3, A3 > B3
@@ -940,7 +941,7 @@ class TestAffine(unittest.TestCase):
         
         # again, shift B1 - now C1 should remain unmoved
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
-        expectedMovers = acilist(["A3", "A4", "B2", "B3", "B4", "C2", "C3", "C4"])
+        expectedMovers = acilist(["A3", "A4", "A5", "B2", "B3", "B4", "B5", "C2", "C3", "C4", "C5"])
         self.assertTrue(sameElements(expectedMovers, movers))
         
         # tricky scenario 1 - updating A1 > B1 tie
@@ -1022,7 +1023,7 @@ class TestAffine(unittest.TestCase):
         builder.tie(False, 0.4, acistr("A1"), 0.5, acistr("B1"), 0.1) # push B1 down 0.4m
         builder.tie(False, -0.4, acistr("B1"), 0.1, acistr("C1"), 0.9) # push C1 up 0.4m
         movers = builder.gatherRelatedCores(acistr("B1"), acistr("C1"))
-        expectedMovers = acilist(['C2', 'C3', 'C4'])
+        expectedMovers = acilist(['C2', 'C3', 'C4', 'C5'])
         self.assertTrue(sameElements(expectedMovers, movers))
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("C1"))
         self.assertTrue(sameElements(expectedMovers, movers))
@@ -1032,7 +1033,7 @@ class TestAffine(unittest.TestCase):
         # now tie C1 > D1 so D1 and below become movers when C1 is shifted
         builder.tie(False, -0.1, acistr("C1"), 0.8, acistr("D1"), 0.9) # push D1 up 0.1m
         movers = builder.gatherRelatedCores(acistr("B1"), acistr("C1"))
-        expectedMovers = acilist(['C2', 'C3', 'C4', 'D1', 'D2', 'D3', 'D4'])
+        expectedMovers = acilist(['C2', 'C3', 'C4', 'C5', 'D1', 'D2', 'D3', 'D4', 'D5'])
         self.assertTrue(sameElements(expectedMovers, movers))
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("C1"))
         self.assertTrue(sameElements(expectedMovers, movers))
