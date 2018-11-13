@@ -1609,9 +1609,8 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("winlength", self.winLength, f)
 
 		colorStr = ""
-		for i in range(18): 
-			colorItem = self.Window.colorList[i].Get()
-			colorStr = colorStr + str(colorItem[0]) + " " + str(colorItem[1]) + " " + str(colorItem[2]) + " "
+		for colorItem in [self.Window.colorDict[key] for key in self.Window.colorDictKeys]:
+			colorStr += str(colorItem[0]) + " " + str(colorItem[1]) + " " + str(colorItem[2]) + " "
 		self.WritePreferenceItem("colors", colorStr, f)
 
 		overlapColorStr = ""
@@ -2783,13 +2782,16 @@ class MainFrame(wx.Frame):
 		if self.config.has_option("applications", "colors"):
 			conf_str = self.config.get("applications", "colors") 
 			if len(conf_str) > 0:
-				conf_array = conf_str.split()
-				self.Window.colorList = []
-				for i in range(18):
-					r = int(conf_array[i*3])
-					g = int(conf_array[i*3+1]) 
-					b = int(conf_array[i*3+2]) 
-					self.Window.colorList.insert(i, wx.Colour(r, g, b))
+				# saved color string is of form "R0 G0 B0 R1 G1 B1...". Order corresponds to
+				# self.Window.colorDictKeys, so 'mbsf' color is (R0, G0, B0), 'ccsfTie'
+				# is (R1, G1, B1), and so on.
+				rgbs = conf_str.split()
+				if len(rgbs) % 3 != 0 or len(rgbs) % len(self.Window.colorDictKeys):
+					print("Expected {} saved color components, found {}, using defaults.".format(3 * len(self.Window.colorDictKeys), len(rgbs)))
+				else:
+					for index, key in enumerate(self.Window.colorDictKeys):
+						color = wx.Colour(int(rgbs[index * 3]), int(rgbs[index * 3 + 1]), int(rgbs[index * 3 + 2]))
+						self.Window.colorDict[key] = color
 
 		if self.config.has_option("applications", "overlapcolors"):
 			conf_str = self.config.get("applications", "overlapcolors") 
