@@ -436,7 +436,7 @@ def _parseFile(path, goalFormat, checkcols=True):
 
 # force pandas column dtype and convert values to object (string)
 def forceStringDatatype(cols, dataframe):
-    for col in cols:
+    for col in [c for c in cols if c in dataframe]:
         dataframe[col] = dataframe[col].astype(object)
         dataframe[col] = dataframe[col].apply(lambda x: str(x)) # todo: if x != NaN? to avoid line below?
         
