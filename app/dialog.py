@@ -1190,7 +1190,7 @@ class CommentTextCtrl(wx.TextCtrl):
 
 # adjust a core's MCD based on a percentage or a fixed distance,
 # resulting in an affine shift of type SET
-class ProjectDialog(wx.Dialog):
+class SetDialog(wx.Dialog):
 	def __init__(self, parent):
 		self.parent = parent
 		self.coreData = {}

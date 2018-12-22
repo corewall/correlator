@@ -716,7 +716,7 @@ class CompositePanel():
 		self.breakTieButton.Enable(shiftType == "TIE")
 
 	def OnProject(self, evt):
-		dlg = dialog.ProjectDialog(self.parent)
+		dlg = dialog.SetDialog(self.parent)
 		dlg.Centre(wx.CENTER_ON_SCREEN)
 		result = dlg.ShowModal()
 		if result == wx.ID_OK:
