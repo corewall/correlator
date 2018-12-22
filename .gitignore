@@ -18,6 +18,10 @@ bin/CorrelatorNoFrame.app/
 bin/public-export/
 bin/static/build/
 bin/static/Correlator.app/
+bin/static/icons/
+bin/static/help/
+bin/static/images/
+bin/static/tmp/
 
 lib/
 releases/

@@ -179,10 +179,19 @@ class AffineTable:
         assert shift is not None
         return shift.distance
 
-    # returns True if core is the top of a chain or chains
+    # returns True if core is the root of a chain i.e. the parent of
+    # one or more cores, and non-TIE iself.
+    def isRoot(self, core):
+        return self.countChildren(core) > 0 and not isTie(self.getShift(core))
+
+    # returns True if core is the root of a chain, or core is a TIE
+    # and parent of 2+ cores i.e. 1+ new branches originate from core
     def isChainTop(self, core):
+        # ugh can't remember what the point of this is...basically returns true
+        # if core is root of a chain, or if core is mid-chain but parent to 2+
+        # cores i.e. chain splits/diverges at that core
         tiedChainTop = self.countChildren(core) > 1 and isTie(self.getShift(core))
-        return tiedChainTop or (self.countChildren(core) > 0 and not isTie(self.getShift(core)))
+        return tiedChainTop or self.isRoot(core)#(self.countChildren(core) > 0 and not isTie(self.getShift(core)))
         
     # is core part of a TIE chain?
     def inChain(self, core):
@@ -199,11 +208,11 @@ class AffineTable:
         else:
             return self.isUpstream(searchCore, curShift.fromCore)
     
-    # get immediate descendants of core
+    # get immediate descendants of core - excludes core itself
     def getChildren(self, core):
         return [shift for shift in self.shifts if isTie(shift) and shift.fromCore == core]
     
-    # count immediate descendants of core
+    # count immediate descendants of core - excludes core itself
     def countChildren(self, core):
         return len(self.getChildren(core))
 
@@ -237,6 +246,7 @@ class AffineTable:
             self._walkChain(self.getChildren(n.core), chainCores)
             chainCores.append(n.core)
             
+    # Currently Unused.
     # if there's a chain of ties from core to any member of searchCores that doesn't
     # involve a core in excluded, return True.
     # core: AffineCoreInfo of core for which connection is sought
@@ -257,7 +267,7 @@ class AffineTable:
             return True
         return False
             
-    # get immediate parent of core
+    # get shift for immediate parent of core
     def getParent(self, core):
         shift = None
         if isTie(self.getShift(core)):
@@ -443,6 +453,7 @@ class AffineBuilder:
                         breaks.append((core, child.core))
         return breaks
     
+    # 12/21/2018 unneeded due to new chaining/SET logic?
     def getOffHoleFromCores(self, cores, shiftHole):
         shiftHoleCores = [c for c in cores if c.hole == shiftHole]
         offHoleFromCores = []
@@ -454,95 +465,32 @@ class AffineBuilder:
                     break
         return offHoleFromCores
         #return [c for c in cores if c not in offHoleFromCores]
-    
-    # gather all cores that will be shifted by "Shift by [shiftCore] and related cores below" action
-    # note: result excludes shiftCore itself!
+
+    # Gather all cores that will be shifted by "Shift by [shiftCore] and related
+    # cores below" action. Note that the result excludes shiftCore itself.
     def gatherRelatedCores(self, fromCore, shiftCore, setAllOperation=False):
-        excludeCores = [fromCore]
-        shift = self.getShift(shiftCore)
-        builder = self
-        if isTie(shift):
-            if shift.fromCore != fromCore:
-                excludeCores.append(shift.fromCore)
-            # Prevent inclusion of upstream cores in related cores by breaking
-            # chain at shiftCore (turning it into a REL instead of a TIE) before
-            # gathering related cores.
-            builder = deepcopy(self)
-            builder.affine.makeImplicit(shiftCore)
+        # gather all descendants of shiftCore
+        shiftKids = self.affine.getDescendants(shiftCore)
+        shiftKids.append(shiftCore) # include shiftCore
 
-        # shiftCore and all cores below in shiftCore.hole are going to shift: find all
-        # chain cores related to those cores.
-        chainCores = builder._gatherHoleChainCores(shiftCore, excludeCores, knownChainCores=[])
-
-        # now find all other chain cores affected by shiftCore's shift by gathering
-        # chain cores related to topmost core in chainCores for each hole != shiftCore.hole
-        done = False
-        nonShiftHoles = [h for h in builder.sectionSummary.getHoles() if h != shiftCore.hole]
-        while not done:
-            newChainCores = []
-            for hole in nonShiftHoles:
-                # topmost chainCore in hole is going to shift - find any chain cores
-                # related to it or any core below it in hole
-                topChainCore = builder._topCoreInHole(hole, chainCores)
-                if topChainCore is not None:
-                    newChainCores.extend(builder._gatherHoleChainCores(topChainCore, excludeCores, knownChainCores=chainCores))
-
-            if len(newChainCores) == 0: # no new chain cores were found, we're done!
-                done = True
-            else: # found new chain cores, add them and repeat the process
-                chainCores.extend(newChainCores)
-        
-        # if this is a SET and related below operation, any TIEs in hole below shiftCore should be
-        # broken before considering related cores
-        if setAllOperation:
-            offHoleFromCores = builder.getOffHoleFromCores(chainCores, shiftCore.hole)
-            chainCores = [c for c in chainCores if c not in offHoleFromCores]
-        
-        # cull cores from any hole that are above shiftCore
-        shiftCoreTop = builder._getCoreTop(shiftCore) + builder.getShift(shiftCore).distance
-        chainCores = [c for c in chainCores if builder._getCoreTop(c) + builder.getShift(c).distance >= shiftCoreTop]
-        
-        # Cull cores in same hole as, and above, fromCore.
-        # fromCore can't move, so nothing above it can move
-        if fromCore != AffineCoreInfo.createBogus():
-            fromCoreTop = builder._getCoreTop(fromCore) + builder.getShift(fromCore).distance
-            coresAboveFrom = [c for c in chainCores if c.hole == fromCore.hole and builder._getCoreTop(c) + builder.getShift(c).distance < fromCoreTop]
-            for core in coresAboveFrom:
-                chainCores.remove(core)
-        
-        for hole in nonShiftHoles:
-            topChainCore = builder._topCoreInHole(hole, chainCores)
-            if topChainCore is not None:
-                coreAndBelow = [topChainCore] + builder.getCoresBelow(topChainCore)
-                chainCores.extend(coreAndBelow)
-            
-        chainCores.extend(builder.getCoresBelow(shiftCore))
-        if shiftCore in chainCores: # remove shiftCore from relatedCores
-            chainCores.remove(shiftCore)
-        relatedCores = list(set(chainCores))
-        
+        # gather holes represented by descendants
+        holes = list(set([sk.hole for sk in shiftKids]))
+        # print("Represented holes = {}".format(holes))
+        relatedCores = []
+        for hole in holes:
+            # find all chain cores in this hole
+            holeChainCores = [h for h in shiftKids if h.hole == hole]
+            # for each, gather cores below until another chain core is found
+            for hcc in holeChainCores:
+                if hcc != shiftCore:
+                    relatedCores.append(hcc)
+                coresBelow = sorted(self.getCoresBelow(hcc))
+                for cb in coresBelow:
+                    if not self.affine.inChain(cb):
+                        relatedCores.append(cb)
+                    else: # chain core - whether it's distinct or not, restart from next holeChainCore
+                        break
         return relatedCores
-    
-    # return list of cores in chains related to core and below in core.hole
-    # core - gather chain cores for this core and all cores below in its hole
-    # excludeCores - cores to be excluded from the list
-    # knownChainCores - chain cores that have already been discovered, to be excluded from list
-    def _gatherHoleChainCores(self, core, excludeCores, knownChainCores):
-        foundCores = []
-        for c in [core] + self.getCoresBelow(core):
-            if c not in knownChainCores and self.affine.inChain(c):
-                newChainCores = [nc for nc in self.affine.getChainCores(c) if nc not in excludeCores and nc not in knownChainCores]
-                foundCores.extend(newChainCores)
-        return list(set(foundCores))
-        
-    # return topmost core in coreList found in hole, otherwise None
-    def _topCoreInHole(self, hole, coreList):
-        foundCoresInHole = [c for c in coreList if c.hole == hole]
-        if len(foundCoresInHole) > 0:
-            theCore = min(foundCoresInHole, key=lambda c: int(c.core))
-            return theCore
-        else:
-            return None
         
     def _getCoreTop(self, ci):
         return self.sectionSummary.getCoreTop(self.site, ci.hole, ci.core)
@@ -738,6 +686,18 @@ class TestAffineTable(unittest.TestCase):
         self.assertTrue(affine.inChain(b2))
         self.assertTrue(affine.inChain(c2))
         self.assertFalse(affine.inChain(d3))
+
+        # All roots are chain tops, but not all chain tops are roots.
+        # isRoot() - only A1 is a root since B1 is a TIE
+        self.assertTrue(affine.isRoot(a1))
+        self.assertFalse(affine.isRoot(b1))
+        self.assertTrue(affine.isRoot(d1)) # D1 is root of separate chain
+        self.assertFalse(affine.isRoot(d3)) # D3 isn't part of any chain
+
+        # getRoot()
+        self.assertTrue(affine.getRoot(a2).core == a1)
+        self.assertTrue(affine.getRoot(b2).core == a1)
+        self.assertTrue(affine.getRoot(d2).core == d1)
         
         # isChainTop() - A1 is chain top but is not a TIE
         self.assertTrue(affine.isChainTop(a1))
@@ -750,14 +710,14 @@ class TestAffineTable(unittest.TestCase):
         self.assertFalse(affine.isChainTop(c2))
         self.assertFalse(affine.isChainTop(a2))
         
-        # countChildren()
+        # countChildren() - immediate descendants only
         self.assertTrue(affine.countChildren(b1) == 2) # A2, C2
         self.assertTrue(affine.countChildren(a1) == 1) # B1
         self.assertTrue(affine.countChildren(c2) == 1) # B2
         self.assertTrue(affine.countChildren(b2) == 0)
         self.assertTrue(affine.countChildren(d3) == 0)
 
-        # countDescendants()
+        # countDescendants() - all descendants
         self.assertTrue(affine.countDescendants(a1) == 4)
         self.assertTrue(affine.countDescendants(a2) == 0)
         self.assertTrue(affine.countDescendants(b1) == 3)
@@ -772,12 +732,7 @@ class TestAffineTable(unittest.TestCase):
         self.assertTrue(affine.getParent(b1).core == a1)
         self.assertTrue(affine.getParent(c2).core == b1)
         self.assertTrue(affine.getParent(a2).core == b1)
-        self.assertTrue(affine.getParent(b2).core == c2)
-        
-        # getRoot()
-        self.assertTrue(affine.getRoot(a2).core == a1)
-        self.assertTrue(affine.getRoot(b2).core == a1)
-        self.assertTrue(affine.getRoot(d2).core == d1)
+        self.assertTrue(affine.getParent(b2).core == c2)        
 
         # getChainCores()
         chain1Cores = affine.getChainCores(a1)
@@ -789,9 +744,42 @@ class TestAffineTable(unittest.TestCase):
         
         # D3 isn't part of any chain
         self.assertTrue(affine.getChainCores(d3) == [])
-        
 
-class TestAffine(unittest.TestCase):
+    def test_connected(self): # AffineTable.isConnected() currently unused
+        secsumm = sectionSummary.SectionSummary.createWithFile('testdata/U1390_reduced_SectionSummary.csv')
+        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_affine1.csv', secsumm)
+        
+        self.assertFalse(builder.affine.isConnected(acistr("C1"), [acistr("A1"), acistr("B1")], [], []))
+        
+        # A1 and B1 are connected - commutative
+        self.assertTrue(builder.affine.isConnected(acistr("A1"), [acistr("B1")], [], []))
+        self.assertTrue(builder.affine.isConnected(acistr("B1"), [acistr("A1")], [], []))
+        
+        # A3 is connected to both C2 and C3 via B2...
+        self.assertTrue(builder.affine.isConnected(acistr("A3"), [acistr("C2")], [], []))
+        self.assertTrue(builder.affine.isConnected(acistr("A3"), [acistr("C3")], [], []))
+        
+        # ...but if B2 is excluded, they're not
+        self.assertFalse(builder.affine.isConnected(acistr("A3"), [acistr("C2")], [acistr("B2")], []))
+        self.assertFalse(builder.affine.isConnected(acistr("A3"), [acistr("C3")], [acistr("B2")], []))
+        
+        # connected in the other direction too, i.e. starting from C2 or C3, seeking A3...
+        self.assertTrue(builder.affine.isConnected(acistr("C2"), [acistr("A3")], [], []))
+        self.assertTrue(builder.affine.isConnected(acistr("C3"), [acistr("A3")], [], []))
+        
+        # ...again, unless B2 is excluded
+        self.assertFalse(builder.affine.isConnected(acistr("C2"), [acistr("A3")], [acistr("B2")], []))
+        self.assertFalse(builder.affine.isConnected(acistr("C3"), [acistr("A3")], [acistr("B2")], []))
+        
+        # now create ties from C3 > B3 > A3...
+        builder.tie(True, 0.0, acistr("C3"), 1.0, acistr("B3"), 0.5)
+        builder.tie(True, 0.0, acistr("B3"), 1.0, acistr("A3"), 0.5)
+        
+        # ...which means there's now a path from A3 to C3 that doesn't involve B2 
+        self.assertTrue(builder.affine.isConnected(acistr("A3"), [acistr("C3")], [acistr("B2")], []))
+
+
+class TestAffineUtils(unittest.TestCase):
     # use numpy.isclose to deal with tiny floating point discrepancies causing == to return False 
     def assertClose(self, fp1, fp2):
         return self.assertTrue(numpy.isclose(fp1, fp2))
@@ -847,6 +835,7 @@ class TestAffine(unittest.TestCase):
     
     # todo: move handy list routines to their own module along with this test
     def test_same_elements(self):
+        self.assertTrue(sameElements([], []))
         list1 = [acistr("A1"), acistr("A2"), acistr("A3"), acistr("B3")]
         list2 = [acistr("B3"), acistr("A3"), acistr("A1"), acistr("A2")] # reordered elts of list1
         list3 = [acistr("B3"), acistr("A3"), acistr("A1"), acistr("A4")] # A4 is oddball
@@ -857,53 +846,25 @@ class TestAffine(unittest.TestCase):
     def test_bogus(self):
         bogusCore = AffineCoreInfo.createBogus()
         self.assertTrue(bogusCore == AffineCoreInfo.createBogus())
-        
-    def test_connected(self):
-        secsumm = sectionSummary.SectionSummary.createWithFile('testdata/U1390_reduced_SectionSummary.csv')
-        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_affine1.csv', secsumm)
-        
-        self.assertFalse(builder.affine.isConnected(acistr("C1"), [acistr("A1"), acistr("B1")], [], []))
-        
-        # A1 and B1 are connected - commutative
-        self.assertTrue(builder.affine.isConnected(acistr("A1"), [acistr("B1")], [], []))
-        self.assertTrue(builder.affine.isConnected(acistr("B1"), [acistr("A1")], [], []))
-        
-        # A3 is connected to both C2 and C3 via B2...
-        self.assertTrue(builder.affine.isConnected(acistr("A3"), [acistr("C2")], [], []))
-        self.assertTrue(builder.affine.isConnected(acistr("A3"), [acistr("C3")], [], []))
-        
-        # ...but if B2 is excluded, they're not
-        self.assertFalse(builder.affine.isConnected(acistr("A3"), [acistr("C2")], [acistr("B2")], []))
-        self.assertFalse(builder.affine.isConnected(acistr("A3"), [acistr("C3")], [acistr("B2")], []))
-        
-        # connected in the other direction too, i.e. starting from C2 or C3, seeking A3...
-        self.assertTrue(builder.affine.isConnected(acistr("C2"), [acistr("A3")], [], []))
-        self.assertTrue(builder.affine.isConnected(acistr("C3"), [acistr("A3")], [], []))
-        
-        # ...again, unless B2 is excluded
-        self.assertFalse(builder.affine.isConnected(acistr("C2"), [acistr("A3")], [acistr("B2")], []))
-        self.assertFalse(builder.affine.isConnected(acistr("C3"), [acistr("A3")], [acistr("B2")], []))
-        
-        # now create ties from C3 > B3 > A3...
-        builder.tie(True, 0.0, acistr("C3"), 1.0, acistr("B3"), 0.5)
-        builder.tie(True, 0.0, acistr("B3"), 1.0, acistr("A3"), 0.5)
-        
-        # ...which means there's now a path from A3 to C3 that doesn't involve B2 
-        self.assertTrue(builder.affine.isConnected(acistr("A3"), [acistr("C3")], [acistr("B2")], []))
-        
-    # test related core gathering for "shift core and all related below" operations
-    def test_chain(self):
+
+
+class TestAffineBuilder(unittest.TestCase):
+  def test_chain(self):
         secsumm = sectionSummary.SectionSummary.createWithFile("testdata/FOO_SectionSummary.csv")
         builder = AffineBuilder.createWithSectionSummary(secsumm)
-        
-        # no existing ties, shift B1 and below
+
+        # no existing ties, tie from A1 > B1 shifts B1 and below
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         self.assertTrue(sameElements(builder.getCoresBelow(acistr("B1")), movers))
-        
-        # shift C2 and below
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("C2"))
-        self.assertTrue(sameElements(builder.getCoresBelow(acistr("C2")), movers))
-        
+
+        # B1 > A2 tie exists. New tie from A1 > B1 shifts A2+, B1+
+        builder.tie(False, 0.1, acistr("B1"), 0.9, acistr("A2"), 0.8)
+        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
+        expectedMovers = acilist(['A2', 'A3', 'A4', 'A5', 'B2', 'B3', 'B4', 'B5'])
+        self.assertTrue(sameElements(expectedMovers, movers))
+
+        ### BEGIN other old tests
+
         # add tie between B3 and C3
         movers = builder.gatherRelatedCores(acistr("B3"), acistr("C3"))
         self.assertTrue(sameElements(builder.getCoresBelow(acistr("C3")), movers))
@@ -911,14 +872,19 @@ class TestAffine(unittest.TestCase):
         
         # now shift B1 and below
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
-        expectedMovers = acilist(["B2", "B3", "B4", "B5", "C3", "C4", "C5"])
+        expectedMovers = acilist(['A2', 'A3', 'A4', 'A5', 'B2'])
         self.assertTrue(sameElements(expectedMovers, movers))
         
         # or C1 and below
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("C1"))
-        expectedMovers = acilist(["B3", "B4", "B5", "C2", "C3", "C4", "C5"])
+        expectedMovers = acilist(['C2'])
         self.assertTrue(sameElements(expectedMovers, movers))
-        
+
+        # or C2 and below
+        movers = builder.gatherRelatedCores(acistr("A1"), acistr("C2"))
+        expectedMovers = []
+        self.assertTrue(sameElements(expectedMovers, movers))
+
         # reset: ties A1 > B1, B1 > C1, B2 > A3, A3 > B3
         builder.reset()
         builder.tie(False, 0.2, acistr("A1"), 0.3, acistr("B1"), 0.1) # push B down 0.2
@@ -929,118 +895,71 @@ class TestAffine(unittest.TestCase):
         # now shift B1
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         #print movers
-        expectedMovers = acilist(["A3", "A4", "A5", "B2", "B3", "B4", "B5", "C1", "C2", "C3", "C4", "C5"])
+        expectedMovers = acilist(['C1', 'C2', 'C3', 'C4', 'C5'])
         self.assertTrue(sameElements(expectedMovers, movers, True))
         
-        # reset, tie B2 > C2 instead of B1 > C1 as above: ties A1 > B1, B2 > C2, B2 > A3, A3 > B3
+        # reset, tie B2 > C2 instead of B1 > C1 as above, resulting in three chains:
+        # A1 > B1, B2 > C2, B2 > A3 > B3
         builder.reset()
         builder.tie(False, 0.2, acistr("A1"), 0.3, acistr("B1"), 0.1) # push B1+ down 0.2
         builder.tie(False, 0.2, acistr("B2"), 1.1, acistr("C2"), 1.1) # push C2+ down 0.2
         builder.tie(False, 0.2, acistr("B2"), 2.0, acistr("A3"), 2.0) # push A3+ down 0.2
         builder.tie(False, 0.2, acistr("A3"), 2.4, acistr("B3"), 2.2) # push B3+ down 0.2 for total shift of 0.4
         
-        # again, shift B1 - now C1 should remain unmoved
+        # again, shift B1 - now nothing should move
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
-        expectedMovers = acilist(["A3", "A4", "A5", "B2", "B3", "B4", "B5", "C2", "C3", "C4", "C5"])
+        expectedMovers = acilist([])
         self.assertTrue(sameElements(expectedMovers, movers))
         
-        # tricky scenario 1 - updating A1 > B1 tie
-        secsumm = sectionSummary.SectionSummary.createWithFile('testdata/U1390_reduced_SectionSummary.csv')
-        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_affine1.csv', secsumm)
-        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
-        expectedMovers = acilist(['A3', 'A4', 'B2', 'B3', 'B4', 'C2', 'C3', 'C4'])
-#         print movers
-#         print "expected = {}".format(expectedMovers)
-        self.assertTrue(sameElements(expectedMovers, movers))
-        
-        # tricky scenario 2 replacing A1 > B1 tie with C1 > B1 should *not* move A2,
-        # which currently happens because we're not considering the fact that A1 is
-        # the old fixed core
-        movers = builder.gatherRelatedCores(acistr('C1'), acistr('B1'))
-        expectedMovers = acilist(['A3', 'A4', 'B2', 'B3', 'B4', 'C2', 'C3', 'C4'])
-        self.assertTrue(sameElements(expectedMovers, movers, True))
-        
-        # scenario 1
-        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_scenario1.csv', secsumm)
-        
-        # TIE of B1
-        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
-        expectedMovers = acilist(['A2', 'A3', 'A4', 'B2', 'B3', 'B4', 'C3', 'C4'])
-        self.assertTrue(sameElements(expectedMovers, movers, True))
-        
-        # SET of B1 should break A1 > B1 and A2 > B2 ties, leaving A cores unmoved
-        bogusFromCore = AffineCoreInfo.createBogus()
-        movers = builder.gatherRelatedCores(bogusFromCore, acistr('B1'), setAllOperation=True)
-        expectedMovers = acilist(['B2', 'B3', 'B4', 'C3', 'C4'])
-        self.assertTrue(sameElements(expectedMovers, movers, True))
-        
-        # scenario 2
-        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_scenario2.csv', secsumm)        
-
-        # TIE of B1
-        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
-        expectedMovers = acilist(['A4', 'B2', 'B3', 'B4', 'C3', 'C4'])
-        self.assertTrue(sameElements(expectedMovers, movers, True))
-        
-        # SET of B1
-        movers = builder.gatherRelatedCores(bogusFromCore, acistr('B1'), setAllOperation=True)
-        expectedMovers = acilist(['A4', 'B2', 'B3', 'B4', 'C3', 'C4'])
-        self.assertTrue(sameElements(expectedMovers, movers, True))
-        
-        # scenario 3
-        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_scenario3.csv', secsumm)
-         
-        # TIE of B1
-        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
-        expectedMovers = acilist(['A2', 'A3', 'A4', 'B2', 'B3', 'B4', 'C3', 'C4'])
-        self.assertTrue(sameElements(expectedMovers, movers, True))
-         
-        # SET of B1
-        movers = builder.gatherRelatedCores(bogusFromCore, acistr('B1'), setAllOperation=True)
-        expectedMovers = acilist(['A4', 'B2', 'B3', 'B4', 'C3', 'C4'])
-        self.assertTrue(sameElements(expectedMovers, movers, True))
-
-        # scenario 4
-        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_scenario4.csv', secsumm)
-         
-        # TIE from C2 to B1
-        movers = builder.gatherRelatedCores(acistr('C2'), acistr('B1'))
-        expectedMovers = acilist(['B2', 'B3', 'B4'])
-        self.assertTrue(sameElements(expectedMovers, movers, True))
-         
-        # SET of B1
-        movers = builder.gatherRelatedCores(bogusFromCore, acistr('B1'), setAllOperation=True)
-        expectedMovers = acilist(['B2', 'B3', 'B4', 'C1', 'C2', 'C3', 'C4'])
-        self.assertTrue(sameElements(expectedMovers, movers, True))
-
-        # buggy scenario discovered in August 2018.
-        # A1 > B1 > C1 such that C1 is above A1. Attempt to re-tie B1 > C1, and
-        # A1 is mistakenly found to be a related core. B1 can't move (fixed core),
-        # so results in a break between A1 and B1, which is wrong. Only C1 and below
-        # should move, there are no related cores in other holes.
-        secsumm = sectionSummary.SectionSummary.createWithFile("testdata/FOO_SectionSummary.csv")
-        builder = AffineBuilder.createWithSectionSummary(secsumm)
-        builder.tie(False, 0.4, acistr("A1"), 0.5, acistr("B1"), 0.1) # push B1 down 0.4m
-        builder.tie(False, -0.4, acistr("B1"), 0.1, acistr("C1"), 0.9) # push C1 up 0.4m
-        movers = builder.gatherRelatedCores(acistr("B1"), acistr("C1"))
-        expectedMovers = acilist(['C2', 'C3', 'C4', 'C5'])
-        self.assertTrue(sameElements(expectedMovers, movers))
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("C1"))
-        self.assertTrue(sameElements(expectedMovers, movers))
-        movers = builder.gatherRelatedCores(acistr("D1"), acistr("C1"))
+        # shift B2 - should move B2+, A3+, C2+
+        movers = builder.gatherRelatedCores(acistr("A2"), acistr("B2"))
+        expectedMovers = acilist(['A3', 'A4', 'A5', 'B3', 'B4', 'B5', 'C2', 'C3', 'C4', 'C5'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
-        # now tie C1 > D1 so D1 and below become movers when C1 is shifted
-        builder.tie(False, -0.1, acistr("C1"), 0.8, acistr("D1"), 0.9) # push D1 up 0.1m
-        movers = builder.gatherRelatedCores(acistr("B1"), acistr("C1"))
-        expectedMovers = acilist(['C2', 'C3', 'C4', 'C5', 'D1', 'D2', 'D3', 'D4', 'D5'])
-        self.assertTrue(sameElements(expectedMovers, movers))
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("C1"))
+        # Note that depths in the tests below are odd, but we're concerned
+        # only with chaining logic, which is unaffected by depth.
+
+        # B2 > A2 tie exists. New tie from A1 > B1 shifts only B1 because
+        # B2 > A2 is a separate chain.
+        builder.reset()
+        builder.tie(False, 0.1, acistr("B2"), 0.9, acistr("A2"), 0.8) # wrong depths
+        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
+        self.assertTrue(sameElements([], movers))
+
+        # B3 > A3 tie exists. New tie from A1 > B1 shifts only B2 because
+        # it's non-chain, but doesn't shift A3+ and B3+ due to the distinct
+        # B3 > A3 chain.
+        builder.reset()
+        builder.tie(False, 0.1, acistr("B3"), 0.9, acistr("A3"), 0.8)
+        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
+        expectedMovers = acilist(['B2'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
+        # B1 > C1, C2 > A2.
+        # New tie from A1 > B1 shifts C1 (chain) and B2+ (non-chain)
+        # below moving B1, but doesn't shift A2+ and C2+  due to distinct
+        # C2 > A2 chain.
+        builder.reset()
+        builder.tie(False, 0.1, acistr("B1"), 0.9, acistr("C1"), 0.8)
+        builder.tie(False, 0.1, acistr("C2"), 0.9, acistr("A2"), 0.8)
+        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
+        expectedMovers = acilist(['B2', 'B3', 'B4', 'B5', 'C1'])
+
+        # Complex scenario from Peter
+        builder = AffineBuilder.createWithAffineFile("testdata/FOO_affine_scenario6.csv", secsumm)
+        movers = builder.gatherRelatedCores(acistr('B1'), acistr('C2')) # retie B1 > C2
+        expectedMovers = acilist(['A3', 'A4', 'A5', 'B3', 'B4', 'B5', 'C3', 'C4', 'C5'])
+        self.assertTrue(sameElements(expectedMovers, movers))
+
+        # Variant of the above scenario - only difference is that C3 is part of a separate
+        # chain and should not be moved
+        builder = AffineBuilder.createWithAffineFile("testdata/FOO_affine_scenario6b.csv", secsumm)
+        movers = builder.gatherRelatedCores(acistr('B1'), acistr('C2')) # retie B1 > C2
+        expectedMovers = acilist(['A3', 'A4', 'A5', 'B3', 'B4', 'B5', 'C4', 'C5'])
+        self.assertTrue(sameElements(expectedMovers, movers))
+   
 
 if __name__ == "__main__":
-    for testcase in [TestAffineTable, TestAffine]:
+    for testcase in [TestAffineUtils, TestAffineTable, TestAffineBuilder]:
         suite = unittest.TestLoader().loadTestsFromTestCase(testcase)
         unittest.TextTestRunner(verbosity=2).run(suite)
-    #unittest.main()
