@@ -392,13 +392,12 @@ class AffineBuilder:
             breaks = self.findBreaks(core, bogusFromCore)
             deltaDistance = distance - self.affine.getShift(core).distance
             self.affine.addShift(SetShift(core, distance, dataUsed, comment))
-        else: # consider related cores
+        else: # move only descendants of core, which must be root of TIE chain
             shift = self.affine.getShift(core)
             deltaDistance = distance - shift.distance
-            relatedCores = self.gatherRelatedCores(bogusFromCore, core, setAllOperation=True)
-            breaks = self.findBreaks(core, bogusFromCore, relatedCores)
+            descendants = self.affine.getDescendants(core)
             self.affine.addShift(SetShift(core, distance, dataUsed, comment))
-            for ci in relatedCores:
+            for ci in descendants:
                 if ci != core:
                     self.affine.adjust(ci, deltaDistance)
 
@@ -530,6 +529,9 @@ class AffineBuilder:
     
     def isTie(self, core):
         return isTie(self.getShift(core))
+
+    def isRoot(self, core):
+        return self.affine.isRoot(core)
     
     # if core is "below" compareCore, return True, else False
     def coreIsBelow(self, coreInfo, compareCoreInfo):

@@ -725,7 +725,9 @@ class CompositePanel():
 				value = dlg.outRate if isRate else dlg.outOffset
 				coreList = dlg.outCoreList
 				self.parent.affineManager.setAll(dlg.outHole, coreList, value, isRate, dlg.outType, dlg.outComment)
-			else:
+			elif dlg.coreAndChain.GetValue(): # entire chain
+				self.parent.affineManager.setChainRoot(dlg.outHole, dlg.outCore, dlg.outOffset, dlg.outType, dlg.outComment)
+			else: # current core only
 				self.parent.affineManager.set(dlg.outHole, dlg.outCore, dlg.outOffset, dlg.outType, dlg.outComment)
 
 			self.parent.AffineChange = True

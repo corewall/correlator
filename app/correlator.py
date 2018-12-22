@@ -3134,26 +3134,51 @@ class AffineController:
 	def isDirty(self):
 		return self.dirty
 
-	# shift a single core with method SET
+	# shift a single untied core with method SET
 	def set(self, hole, core, distance, dataUsed="", comment=""):
+		if self.affine.isTie(aci(hole, core)):
+			errmsg = "Core {}{} is shifted by a TIE. It cannot be SET unless that TIE is broken.".format(hole, core)
+			self.parent.OnShowMessage("Error", errmsg, 1)
+			return
 		if self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, core), coreOnly=True):
 			self.pushState()
 			self.affine.set(True, aci(hole, core), distance, dataUsed, comment)
 			self.dirty = True
 			self.updateGUI()
+
+	# Shift an entire chain by shifting chain root with method SET.
+	# All descendants will remain TIEs.
+	def setChainRoot(self, hole, core, distance, dataUsed="", comment=""):
+		if self.affine.isRoot(aci(hole, core)):
+			self.pushState()
+			self.affine.set(False, aci(hole, core), distance, dataUsed, comment)
+			self.dirty = True
+			self.updateGUI()
+		else:
+			self.parent.OnShowMessage("Error", "Core {}{} must be the root of a TIE chain to shift an entire chain.".format(hole, core), 1)
 		
-	# shift all cores in a hole with method SET
+	# shift all untied cores in a hole with method SET
 	def setAll(self, hole, coreList, value, isPercent, dataUsed="", comment=""):
-		if self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, coreList[0]), coreOnly=False, setAllOperation=True):
+		proceed = True
+		tieCores = [c for c in coreList if self.affine.isTie(aci(hole, c))]
+		if len(tieCores) > 0:
+			tieCoreNames = [str(aci(hole, c)) for c in tieCores]
+			msg = "The following cores are shifted by a TIE:\n\n{}\n\nThey will not be SET. Proceed?".format(','.join(tieCoreNames))
+			proceed = self.parent.OnShowMessage("Warning", msg, 0) == wx.ID_YES
+
+		# warn/confirm about breaks for chain roots that will be moved...
+
+		setCoreList = [c for c in coreList if c not in tieCores]
+		if proceed and self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, setCoreList[0]), coreOnly=False, setAllOperation=True):
 			self.pushState()
 			site = self.parent.Window.GetHoleSite(hole)
-			for core in coreList:
+			for core in setCoreList:
 				if isPercent:
 					coreTop, coreBot = self.parent.sectionSummary.getCoreRange(site, hole, core)
 					shiftDistance = (coreTop * value) - coreTop
 				else:
 					shiftDistance = value
-				self.affine.set(False, aci(hole, core), shiftDistance, dataUsed, comment)
+				self.affine.set(True, aci(hole, core), shiftDistance, dataUsed, comment)
 			self.dirty = True
 			self.updateGUI()
 			

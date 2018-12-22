@@ -1209,7 +1209,6 @@ class SetDialog(wx.Dialog):
 		wx.Dialog.__init__(self, parent, -1, "SET", size=(300,360), style=wx.DEFAULT_DIALOG_STYLE |
 						   wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
 		self.SetBackgroundColour(wx.WHITE)
-		
 		dlgSizer = wx.BoxSizer(wx.VERTICAL)
 		
 		methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Shift by:"), orient=wx.VERTICAL)
@@ -1243,7 +1242,6 @@ class SetDialog(wx.Dialog):
 		shiftSizer.Add(self.shiftDiffText, 1, wx.ALIGN_CENTER_VERTICAL)
 		
 		methodSizer.Add(shiftSizer, 0, wx.EXPAND | wx.TOP, 10)
-		
 
 		coreSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Apply shift to:"), orient=wx.VERTICAL)
 		hsz = wx.BoxSizer(wx.HORIZONTAL)
@@ -1256,9 +1254,11 @@ class SetDialog(wx.Dialog):
 		coreSizer.Add(hsz, 0, wx.EXPAND)
 		
 		self.coreOnly = wx.RadioButton(self, -1, "Selected core only", style=wx.RB_GROUP)
-		self.coreAndBelow = wx.RadioButton(self, -1, "Selected core and all below")
+		self.coreAndChain = wx.RadioButton(self, -1, "Selected core and all tied cores (entire chain)")
+		self.coreAndBelow = wx.RadioButton(self, -1, "Selected core and all untied cores below")
 		self.coreOnly.SetValue(True)
 		coreSizer.Add(self.coreOnly, 0, wx.EXPAND | wx.TOP, 5)
+		coreSizer.Add(self.coreAndChain, 0, wx.EXPAND | wx.TOP, 5)
 		coreSizer.Add(self.coreAndBelow, 0, wx.EXPAND | wx.TOP, 5)
 		
 		commentSizer = wx.BoxSizer(wx.HORIZONTAL)
