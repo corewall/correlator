@@ -37,7 +37,7 @@ class SectionSummary:
         dataframes = []
         for filepath in fileList:
             dataframe = tabularImport.readFile(filepath)
-            stringColumns = ['Core', 'Section']
+            stringColumns = ['Site', 'Core', 'Section']
             tabularImport.forceStringDatatype(stringColumns, dataframe)
             dataframes.append(dataframe)
             
@@ -106,11 +106,11 @@ class SectionSummary:
         return sorted(rows, key=lambda x:x.section, cmp=cmp_section)
     
     def getCoreTop(self, site, hole, core):
-        top, bottom = self.getCoreRange(site, hole, core)
+        top, _ = self.getCoreRange(site, hole, core)
         return top
     
     def getCoreBottom(self, site, hole, core):
-        top, bottom = self.getCoreRange(site, hole, core)
+        _, bottom = self.getCoreRange(site, hole, core)
         return bottom
     
     # note: this and getSectionBot() are fairly slow, really bogged down drawing
