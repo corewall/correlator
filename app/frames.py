@@ -349,6 +349,7 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 				self.UpdatePointLabel(mDataDict)
 		event.Skip() #go to next handler
 	
+    # find closest growth rate point and display its info
 	def MouseOverPoint(self, dc, mDataDict):
 		minDist = None
 		closest = None
@@ -361,9 +362,9 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 			if minDist is None or dist < minDist:
 				minDist = dist
 				closest = hd
-			
-		growthRate = round(closest.growthRate[0], 3) if not math.isnan(closest.growthRate[0]) else "undefined"		
-		self.statusText.SetLabel("{}{}: Growth rate {}".format(closest.hole, closest.core, growthRate))
+		if closest:
+			growthRate = round(closest.growthRate[0], 3) if not math.isnan(closest.growthRate[0]) else "undefined"
+			self.statusText.SetLabel("{}{}: Growth rate {}".format(closest.hole, closest.core, growthRate))
 	
 	# scrollMax = max scrollable depth in GUI
 	def UpdatePlot(self, holeData, startDepth, endDepth, scrollMax):
