@@ -2045,7 +2045,7 @@ class DataCanvas(wxBufferedWindow):
 			drawing_start = self.SPrulerStartDepth - 5.0
 			
 		coreTopY, coreBotY = coreData[0][0], coreData[-1][0]
-		# draw section boundaries
+		# Draw section tops. Assume bottom abuts next section top so no need to draw it.
 		if self.parent.sectionSummary and (self.pressedkeyS == 1 or self.showSectionDepths):
 			if drawComposite and smoothed != 2 and (self.depthVisible(coreTopY, drawing_start, self.rulerEndDepth) or self.depthVisible(coreBotY, drawing_start, self.rulerEndDepth)):
 				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
@@ -2059,7 +2059,7 @@ class DataCanvas(wxBufferedWindow):
 					coreSectionStr = "{}-{}".format(coreno, row.section)
 					dc.DrawText(coreSectionStr, startX + 2, y)
 					
-					if secIndex == len(secrows) - 1:
+					if secIndex == len(secrows) - 1: # draw bottom of last section
 						ybot = self.startDepth + (bot - self.rulerStartDepth) * (self.length / self.gap)
 						dc.DrawLines(((startX, ybot), (startX + self.holeWidth, ybot)))					
 
@@ -2105,6 +2105,16 @@ class DataCanvas(wxBufferedWindow):
 					parentY = self.getCoord(parentNearDepth)
 					parentTieX = parentNearDatum - self.minRange
 					parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType)
+
+					# save (hole + core, bounding rect) tuple for click/hover detection
+					rx = parentTieX if parentTieX < tieX else tieX
+					arrowRect = wx.Rect(rx, tieY - 5, abs(tieX - parentTieX), 10)
+					self.AffineTieArrows.append((hole+coreno, arrowRect))
+
+ 					# highlight tie arrow on mouseover
+					if self.MousePos and arrowRect.Inside(self.MousePos):
+						dc.SetPen(wx.Pen(wx.Colour(0, 255, 0))) # green
+
 					# dot on parent core, arrow to shifted core 				
 					dc.DrawCircle(parentTieX, parentY, 3)
 					arrowDir = 5 if parentTieX > tieX else -5
@@ -3077,7 +3087,8 @@ class DataCanvas(wxBufferedWindow):
 		self.DrawData["CoreArea"] = [] 
 		self.DrawData["SpliceArea"] = [] 
 		self.DrawData["LogArea"] = [] 
-		self.DrawData["CoreInfo"] = [] 
+		self.DrawData["CoreInfo"] = []
+		self.AffineTieArrows = [] # (hole+core, bounding rect) for each TIE arrow
 
 		if self.ScrollUpdate == 1: 
 			self.UpdateScroll(1)
@@ -4511,6 +4522,9 @@ class DataCanvas(wxBufferedWindow):
 	def OnAgeDepthRMouse(self, event):
 		pass
 
+	def OnBreakTie(self, event, holecore):
+		self.parent.affineManager.breakTie(holecore)
+
 	def OnMainRMouse(self, event):
 		pos = event.GetPositionTuple()
 		self.selectedTie = -1 
@@ -4543,6 +4557,15 @@ class DataCanvas(wxBufferedWindow):
 				self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
 				return
 			count = count + 1
+
+		# is right click on an existing tie?
+		for holecore, rect in self.AffineTieArrows:
+			if rect.Inside(wx.Point(pos[0], pos[1])):
+				popupMenu = wx.Menu()
+				popupMenu.Append(2, "Break TIE to {}".format(holecore))
+				wx.EVT_MENU(popupMenu, 2, lambda evt, hc=holecore: self.OnBreakTie(evt, hc))
+				self.parent.PopupMenu(popupMenu, pos)
+				break
 
 		count = 0
 		for spliceTie in self.SpliceTieData:
