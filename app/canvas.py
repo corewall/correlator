@@ -2231,19 +2231,6 @@ class DataCanvas(wxBufferedWindow):
 					elif y > self.rulerEndDepth:
 						break
 
-		min_splice = min - self.minRangeSplice
-
-		if smoothed == 2:
-			min = min - self.minRangeSplice
-			min = (min * self.coefRangeSplice) + startX 
-			max = max - self.minRangeSplice
-			max = (max * self.coefRangeSplice) + startX 
-		else:
-			min = min - self.minRange
-			min = (min * self.coefRange) + startX 
-			max = max - self.minRange
-			max = (max * self.coefRange) + startX 
-		
 		# draw lines 
 		y = 0
 		if self.DiscretePlotMode == 0:
@@ -2275,9 +2262,33 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawLines(((px, py), (x, y))) 
 			return
 
-
 		#min = min - startX
 		#max = max - startX
+		min_splice = min - self.minRangeSplice
+
+		if smoothed == 2:
+			min = min - self.minRangeSplice
+			min = (min * self.coefRangeSplice) + startX 
+			max = max - self.minRangeSplice
+			max = (max * self.coefRangeSplice) + startX 
+		else:
+			min = min - self.minRange
+			min = (min * self.coefRange) + startX 
+			max = max - self.minRange
+			max = (max * self.coefRange) + startX 
+
+		# Highlight core on mouseover. If mouse pos happens to be within multiple
+		# cores' bounds, only draw for the first such core encountered.
+		if not self.highlightedCore and len(lines) > 0:
+			hx = min
+			hy = lines[0][1]
+			wid = max - min
+			hit = y - lines[0][1]
+			if wx.Rect(hx, hy, wid, hit).Inside(self.MousePos):
+				curPen = dc.GetPen()
+				self.DrawHighlight(dc, hx, hy, wid, hit)
+				dc.SetPen(curPen)
+				self.highlightedCore = True # only highlight a single core
 
 		if smoothed == 2:
 			if log_number != 2:
@@ -2293,154 +2304,152 @@ class DataCanvas(wxBufferedWindow):
 					l.append((index, min, r[1], max - min, y - r[1], spliceholewidth, self.holeWidth + 40))
 					self.DrawData["LogArea"].append(l)
 					return
-	
-		else: 
-			for r in lines:
-				l = []
-				l.append((index, min, r[1], max - min, y - r[1], startX, self.holeWidth + 40, self.HoleCount))
-				#l.append( (index, startX, r[1], self.holeWidth+40, y-r[1]) )
-				self.DrawData["CoreArea"].append(l)
-				break
+		else:
+			if len(lines) > 0:
+				firstLine = lines[0]
+				coreDrawData = [(index, min, firstLine[1], max-min, y-firstLine[1], startX, self.holeWidth+40, self.HoleCount)]
+				self.DrawData["CoreArea"].append(coreDrawData)
 
 		lines = []
 
+		# brg 1/4/2019 obsolete
 		# draw CurrentSpliceCore
-		dc.SetPen(wx.Pen(wx.Colour(255, 130, 71), 1))
-		y = 0
-		for r in splicelines:
-			px, py, x, y = r
-			dc.DrawLines(((px, py), (x, y))) 
+		# dc.SetPen(wx.Pen(wx.Colour(255, 130, 71), 1))
+		# y = 0
+		# for r in splicelines:
+		# 	px, py, x, y = r
+		# 	dc.DrawLines(((px, py), (x, y))) 
 
-		min = min + spliceholewidth - startX
-		max = max + spliceholewidth - startX 
+		# min = min + spliceholewidth - startX
+		# max = max + spliceholewidth - startX 
 
-		if y > 0:
-			#min_splice = (min_splice * self.coefRangeSplice) + startX 
-			#min_splice = min_splice + self.splicerX + self.spliceHoleWidth - startX
-			dc.DrawText(str(hole) + str(coreno), spliceholewidth - 20, y - 20)
+		# if y > 0:
+		# 	#min_splice = (min_splice * self.coefRangeSplice) + startX 
+		# 	#min_splice = min_splice + self.splicerX + self.spliceHoleWidth - startX
+		# 	dc.DrawText(str(hole) + str(coreno), spliceholewidth - 20, y - 20)
 
-		for r in splicelines:
-			l = []
-			#l.append( (index, spliceholewidth, r[1], self.holeWidth+40, y-r[1]) )
-			l.append((index, min, r[1], max - min, y - r[1], spliceholewidth, self.holeWidth + 40))
-			self.DrawData["SpliceArea"].append(l)
-			break
-		splicelines = [] 
+		# for r in splicelines:
+		# 	l = []
+		# 	#l.append( (index, spliceholewidth, r[1], self.holeWidth+40, y-r[1]) )
+		# 	l.append((index, min, r[1], max - min, y - r[1], spliceholewidth, self.holeWidth + 40))
+		# 	self.DrawData["SpliceArea"].append(l)
+		# 	break
+		# splicelines = [] 
 
-		if self.hideTie == 1:
-			return
+		# if self.hideTie == 1:
+		# 	return
 
-		if self.guideCore == index: 
-			i = 0	
-			px = 0
-			py = 0
-			max = -999
-			lead = self.compositeDepth - self.parent.winLength
-			lag = self.compositeDepth + self.parent.winLength
+		# if self.guideCore == index: 
+		# 	i = 0	
+		# 	px = 0
+		# 	py = 0
+		# 	max = -999
+		# 	lead = self.compositeDepth - self.parent.winLength
+		# 	lag = self.compositeDepth + self.parent.winLength
 
-			drawing_start = self.rulerStartDepth - 5.0
+		# 	drawing_start = self.rulerStartDepth - 5.0
 
-			for data in self.GuideCore:
-				for r in data:
-					y, x = r
-					if y >= drawing_start and y <= self.rulerEndDepth:
-						f = 0
-						if y >= lead and y <= lag: 
-							f = 1
-						y = self.startDepth + (y - self.rulerStartDepth) * (self.length / self.gap)
-						x = x - self.minRange
-						x = (x * self.coefRange) + startX 
-						#if max < x:
-						#	max = x
-						if i > 0:	 
-							lines.append((px, py, x, y, f))
-						px = x
-						py = y
-						i = i + 1 
+		# 	for data in self.GuideCore:
+		# 		for r in data:
+		# 			y, x = r
+		# 			if y >= drawing_start and y <= self.rulerEndDepth:
+		# 				f = 0
+		# 				if y >= lead and y <= lag: 
+		# 					f = 1
+		# 				y = self.startDepth + (y - self.rulerStartDepth) * (self.length / self.gap)
+		# 				x = x - self.minRange
+		# 				x = (x * self.coefRange) + startX 
+		# 				#if max < x:
+		# 				#	max = x
+		# 				if i > 0:	 
+		# 					lines.append((px, py, x, y, f))
+		# 				px = x
+		# 				py = y
+		# 				i = i + 1 
 
-			#max = startX + self.holeWidth + 50 
-			max = startX + self.holeWidth / 2.0  
-			# draw lines 
-			if max < self.splicerX:
-				for r in lines:
-					px, py, x, y, f = r
-					if f == 1: 
-						dc.SetPen(wx.Pen(self.colorDict['corrWindow'], 1))
-					else: 
-						#dc.SetPen(wx.Pen(wx.Colour(0, 139, 0), 1))
-						dc.SetPen(wx.Pen(self.colorDict['guide'], 1))
-					dc.DrawLines(((px, py), (x, y))) 
+		# 	#max = startX + self.holeWidth + 50 
+		# 	max = startX + self.holeWidth / 2.0  
+		# 	# draw lines 
+		# 	if max < self.splicerX:
+		# 		for r in lines:
+		# 			px, py, x, y, f = r
+		# 			if f == 1: 
+		# 				dc.SetPen(wx.Pen(self.colorDict['corrWindow'], 1))
+		# 			else: 
+		# 				#dc.SetPen(wx.Pen(wx.Colour(0, 139, 0), 1))
+		# 				dc.SetPen(wx.Pen(self.colorDict['guide'], 1))
+		# 			dc.DrawLines(((px, py), (x, y))) 
 
-		lines = []
+		# lines = []
 
-		if self.guideSPCore == index: 
-			dc.SetBrush(wx.TRANSPARENT_BRUSH)
-			dc.SetPen(wx.Pen(wx.Colour(224, 255, 255), 1))
-			i = 0	
-			px = 0
-			py = 0
-			lead = self.spliceDepth - self.parent.winLength
-			lag = self.spliceDepth + self.parent.winLength
+		# if self.guideSPCore == index: 
+		# 	dc.SetBrush(wx.TRANSPARENT_BRUSH)
+		# 	dc.SetPen(wx.Pen(wx.Colour(224, 255, 255), 1))
+		# 	i = 0	
+		# 	px = 0
+		# 	py = 0
+		# 	lead = self.spliceDepth - self.parent.winLength
+		# 	lag = self.spliceDepth + self.parent.winLength
 
-			coefRangeGuide = self.coefRange 
-			modifiedType = "splice"
-			minRangeGuide = 0.0
-			for r in self.range:
-				if r[0] == modifiedType:
-					minRangeGuide = r[1]
-					if r[3] != 0.0:
-						coefRangeGuide = self.holeWidth / r[3]
-					else:
-						coefRangeGuide = 0 
-					break
+		# 	coefRangeGuide = self.coefRange 
+		# 	modifiedType = "splice"
+		# 	minRangeGuide = 0.0
+		# 	for r in self.range:
+		# 		if r[0] == modifiedType:
+		# 			minRangeGuide = r[1]
+		# 			if r[3] != 0.0:
+		# 				coefRangeGuide = self.holeWidth / r[3]
+		# 			else:
+		# 				coefRangeGuide = 0 
+		# 			break
 
-			for data in self.SPGuideCore:
-				for r in data:
-					y, x = r
-					f = 0
-					if y >= lead and y <= lag: 
-						f = 1
-					y = self.startDepth + (y - self.SPrulerStartDepth) * (self.length / self.gap)
-					#x = x - self.minRange
-					x = x - minRangeGuide
-					x = (x * coefRangeGuide) + self.splicerX + 50
-					if i > 0: 
-						lines.append((px, py, x, y, f))
-					px = x
-					py = y
-				i = i + 1 
+		# 	for data in self.SPGuideCore:
+		# 		for r in data:
+		# 			y, x = r
+		# 			f = 0
+		# 			if y >= lead and y <= lag: 
+		# 				f = 1
+		# 			y = self.startDepth + (y - self.SPrulerStartDepth) * (self.length / self.gap)
+		# 			#x = x - self.minRange
+		# 			x = x - minRangeGuide
+		# 			x = (x * coefRangeGuide) + self.splicerX + 50
+		# 			if i > 0: 
+		# 				lines.append((px, py, x, y, f))
+		# 			px = x
+		# 			py = y
+		# 		i = i + 1 
 
-			# draw lines 
-			for r in lines:
-				px, py, x, y, f = r
-				if f == 1: 
-					#dc.SetPen(wx.Pen(wx.Colour(0, 191, 255), 1))
-					dc.SetPen(wx.Pen(self.colorDict['corrWindow'], 1))
-				else: 
-					#dc.SetPen(wx.Pen(wx.Colour(224, 255, 255), 1))
-					dc.SetPen(wx.Pen(self.colorDict['guide'], 1))
-				dc.DrawLines(((px, py), (x, y))) 
+		# 	# draw lines 
+		# 	for r in lines:
+		# 		px, py, x, y, f = r
+		# 		if f == 1: 
+		# 			#dc.SetPen(wx.Pen(wx.Colour(0, 191, 255), 1))
+		# 			dc.SetPen(wx.Pen(self.colorDict['corrWindow'], 1))
+		# 		else: 
+		# 			#dc.SetPen(wx.Pen(wx.Colour(224, 255, 255), 1))
+		# 			dc.SetPen(wx.Pen(self.colorDict['guide'], 1))
+		# 		dc.DrawLines(((px, py), (x, y))) 
 
-		lines = [] 
+		# lines = [] 
 
-		i = 0
-		if spliceflag == 2 and self.LogTieData == []:
-			spliceholewidth = self.splicerX + (self.holeWidth * 2) + 150
-			drawing_start = self.rulerStartDepth - 5.0
-			for r in coreData:
-				y, x = r
-				if y >= drawing_start and y <= self.rulerEndDepth:
-					y = self.startDepth + (y - self.SPrulerStartDepth) * (self.length / self.gap)
-					x = x - self.minRange
-					x = (x * self.coefRange) + spliceholewidth
-					if i > 0: 
-						lines.append((px, py, x, y))
-					px = x
-					py = y
-					i = i + 1 
-			for r in lines:
-				px, py, x, y = r
-				dc.DrawLines(((px, py), (x, y))) 
+		# i = 0
+		# if spliceflag == 2 and self.LogTieData == []:
+		# 	spliceholewidth = self.splicerX + (self.holeWidth * 2) + 150
+		# 	drawing_start = self.rulerStartDepth - 5.0
+		# 	for r in coreData:
+		# 		y, x = r
+		# 		if y >= drawing_start and y <= self.rulerEndDepth:
+		# 			y = self.startDepth + (y - self.SPrulerStartDepth) * (self.length / self.gap)
+		# 			x = x - self.minRange
+		# 			x = (x * self.coefRange) + spliceholewidth
+		# 			if i > 0: 
+		# 				lines.append((px, py, x, y))
+		# 			px = x
+		# 			py = y
+		# 			i = i + 1 
+		# 	for r in lines:
+		# 		px, py, x, y = r
+		# 		dc.DrawLines(((px, py), (x, y))) 
 
 		return affine
 
@@ -2470,12 +2479,10 @@ class DataCanvas(wxBufferedWindow):
 		self.minData = coreInfo.minData
 		return (coreInfo.type, coreInfo.hole)
 
-	def DrawHighlight(self, dc):
-		if "HighlightCore" in self.DrawData:
-			tuple = self.DrawData["HighlightCore"]
-			x, y, wid, hit = tuple
-			dc.SetPen(wx.Pen(wx.Colour(192, 192, 192), 1, wx.DOT))
-			dc.DrawLines(((x - 2, y - 2), (x + wid + 2, y - 2), (x + wid + 2, y + hit + 2), (x - 2, y + hit + 2), (x - 2, y - 2)))
+	# Draw dashed rectangle around given bounds
+	def DrawHighlight(self, dc, x, y, wid, hit):
+		dc.SetPen(wx.Pen(wx.Colour(192, 192, 192), 1, wx.DOT))
+		dc.DrawLines(((x - 2, y - 2), (x + wid + 2, y - 2), (x + wid + 2, y + hit + 2), (x - 2, y + hit + 2), (x - 2, y - 2)))
 	
 	def DrawMouseInfo(self, dc, coreInfo, x, y, startx, flag, type):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
@@ -2717,7 +2724,6 @@ class DataCanvas(wxBufferedWindow):
 						holeType, holeName = self.DrawGraphInfo(dc, coreInfo, flag)
 						self.selectedHoleType = holeType
 						self.DrawMouseInfo(dc, coreInfo, x, y, startx, flag, holeType)
-						self.DrawHighlight(dc)
 			if holeType != "":
 				break
 		self.parent.statusBar.SetStatusText(self.statusStr)
@@ -3089,6 +3095,7 @@ class DataCanvas(wxBufferedWindow):
 		self.DrawData["LogArea"] = [] 
 		self.DrawData["CoreInfo"] = []
 		self.AffineTieArrows = [] # (hole+core, bounding rect) for each TIE arrow
+		self.highlightedCore = False # has a core been highlighted (rect drawn around bounds)?
 
 		if self.ScrollUpdate == 1: 
 			self.UpdateScroll(1)
@@ -6112,7 +6119,6 @@ class DataCanvas(wxBufferedWindow):
 
 							l.append((n, pos[0], pos[1], x, 1))
 							self.DrawData["MouseInfo"] = l
-							self.DrawData["HighlightCore"] = (x, y, w, h)
 			elif key == "SpliceArea" and self.MousePos[0] > self.splicerX:
 				ydepth = self.getSpliceDepth(pos[1])
 				interval = self.parent.spliceManager.getIntervalAtDepth(ydepth)
@@ -6377,7 +6383,6 @@ class DataCanvas(wxBufferedWindow):
 
 		if got == 0:
 			self.DrawData["MouseInfo"] = []
-			self.DrawData.pop("HighlightCore", None) # remove key/value pair entirely
 			self.selectedCore = -1 
 
 		self.UpdateDrawing()
