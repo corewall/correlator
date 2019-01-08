@@ -931,7 +931,6 @@ class DataFrame(wx.Panel):
 				py_correlator.openCullTable(path + self.tree.GetItemText(cull_item, 8), type, annot)
 				applied = "cull"
 
-			affinePath = path + self.tree.GetItemText(affine_item, 8)
 			if dlg.affine.GetValue() == True and affine_item != None:
 				py_correlator.openAttributeFile(path + self.tree.GetItemText(affine_item, 8), 0)
 				applied = "affine"
