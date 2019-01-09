@@ -51,8 +51,6 @@ myPath = User_Dir  + "/Documents/Correlator/" + vers.BaseVersion + "/"
 if platform_name[0] == "Windows":
 	myPath =  User_Dir  + "\\Correlator\\" + vers.BaseVersion + "\\"
 myTempPath = myPath
-WIN_WIDTH = 800
-WIN_HEIGHT = 600
 
 global_logName = "" 
 global_logFile = None 
@@ -148,7 +146,6 @@ class MainFrame(wx.Frame):
 		self.client = None
 		self.loadedSite = None
 
-		wx.EVT_CLOSE(self, self.OnHide)
 		wx.EVT_IDLE(self, self.OnIDLE)
 
 	def SetLoadedSite(self, siteData):
@@ -200,13 +197,9 @@ class MainFrame(wx.Frame):
 			return False
 		return True
 
-
 	def UpdateSize(self, width, height):
 		self.Width = width 
 		self.Height = height 
-		WIN_WIDTH = width
-		WIN_HEIGHT = height
-
 
 	def DoesFineTune(self):
 		if self.Window.SpliceData != []:
@@ -784,20 +777,6 @@ class MainFrame(wx.Frame):
 		elif self.showELDPanel == 1:
 			self.eldPanel.OnAddData(l)
 
-	def OnHide(self, event):
-		self.SavePreferences()
-
-		WIN_WIDTH = self.Width 
-		WIN_HEIGHT = self.Height 
-		if self.logFileptr != None:
-			s = "\n" + str(datetime.today()) + "\n"
-			self.logFileptr.write(s)
-			self.logFileptr.write("Close of Session.\n\n")
-			self.logFileptr.close()
-			self.logFileptr = None
-
-		app.ExitMainLoop()
-
 	def OnExitButton(self, event):
 		if self.client != None:
 			if self.Window.HoleData != []: 
@@ -835,9 +814,6 @@ class MainFrame(wx.Frame):
 			self.logFileptr.write("Close of Session.\n\n")
 			self.logFileptr.close()
 			self.logFileptr = None
-
-		WIN_WIDTH = self.Width 
-		WIN_HEIGHT = self.Height 
 
 		self.Window.Close(True)
 		self.dataFrame.Close(True)
@@ -2668,8 +2644,15 @@ class MainFrame(wx.Frame):
 
 		#print "[DEBUG] Window Position:" + str(win_x) + " " + str(win_y)
 
+		# 1/8/2019 brg: Logic to handle multiple displays, hook up once we have
+		# OpenFrame (splash screen) opening after prefs loading (as MainFrame is)
+		# so it too can be placed in the appropriate display (currently always opens
+		# in primary display).
+		# displays = [wx.Display(didx) for didx in range(wx.Display.GetCount())]
+		# display_width = sum([disp.GetGeometry().GetWidth() for disp in displays])
+		# display_height = sum([disp.GetGeometry().GetHeight() for disp in displays])
 		display_x, display_y = wx.DisplaySize()
-		if (win_x > display_x) or (win_y > display_y): 
+		if (win_x > display_x) or (win_y > display_y):
 			win_x = 0
 			win_y = 23 
 
