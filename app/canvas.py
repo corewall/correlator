@@ -2525,6 +2525,7 @@ class DataCanvas(wxBufferedWindow):
 		#else:
 		#	dc.DrawText(str(ycoord), self.splicerX + 3, y - 5)
 
+		# draw value of current mouse x position based on current core's datatype
 		tempx = 0.0
 		if type == "Natural Gamma":
 			type = "NaturalGamma"
@@ -5767,13 +5768,9 @@ class DataCanvas(wxBufferedWindow):
 								if ciA is not None and ciA.hole == ciB.hole:
 									self.parent.OnShowMessage("Error", "Composite ties cannot be made in the same hole.", 1)
 									self.ClearCompositeTies()
-									self.UpdateDrawing()
-									return
 								elif not self.parent.affineManager.isLegalTie(ciB, ciA):
 									self.parent.OnShowMessage("Error", "Core {}{} is upstream in the tie chain.".format(ciB.hole, ciB.holeCore), 1)
 									self.ClearCompositeTies()
-									self.UpdateDrawing()									
-									return
 								else:
 									self.activeCore = self.selectedCore
 									self.OnUpdateGuideData(self.selectedCore, shiftx, shift)
@@ -6180,8 +6177,6 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.TieUpdateSend(ciA.leg, ciA.site, ciB.hole, int(ciB.holeCore), ciA.hole, int(ciA.holeCore), y1, shift)
 
 			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-			# brg 2/22/2017: stifle evaluation graph for now - want to move
-			# to Python side but not a priority at the moment
 			if ciA.hole != None and ciB.hole != None and flag == 1:
 				testret = self.EvaluateCorrelation(ciB.type, ciB.hole, int(ciB.holeCore), y2, ciA.type, ciA.hole, int(ciA.holeCore), y1)
 				if testret != "":
