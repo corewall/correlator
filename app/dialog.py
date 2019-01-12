@@ -1185,7 +1185,11 @@ class CommentTextCtrl(wx.TextCtrl):
 
 	# for unambiguous CSV output, don't allow commas in comment field
 	def _prohibitCommas(self, evt):
-		if chr(evt.GetKeyCode()) != ',':
+		try:
+			if chr(evt.GetKeyCode()) != ',':
+				evt.Skip()
+		except ValueError: # handle key code out of 0-255 range (e.g arrow keys)
+			print("Can't convert key code {} to char".format(evt.GetKeyCode()))
 			evt.Skip()
 
 # adjust a core's MCD based on a percentage or a fixed distance,
