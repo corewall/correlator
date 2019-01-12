@@ -485,7 +485,7 @@ class AffineBuilder:
                     relatedCores.append(hcc)
                 coresBelow = sorted(self.getCoresBelow(hcc))
                 for cb in coresBelow:
-                    if not self.affine.inChain(cb):
+                    if not self.affine.inChain(cb) and cb != fromCore:
                         relatedCores.append(cb)
                     else: # chain core - whether it's distinct or not, restart from next holeChainCore
                         break
@@ -946,6 +946,7 @@ class TestAffineBuilder(unittest.TestCase):
         builder.tie(False, 0.1, acistr("C2"), 0.9, acistr("A2"), 0.8)
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         expectedMovers = acilist(['B2', 'B3', 'B4', 'B5', 'C1'])
+        self.assertTrue(sameElements(expectedMovers, movers))
 
         # Complex scenario from Peter
         builder = AffineBuilder.createWithAffineFile("testdata/FOO_affine_scenario6.csv", secsumm)
@@ -958,6 +959,15 @@ class TestAffineBuilder(unittest.TestCase):
         builder = AffineBuilder.createWithAffineFile("testdata/FOO_affine_scenario6b.csv", secsumm)
         movers = builder.gatherRelatedCores(acistr('B1'), acistr('C2')) # retie B1 > C2
         expectedMovers = acilist(['A3', 'A4', 'A5', 'B3', 'B4', 'B5', 'C4', 'C5'])
+        self.assertTrue(sameElements(expectedMovers, movers))
+
+        # B1 > C1.
+        # New tie from C2 > B1 shifts B1 and C1, but *cannot* shift C2
+        # or anything below it since it's the fixed core.
+        builder.reset()
+        builder.tie(False, 0.1, acistr("B1"), 0.9, acistr("C1"), 0.8)
+        movers = builder.gatherRelatedCores(acistr("C2"), acistr("B1"))
+        expectedMovers = acilist(['B2', 'B3', 'B4', 'B5', 'C1'])
         self.assertTrue(sameElements(expectedMovers, movers))
    
 
