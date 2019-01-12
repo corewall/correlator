@@ -172,6 +172,28 @@ class DragCoreData:
 		self.x = curMouseX
 		self.y = curMouseY - self.origMouseY
 
+
+# Report changes in the number of affine tie points, at most
+# two if fixed and movable ties have been created.
+class AffineTiePointEventBroadcaster:
+	def __init__(self):
+		self.listeners = []
+
+    # Listener l is a function with a single integer parameter
+    # indicating the current affine tie point count.
+	def addListener(self, l):
+		if l not in self.listeners:
+			self.listeners.append(l)
+
+	def removeListener(self, l):
+		if l in self.listeners:
+			self.listeners.remove(l)
+
+	def updateAffineTiePointCount(self, count):
+		for l in self.listeners:
+			l(count)
+
+
 class DataCanvas(wxBufferedWindow):
 	def __init__(self, parent, id= -1):
 		## Any data the Draw() function needs must be initialized before
@@ -186,6 +208,8 @@ class DataCanvas(wxBufferedWindow):
 		self.DrawData = {}
 		self.Highlight_Tie = -1
 		self.SpliceTieFromFile = 0
+
+		self.affineBroadcaster = AffineTiePointEventBroadcaster()
 
 		# brgtodo 6/26/2014: ShiftTieList is populated with new composite shifts only,
 		# but shift arrows still draw correctly without this, even for a new shift. Remove?
@@ -870,7 +894,6 @@ class DataCanvas(wxBufferedWindow):
 			#	self.parent.OnActivateWindow(1)
 			self.parent.showSplicePanel = 0 
 			self.parent.showELDPanel = 0 
-			self.parent.compositePanel.OnUpdatePlots()
 		elif note_id == 2:
 			self.spliceIntervalPanel.Show()
 			self.parent.showSplicePanel = 1
@@ -3933,6 +3956,10 @@ class DataCanvas(wxBufferedWindow):
 		self.activeTie = -1
 		self.selectedTie = -1
 		self.parent.clearSend()
+		self.UpdateAffineTieCount(0)
+
+	def UpdateAffineTieCount(self, count):
+		self.affineBroadcaster.updateAffineTiePointCount(count)
 		
 	def UndoLastShift(self):
 		py_correlator.undo(1, "X", 0)
@@ -3975,7 +4002,6 @@ class DataCanvas(wxBufferedWindow):
 			#self.parent.UndoShiftSectionSend()
 			self.parent.UpdateData()
 			self.parent.UpdateStratData()
-			self.parent.compositePanel.OnButtonEnable(1, False)
 		elif opId == 5: # undo to offset of core above
 			if self.selectedTie >= 0:
 				tie = self.TieData[self.selectedTie]
@@ -3993,7 +4019,6 @@ class DataCanvas(wxBufferedWindow):
 
 					self.parent.UpdateData()
 					self.parent.UpdateStratData()
-					self.parent.compositePanel.OnButtonEnable(1, False)
 		elif opId == 2 or opId == 3: # adjust this core and all below (2), adjust this core only (3)
 			shiftCoreOnly = (opId == 3)
 			self.OnAdjustCore(shiftCoreOnly)
@@ -4026,8 +4051,6 @@ class DataCanvas(wxBufferedWindow):
 				return
 
 			self.OnDataChange(movableTie.core, shift)
-			self.parent.compositePanel.OnButtonEnable(0, False)
-			self.parent.compositePanel.OnButtonEnable(1, True)
 
 			if ciA is not None and ciB is not None:
 				comment = self.parent.compositePanel.GetComment()
@@ -4053,7 +4076,6 @@ class DataCanvas(wxBufferedWindow):
 
 				self.parent.UpdateData()
 				self.parent.UpdateStratData()
-				self.TieData = []
 				
 				self.UpdateShiftedSpliceIntervals(ciA.hole, ciA.holeCore, not shiftCoreOnly)
 
@@ -4063,9 +4085,7 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.OnAddFirstGraph(corr, fixedTie.depth, y1)
 					self.parent.OnUpdateGraph()
 
-			self.selectedTie = -1
-			self.activeTie = -1
-			self.GuideCore = []
+			self.ClearCompositeTies()
 			self.drag = 0 
 			self.UpdateDrawing()
 
@@ -4275,8 +4295,7 @@ class DataCanvas(wxBufferedWindow):
 		eventCaught = True
 		keyid = event.GetKeyCode()
 		if keyid == 127:
-			self.TieData = [] 
-			self.GuideCore = []
+			self.ClearCompositeTies()
 		elif keyid == 72:
 			if self.hideTie == 1:
 				self.hideTie = 0
@@ -4369,8 +4388,6 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.TieUpdateSend(ciA.leg, ciA.site, ciA.hole, int(ciA.holeCore), ciB.hole, int(ciB.holeCore), depth, shift)
 
 			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-			# brg 2/22/2017: stifle evaluation graph for now - want to move
-			# to Python side but not a priority at the moment
 			if flag == 1:
 				testret = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), depth2, ciB.type, ciB.hole, int(ciB.holeCore), depth)
 				if testret != "":
@@ -4544,7 +4561,7 @@ class DataCanvas(wxBufferedWindow):
 		half = dotsize_y / 2
 
 		count = 0
-		for data in self.TieData:
+		for data in self.TieData: # handle context-click on in-progress tie points
 			y = self.startDepth + (data.depth - self.rulerStartDepth) * (self.length / self.gap)
 			x = (data.hole * self.holeWidth) + (data.hole * 50) + 50 - self.minScrollRange
 			reg = None
@@ -4568,7 +4585,7 @@ class DataCanvas(wxBufferedWindow):
 				return
 			count = count + 1
 
-		# is right click on an existing tie?
+		# handle right-click on an existing tie arrow
 		for holecore, rect in self.AffineTieArrows:
 			if rect.Inside(wx.Point(pos[0], pos[1])):
 				popupMenu = wx.Menu()
@@ -5728,9 +5745,9 @@ class DataCanvas(wxBufferedWindow):
 							self.TieData.append(newTie) 
 
 							# if we now have two ties, set up guide core
-							self.parent.compositePanel.OnButtonEnable(2, True)
-							length = len(self.TieData) % 2
-							if length == 0: 
+							if len(self.TieData) == 1:
+								self.UpdateAffineTieCount(1)
+							else: # len(self.TieData) == 2
 								self.activeTie = 1
 								length = len(self.TieData) 
 								fixedTie = self.TieData[length - 2]
@@ -5762,26 +5779,21 @@ class DataCanvas(wxBufferedWindow):
 									self.OnUpdateGuideData(self.selectedCore, shiftx, shift)
 									self.parent.OnUpdateDepth(shift)
 									self.parent.TieUpdateSend(ciA.leg, ciA.site, ciA.hole, int(ciA.holeCore), ciB.hole, int(ciB.holeCore), y1, shift)
-									self.parent.compositePanel.OnButtonEnable(0, True)
-									flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-									# brg 2/22/2017: stifle evaluation graph for now - want to move
-									# to Python side but not a priority at the moment
-									if flag == 1:
-										testret = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
-										if testret != "":
-											self.parent.OnAddFirstGraph(testret, y2, y1)
-										for data_item in self.range:
-											typeA = ciA.type
-											if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma":
-												typeA = "Natural Gamma"
-											elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma":
-												typeA = "NaturalGamma"
-											if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log":
-												testret = self.EvaluateCorrelation(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
-												if testret != "":
-													self.parent.OnAddGraph(testret, y2, y1)
- 
-										self.parent.OnUpdateGraph()
+									testret = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
+									if testret != "":
+										self.parent.OnAddFirstGraph(testret, y2, y1)
+									for data_item in self.range:
+										typeA = ciA.type
+										if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma":
+											typeA = "Natural Gamma"
+										elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma":
+											typeA = "NaturalGamma"
+										if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log":
+											testret = self.EvaluateCorrelation(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
+											if testret != "":
+												self.parent.OnAddGraph(testret, y2, y1)
+									self.parent.OnUpdateGraph()
+									self.UpdateAffineTieCount(len(self.TieData))
 
 				elif len(self.LogTieData) == 0: # create splice tie
 					if (len(self.RealSpliceTie) == 0 and len(self.SpliceTieData) < 2) or(len(self.RealSpliceTie) >= 2 and len(self.SpliceTieData) < 4):

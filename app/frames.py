@@ -349,7 +349,7 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 				self.UpdatePointLabel(mDataDict)
 		event.Skip() #go to next handler
 	
-    # find closest growth rate point and display its info
+	# find closest growth rate point and display its info
 	def MouseOverPoint(self, dc, mDataDict):
 		minDist = None
 		closest = None
@@ -475,7 +475,7 @@ class CompositePanel():
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.parent = parent
-		self.polyline_list =[]
+		self.polyline_list = []
 		self.growthPlotData = []
 		self.addItemsInFrame()
 		self.bestOffset = 0
@@ -656,16 +656,6 @@ class CompositePanel():
 			print "Save: updateExisting = {}, filename = {}".format(updateExisting, filename)
 			self.parent.affineManager.save(filename)
 
-	def OnButtonEnable(self, opt, enable):
-		if opt == 0 : 
-			self.adjustButton.Enable(enable)
-			self.clearButton.Enable(enable)
-			#self.aboveButton.Enable(enable)
-		elif opt == 1:
-			self.undoButton.Enable(enable)
-		else :
-			self.clearButton.Enable(enable)
-
 	def OnDismiss(self, evt):
 		self.Hide()
 
@@ -676,10 +666,20 @@ class CompositePanel():
 		self.parent.Window.activeTie = -1
 		self.UpdateGrowthPlot()
 
+	# AffineTiePointChangeListener - update button state depending on
+    # new number of active affine tie points
+	def TiePointCountChanged(self, count):
+		if count == 0:
+			self.adjustButton.Enable(False)
+			self.clearButton.Enable(False)
+		elif count == 1:
+			self.clearButton.Enable(True)
+		elif count == 2:
+			self.adjustButton.Enable(True)
+
 	def OnClearTie(self, evt):
-		self.parent.Window.OnClearTies(0)
-		self.OnButtonEnable(0, False)
-		self.parent.Window.activeTie = -1
+		self.parent.Window.ClearCompositeTies()
+		self.parent.Window.UpdateDrawing() # or tie graphics won't clear until mouseover
 
 	def OnUndoAffineShift(self, evt):
 		self.parent.OnUndoAffineShift()
@@ -756,6 +756,7 @@ class CompositePanel():
 	# brgtodo 9/4/2014: only called from this module, and always to set "empty" data:
 	# merge f'ns and add default params?
 	def OnUpdateData(self, data, bestdata, best):
+		self.polyline_list = []
 		self.bestOffset = best 
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
 		self.polyline_list.append(line)
@@ -766,6 +767,7 @@ class CompositePanel():
 	# 9/18/2013 brg: Identical to OnUpdateData() above... and in SplicePanel
 	# plot correlation for datatype with which tie is being made
 	def OnAddFirstData(self, data, bestdata, best):
+		self.polyline_list = []
 		self.bestOffset = best
 		line = plot.PolyLine(data, legend='', colour='red', width =2) 
 		self.polyline_list.append(line)
@@ -810,7 +812,7 @@ class CompositePanel():
 			return
 		
 	def UpdateEvalPlot(self):
-		self.corrPlotCanvas.Clear()
+		# self.corrPlotCanvas.Clear() - causes flicker on Mac
 		data = [(-self.parent.leadLag, 0), (0, 0), (self.parent.leadLag, 0)]
 		self.OnUpdateData(data, [], 0)
 		self.UpdateEvalStatus()
@@ -838,9 +840,8 @@ class CompositePanel():
 	def OnUpdateDrawing(self):
 		self.polyline_list.append(self.xaxes)
 		self.polyline_list.append(self.yaxes)
-		gc = plot.PlotGraphics(self.polyline_list, 'Evaluation Graph', 'depth Axis', 'coef Axis')
+		gc = plot.PlotGraphics(self.polyline_list, xLabel='depth (m)', yLabel='correlation coefficient (r)')
 		self.corrPlotCanvas.Draw(gc, xAxis = (-self.parent.leadLag , self.parent.leadLag), yAxis = (-1, 1))
-		self.polyline_list = []
 		
 	def GetDepthValue(self):
 		return self.depthField.GetValue()

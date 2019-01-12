@@ -146,6 +146,8 @@ class MainFrame(wx.Frame):
 		self.client = None
 		self.loadedSite = None
 
+		self.Window.affineBroadcaster.addListener(self.compositePanel.TiePointCountChanged)
+
 		wx.EVT_IDLE(self, self.OnIDLE)
 
 	def SetLoadedSite(self, siteData):
@@ -692,9 +694,8 @@ class MainFrame(wx.Frame):
 		self.Window.OnUndoSplice()
 
 	def OnUpdateGraph(self):
-		if self.showCompositePanel == 1:
-			self.compositePanel.OnUpdateDrawing()
-		elif self.showSplicePanel == 1: 
+		self.compositePanel.OnUpdateDrawing()
+		if self.showSplicePanel == 1: 
 			self.spliceIntervalPanel.OnUpdate()
 		elif self.showELDPanel == 1:
 			self.eldPanel.OnUpdateDrawing()
@@ -738,9 +739,8 @@ class MainFrame(wx.Frame):
 		if len(l) <= 1:
 			l = [ (-1.0, -1.0), (0, 0), (1.0, 1.0) ]
 
-		if self.showCompositePanel == 1:
-			self.compositePanel.OnAddFirstData(l, bestdata, best)
-		elif self.showSplicePanel == 1: 
+		self.compositePanel.OnAddFirstData(l, bestdata, best)
+		if self.showSplicePanel == 1: 
 			self.spliceIntervalPanel.OnAddFirstData(l, bestdata, best)
 		elif self.showELDPanel == 1:
 			self.eldPanel.OnAddFirstData(l, bestdata, best)
@@ -770,9 +770,8 @@ class MainFrame(wx.Frame):
 			if start >= max:
 				break
 
-		if self.showCompositePanel == 1:
-			self.compositePanel.OnAddData(l)
-		elif self.showSplicePanel == 1: 
+		self.compositePanel.OnAddData(l)
+		if self.showSplicePanel == 1: 
 			self.spliceIntervalPanel.OnAddData(l)
 		elif self.showELDPanel == 1:
 			self.eldPanel.OnAddData(l)
@@ -1409,8 +1408,7 @@ class MainFrame(wx.Frame):
 
 	def OnClearData(self):
 		py_correlator.cleanData(2)
-		self.Window.TieData = []
-		self.Window.GuideCore = []
+		self.Window.ClearCompositeTies()
 		self.affineManager.clear()
 		self.spliceManager.clear()
 		self.Window.SpliceHole = []
@@ -1427,14 +1425,6 @@ class MainFrame(wx.Frame):
 		self.UpdateLogData()
 		self.UpdateData()
 		self.OnClearSAGANTie(None)
-
-	def OnClearComposite(self, event):
-		py_correlator.cleanData(3)
-		self.Window.HoleData = []
-		self.Window.TieData = []
-		self.Window.GuideCore = []
-		self.UpdateData()
-		#self.Window.UpdateDrawing()
 
 	def OnClearSpliceTie(self, event):
 		py_correlator.cleanData(4)
