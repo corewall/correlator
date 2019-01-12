@@ -17,6 +17,7 @@ app/build/
 app/dist/
 app/experimental/
 app/intel/
+app/unused/
 
 # this and a few subfiles are in the repo, but I don't think it's being used at all
 bin/Correlator.app/
