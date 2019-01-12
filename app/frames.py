@@ -2704,15 +2704,15 @@ class AgeDepthPanel():
 		self.firstPntDepth = 0.0, self.startY
 
 	def OnAgeData(self, evt):
-                selected_item = "" 
-                if platform_name[0] == "Windows" :
-                        age_list = self.ageList.GetSelections()
-                        for sel in age_list :
-                                selected_item = self.ageList.GetString(sel)
-                else :
-                        selected_item = self.ageList.GetStringSelection()
+		selected_item = "" 
+		if platform_name[0] == "Windows":
+			age_list = self.ageList.GetSelections()
+			for sel in age_list:
+				selected_item = self.ageList.GetString(sel)
+		else:
+			selected_item = self.ageList.GetStringSelection()
 
-		self.selectedAge = False 
+		self.selectedAge = False
 		end = selected_item.find("*handpick", 0)
 		if end > 0 :
 			items = selected_item.split()
@@ -2806,16 +2806,16 @@ class AgeDepthPanel():
 		else :
 			pickmcd = rate * pickdepth
 			pickmcd = int(100.0 * pickmcd) / 100.0
-                strItem = ""
+			strItem = ""
 		str_ba = str(pickdepth)
 		max_ba = len(str_ba)
 		start_ba = str_ba.find('.', 0)
 		str_ba = str_ba[start_ba:max_ba]
 		max_ba = len(str_ba)
 		space_bar = ""
-		if platform_name[0] == "Windows" :
-                        space_bar = " "
-                        
+		if platform_name[0] == "Windows":
+			space_bar = " "
+						
 		if max_ba < 3 :
 			strItem = str(pickdepth) + "0 \t"
 		else :
@@ -2904,9 +2904,9 @@ class AgeDepthPanel():
 		str_ba = str_ba[start_ba:max_ba]
 		max_ba = len(str_ba)
 		space_bar = ""
-		if platform_name[0] == "Windows" :
-                        space_bar = " "
-                        
+		if platform_name[0] == "Windows":
+			space_bar = " "
+						
 		if max_ba < 3 :
 			strItem = str(pickdepth) + "0 \t"  + str(pickdepth) + "0 \t" + str(pickdepth) + "0 \t"
 		else :
