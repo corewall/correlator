@@ -1565,26 +1565,55 @@ class ApplicationPreferencesDialog(wx.Dialog):
 
 class AboutDialog(wx.Dialog):
 	def __init__(self, parent, version):
-		wx.Dialog.__init__(self, parent, -1, "About Correlator " + version, size=(500, 330), style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, -1, "About Correlator " + version, style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
 
-		desctext = "Correlator facilitates the adjustment of core depth data drilled in a multi-hole scenario by usually correlating measured whole-core (GRA, MSLP, PWC, #NGR) or half-core (RSC) sensor data across holes using an optimized cross-correlation approach."
+		vertSizer = wx.BoxSizer(wx.VERTICAL)
+		self.SetSizer(vertSizer)
 
-		desc = wx.StaticText(self, -1, desctext, (10,10))
-		desc.Wrap(480)
+		description = "The Correlator application facilitates the construction of " \
+					"'Core Composite depth below Sea Floor' (CCSF) depth scales when " \
+					"core data from multiple holes are available, by allowing users " \
+					"to align correlative features across holes and shift the core " \
+					"depths accordingly. Correlator also facilitates the definition " \
+					"of stratigraphic splices at the CCSF scale by allowing users to " \
+					"select the most suitable and contiguous core intervals."
 
-		wx.HyperlinkCtrl(self, -1, 'For more detailed information, please visit the Correlator Website', 'http://www.corewall.org', (15,95))
+		desc = wx.StaticText(self, -1, description)
+		desc.Wrap(530)
+		vertSizer.Add(desc, 0, wx.ALL, 10)
 
-		wx.StaticText(self, -1, 'Developers:  Sean Higgins (sean@ldeo.columbia.edu)', (20, 130))
-		wx.StaticText(self, -1, 'Brian Grivna (brian.grivna@gmail.com)', (103, 150))
-		wx.StaticText(self, -1, 'Hyejung Hur (hhur2@uic.edu)', (103, 170))
+		corryUrl = "https://csdco.umn.edu/resources/software/correlator"
+		link = wx.HyperlinkCtrl(self, -1, 'For more detailed information, please visit the Correlator Website', corryUrl)
+		vertSizer.Add(link, 0, wx.LEFT, 10)
+		vertSizer.Add((15,15), 0) # add some vertical space between sections
 
-		wx.StaticText(self, -1, 'Organizations:', (20, 210))
-		wx.HyperlinkCtrl(self, -1, 'EVL (University of Illinois)', 'http://www.evl.uic.edu', (25, 230))
-		wx.HyperlinkCtrl(self, -1, 'National Science Foundation', 'http://www.nsf.gov/', (25, 250))
-		wx.HyperlinkCtrl(self, -1, 'LacCore (University of Minnesota)', 'http://lrc.geo.umn.edu/LacCore/laccore.html', (230, 230))
-		wx.HyperlinkCtrl(self, -1, 'Lamont-Doherty Earth Observatory', 'http://www.ldeo.columbia.edu/', (230, 250))
+		vertSizer.Add(wx.StaticText(self, -1, 'Developers:'), 0, wx.LEFT, 10)
+		vertSizer.Add((5,5), 0)
+		devs = 'Peter Blum (blum@iodp.tamu.edu)  |  Brian Grivna (brian.grivna@gmail.com)'
+		vertSizer.Add(wx.StaticText(self, -1, devs), 0, wx.LEFT, 10)
+		vertSizer.Add((15,15), 0)
 
-		okBtn = wx.Button(self, wx.ID_OK, "Close", ((230, 270)))
+		devsEmeritus = 'Sean Higgins  |  Hyejung Hur'
+		vertSizer.Add(wx.StaticText(self, -1, 'Developers Emeritus:'), 0, wx.LEFT, 10)
+		vertSizer.Add((5,5), 0)
+		vertSizer.Add(wx.StaticText(self, -1, devsEmeritus), 0, wx.LEFT, 10)
+		vertSizer.Add((15,15), 0)
+
+		vertSizer.Add(wx.StaticText(self, -1, 'Organizations:'), 0, wx.LEFT, 10)
+		vertSizer.Add((5,5), 0)
+		grid = wx.FlexGridSizer(cols=2, rows=3, hgap=20, vgap=10)
+		grid.Add(wx.HyperlinkCtrl(self, -1, 'National Science Foundation', 'https://www.nsf.gov/'))
+		grid.Add(wx.HyperlinkCtrl(self, -1, 'CSDCO/LacCore (University of Minnesota)', 'https://csdco.umn.edu/'))
+		grid.Add(wx.HyperlinkCtrl(self, -1, 'IODP/JR Science Operator', 'https://iodp.tamu.edu/'))
+		grid.Add(wx.HyperlinkCtrl(self, -1, 'Lamont-Doherty Earth Observatory', 'https://www.ldeo.columbia.edu/'))
+		grid.Add(wx.HyperlinkCtrl(self, -1, 'EVL (University of Illinois)', 'https://www.evl.uic.edu/'))
+		vertSizer.Add(grid, 0, wx.LEFT | wx.RIGHT, 15)
+
+		vertSizer.Add((20,20), 0)
+		okBtn = wx.Button(self, wx.ID_OK, "Close")
+		vertSizer.Add(okBtn, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
+
+		self.Fit() # auto-adjust dialog size to fit all elements
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
 	def OnCharUp(self,event):
