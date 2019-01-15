@@ -711,10 +711,11 @@ class CompositePanel():
 		row = self.table.GetSelectedRows()[0] # only one row can be selected
 		corestr = str(self.table.GetCellValue(row, 0)) # str() to convert from Unicode, col 0 is core
 		self.parent.affineManager.breakTie(corestr)
+		self.breakTieButton.Enable(False)
 
 	def OnShiftsTableSelection(self, evt):
 		shiftType = self.table.GetCellValue(evt.GetRow(), 2) # col 2 is shift type
-		self.breakTieButton.Enable(shiftType == "TIE")
+		self.breakTieButton.Enable("TIE" in shiftType)
 
 	def OnProject(self, evt):
 		dlg = dialog.SetDialog(self.parent)
