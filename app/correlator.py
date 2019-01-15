@@ -3219,11 +3219,16 @@ class AffineController:
 		coremin, coremax = secsumm.getCoreRange(coreinfo.leg, coreinfo.hole, coreinfo.holeCore)
 		return coremin
 	
-	# get rows for GUI affine table: each tuple is hole+core, shift distance, and shift type
-	def getAffineRows(self):
+	# get rows for UI affine table: each tuple is hole+core, shift distance, and shift type
+	def getAffineRowsForUI(self):
 		rows = []
 		for shift in self.affine.getSortedShifts():
-			rows.append((shift.core.GetHoleCoreStr(), str(shift.distance), self.getShiftTypeStr(shift.core.hole, shift.core.core)))
+			core = shift.core.GetHoleCoreStr()
+			offset = str(shift.distance)
+			shiftType = self.getShiftTypeStr(shift.core.hole, shift.core.core)
+			if isTie(shift): # include reference core for ties
+				shiftType += " ({})".format(shift.fromCore)
+			rows.append((core, offset, shiftType))
 		return rows
 	
 	# moveCore and fixedCore are CoreInfo objects

@@ -541,7 +541,7 @@ class CompositePanel():
 		self.table.DisableDragRowSize()
 		self.table.EnableEditing(False)
 		self.table.CreateGrid(numRows=0, numCols=3)
-		for colidx, label in enumerate(["Core", "Shift", "Type"]):
+		for colidx, label in enumerate(["Core", "Offset", "Type"]):
 			self.table.SetColLabelValue(colidx, label)
 		self.table.SetSelectionMode(wx.grid.Grid.SelectRows)
 		self.breakTieButton = wx.Button(atPanel, -1, "Break TIE")
@@ -819,7 +819,7 @@ class CompositePanel():
 		self.OnUpdateDrawing()
 		
 	def UpdateAffineTable(self):
-		affineRows = self.parent.affineManager.getAffineRows()
+		affineRows = self.parent.affineManager.getAffineRowsForUI()
 		
 		if len(affineRows) > self.table.GetNumberRows():
 			self.table.InsertRows(pos=0, numRows=len(affineRows))
