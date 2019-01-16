@@ -38,7 +38,6 @@ import version as vers
 from affine import AffineBuilder, AffineCoreInfo, aci, acistr, isTie, isSet, isImplicit
 import splice
 import tabularImport
-import tracker
 import prefs
 
 app = None
@@ -3642,12 +3641,6 @@ class SpliceController:
 				matches = [i for i in matches if int(i.coreinfo.holeCore) == int(core)]
 		return matches
 
-# ping GA launch tracker
-def ping_tracker():
-	uuidPath = os.path.join(User_Dir, ".correlator", "uuid.p")
-	gatracker = tracker.Tracker(uuidPath, ["UA", "99979639", "1"])
-	gatracker.ping()	
-
 
 class CorrelatorApp(wx.App):
 	def __init__(self, new_version, cfg=myPath+"default.cfg"):
@@ -3838,7 +3831,6 @@ if __name__ == "__main__":
 	global_logFile.write(s)
 
 	ret = py_correlator.initialize("../DATA/current-test")
-	ping_tracker()
 	app = CorrelatorApp(new)
 	app.MainLoop()
 	win_size = app.frame.Width, app.frame.Height
