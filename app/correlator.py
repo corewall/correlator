@@ -35,7 +35,6 @@ import dialog
 import frames
 import dbmanager
 import version as vers
-import model
 from affine import AffineBuilder, AffineCoreInfo, aci, acistr, isTie, isSet, isImplicit
 import splice
 import tabularImport
@@ -143,18 +142,10 @@ class MainFrame(wx.Frame):
 		self.Directory = ""
 		self.DBPath = "-"
 		self.client = None
-		self.loadedSite = None
 
 		self.Window.affineBroadcaster.addListener(self.compositePanel.TiePointCountChanged)
 
 		wx.EVT_IDLE(self, self.OnIDLE)
-
-	def SetLoadedSite(self, siteData):
-		if isinstance(siteData, model.SiteData):
-			self.loadedSite = siteData
-
-	def GetLoadedSite(self):
-		return self.loadedSite
 
 	def INIT_CHANGES(self):
 		self.AffineChange = False 
