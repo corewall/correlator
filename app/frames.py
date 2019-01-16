@@ -723,7 +723,7 @@ class CompositePanel():
 		result = dlg.ShowModal()
 		if result == wx.ID_OK:
 			if dlg.coreAndBelow.GetValue(): # SET current core and below
-				isRate = dlg.outRate is not None
+				isRate = dlg.percentRadio.GetValue()
 				value = dlg.outRate if isRate else dlg.outOffset
 				coreList = dlg.outCoreList
 				self.parent.affineManager.setAll(dlg.outHole, coreList, value, isRate, dlg.outType, dlg.outComment)

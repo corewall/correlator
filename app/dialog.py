@@ -1255,15 +1255,6 @@ class SetDialog(wx.Dialog):
 		
 		self.currentShiftText = wx.StaticText(self, -1, "Current shift:")
 		methodSizer.Add(self.currentShiftText, 0, wx.EXPAND | wx.TOP, 5)
-		
-		shiftSizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.shiftLabel = wx.StaticText(self, -1, "Suggested shift: ")
-		self.shiftField = wx.TextCtrl(self, -1, "1.000", size=(80,-1))
-		self.shiftDiffText = wx.StaticText(self, -1, "(+0.432)")
-		shiftSizer.Add(self.shiftLabel, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 3)
-		shiftSizer.Add(self.shiftField, 0, wx.RIGHT, 2)
-		shiftSizer.Add(self.shiftDiffText, 1, wx.ALIGN_CENTER_VERTICAL)
-		methodSizer.Add(shiftSizer, 0, wx.EXPAND | wx.TOP, 10)
 
 		commentSizer = wx.BoxSizer(wx.HORIZONTAL)
 		commentSizer.Add(wx.StaticText(self, -1, "Comment:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
@@ -1296,9 +1287,20 @@ class SetDialog(wx.Dialog):
 		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.fixedRadio)
 		self.Bind(wx.EVT_TEXT, self.UpdateData, self.percentField)
 		self.Bind(wx.EVT_TEXT, self.UpdateData, self.fixedField)
-		self.Bind(wx.EVT_TEXT, self.OnSuggShiftChange, self.shiftField)
 
 	def OnApply(self, evt):
+		# gather and validate fixed distance/percentage input
+		try:
+			self.outOffset = float(self.fixedField.GetValue())
+		except ValueError:
+			self.parent.OnShowMessage("Error", "Invalid fixed distance {}".format(self.fixedField.GetValue()), 1)
+			return
+		try:
+			self.outRate = float(self.percentField.GetValue())/100.0 + 1.0
+		except ValueError:
+			self.parent.OnShowMessage("Error", "Invalid percentage {}".format(self.percentField.GetValue()), 1)
+			return
+
 		# str() to convert from type unicode
 		self.outHole = str(self.holeChoice.GetStringSelection())
 		self.outCore = str(self.coreChoice.GetStringSelection())
@@ -1308,19 +1310,7 @@ class SetDialog(wx.Dialog):
 		if not self.parent.CanAdjustCore(self.outHole, '1' if checkBelow else self.outCore, checkBelow):
 			return
 		
-		try:
-			self.outOffset = float(self.shiftField.GetValue())
-		except ValueError:
-			try:
-				self.outOffset = float(self.fixedField.GetValue())
-			except ValueError:
-				self.outOffset = 0.0
 		self.outComment = self.commentField.GetValue()
-
-		if self.percentRadio.GetValue():
-			self.outRate = float(self.percentField.GetValue())/100.0 + 1.0
-		else:
-			self.outRate = None
 		# self.outType already set
 		self.EndModal(wx.ID_OK)
 
@@ -1374,7 +1364,7 @@ class SetDialog(wx.Dialog):
 			self.UpdateData()
 
 	# disable/enable Percentage option if 'Selected core and all tied cores
-	# (entire chain)' is selected/deselected.
+	# (entire chain)' radio is selected/deselected.
 	def UpdateMethodRadios(self, evt=None):
 		enablePct = True
 		if self.coreAndChain.GetValue():
@@ -1401,52 +1391,14 @@ class SetDialog(wx.Dialog):
 		self.outCoreList = []
 		for coreTuple in [ct for ct in self.coreData[curHole] if int(ct[0]) >= int(self.coreChoice.GetStringSelection())]:
 			self.outCoreList.append(coreTuple[0])
-		#print "Updated outCoreList = {}".format(self.outCoreList)
-
-		if self.percentRadio.GetValue():
-			try:
-				pct = float(self.percentField.GetValue())/100.0 + 1.0 
-				self.suggShift = round(curCore[1] * pct, 3) - curCore[1]
-			except ValueError:
-				self.suggShift = None
-		else: # fixed distance
-			try:
-				dist = float(self.fixedField.GetValue())
-				self.suggShift = dist
-			except ValueError:
-				self.suggShift = None
 
 		self.UpdateCurShiftText()
-		self.UpdateSuggShiftText()
-		self.UpdateShiftDiffText()
-
-	def UpdateSuggShiftText(self):
-		if self.suggShift is not None:
-			self.shiftField.SetValue(str(self.suggShift))
-		else:
-			self.shiftField.SetValue("")
-			
-	def UpdateShiftDiffText(self):
-		if self.suggShift is not None:
-			shiftDiff = round(self.suggShift - self.curCoreShift, 3) 
-			sign = "+" if shiftDiff >= 0 else ""
-			self.shiftDiffText.SetLabel("(" + sign + str(shiftDiff) + ")")
-		else:
-			self.shiftDiffText.SetLabel("")
 	
 	def UpdateCurShiftText(self):
 		if self.curCoreName is not None:
 			self.currentShiftText.SetLabel("Current " + self.curCoreName + " affine shift: " + str(self.curCoreShift))
 		else:
 			self.currentShiftText.SetLabel("Current affine shift: [n/a for All]")
-		
-	def OnSuggShiftChange(self, evt):
-		origSuggShift = self.suggShift
-		try:
-			self.suggShift = float(self.shiftField.GetValue())
-			self.UpdateShiftDiffText()
-		except ValueError:
-			self.suggShift = origSuggShift
 
 
 class CorrParamsDialog(wx.Dialog):
