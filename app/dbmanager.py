@@ -33,7 +33,8 @@ def opj(path):
 FormatDict = {"Text":0, "CSV":1, "XML":2}
 
 # list of a site node's immediate non-measurement children 
-STD_SITE_NODES = ["Saved Tables", "Downhole Log Data", "Stratigraphy", "Age Models", "Image Data", "Section Summaries"]
+# STD_SITE_NODES = ["Saved Tables", "Downhole Log Data", "Stratigraphy", "Age Models", "Image Data", "Section Summaries"]
+STD_SITE_NODES = ['Saved Tables', 'Section Summaries']
 
 class DataFrame(wx.Panel):
 	def __init__(self, parent):
