@@ -249,21 +249,23 @@ class MainFrame(wx.Frame):
 
 		menuFile.AppendSeparator()
 
-		self.miFileClear = menuFile.Append(-1, "Clear All Ties\tCtrl-C", "Clear all")
-		self.Bind(wx.EVT_MENU, self.OnClearAllData, self.miFileClear)
+		# 1/15/2019 brg: We've elected to hide these menu items for now. Functionality
+		# is available from other controls, or unused (Core-Log) at present.
+		# self.miFileClear = menuDummy.Append(-1, "Clear All Ties\tCtrl-C", "Clear all")
+		# self.Bind(wx.EVT_MENU, self.OnClearAllData, self.miFileClear)
 
-		self.miFileClearco = menuFile.Append(-1, "Clear All Shifts", "Clear composite ties")
-		self.Bind(wx.EVT_MENU, self.OnClearComposite, self.miFileClearco)
+		# self.miFileClearco = menuDummy.Append(-1, "Clear All Shifts", "Clear composite ties")
+		# # self.Bind(wx.EVT_MENU, self.OnClearComposite, self.miFileClearco)
 
-		self.miFileClearsp = menuFile.Append(-1, "Clear All Splice Ties", "Clear splice ties")
-		self.Bind(wx.EVT_MENU, self.OnClearSpliceTie, self.miFileClearsp)
+		# self.miFileClearsp = menuDummy.Append(-1, "Clear All Splice Ties", "Clear splice ties")
+		# self.Bind(wx.EVT_MENU, self.OnClearSpliceTie, self.miFileClearsp)
 
-		self.miFileClearsa = menuFile.Append(-1, "Clear All Core-Log Ties", "Clear core-log ties")
-		self.Bind(wx.EVT_MENU, self.OnClearSAGANTie, self.miFileClearsa)
+		# self.miFileClearsa = menuDummy.Append(-1, "Clear All Core-Log Ties", "Clear core-log ties")
+		# self.Bind(wx.EVT_MENU, self.OnClearSAGANTie, self.miFileClearsa)
 
-		menuFile.AppendSeparator()
+		# menuFile.AppendSeparator()
 
-		miFileExit = menuFile.Append(wx.ID_EXIT, "&Exit\tCtrl-X", "Exit demo")
+		miFileExit = menuFile.Append(wx.ID_EXIT, "&Exit\tCtrl-X", "Exit Correlator")
 		self.Bind(wx.EVT_MENU, self.OnExitButton, miFileExit)
 		menuBar.Append(menuFile, "&File")
 
@@ -296,7 +298,7 @@ class MainFrame(wx.Frame):
 		self.Bind(wx.EVT_MENU, self.SetTIE_WIDTHDOWN, self.mitiewidthDown)
 
 		menuView.AppendSeparator()
-		self.misecond = menuView.AppendCheckItem(-1, "Splice/Log Window", "Splice/Log window")
+		self.misecond = menuView.AppendCheckItem(-1, "Splice Window", "Splice Window")#Splice/Log Window", "Splice/Log window")
 		self.misecond.Check(True)
 		self.Bind(wx.EVT_MENU, self.SHOWSplice, self.misecond)
 
@@ -331,7 +333,7 @@ class MainFrame(wx.Frame):
 		self.Bind(wx.EVT_MENU, self.OnAbout, self.miAbout)
 		menuBar.Append(menuHelp, "&Help")
 
-		self.OnDisableMenu(0, False)
+		# self.OnDisableMenu(0, False)
 
 		# bind keystrokes to the frame
 		# self.Bind(wx.EVT_KEY_DOWN, self.OnKeyEvent)
@@ -604,13 +606,14 @@ class MainFrame(wx.Frame):
 		self.ScaleScrollbar("MovableSkin", -self.Window.ScrollSize - 5, None)
 		self.ScaleScrollbar("Skin", -self.Window.ScrollSize, None)
 		self.ScaleScrollbar("HScroll", None, -self.Window.ScrollSize, horizontal=True)
-				
-	def OnDisableMenu(self, type, enable):
-		if type == 1 or type == 0: 
-			self.miFileClear.Enable(enable)
-			self.miFileClearco.Enable(enable)
-			self.miFileClearsp.Enable(enable)
-			self.miFileClearsa.Enable(enable)
+
+	# 1/15/2019 hiding these menu items				
+	# def OnDisableMenu(self, type, enable):
+	# 	if type == 1 or type == 0: 
+	# 		self.miFileClear.Enable(enable)
+	# 		self.miFileClearco.Enable(enable)
+	# 		self.miFileClearsp.Enable(enable)
+	# 		self.miFileClearsa.Enable(enable)
 
 	# update global Evaluation Graph parameters
 	def OnEvalSetup(self, depthStep, winLength, leadLag):
@@ -1399,7 +1402,7 @@ class MainFrame(wx.Frame):
 
 		py_correlator.cleanData(1)
 		self.OnClearData()
-		self.OnDisableMenu(0, False)
+		# self.OnDisableMenu(0, False)
 		self.Window.UpdateDrawing()
 
 	def OnClearAllData(self, event):

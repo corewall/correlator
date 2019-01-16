@@ -4467,7 +4467,7 @@ class DataFrame(wx.Panel):
 			self.parent.Window.ShowLog = True
 			self.parent.filterPanel.OnRegisterHole("Log")
 
-		self.parent.OnDisableMenu(1, True)
+		# self.parent.OnDisableMenu(1, True)
 		self.parent.LOCK = 1
 
 		if self.parent.showReportPanel == 1:

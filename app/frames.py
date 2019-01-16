@@ -144,9 +144,9 @@ class TopMenuFrame(wx.Frame):
 		savedialog.Centre()
 		ret = savedialog.ShowModal()
 		
-		eld_flag = savedialog.eldCheck.GetValue()
-		age_flag =  savedialog.ageCheck.GetValue()
-		series_flag = savedialog.seriesCheck.GetValue()
+		eld_flag = False #savedialog.eldCheck.GetValue()
+		age_flag =  False #savedialog.ageCheck.GetValue()
+		series_flag = False #savedialog.seriesCheck.GetValue()
 
 		if ret == wx.ID_CANCEL :
 			return
@@ -198,7 +198,6 @@ class TopMenuFrame(wx.Frame):
 
 		#self.parent.Window.SetFocusFromKbd()
 
-
 	def OnSPLICE(self, event):
 		if self.parent.Window.ShowSplice == True :
 			self.parent.Window.ShowSplice = False
@@ -230,10 +229,12 @@ class TopMenuFrame(wx.Frame):
 		self.parent.Window.sideNote.SetSelection(2)
 
 	def OnFilter(self, event):
-		self.parent.Window.sideNote.SetSelection(5)
+		self.parent.Window.sideNote.SetSelection(3)
+		# self.parent.Window.sideNote.SetSelection(5)
 	
 	def OnPrefs(self, event):
-		self.parent.Window.sideNote.SetSelection(6)
+		self.parent.Window.sideNote.SetSelection(4)
+		# self.parent.Window.sideNote.SetSelection(6)
 
 	def OnEXIT(self, event):
 		self.parent.OnExitButton(event)

@@ -446,10 +446,10 @@ class AgeListDialog(wx.Dialog):
 
 class SaveTableDialog(wx.Dialog):
 	def __init__(self, parent, id, affine, splice):
-		wx.Dialog.__init__(self, parent, id, "Save", size=(340, 340),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE|wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, id, "Save", size=(340, 180),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE|wx.STAY_ON_TOP)
 
 		wx.StaticText(self, -1, 'Check to Save to Data Manager', (50, 10))
-		panel = wx.Panel ( self, -1, (10, 30), size=(320, 40), style=wx.BORDER)
+		panel = wx.Panel( self, -1, (10, 30), size=(320, 40), style=wx.BORDER)
 
 		self.affineCheck = wx.CheckBox(panel, -1, 'Affine Table', (10, 10))
 		self.affineCheck.SetValue(affine)
@@ -464,26 +464,26 @@ class SaveTableDialog(wx.Dialog):
 		self.spliceUpdate.SetValue(True)
 		wx.RadioButton(panel1, -1, "Create New", (190, 10))
 
-		panel2 = wx.Panel ( self, -1, (10, 120), size=(320, 40), style=wx.BORDER)
-		self.eldCheck = wx.CheckBox(panel2, -1, 'ELD Table', (10, 10))
-		self.eldUpdate = wx.RadioButton(panel2, -1, "Update", (120, 10), style=wx.RB_GROUP)
-		self.eldUpdate.SetValue(True)
-		wx.RadioButton(panel2, -1, "Create New", (190, 10))
+		# panel2 = wx.Panel ( self, -1, (10, 120), size=(320, 40), style=wx.BORDER)
+		# self.eldCheck = wx.CheckBox(panel2, -1, 'ELD Table', (10, 10))
+		# self.eldUpdate = wx.RadioButton(panel2, -1, "Update", (120, 10), style=wx.RB_GROUP)
+		# self.eldUpdate.SetValue(True)
+		# wx.RadioButton(panel2, -1, "Create New", (190, 10))
 
-		panel3 = wx.Panel ( self, -1, (10, 165), size=(320, 40), style=wx.BORDER)
-		self.ageCheck = wx.CheckBox(panel3, -1, 'Age/Depth', (10, 10))
-		self.ageUpdate = wx.RadioButton(panel3, -1, "Update", (120, 10), style=wx.RB_GROUP)
-		self.ageUpdate.SetValue(True)
-		wx.RadioButton(panel3, -1, "Create New", (190, 10))
+		# panel3 = wx.Panel ( self, -1, (10, 165), size=(320, 40), style=wx.BORDER)
+		# self.ageCheck = wx.CheckBox(panel3, -1, 'Age/Depth', (10, 10))
+		# self.ageUpdate = wx.RadioButton(panel3, -1, "Update", (120, 10), style=wx.RB_GROUP)
+		# self.ageUpdate.SetValue(True)
+		# wx.RadioButton(panel3, -1, "Create New", (190, 10))
 
-		panel4 = wx.Panel ( self, -1, (10, 210), size=(320, 40), style=wx.BORDER)
-		self.seriesCheck = wx.CheckBox(panel4, -1, 'Age Model', (10, 10))
-		self.seriesUpdate = wx.RadioButton(panel4, -1, "Update", (120, 10), style=wx.RB_GROUP)
-		self.seriesUpdate.SetValue(True)
-		wx.RadioButton(panel4, -1, "Create New", (190, 10))
+		# panel4 = wx.Panel ( self, -1, (10, 210), size=(320, 40), style=wx.BORDER)
+		# self.seriesCheck = wx.CheckBox(panel4, -1, 'Age Model', (10, 10))
+		# self.seriesUpdate = wx.RadioButton(panel4, -1, "Update", (120, 10), style=wx.RB_GROUP)
+		# self.seriesUpdate.SetValue(True)
+		# wx.RadioButton(panel4, -1, "Create New", (190, 10))
 
-		wx.Button(self, wx.ID_OK, "Save", ((85, 265)))
-		wx.Button(self, wx.ID_CANCEL, "Cancel", ((180, 265)))
+		wx.Button(self, wx.ID_OK, "Save", ((85,120))) #((85, 265)))
+		wx.Button(self, wx.ID_CANCEL, "Cancel", ((180,120))) #((180, 265)))
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
 	def OnCharUp(self,event):
@@ -1609,7 +1609,7 @@ class OpenFrame(wx.Dialog):
 		panel = BackgroundPanel(self, 'images/corewall_suite.jpg', panel_size)
 
 		self.version = version
-		wx.StaticText(self, -1, 'COMPOSITE, SPLICE, CORE-LOG INTEGRATION, AGE MODEL', (60, 30))
+		wx.StaticText(self, -1, 'COMPOSITE AND SPLICE', (60,30))# CORE-LOG INTEGRATION, AGE MODEL', (60, 30))
 
 		wx.StaticText(self, -1, 'User Name: ', (250, 220))
 		self.name = wx.TextCtrl(self, -1, user, (340, 220), size=(150, 25))
@@ -1621,7 +1621,8 @@ class OpenFrame(wx.Dialog):
 		if platform_name[0] == "Windows":
 			cancelBtn = wx.Button(panel, wx.ID_CANCEL, "Cancel", (580, 213), size=(80, 30))
 
-		wx.HyperlinkCtrl(self, -1, 'Go to Correlator Web', 'http://www.corewall.org', (60, 300))
+		corryUrl = "https://csdco.umn.edu/resources/software/correlator"
+		wx.HyperlinkCtrl(self, -1, "Correlator Website", corryUrl, (60, 300))
 
 		aboutBtn = wx.Button(panel, -1, "About", (200, 290), size=(80, 30))
 		self.Bind(wx.EVT_BUTTON, self.OnABOUT, aboutBtn)

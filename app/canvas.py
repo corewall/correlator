@@ -537,11 +537,11 @@ class DataCanvas(wxBufferedWindow):
 		self.sideNote.AddPage(self.compPanel, 'Composite')
 		#self.sideNote.AddPage(self.splicePanel, 'Splice')
 		self.sideNote.AddPage(self.spliceIntervalPanel, "Splice Interval")
-		self.sideNote.AddPage(self.eldPanel, 'Core-Log Integration')
+		# self.sideNote.AddPage(self.eldPanel, 'Core-Log Integration')
 		#self.sideNote.AddPage(self.eldPanel, 'Correlation')
 
 		#self.sideNote.AddPage(self.autoPanel, 'Auto Correlation')
-		self.sideNote.AddPage(self.agePanel, 'Age Depth Model')
+		# self.sideNote.AddPage(self.agePanel, 'Age Depth Model')
 
 		self.sideNote.AddPage(self.filterPanel, 'Filter')
 		self.sideNote.AddPage(self.optPanel, 'Preferences')
@@ -899,39 +899,39 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.showSplicePanel = 1
 			self.parent.showCompositePanel = 0 
 			self.parent.showELDPanel = 0
-		elif note_id == 3:
-			self.mode = 3
-			#if self.ShowAutoPanel == False:
-			self.eldPanel.Show()
-			self.parent.showELDPanel = 1
-			self.mode = 3
-			if self.spliceWindowOn == 0: 
-				self.parent.OnActivateWindow(1)
-			self.parent.showSplicePanel = 0 
-			self.parent.showCompositePanel = 0 
+		# elif note_id == 3:
+		# 	self.mode = 3
+		# 	#if self.ShowAutoPanel == False:
+		# 	self.eldPanel.Show()
+		# 	self.parent.showELDPanel = 1
+		# 	self.mode = 3
+		# 	if self.spliceWindowOn == 0: 
+		# 		self.parent.OnActivateWindow(1)
+		# 	self.parent.showSplicePanel = 0 
+		# 	self.parent.showCompositePanel = 0 
 
-			if self.parent.showELDPanel == 1:
-				self.parent.eldPanel.OnUpdate()
+		# 	if self.parent.showELDPanel == 1:
+		# 		self.parent.eldPanel.OnUpdate()
 
-			# -------- HJ
-			#self.mode = 3
-			#self.autoPanel.Show()
-			#self.parent.showSplicePanel = 0 
-			#self.parent.showCompositePanel = 0 
-			#self.parent.showELDPanel = 0 
-			# --------
-		elif note_id == 4:
-			self.mode = 4
-			self.agePanel.Show()
-			self.parent.showSplicePanel = 0 
-			self.parent.showCompositePanel = 0 
-			self.parent.showELDPanel = 0 
-		elif note_id == 5:
+		# 	# -------- HJ
+		# 	#self.mode = 3
+		# 	#self.autoPanel.Show()
+		# 	#self.parent.showSplicePanel = 0 
+		# 	#self.parent.showCompositePanel = 0 
+		# 	#self.parent.showELDPanel = 0 
+		# 	# --------
+		# elif note_id == 4:
+		# 	self.mode = 4
+		# 	self.agePanel.Show()
+		# 	self.parent.showSplicePanel = 0 
+		# 	self.parent.showCompositePanel = 0 
+		# 	self.parent.showELDPanel = 0 
+		elif note_id == 3:#5:
 			self.filterPanel.Show()
 			self.parent.showSplicePanel = 0 
 			self.parent.showCompositePanel = 0 
 			self.parent.showELDPanel = 0 
-		elif note_id == 6:
+		elif note_id == 4:#6:
 			self.optPanel.Show()
 			#self.parent.optPanel.updateItem()
 			self.parent.showSplicePanel = 0 
