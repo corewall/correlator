@@ -548,9 +548,10 @@ class DataCanvas(wxBufferedWindow):
 		#self.sideNote.AddPage(self.logPanel, 'Report')
 
 		#self.sideNote.AddPage(self.helpPanel, 'Help')
-		self.sideNote.SetSelection(1)
+		
 		self.sideNote.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectNote)
-
+		self.sideNote.SetSelection(1)
+		
 		wx.EVT_MOTION(self, self.OnMotion)
 		wx.EVT_LEFT_DOWN(self, self.OnLMouse)
 		wx.EVT_RIGHT_DOWN(self, self.OnRMouse)
