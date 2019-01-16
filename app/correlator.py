@@ -3109,7 +3109,7 @@ class AffineController:
 	# shift a single untied core with method SET
 	def set(self, hole, core, distance, dataUsed="", comment=""):
 		if self.affine.isTie(aci(hole, core)):
-			errmsg = "Core {}{} is shifted by a TIE. It cannot be SET unless that TIE is broken.".format(hole, core)
+			errmsg = "Core {}{} is shifted by a TIE and is part of a chain.\nIt cannot be SET unless that TIE is broken first.".format(hole, core)
 			self.parent.OnShowMessage("Error", errmsg, 1)
 			return
 		if self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, core), coreOnly=True):
@@ -3127,7 +3127,9 @@ class AffineController:
 			self.dirty = True
 			self.updateGUI()
 		else:
-			self.parent.OnShowMessage("Error", "Core {}{} must be the root of a TIE chain to shift an entire chain.".format(hole, core), 1)
+			msg = "The selected core, {}{}, is not the root core of a chain.\n" \
+			"The root core must be selected to shift an entire chain.".format(hole, core)
+			self.parent.OnShowMessage("Error", msg, 1)
 		
 	# shift all untied cores in a hole with method SET
 	def setAll(self, hole, coreList, value, isPercent, dataUsed="", comment=""):
@@ -3135,7 +3137,9 @@ class AffineController:
 		tieCores = [c for c in coreList if self.affine.isTie(aci(hole, c))]
 		if len(tieCores) > 0:
 			tieCoreNames = [str(aci(hole, c)) for c in tieCores]
-			msg = "The following cores are shifted by a TIE:\n\n{}\n\nThey will not be SET. Proceed?".format(','.join(tieCoreNames))
+			msg = "The following cores are shifted by a TIE and are part of chain:\n\n{}\n\n" \
+			"They will not be SET unless you first break their TIEs. " \
+			"Do you still want to SET untied cores?".format(','.join(tieCoreNames))
 			proceed = self.parent.OnShowMessage("Warning", msg, 0) == wx.ID_YES
 
 		# warn/confirm about breaks for chain roots that will be moved...
