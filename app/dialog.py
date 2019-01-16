@@ -1214,16 +1214,35 @@ class SetDialog(wx.Dialog):
 						   wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
 		self.SetBackgroundColour(wx.WHITE)
 		dlgSizer = wx.BoxSizer(wx.VERTICAL)
+
+		coreSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Apply shift to:"), orient=wx.VERTICAL)
+		hsz = wx.BoxSizer(wx.HORIZONTAL)
+		hsz.Add(wx.StaticText(self, -1, "Hole:"), 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+		self.holeChoice = wx.Choice(self, -1, size=(70,-1))
+		hsz.Add(self.holeChoice, 0, wx.ALL, 5)
+		self.coreChoice = wx.Choice(self, -1, size=(70,-1))
+		hsz.Add(wx.StaticText(self, -1, "Core:"), 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+		hsz.Add(self.coreChoice, 0, wx.ALL, 5)
+		coreSizer.Add(hsz, 0, wx.EXPAND)		
+
+		self.coreAndBelow = wx.RadioButton(self, -1, "Selected core and all untied cores below in this hole", style=wx.RB_GROUP)
+		self.coreAndChain = wx.RadioButton(self, -1, "Selected core and all tied cores (entire chain)")
+		self.coreOnly = wx.RadioButton(self, -1, "Selected core only")
+		self.coreAndBelow.SetValue(True)
+		coreSizer.Add(self.coreAndBelow, 0, wx.EXPAND | wx.TOP, 5)
+		coreSizer.Add(self.coreAndChain, 0, wx.EXPAND | wx.TOP, 5)		
+		coreSizer.Add(self.coreOnly, 0, wx.EXPAND | wx.TOP, 5)
 		
 		methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Shift by:"), orient=wx.VERTICAL)
 		hsz = wx.BoxSizer(wx.HORIZONTAL)
-		self.percentRadio = wx.RadioButton(self, -1, "Percentage:")
+		self.percentRadio = wx.RadioButton(self, -1, "Percentage:", style=wx.RB_GROUP)
 		self.percentRadio.SetValue(True)
 		self.percentField = wx.TextCtrl(self, -1, "10.0", size=(70,-1))
 		hsz2 = wx.BoxSizer(wx.HORIZONTAL)
 		hsz2.Add(self.percentRadio, 0, wx.RIGHT, 5)
 		hsz2.Add(self.percentField)
-		hsz2.Add(wx.StaticText(self, -1, "%"), 0, wx.LEFT, 3)
+		self.percentLabel = wx.StaticText(self, -1, "%")
+		hsz2.Add(self.percentLabel, 0, wx.LEFT, 3)
 		hsz3 = wx.BoxSizer(wx.HORIZONTAL)
 		self.fixedRadio = wx.RadioButton(self, -1, "Fixed distance:")
 		self.fixedField = wx.TextCtrl(self, -1, "0.0", size=(70,-1))
@@ -1244,27 +1263,8 @@ class SetDialog(wx.Dialog):
 		shiftSizer.Add(self.shiftLabel, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 3)
 		shiftSizer.Add(self.shiftField, 0, wx.RIGHT, 2)
 		shiftSizer.Add(self.shiftDiffText, 1, wx.ALIGN_CENTER_VERTICAL)
-		
 		methodSizer.Add(shiftSizer, 0, wx.EXPAND | wx.TOP, 10)
 
-		coreSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Apply shift to:"), orient=wx.VERTICAL)
-		hsz = wx.BoxSizer(wx.HORIZONTAL)
-		hsz.Add(wx.StaticText(self, -1, "Hole:"), 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
-		self.holeChoice = wx.Choice(self, -1, size=(70,-1))
-		hsz.Add(self.holeChoice, 0, wx.ALL, 5)
-		self.coreChoice = wx.Choice(self, -1, size=(70,-1))
-		hsz.Add(wx.StaticText(self, -1, "Core:"), 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
-		hsz.Add(self.coreChoice, 0, wx.ALL, 5)
-		coreSizer.Add(hsz, 0, wx.EXPAND)
-		
-		self.coreOnly = wx.RadioButton(self, -1, "Selected core only", style=wx.RB_GROUP)
-		self.coreAndChain = wx.RadioButton(self, -1, "Selected core and all tied cores (entire chain)")
-		self.coreAndBelow = wx.RadioButton(self, -1, "Selected core and all untied cores below")
-		self.coreOnly.SetValue(True)
-		coreSizer.Add(self.coreOnly, 0, wx.EXPAND | wx.TOP, 5)
-		coreSizer.Add(self.coreAndChain, 0, wx.EXPAND | wx.TOP, 5)
-		coreSizer.Add(self.coreAndBelow, 0, wx.EXPAND | wx.TOP, 5)
-		
 		commentSizer = wx.BoxSizer(wx.HORIZONTAL)
 		commentSizer.Add(wx.StaticText(self, -1, "Comment:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
 		self.commentField = CommentTextCtrl(self, -1)
@@ -1289,6 +1289,9 @@ class SetDialog(wx.Dialog):
 		self.Bind(wx.EVT_CHOICE, self.UpdateCoreChoice, self.holeChoice)
 		self.Bind(wx.EVT_CHOICE, self.UpdateData, self.coreChoice)
 		self.Bind(wx.EVT_BUTTON, self.OnApply, self.applyButton)
+		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateMethodRadios, self.coreAndBelow)
+		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateMethodRadios, self.coreAndChain)
+		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateMethodRadios, self.coreOnly)
 		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.percentRadio)
 		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.fixedRadio)
 		self.Bind(wx.EVT_TEXT, self.UpdateData, self.percentField)
@@ -1369,6 +1372,18 @@ class SetDialog(wx.Dialog):
 		if self.coreChoice.GetCount() > 0:
 			self.coreChoice.Select(0)
 			self.UpdateData()
+
+	# disable/enable Percentage option if 'Selected core and all tied cores
+	# (entire chain)' is selected/deselected.
+	def UpdateMethodRadios(self, evt=None):
+		enablePct = True
+		if self.coreAndChain.GetValue():
+			if self.percentRadio.GetValue():
+				self.fixedRadio.SetValue(True)
+			enablePct = False
+		self.percentRadio.Enable(enablePct)
+		self.percentField.Enable(enablePct)
+		self.percentLabel.Enable(enablePct)
 
 	# update growth rate, current core shift, etc 
 	def UpdateData(self, evt=None):
