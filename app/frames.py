@@ -4035,9 +4035,9 @@ class PreferencesPanel():
 		self.parent.Window.showAffineTieArrows = self.showAffineTieArrows.IsChecked()
 		self.parent.Window.UpdateDrawing()
 		
-	def OnShowLogShiftArrows(self, event):
-		self.parent.Window.LogClue = self.showLogShiftArrows.IsChecked()
-		self.parent.Window.UpdateDrawing()
+	# def OnShowLogShiftArrows(self, event):
+	# 	self.parent.Window.LogClue = self.showLogShiftArrows.IsChecked()
+	# 	self.parent.Window.UpdateDrawing()
 	
 	def addItemsInFrame(self):
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
@@ -4046,9 +4046,9 @@ class PreferencesPanel():
 		viewPanel = wx.Panel(self.mainPanel, -1)
 		viewSizer = wx.StaticBoxSizer(wx.StaticBox(viewPanel, -1, "General view settings"), orient=wx.VERTICAL)
 
-		self.showSpliceWindow = wx.CheckBox(viewPanel, -1, 'Show Splice/Log window partition')
+		self.showSpliceWindow = wx.CheckBox(viewPanel, -1, 'Show Splice window partition')
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnActivateWindow, self.showSpliceWindow)
-		self.indSpliceScroll = wx.CheckBox(viewPanel, -1, 'Independent Splice/Log scrollbar')
+		self.indSpliceScroll = wx.CheckBox(viewPanel, -1, 'Independent Splice scrollbar')
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnActivateScroll, self.indSpliceScroll)
 		self.indSpliceScroll.SetValue(False)
 		self.showPlotLines = wx.CheckBox(viewPanel, -1, 'Show lines between plot tracks')
@@ -4060,15 +4060,15 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftInfo, self.showAffineShiftInfo)
 		self.showAffineTieArrows = wx.CheckBox(viewPanel, -1, "Show core tie arrows")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineTieArrows, self.showAffineTieArrows)
-		self.showLogShiftArrows = wx.CheckBox(viewPanel, -1, "Show log shift arrows")
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)
+		# self.showLogShiftArrows = wx.CheckBox(viewPanel, -1, "Show log shift arrows")
+		# self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)
 
 		viewSizer.Add(self.showSpliceWindow, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.indSpliceScroll, 0, wx.LEFT, 20)
 		viewSizer.Add(self.showSectionDepths, 0, wx.TOP | wx.BOTTOM, 5)		
 		viewSizer.Add(self.showAffineShiftInfo, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showAffineTieArrows, 0, wx.BOTTOM, 5)
-		viewSizer.Add(self.showLogShiftArrows, 0, wx.BOTTOM, 5)
+		# viewSizer.Add(self.showLogShiftArrows, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)		
 		viewPanel.SetSizer(viewSizer)
 		vbox_top.Add(viewPanel, 0, wx.BOTTOM | wx.EXPAND, 10)
