@@ -5615,6 +5615,12 @@ class DataFrame(wx.Panel):
 				sub_f.close()
 				self.tree.SortChildren(secSummRoot)
 
+				# remove subnodes for any currently-defunct functionality if the site has
+				# no files of that type
+				for subnode in [log_child, age_child, image_child, strat_child]:
+					if subnode and self.tree.GetChildrenCount(subnode, False) == 0:
+						self.tree.Delete(subnode)
+
 		loaded_item_list = []
 
 		root_f.close()
