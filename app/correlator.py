@@ -1019,8 +1019,7 @@ class MainFrame(wx.Frame):
 		dlg.Destroy()
 
 	def OnShowMessage(self, type, msg, numButton): 
-		#dlg = dialog.MessageDialog(None, type, msg, numButton)
-		dlg = dialog.MessageDialog(self.topMenu, type, msg, numButton)
+		dlg = dialog.MessageDialog(self, type, msg, numButton)
 		dlg.Centre(wx.CENTER_ON_SCREEN)
 		ret = dlg.ShowModal()
 		dlg.Destroy()
@@ -3628,6 +3627,8 @@ class SpliceController:
 		return canApply
 	
 	# called before an affine shift - are the shifted core(s) included in the splice?
+	# TODO: Update to reflect new chaining logic - a shift could now affect cores in
+	# multiple holes. Should pass this method the entire list of cores to be shifted.
 	def allowAffineShift(self, hole, core, below=False):
 		matches = self.findIntervals(hole, core, below)
 		return len(matches) == 0
