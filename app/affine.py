@@ -180,7 +180,7 @@ class AffineTable:
         return shift.distance
 
     # returns True if core is the root of a chain i.e. the parent of
-    # one or more cores, and non-TIE iself.
+    # one or more cores, and non-TIE itself.
     def isRoot(self, core):
         return self.countChildren(core) > 0 and not isTie(self.getShift(core))
 
@@ -467,7 +467,7 @@ class AffineBuilder:
 
     # Gather all cores that will be shifted by "Shift by [shiftCore] and related
     # cores below" action. Note that the result excludes shiftCore itself.
-    def gatherRelatedCores(self, fromCore, shiftCore, setAllOperation=False):
+    def gatherRelatedCores(self, fromCore, shiftCore):
         # gather all descendants of shiftCore
         shiftKids = self.affine.getDescendants(shiftCore)
         shiftKids.append(shiftCore) # include shiftCore
@@ -532,6 +532,12 @@ class AffineBuilder:
 
     def isRoot(self, core):
         return self.affine.isRoot(core)
+
+    def getChildren(self, core):
+        return self.affine.getChildren(core)
+
+    def countChildren(self, core):
+        return self.affine.countChildren(core)
     
     # if core is "below" compareCore, return True, else False
     def coreIsBelow(self, coreInfo, compareCoreInfo):

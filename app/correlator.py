@@ -3067,11 +3067,11 @@ class AffineController:
 		prevAffine = copy.deepcopy(self.affine)
 		self.undoStack.append(prevAffine)
 		
-	def confirmBreaks(self, fromCoreInfo, coreInfo, coreOnly, setAllOperation=False):
+	def confirmBreaks(self, fromCoreInfo, coreInfo, coreOnly):
 		confirmed = True
 		if fromCoreInfo is None:
 			fromCoreInfo = AffineCoreInfo.createBogus() # bogus fromCore to ensure no matches
-		needConfirm, msg = self.needConfirmation(fromCoreInfo, coreInfo, coreOnly, setAllOperation)
+		needConfirm, msg = self.needConfirmation(fromCoreInfo, coreInfo, coreOnly)
 		if needConfirm:
 			confirmed = self.parent.OnShowMessage("Confirm", msg + "\nDo you want to continue?", 0) == wx.ID_YES
 		return confirmed
@@ -3081,7 +3081,7 @@ class AffineController:
 
 	# will shifting core have side effects that require user confirmation to proceed?
 	# returns tuple of form (confirmation needed [boolean], warning message [string])
-	def needConfirmation(self, fromCore, shiftCore, coreOnly, setAllOperation=False):
+	def needConfirmation(self, fromCore, shiftCore, coreOnly):
 		breaks = []
 		msg = "Shifting core {} ".format(shiftCore)
 		msg += "only " if coreOnly else "and related "
@@ -3089,7 +3089,7 @@ class AffineController:
 		if coreOnly:
 			breaks = self.affine.findBreaks(shiftCore, fromCore)
 		else:
-			relatedCores = self.affine.gatherRelatedCores(fromCore, shiftCore, setAllOperation)
+			relatedCores = self.affine.gatherRelatedCores(fromCore, shiftCore)
 			breaks = self.affine.findBreaks(shiftCore, fromCore, relatedCores)
 
 		needConfirm = len(breaks) > 0
@@ -3129,15 +3129,30 @@ class AffineController:
 		tieCores = [c for c in coreList if self.affine.isTie(aci(hole, c))]
 		if len(tieCores) > 0:
 			tieCoreNames = [str(aci(hole, c)) for c in tieCores]
-			msg = "The following cores are shifted by a TIE and are part of chain:\n\n{}\n\n" \
+			msg = "The following cores are shifted by a TIE and are part of a chain:\n\n{}\n\n" \
 			"They will not be SET unless you first break their TIEs. " \
-			"Do you still want to SET untied cores?".format(','.join(tieCoreNames))
+			"Do you still want to SET untied cores?".format(', '.join(tieCoreNames))
 			proceed = self.parent.OnShowMessage("Warning", msg, 0) == wx.ID_YES
 
 		# warn/confirm about breaks for chain roots that will be moved...
+		chainRoots = [c for c in coreList if self.affine.isRoot(aci(hole, c))]
+		if proceed and len(chainRoots) > 0:
+			chainRootNames = [str(aci(hole, c)) for c in chainRoots]
+			breakList = []
+			for cr in chainRoots:
+				kids = self.affine.getChildren(aci(hole, cr))
+				for k in kids:
+					breakList.append("{} > {}".format(aci(hole, cr), k.core))
 
-		setCoreList = [c for c in coreList if c not in tieCores]
-		if proceed and self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, setCoreList[0]), coreOnly=False, setAllOperation=True):
+			msg = "The following cores are the root of a TIE chain:\n\n{}\n\n" \
+			"Shifting them by SET will break the following TIEs:\n\n{}\n\n" \
+			"Do you still want to proceed with this SET?".format(', '.join(chainRootNames), '\n'.join(breakList))
+			proceed = self.parent.OnShowMessage("Warning", msg, 0) == wx.ID_YES
+			if not proceed:
+				return
+
+		if proceed:
+			setCoreList = [c for c in coreList if c not in tieCores]
 			self.pushState()
 			site = self.parent.Window.GetHoleSite(hole)
 			for core in setCoreList:
