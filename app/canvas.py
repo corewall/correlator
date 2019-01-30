@@ -4052,34 +4052,33 @@ class DataCanvas(wxBufferedWindow):
 			if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, not shiftCoreOnly):
 				return
 
-			self.OnDataChange(movableTie.core, shift)
-
 			if ciA is not None and ciB is not None:
 				comment = self.parent.compositePanel.GetComment()
-				self.parent.affineManager.tie(shiftCoreOnly, ciB.hole, ciB.holeCore, round(y2, 3), ciA.hole, ciA.holeCore, round(y1, 3), ciA.type, comment)
+				proceed = self.parent.affineManager.tie(shiftCoreOnly, ciB.hole, ciB.holeCore, round(y2, 3), ciA.hole, ciA.holeCore, round(y1, 3), ciA.type, comment)
+				if proceed:
+					self.OnDataChange(movableTie.core, shift) # apply shift to self.HoleData
+					self.parent.AffineChange = True
 
-				self.parent.AffineChange = True
+					if shiftCoreOnly:
+						s = "Composite: hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
+						self.parent.logFileptr.write(s)
+					else:
+						s = "Composite(All Below): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
+						self.parent.logFileptr.write(s)
 
-				if shiftCoreOnly:
-					s = "Composite: hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
+					s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
 					self.parent.logFileptr.write(s)
-				else:
-					s = "Composite(All Below): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
-					self.parent.logFileptr.write(s)
 
-				s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
-				self.parent.logFileptr.write(s)
+					#py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
+					self.parent.ShiftSectionSend()
 
-				#py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
-				self.parent.ShiftSectionSend()
+					if self.parent.showReportPanel == 1:
+						self.parent.OnUpdateReport()
 
-				if self.parent.showReportPanel == 1:
-					self.parent.OnUpdateReport()
-
-				self.parent.UpdateData()
-				self.parent.UpdateStratData()
-				
-				self.UpdateShiftedSpliceIntervals(ciA.hole, ciA.holeCore, not shiftCoreOnly)
+					self.parent.UpdateData()
+					self.parent.UpdateStratData()
+					
+					self.UpdateShiftedSpliceIntervals(ciA.hole, ciA.holeCore, not shiftCoreOnly)
 
 			if actionType == 0: # update graph to reflect best correlation
 				corr = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), fixedTie.depth, ciB.type, ciB.hole, int(ciB.holeCore), y1)

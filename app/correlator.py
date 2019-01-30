@@ -3167,6 +3167,7 @@ class AffineController:
 			
 	# fromDepth - MBSF depth of tie point on fromCore
 	# depth - MBSF depth of tie point on core
+	# Returns True if tie was made, False if not (user didn't confirm breaks)
 	def tie(self, coreOnly, fromHole, fromCore, fromDepth, hole, core, depth, dataUsed="", comment=""):
 		fromCoreInfo = aci(fromHole, fromCore)
 		coreInfo = aci(hole, core)
@@ -3180,6 +3181,9 @@ class AffineController:
 			self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
 			self.dirty = True
 			self.updateGUI()
+			return True
+		else:
+			return False
 
 	def breakTie(self, coreStr):
 		core = acistr(coreStr)
