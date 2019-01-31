@@ -2155,28 +2155,27 @@ class DataFrame(wx.Panel):
 	
 		self.parent.logFileptr.write("Delete All Dataset \n\n")
 
-
-		log_report = self.tree.AppendItem(self.root, 'Session Reports')
-		list = os.listdir(self.parent.DBPath + 'log/')
-		for dir in list:
-			if dir != ".DS_Store":
-				report_item = self.tree.AppendItem(log_report, 'Report')
-				self.tree.SetItemText(report_item, dir, 1)
-				last = dir.find(".", 0)
-				user = dir[0:last]
-				self.tree.SetItemText(report_item, user, 7)
-				start = last + 1
-				last = dir.find("-", start)
-				last = dir.find("-", last+1)
-				last = dir.find("-", last+1)
-				time = dir[start:last] + " "
-				start = last + 1
-				last = dir.find("-", start)
-				time += dir[start:last] + ":"
-				start = last + 1
-				last = dir.find(".", start)
-				time += dir[start:last]
-				self.tree.SetItemText(report_item, time, 6)
+		# log_report = self.tree.AppendItem(self.root, 'Session Reports')
+		# list = os.listdir(self.parent.DBPath + 'log/')
+		# for dir in list:
+		# 	if dir != ".DS_Store":
+		# 		report_item = self.tree.AppendItem(log_report, 'Report')
+		# 		self.tree.SetItemText(report_item, dir, 1)
+		# 		last = dir.find(".", 0)
+		# 		user = dir[0:last]
+		# 		self.tree.SetItemText(report_item, user, 7)
+		# 		start = last + 1
+		# 		last = dir.find("-", start)
+		# 		last = dir.find("-", last+1)
+		# 		last = dir.find("-", last+1)
+		# 		time = dir[start:last] + " "
+		# 		start = last + 1
+		# 		last = dir.find("-", start)
+		# 		time += dir[start:last] + ":"
+		# 		start = last + 1
+		# 		last = dir.find(".", start)
+		# 		time += dir[start:last]
+		# 		self.tree.SetItemText(report_item, time, 6)
 
 		self.parent.Window.UpdateDrawing()
 
