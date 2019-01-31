@@ -5173,138 +5173,138 @@ class DataFrame(wx.Panel):
 		if len(list) >= 50:
 			self.parent.OnShowMessage("Information", "Please, Clean Session Reports", 1)
 
-	def LoadDatabase(self):
-		self.ValidateDatabase()
-		self.LoadSessionReports()
-		siteNames = self.LoadSiteNames()
-		self.loadedSites = self.LoadSites(siteNames) # return instead?
+	# def LoadDatabase(self):
+	# 	self.ValidateDatabase()
+	# 	self.LoadSessionReports()
+	# 	siteNames = self.LoadSiteNames()
+	# 	self.loadedSites = self.LoadSites(siteNames) # return instead?
 
-	def LoadSiteNames(self):
-		dbRootFile = open(self.parent.DBPath + 'db/datalist.db', 'r+')
-		loadedSites = []
-		for site in dbRootFile:
-			site = site.strip()
-			if site == '' or site in loadedSites:
-				continue
-			else:
-				loadedSites.append(site)
-		return loadedSites
+	# def LoadSiteNames(self):
+	# 	dbRootFile = open(self.parent.DBPath + 'db/datalist.db', 'r+')
+	# 	loadedSites = []
+	# 	for site in dbRootFile:
+	# 		site = site.strip()
+	# 		if site == '' or site in loadedSites:
+	# 			continue
+	# 		else:
+	# 			loadedSites.append(site)
+	# 	return loadedSites
 
-	# parse single-line types
-	def ParseOthers(self, site, siteLines):
-		for line in siteLines:
-			tokens = line.split(': ')
-			if tokens[0] == 'affinetable':
-				affine = AffineData()
-				affine.FromTokens(tokens)
-				site.affineTables.append(affine)
-			elif tokens[0] == 'splicetable':
-				splice = SpliceData()
-				splice.FromTokens(tokens)
-				site.spliceTables.append(splice)
-			elif tokens[0] == 'eldtable':
-				eld = EldData()
-				eld.FromTokens(tokens)
-				site.eldTables.append(eld)
-			elif tokens[0] == 'log':
-				log = DownholeLogTable()
-				log.FromTokens(tokens)
-				site.logTables.append(log)
-			elif tokens[0] == 'strat':
-				strat = StratTable()
-				strat.FromTokens(tokens)
-				site.stratTables.append(strat)
-			elif tokens[0] == 'age':
-				age = AgeTable()
-				age.FromTokens(tokens)
-				site.ageTables.append(age)
-			elif tokens[0] == 'series':
-				series = SeriesTable()
-				series.FromTokens(tokens)
-				site.seriesTables.append(series)
-			elif tokens[0] == 'image':
-				image = ImageTable()
-				image.FromTokens(tokens)
-				site.imageTables.append(image)
+	# # parse single-line types
+	# def ParseOthers(self, site, siteLines):
+	# 	for line in siteLines:
+	# 		tokens = line.split(': ')
+	# 		if tokens[0] == 'affinetable':
+	# 			affine = AffineData()
+	# 			affine.FromTokens(tokens)
+	# 			site.affineTables.append(affine)
+	# 		elif tokens[0] == 'splicetable':
+	# 			splice = SpliceData()
+	# 			splice.FromTokens(tokens)
+	# 			site.spliceTables.append(splice)
+	# 		elif tokens[0] == 'eldtable':
+	# 			eld = EldData()
+	# 			eld.FromTokens(tokens)
+	# 			site.eldTables.append(eld)
+	# 		elif tokens[0] == 'log':
+	# 			log = DownholeLogTable()
+	# 			log.FromTokens(tokens)
+	# 			site.logTables.append(log)
+	# 		elif tokens[0] == 'strat':
+	# 			strat = StratTable()
+	# 			strat.FromTokens(tokens)
+	# 			site.stratTables.append(strat)
+	# 		elif tokens[0] == 'age':
+	# 			age = AgeTable()
+	# 			age.FromTokens(tokens)
+	# 			site.ageTables.append(age)
+	# 		elif tokens[0] == 'series':
+	# 			series = SeriesTable()
+	# 			series.FromTokens(tokens)
+	# 			site.seriesTables.append(series)
+	# 		elif tokens[0] == 'image':
+	# 			image = ImageTable()
+	# 			image.FromTokens(tokens)
+	# 			site.imageTables.append(image)
 
-	def ParseHoleSets(self, site, siteLines):
-		curType = None
-		for line in siteLines:
-			tokens = line.split(': ')
-			#if tokens[0] == 'type' and tokens[1] not in site.holeSets:
-			#	curType = tokens[1]
-			#	site.holeSets[tokens[1]] = HoleSet(curType)
-			if tokens[0] == 'type':
-				curType = tokens[1]
-				site.AddHoleSet(curType)
-			elif tokens[0] == 'typeData':
-				site.holeSets[curType].continuous = ParseContinuousToken(tokens[1])
-			elif tokens[0] == 'typeDecimate':
-				site.holeSets[curType].decimate = ParseDecimateToken(tokens[1])
-			elif tokens[0] == 'typeSmooth':
-				site.holeSets[curType].smooth = tokens[1]
-			elif tokens[0] == 'typeMin':
-				site.holeSets[curType].min = tokens[1]
-			elif tokens[0] == 'typeMax':
-				site.holeSets[curType].max = tokens[1]
-			elif tokens[0] == 'culltable' or tokens[0] == 'uni_culltable':
-				cull = CullTable()
-				cull.FromTokens(tokens)
-				site.holeSets[curType].cullTable = cull
+	# def ParseHoleSets(self, site, siteLines):
+	# 	curType = None
+	# 	for line in siteLines:
+	# 		tokens = line.split(': ')
+	# 		#if tokens[0] == 'type' and tokens[1] not in site.holeSets:
+	# 		#	curType = tokens[1]
+	# 		#	site.holeSets[tokens[1]] = HoleSet(curType)
+	# 		if tokens[0] == 'type':
+	# 			curType = tokens[1]
+	# 			site.AddHoleSet(curType)
+	# 		elif tokens[0] == 'typeData':
+	# 			site.holeSets[curType].continuous = ParseContinuousToken(tokens[1])
+	# 		elif tokens[0] == 'typeDecimate':
+	# 			site.holeSets[curType].decimate = ParseDecimateToken(tokens[1])
+	# 		elif tokens[0] == 'typeSmooth':
+	# 			site.holeSets[curType].smooth = tokens[1]
+	# 		elif tokens[0] == 'typeMin':
+	# 			site.holeSets[curType].min = tokens[1]
+	# 		elif tokens[0] == 'typeMax':
+	# 			site.holeSets[curType].max = tokens[1]
+	# 		elif tokens[0] == 'culltable' or tokens[0] == 'uni_culltable':
+	# 			cull = CullTable()
+	# 			cull.FromTokens(tokens)
+	# 			site.holeSets[curType].cullTable = cull
 
-	# For some reason holes are the only data we serialize as multiple lines. Why?
-	# Maintaining as single lines (like everything else) would simplify parsing.
-	def ParseHoles(self, site, siteLines):
-		curHole = None
-		curType = None
-		for line in siteLines:
-			token = line.split(': ')
-			if token[0] == 'hole':
-				if curHole != None:
-					site.AddHole(curType, curHole)
-				curHole = HoleData(token[1])
-			elif token[0] == 'type':
-				curType = token[1]
- 			elif token[0] == "dataName":
-				curHole.dataName = token[1]
- 			elif token[0] == "depth":
-				curHole.depth = token[1]
- 			elif token[0] == "file":
-				curHole.file = token[1]
- 			elif token[0] == "min":
-				curHole.min = token[1]
- 			elif token[0] == "max":
-				curHole.max = token[1]
- 			elif token[0] == "updatedTime":
-				curHole.updatedTime = token[1]
- 			elif token[0] == "enable":
-				curHole.enable = ParseEnableToken(token[1])
- 			elif token[0] == "byWhom":
-				curHole.byWhom = token[1]
- 			elif token[0] == "source":
-				curHole.origSource = token[1]
- 			elif token[0] == "data":
-				curHole.data = token[1]
-		if curHole != None:
-			site.AddHole(curType, curHole)
+	# # For some reason holes are the only data we serialize as multiple lines. Why?
+	# # Maintaining as single lines (like everything else) would simplify parsing.
+	# def ParseHoles(self, site, siteLines):
+	# 	curHole = None
+	# 	curType = None
+	# 	for line in siteLines:
+	# 		token = line.split(': ')
+	# 		if token[0] == 'hole':
+	# 			if curHole != None:
+	# 				site.AddHole(curType, curHole)
+	# 			curHole = HoleData(token[1])
+	# 		elif token[0] == 'type':
+	# 			curType = token[1]
+ 	# 		elif token[0] == "dataName":
+	# 			curHole.dataName = token[1]
+ 	# 		elif token[0] == "depth":
+	# 			curHole.depth = token[1]
+ 	# 		elif token[0] == "file":
+	# 			curHole.file = token[1]
+ 	# 		elif token[0] == "min":
+	# 			curHole.min = token[1]
+ 	# 		elif token[0] == "max":
+	# 			curHole.max = token[1]
+ 	# 		elif token[0] == "updatedTime":
+	# 			curHole.updatedTime = token[1]
+ 	# 		elif token[0] == "enable":
+	# 			curHole.enable = ParseEnableToken(token[1])
+ 	# 		elif token[0] == "byWhom":
+	# 			curHole.byWhom = token[1]
+ 	# 		elif token[0] == "source":
+	# 			curHole.origSource = token[1]
+ 	# 		elif token[0] == "data":
+	# 			curHole.data = token[1]
+	# 	if curHole != None:
+	# 		site.AddHole(curType, curHole)
 
-	def LoadSites(self, siteNames):
-		loadedSites = []
-		for siteName in siteNames:
-			site = SiteData(siteName)
+	# def LoadSites(self, siteNames):
+	# 	loadedSites = []
+	# 	for siteName in siteNames:
+	# 		site = SiteData(siteName)
 
-			siteFile = open(self.parent.DBPath + 'db/' + siteName + '/datalist.db', 'r+')
-			siteLines = siteFile.readlines()
-			for idx, line in enumerate(siteLines):
-				siteLines[idx] = siteLines[idx].strip('\r\n')
+	# 		siteFile = open(self.parent.DBPath + 'db/' + siteName + '/datalist.db', 'r+')
+	# 		siteLines = siteFile.readlines()
+	# 		for idx, line in enumerate(siteLines):
+	# 			siteLines[idx] = siteLines[idx].strip('\r\n')
 
-			self.ParseHoleSets(site, siteLines)
-			self.ParseHoles(site, siteLines)
-			self.ParseOthers(site, siteLines)
-			site.dump()
-			loadedSites.append(site)
+	# 		self.ParseHoleSets(site, siteLines)
+	# 		self.ParseHoles(site, siteLines)
+	# 		self.ParseOthers(site, siteLines)
+	# 		site.dump()
+	# 		loadedSites.append(site)
 
-		return loadedSites
+	# 	return loadedSites
 
 	# brg 12/4/2013: Builds data manager UI
 	def OnLOADCONFIG(self):
