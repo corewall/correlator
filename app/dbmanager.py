@@ -539,9 +539,9 @@ class DataFrame(wx.Panel):
 	# text strings from the View to determine what's what, we should be asking the Model!
 	def SelectTREE(self, event):
 		pos = event.GetPosition()
-		idx, flags, col = self.tree.HitTest(pos)
-		self.tree.SelectItem(idx)
-		if col >= 0:
+		idx, _, col = self.tree.HitTest(pos)
+		if col >= 0: # col of -1 indicates no item at click location
+			self.tree.SelectItem(idx) # ensure right-clicked item is selected
 			self.selectedIdx = idx
 			popupMenu = wx.Menu()
 
