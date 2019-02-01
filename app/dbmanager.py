@@ -442,7 +442,7 @@ class DataFrame(wx.Panel):
 		
 	def AddSectionSummary(self, secsumm, originalPath):
 		siteNode = self.GetSelectedSite()
-		if siteNode is not None:
+		if siteNode.IsOk():
 			siteName = self.GetSelectedSiteName()
 			ssListFound, secSummItem = self.FindItem(siteNode, "Section Summaries")
 			if ssListFound:
@@ -482,26 +482,25 @@ class DataFrame(wx.Panel):
 	def GetSelectedSiteName(self):
 		sitename = ""
 		selsite = self.GetSelectedSite()
-		if selsite.IsOk() and selsite is not None:
+		if selsite.IsOk():
 			sitename = self.tree.GetItemText(selsite, 0) 
 		return sitename
 	
 	# get wxTreeItem Site for current selection in self.tree
 	def GetSelectedSite(self):
 		item = self.tree.GetSelection()
-		while item.IsOk() and item is not None:
+		while item.IsOk():
 			parent = self.tree.GetItemParent(item)
-			if parent is not None:
-				if self.tree.GetItemText(parent, 0) == "Root":
+			if parent.IsOk():
+				if self.IsRootNode(parent):
 					break
 			item = parent
-		#print "Selected Site = {}".format(self.tree.GetItemText(item, 0))
 		return item
 	
 	def IsSiteNode(self, node):
 		siteNode = False
 		parent = self.tree.GetItemParent(node)
-		if parent is not None:
+		if parent.IsOk():
 			siteNode = self.IsRootNode(parent)
 		return siteNode
 	
@@ -6802,22 +6801,18 @@ class DataFrame(wx.Panel):
 					return (True, test_child)
 		return (False, None)
 
-
-	def FindItem(self, item, hole, col=0):
-		totalcount = self.tree.GetChildrenCount(item, False)
-		if totalcount > 0:
-			child = self.tree.GetFirstChild(item)
-			test_child = child[0]
-			str_test = self.tree.GetItemText(test_child, col)
-			if str_test == hole:
-				return (True, child[0])
-			for k in range(1, totalcount):
-				test_child = self.tree.GetNextSibling(test_child)
-				str_test = self.tree.GetItemText(test_child, col)
-				if str_test == hole:
-					return (True, test_child)
+	# Search subnodes of item for node with column text matching searchStr.
+	# Use this method instead of TreeListCtrl.FindItem(node), which doesn't
+	# limit search to subnodes regardless of specified node.
+	# item: TreeListCtrl parent node of nodes to search
+	# searchStr: string to match
+	# col: node column whose text is checked for a match
+	def FindItem(self, item, searchStr, col=0):
+		subnodes = self.GetChildren(item)
+		for sn in subnodes:
+			if self.tree.GetItemText(sn, col) == searchStr:
+				return (True, sn)
 		return (False, None)
-
 
 	def ImportFORMAT(self, source, dest, type, ntype, annot, stamp, datasort, selectItem):
 		fout = open(self.parent.DBPath + "db/" + dest, 'w+')
@@ -7505,7 +7500,10 @@ class DataFrame(wx.Panel):
 			leg = leg[1:]
 		if site[0] == '\t':
 			site = site[1:]
-		prefilename = self.parent.DBPath + "db/" + leg + "-" + site
+
+		# create databse directory for site if none exists
+		legSiteStr = leg + "-" + site
+		prefilename = self.parent.DBPath + "db/" + legSiteStr
 		if os.access(prefilename, os.F_OK) == False:
 			os.mkdir(prefilename)
 
@@ -7516,43 +7514,32 @@ class DataFrame(wx.Panel):
 			fout.write(s)
 		fout.close()
 		
-		prefilename = prefilename + "/" + leg + "-" + site
-
-		# create node on tree
-		# Check leg-site node
-		new = True 
-		subroot = None
-		child = self.tree.FindItem(self.root, leg + "-" + site) 
-		if child.IsOk() == False:
-			subroot = self.tree.AppendItem(self.root,  leg + "-" + site )
-			self.tree.SetItemBold(subroot, True)
-			self.tree.Expand(subroot)
-			
-			# immediately select newly-added site node so an associated IODP section summary
-			# can automatically be added if present (depends on self.GetSelectedSite()) 
-			self.tree.SelectItem(subroot)
+		# Create a new site node named legSiteStr if none exists already
+		found, siteNode = self.FindItem(self.root, legSiteStr)
+		if not found:
+			siteNode = self.tree.AppendItem(self.root, legSiteStr)
+			self.tree.SetItemBold(siteNode, True)
 
 			for nodeName in STD_SITE_NODES:
-				self.tree.AppendItem(subroot, nodeName)
-			child = self.tree.AppendItem(subroot, strdatatype)
-			self.tree.SetItemText(child, "Continuous", 1)
-			self.tree.SortChildren(subroot)
+				self.tree.AppendItem(siteNode, nodeName)
+			dataNode = self.tree.AppendItem(siteNode, strdatatype)
+			self.tree.SetItemText(dataNode, "Continuous", 1)
+			self.tree.SortChildren(siteNode)
 
 			dblist_f = open(self.parent.DBPath +'db/datalist.db', 'a+')
-			dblist_f.write('\n' + leg + "-" + site)
+			dblist_f.write('\n' + legSiteStr)
 			dblist_f.close()
+		else: # site node exists, add data type
+			found, dataNode = self.FindItem(siteNode, strdatatype)
+			if not found:
+				dataNode = self.tree.AppendItem(siteNode, strdatatype)
+				self.tree.SetItemText(dataNode, "Continuous", 1)
+				self.tree.SortChildren(siteNode)
 
-		else:
-			# Check data type 
-			subroot = child
-			ret = self.FindItem(subroot, strdatatype)
-			if ret[0] == False:
-				child = self.tree.AppendItem(subroot, strdatatype)
-				self.tree.SetItemText(child, "Continuous", 1)
-				self.tree.SortChildren(subroot)
-			else:
-				new = False 
-				child = ret[1] 
+		# ensure site node is selected so an associated IODP section summary
+		# can automatically be added if present (depends on self.GetSelectedSite()) 
+		self.tree.SelectItem(siteNode)
+		self.tree.Expand(siteNode)
 
 		tempstamp = str(datetime.today())
 		last = tempstamp.find(":", 0)
@@ -7560,6 +7547,7 @@ class DataFrame(wx.Panel):
 		#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
 		stamp = tempstamp[0:last]
 
+		prefilename = prefilename + "/" + legSiteStr
 		for i in range(len(self.paths)):
 			if i == 4: # brgtodo 6/17/2014
 				break
@@ -7609,9 +7597,9 @@ class DataFrame(wx.Panel):
 				modifiedLine = line[0:-1].split()
 				if modifiedLine[0] == 'null':
 					continue
-				max = len(modifiedLine)
+				maxColumn = len(modifiedLine)
 				s = ""
-				if max <= MAX_COLUMN:
+				if maxColumn <= MAX_COLUMN:
 					continue
 				if modifiedLine[MAX_COLUMN].find("null", 0) >= 0:
 					continue
@@ -7629,11 +7617,9 @@ class DataFrame(wx.Panel):
 			f.close()
 			fout.close()
 
-			# Check hole
-			ret = self.FindItem(child, hole)
-			if ret[0] == True:
-				# if there is same hole, then it's error
-				self.parent.OnShowMessage("Error", "{} already has {} data for Hole {}".format(leg + '-' + site, strdatatype, hole), 1)
+			found, _ = self.FindItem(dataNode, hole) # does hole+datatype combination already exist in tree?
+			if found:
+				self.parent.OnShowMessage("Error", "{} already has {} data for Hole {}".format(legSiteStr, strdatatype, hole), 1)
 				break
 			else:
 				self.parent.LOCK = 0	
@@ -7644,8 +7630,8 @@ class DataFrame(wx.Panel):
 				s = "Import Core Data: " + filename + "\n"
 				self.parent.logFileptr.write(s)
 
-				newline = self.tree.AppendItem(child, hole)
-				self.tree.SetItemText(newline, leg + "-" + site + "-" + hole + "." + datatype + ".dat", 8)
+				newline = self.tree.AppendItem(dataNode, hole)
+				self.tree.SetItemText(newline, legSiteStr + "-" + hole + "." + datatype + ".dat", 8)
 
 				self.tree.SetItemText(newline, "1", 3)
 				self.tree.SetItemText(newline, "Enable", 2)
@@ -7654,7 +7640,7 @@ class DataFrame(wx.Panel):
 				self.tree.SetItemText(newline, stamp, 6)
 				self.tree.SetItemText(newline, self.parent.user, 7)
 				self.tree.SetItemText(newline, self.paths[i], 9)
-				self.tree.SetItemText(newline, leg + "-" + site + "/", 10)
+				self.tree.SetItemText(newline, legSiteStr + "/", 10)
 				self.tree.SetItemText(newline, str(datasort[6]) + " " + str(datasort[7]) + " " + str(datasort[8]) + " " + str(datasort[9]) + " ", 11)
 				self.tree.SetItemText(newline, self.selectedDataType, 1)
 				if self.selectedDataType == "?":
@@ -7666,31 +7652,21 @@ class DataFrame(wx.Panel):
 
 		self.parent.logFileptr.write("\n")
 
-		self.tree.SortChildren(child)
+		self.tree.SortChildren(dataNode)
 		self.tree.SortChildren(self.root)
+		self.tree.Expand(self.root)
 
-		item = child
-		totalcount = self.tree.GetChildrenCount(item, False)
-		if totalcount > 0:
-			sub_child = self.tree.GetFirstChild(item)
-			item = sub_child[0]
-			min = float(self.tree.GetItemText(item, 4))
-			max = float(self.tree.GetItemText(item, 5))
-			for k in range(1, totalcount):
-				item = self.tree.GetNextSibling(item)
-				float_min = float(self.tree.GetItemText(item, 4))
-				float_max = float(self.tree.GetItemText(item, 5))
-				if float_min < min:
-					min = float_min
-				if float_max > max:
-					max = float_max
+		# update min/max values for datatype
+		dataFileItems = self.GetChildren(dataNode)
+		mins = [float(self.tree.GetItemText(dfi, 4)) for dfi in dataFileItems]
+		maxs = [float(self.tree.GetItemText(dfi, 5)) for dfi in dataFileItems]
+		dataMin = str(min(mins))
+		dataMax = str(max(maxs))
+		self.tree.SetItemText(dataNode, '1', 3) # decimate
+		self.tree.SetItemText(dataNode, dataMin, 4)
+		self.tree.SetItemText(dataNode, dataMax, 5)
 
-			item = child
-			self.tree.SetItemText(item, '1', 3)
-			self.tree.SetItemText(item, str(min), 4)
-			self.tree.SetItemText(item, str(max), 5)
-
-			self.OnUPDATE_DB_FILE(leg + "-" + site, subroot)
+		self.OnUPDATE_DB_FILE(legSiteStr, siteNode)
 
 		self.sideNote.SetSelection(0)
 		self.EditRow = -1
