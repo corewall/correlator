@@ -2184,7 +2184,7 @@ class DataFrame(wx.Panel):
 		type = "-"
 		title = "-"
 
-		# CHECK CURRNT LOADING ITEM
+		# If data to be deleted is currently loaded, prompt user to proceed/cancel
 		if self.selectBackup != None:
 			back_type = ""
 			back_title = self.title 
@@ -2265,7 +2265,7 @@ class DataFrame(wx.Panel):
 
 			parentItem = self.tree.GetItemParent(selectItem)
 
-			if len(self.tree.GetItemText(selectItem, 8)) > 0:
+			if len(self.tree.GetItemText(selectItem, 8)) > 0: # is a datafile item selected?
 				hole = self.tree.GetItemText(selectItem, 0)
 				type = self.tree.GetItemText(parentItem, 0)
 				titleItem = self.tree.GetItemParent(parentItem)
@@ -2306,14 +2306,13 @@ class DataFrame(wx.Panel):
 						iodpFilename = filename + "_IODP"
 						os.system('rm \"' + iodpFilename + '\"')
 					self.parent.logFileptr.write("Delete " + filename + "\n\n")
-			else:
+			else: # otherwise, a parent node (data type or site) was selected
 				type = self.tree.GetItemText(selectItem, 0)
-				if type.find("-", 0) == -1:
+				if type.find("-", 0) == -1: # is a data type node selected?
 					title = self.tree.GetItemText(parentItem, 0)
 					titleItem = parentItem
 					hole = '*'
 					level = 1 
-					# data type
 					totalcount = self.tree.GetChildrenCount(selectItem, False)
 					if totalcount > 0:
 						child = self.tree.GetFirstChild(selectItem)
@@ -2344,8 +2343,7 @@ class DataFrame(wx.Panel):
 								# ----- not to delete
 								os.system('rm \"'+ filename + '\"')
 								self.parent.logFileptr.write("Delete " + filename + "\n\n")
-
-				else: # delete site
+				else: # a site node is selected
 					titleItem = selectItem
 					title = type
 					type = '*' 
@@ -2362,7 +2360,7 @@ class DataFrame(wx.Panel):
 						# ----- not to delete
 						os.system('rm -rf ' + self.parent.DBPath + 'db/' + title)
 						self.parent.logFileptr.write("Delete " + self.parent.DBPath + 'db/' + title + "\n\n")
-
+					self.UpdateSiteDatabaseFile() # remove deleted site from site database file
 
 			#self.OnSAVE_DB_FILE(title, type, hole)
 			self.tree.Delete(selectItem)
@@ -2371,54 +2369,35 @@ class DataFrame(wx.Panel):
 			if os.access(filename, os.F_OK) == True:
 				self.OnUPDATE_DB_FILE(title, titleItem)
 
-			if level == 1:
-				totalcount = self.tree.GetChildrenCount(parentItem, False)
-				if totalcount == 5:
-					empty_flag = True 
-					selectItem = parentItem
-					child = self.tree.GetFirstChild(selectItem)
-					child_item = child[0]
-					if self.tree.GetChildrenCount(child_item, False) > 0:
-						empty_flag = False 
-					else:
-						for k in range(1, totalcount):
-							child_item = self.tree.GetNextSibling(child_item)
-							if self.tree.GetChildrenCount(child_item, False) > 0:
-								empty_flag = False 
-								break
-					if empty_flag == True:	
-						parentItem = self.tree.GetItemParent(selectItem)
-						self.tree.Delete(selectItem)
-						self.OnSAVE_DB_FILE(title, "*", "*")
-			elif level == 2:
+			if level == 2: # single datafile was deleted
+				# if data type node is now empty due to deletion, remove it entirely
 				totalcount = self.tree.GetChildrenCount(parentItem, False)
 				if totalcount == 0:
 					selectItem = parentItem
 					parentItem = self.tree.GetItemParent(selectItem)
 					self.tree.Delete(selectItem)
 
-					totalcount = self.tree.GetChildrenCount(parentItem, False)
-					if totalcount == 5:
-						empty_flag = True 
-						selectItem = parentItem
-						child = self.tree.GetFirstChild(selectItem)
-						child_item = child[0]
-						if self.tree.GetChildrenCount(child_item, False) > 0:
-							empty_flag = False 
-						else:
-							for k in range(1, totalcount):
-								child_item = self.tree.GetNextSibling(child_item)
-								if self.tree.GetChildrenCount(child_item, False) > 0:
-									empty_flag = False 
-									break
-						if empty_flag == True:	
-							parentItem = self.tree.GetItemParent(selectItem)
-							self.tree.Delete(selectItem)
-							self.OnSAVE_DB_FILE(title, "*", "*")
+			# Leaving commented until we determine whether auto-deletion of empty site nodes is
+			# desirable. Users can still delete a site by right-clicking the site and choosing Delete.
+			# if siteNode:
+			# 	self.DeleteSiteNodeIfEmpty(siteNode)
 
-
+	# If siteNode only contains standard nodes and those nodes have
+	# no children, remove siteNode from tree.
+	def DeleteSiteNodeIfEmpty(self, siteNode):
+		emptySite = True
+		childCount = self.tree.GetChildrenCount(siteNode, False) # False: count only immediate children
+		if childCount == len(STD_SITE_NODES): # only standard nodes remain?
+			for subNode in self.GetChildren(siteNode):
+				if self.tree.GetChildrenCount(subNode, False) > 0:
+					emptySite = False
+					break
+			if emptySite:
+				siteName = self.tree.GetItemText(siteNode, 0)
+				self.OnSAVE_DB_FILE(siteName, "*", "*")
+				self.tree.Delete(siteNode)
+				
 	def OnSAVE_DB_FILE(self, title, type, hole):
-
 		filename = self.parent.DBPath + 'db/' + title + '/datalist.db'
 
 		if type == '*':
@@ -4355,7 +4334,7 @@ class DataFrame(wx.Panel):
 
 
 		if count_load == 0:
-			self.parent.OnShowMessage("Error", "There is no data loaded", 1)
+			self.parent.OnShowMessage("Error", "No data files are enabled.", 1)
 			self.parent.OnNewData(None)
 			return
 			
@@ -5124,28 +5103,31 @@ class DataFrame(wx.Panel):
 			root_f = open(self.parent.DBPath + 'db/datalist.db', 'w+')
 			root_f.close()
 
-		validate = True 
-		root_f = open(self.parent.DBPath + 'db/datalist.db', 'r+')
-		for root_line in root_f:
-			list = root_line.splitlines()
-			if list[0] == '':
-				continue
-			for data_item in list:
-				if os.access(self.parent.DBPath + 'db/' + data_item + '/datalist.db', os.F_OK) == False:
-					validate = False 
-					break
+		# do all site names in db/datalist.db have a corresponding db/[site name] dir?
+		valid = True
+		with open(self.parent.DBPath + 'db/datalist.db', 'r+') as root_f:
+			for root_line in root_f:
+				list = root_line.splitlines()
+				if list[0] == '':
+					continue
+				for siteName in list:
+					if os.access(self.parent.DBPath + 'db/' + siteName + '/datalist.db', os.F_OK) == False:
+						valid = False 
+						break
 
-		root_f.close()
-		if validate == False:
-			print "[ERROR] Data list is not valide, DATALIST WILL BE RE-GENERATED"
-			root_f = open(self.parent.DBPath + 'db/datalist.db', 'w+')
+		if not valid:
+			print("Site database file is out of date, regenerating.")
+			self.UpdateSiteDatabaseFile()
+
+	# Update list of sites in database
+	def UpdateSiteDatabaseFile(self):
+		with open(self.parent.DBPath + 'db/datalist.db', 'w+') as root_f:
 			list = os.listdir(self.parent.DBPath + 'db/')
 			for dir in list:
 				if dir != "datalist.db":
 					if dir.find("-", 0) > 0:
 						if os.access(self.parent.DBPath + 'db/' + dir + '/datalist.db', os.F_OK) == True:
 							root_f.write(dir + "\n")
-			root_f.close()
 
 	def LoadSessionReports(self):
 		log_report = self.tree.AppendItem(self.root, 'Session Reports')
