@@ -3978,11 +3978,6 @@ class DataCanvas(wxBufferedWindow):
 		self.parent.UpdateData()
 		self.parent.UpdateStratData()
 
-	def UpdateShiftedSpliceIntervals(self, hole, holeCore, below):
-		intervals = self.parent.spliceManager.findIntervals(hole, holeCore, below)
-		for interval in intervals:
-			self.parent.spliceManager.delete(interval)
-	
 	def OnTieSelectionCb(self, event):
 		opId = event.GetId() 
 		self.activeTie = -1
@@ -4049,9 +4044,6 @@ class DataCanvas(wxBufferedWindow):
 
 			ciA = self.findCoreInfoByIndex(movableTie.core)
 			ciB = self.findCoreInfoByIndex(fixedTie.core)
-			if not self.parent.CanAdjustCore(ciA.hole, ciA.holeCore, not shiftCoreOnly):
-				return
-
 			if ciA is not None and ciB is not None:
 				comment = self.parent.compositePanel.GetComment()
 				proceed = self.parent.affineManager.tie(shiftCoreOnly, ciB.hole, ciB.holeCore, round(y2, 3), ciA.hole, ciA.holeCore, round(y1, 3), ciA.type, comment)
@@ -4077,8 +4069,6 @@ class DataCanvas(wxBufferedWindow):
 
 					self.parent.UpdateData()
 					self.parent.UpdateStratData()
-					
-					self.UpdateShiftedSpliceIntervals(ciA.hole, ciA.holeCore, not shiftCoreOnly)
 
 			if actionType == 0: # update graph to reflect best correlation
 				corr = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), fixedTie.depth, ciB.type, ciB.hole, int(ciB.holeCore), y1)

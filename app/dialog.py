@@ -1305,11 +1305,6 @@ class SetDialog(wx.Dialog):
 		self.outHole = str(self.holeChoice.GetStringSelection())
 		self.outCore = str(self.coreChoice.GetStringSelection())
 
-		# ensure shifted cores aren't part of current splice
-		checkBelow = self.coreAndBelow.GetValue()
-		if not self.parent.CanAdjustCore(self.outHole, '1' if checkBelow else self.outCore, checkBelow):
-			return
-		
 		self.outComment = self.commentField.GetValue()
 		# self.outType already set
 		self.EndModal(wx.ID_OK)

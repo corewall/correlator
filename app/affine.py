@@ -98,7 +98,6 @@ class UnknownCoreError(AffineError):
         AffineError.__init__(self, expression, message)
         
         
-        
 # Maintains a collection of AffineShifts, ensuring exactly one shift per AffineCoreId.
 # No enforcement or updating of TIE relationships. 
 class AffineTable:
@@ -357,91 +356,141 @@ class AffineBuilder:
         
     def reset(self):
         self.affine.reset()
-        
-    # modify existing shift by deltaDistance
+
+    # Perform tasks in AffineOperation ao
+    def execute(self, ao):
+        for shift in ao.shifts:
+            self.affine.addShift(shift)
+        for core, distance in ao.adjusts:
+            self.affine.adjust(core, distance)
+        for core in ao.implicits:
+            self.affine.makeImplicit(core)
+
+    # Modify core's existing shift by deltaDistance.
     def adjust(self, core, deltaDistance):
         self.affine.getShift(core).adjust(deltaDistance)
      
-    # shift core(s) by a given distance (SET)
-    # todo: rename to avoid conflict with Python's built-in set() method?
+    # Shift one core by a given distance (SET). Rename to avoid conflict with Python set()?
+    # core: core to shift
+    # distance: distance, in meters, to shift core from its original, unshifted position
     def set(self, core, distance, dataUsed="", comment=""):
-        bogusFromCore = AffineCoreInfo.createBogus() # SET has no fromCore, use bogus to ensure no matches
-        breaks = self.findBreaks(core, bogusFromCore)
-        deltaDistance = distance - self.affine.getShift(core).distance
-        self.affine.addShift(SetShift(core, distance, dataUsed, comment))
+        ao = AffineOperation()
+        breaks = self.findBreaksForSET([core])
+        ao.infoDict['breaks'] = breaks
+        ao.shifts.append(SetShift(core, distance, dataUsed, comment))
         for b in breaks:
             childCore = b[1]
             if childCore != core:
-                self.affine.makeImplicit(childCore)
+                ao.implicits.append(childCore)
+        return ao
+
+    # Shift all cores of specified hole in coreList (SET).
+    # hole: hole of cores in coreList
+    # coreList: list of cores in hole to be SET
+    # value: shift distance from core's original, unshifted position if isPercent is False,
+    #        otherwise a percentage of core's original top depth by which to shift.
+    # isPercent: if True, value is a percentage, otherwise a distance
+    # site: current site (required to query SectionSummary for core top depth)
+    # _sectionSummary: SectionSummary to query for core top depth
+    def setAll(self, hole, coreList, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
+        ao = AffineOperation()
+        tieCores = [aci(hole, c) for c in coreList if self.isTie(aci(hole, c))]
+        ao.infoDict['tieCores'] = tieCores
+
+        # warn/confirm about breaks for chain roots that will be moved...
+        chainRoots = [aci(hole, c) for c in coreList if self.affine.isRoot(aci(hole, c))]
+        ao.infoDict['chainRoots'] = chainRoots
+        breaks = self.findBreaksForSET(chainRoots)
+        ao.infoDict['breaks'] = breaks
+        for b in breaks:
+            ao.implicits.append(b[1]) # child core
+
+        setCoreList = [c for c in coreList if aci(hole, c) not in tieCores]
+        for core in setCoreList:
+            if isPercent:
+                coreTop, _ = _sectionSummary.getCoreRange(site, hole, core)
+                shiftDistance = (coreTop * value) - coreTop
+            else:
+                shiftDistance = value
+            ao.shifts.append(SetShift(aci(hole, core), shiftDistance, dataUsed, comment))
+
+        return ao
     
-    # shift entire TIE chain by SET of chain root
+    # Shift entire TIE chain by a SET of chain root.
+    # core: core to shift, must be root of a TIE chain
+    # distance: distance, in meters, to shift chain from its original, unshifted position
     def setChainRoot(self, core, distance, dataUsed="", comment=""):
+        assert self.affine.isRoot(core)
+        ao = AffineOperation()
         shift = self.affine.getShift(core)
         deltaDistance = distance - shift.distance
         descendants = self.affine.getDescendants(core)
-        self.affine.addShift(SetShift(core, distance, dataUsed, comment))
+        ao.shifts.append(SetShift(core, distance, dataUsed, comment))
         for ci in descendants:
             if ci != core:
-                self.affine.adjust(ci, deltaDistance)
+                ao.adjusts.append((ci, deltaDistance))
+        return ao
 
-    # shift core(s) based on a tie between two cores
-    # coreOnly - if True, shift core only, else shift core and all related
-    # mcdShiftDistance - distance between tie points in MCD space
-    # fromCore, fromDepth - core and MBSF depth of tie on fixed core
-    # core, depth - core and MBSF depth of tie on core to be shifted
-    # dataUsed - data type used to create shift
-    # comment - user comment/annotation of shift
+    # Shift core(s) based on a tie between two cores.
+    # coreOnly: if True, shift core only, else shift core and all related
+    # mcdShiftDistance: distance between tie points in MCD space
+    # fromCore, fromDepth: core and MBSF depth of tie on fixed core
+    # core, depth: core and MBSF depth of tie on core to be shifted
+    # dataUsed: data type used to create shift
+    # comment: user comment/annotation of shift
     def tie(self, coreOnly, mcdShiftDistance, fromCore, fromDepth, core, depth, dataUsed="", comment=""):
-        breaks = []
+        ao = AffineOperation()
         totalShiftDistance = self.affine.getShiftDistance(core) + mcdShiftDistance
         if coreOnly:
-            breaks = self.findBreaks(core, fromCore)
-            self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
+            ao.infoDict['breaks'] = self.findBreaks(fromCore, core)
+            ao.shifts.append(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
         else:
             relatedCores = self.gatherRelatedCores(fromCore, core)
-            breaks = self.findBreaks(core, fromCore, relatedCores)
-            self.affine.addShift(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
+            ao.infoDict['breaks'] = self.findBreaks(fromCore, core, relatedCores)
+            ao.shifts.append(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
             for ci in relatedCores:
-                self.affine.adjust(ci, mcdShiftDistance)
+                ao.adjusts.append((ci, mcdShiftDistance))
                 
         # change shift type of cores with just-broken ties to ImplicitShift
-        for b in breaks:
+        for b in ao.infoDict['breaks']:
             childCore = b[1]
             if childCore != core: # original tie for core was broken by new tie - don't make implicit!
-                self.affine.makeImplicit(childCore)
+                ao.implicits.append(childCore)
 
+        return ao
+
+    # Wrapper that immediately executes AffineOperation generated by tie(), used for testing.
+    def _tie(self, coreOnly, mcdShiftDistance, fromCore, fromDepth, core, depth, dataUsed="", comment=""):
+        ao = self.tie(coreOnly, mcdShiftDistance, fromCore, fromDepth, core, depth, dataUsed, comment)
+        self.execute(ao)
+
+    # Make core's shift type REL.
     def makeImplicit(self, core):
         self.affine.makeImplicit(core)
-    
-    # given list of cores to move, determine where ties will be broken and return
-    # list of tuples of form (fromCore, childCore) indicating break locations
-    def findBreaks(self, shiftCore, fromCore, _movingCores=[]):
+
+    # Find breaks for an affine operation, handling special case in which an edited
+    # tie between the same two cores is *not* considered a break.
+    # For a SET operation, use findBreaksForSET() wrapper.
+    def findBreaks(self, fromCore, shiftCore, _movingCores=[]):
         # use local copy of _movingCores to avoid adding shiftCore to client list
-        movingCores = _movingCores + [shiftCore]
+        movingCores = list(_movingCores)
+        if shiftCore:
+            movingCores.append(shiftCore)
         breaks = []
         for core in movingCores:
             shift = self.getShift(core)
             if isTie(shift) and shift.fromCore not in movingCores and \
-                (core != shiftCore or fromCore != shift.fromCore): # re-tie with same fromCore isn't a break
+                (shiftCore is None or core != shiftCore or fromCore != shift.fromCore): # re-tie with same fromCore isn't a break
                 breaks.append((shift.fromCore, core))
-            if self.affine.getChildren(core) > 0:
-                for child in self.affine.getChildren(core):
-                    if child.core not in movingCores:
-                        breaks.append((core, child.core))
+            for child in self.affine.getChildren(core):
+                if child.core not in movingCores:
+                    breaks.append((core, child.core))
         return breaks
-    
-    # 12/21/2018 unneeded due to new chaining/SET logic?
-    def getOffHoleFromCores(self, cores, shiftHole):
-        shiftHoleCores = [c for c in cores if c.hole == shiftHole]
-        offHoleFromCores = []
-        for c in [c for c in cores if c.hole != shiftHole]:
-            kids = self.affine.getChildren(c)
-            for k in kids:
-                if k.core in shiftHoleCores:
-                    offHoleFromCores.append(c)
-                    break
-        return offHoleFromCores
-        #return [c for c in cores if c not in offHoleFromCores]
+
+    # Find breaks for a SET operation, just a wrapper of findBreaks() with
+    # dummy arguments for fromCore and core.
+    def findBreaksForSET(self, movingCores):
+        return self.findBreaks(AffineCoreInfo.createBogus(), None, movingCores)
 
     # Gather all cores that will be shifted by "Shift by [shiftCore] and related
     # cores below" action. Note that the result excludes shiftCore itself.
@@ -472,7 +521,7 @@ class AffineBuilder:
     def _getCoreTop(self, ci):
         return self.sectionSummary.getCoreTop(self.site, ci.hole, ci.core)
     
-    # get all cores in hole below core by name - not actual position!
+    # Get all cores in hole below core by name - not actual position!
     # todo: abstract concept of "below"?
     # todo: this really shouldn't be part of AffineBuilder, should be done
     # through SectionSummary so we can deal with holes/cores directly instead
@@ -521,6 +570,23 @@ class AffineBuilder:
     def coreIsBelow(self, coreInfo, compareCoreInfo):
         return (self._getCoreTop(coreInfo) + self.getShift(coreInfo).distance) >= (self._getCoreTop(compareCoreInfo) + self.getShift(compareCoreInfo).distance)
     
+
+# Blob of shifts, adjusts, implicits, and other operation-specific data.
+class AffineOperation:
+    def __init__(self):
+        self.shifts = [] # list of AffineShifts
+        self.adjusts = [] # list of (AffineCoreInfo, adjust distance) tuples
+        self.implicits = [] # list of AffineCoreInfos to be made implicit
+        self.infoDict = {} # dictionary of operation-specific data for client use
+
+    # Return list of AffineCoreInfos for cores that will be moved
+    # by this operation.
+    def getCoresToBeMoved(self):
+        shifting = [s.core for s in self.shifts]
+        adjusting = [a[0] for a in self.adjusts]
+        # assert len(shifting) + len(adjusting) == len(set(shifting + adjusting))
+        return shifting + adjusting
+
 
 # Reference to hole and core for affine shifts
 class AffineCoreInfo:
@@ -802,7 +868,7 @@ class TestAffineUtils(unittest.TestCase):
 
 
 class TestAffineBuilder(unittest.TestCase):
-  def test_chain(self):
+    def test_chain(self):
         secsumm = sectionSummary.SectionSummary.createWithFile("testdata/FOO_SectionSummary.csv")
         builder = AffineBuilder.createWithSectionSummary(secsumm)
 
@@ -811,7 +877,7 @@ class TestAffineBuilder(unittest.TestCase):
         self.assertTrue(sameElements(builder.getCoresBelow(acistr("B1")), movers))
 
         # B1 > A2 tie exists. New tie from A1 > B1 shifts A2+, B1+
-        builder.tie(False, 0.1, acistr("B1"), 0.9, acistr("A2"), 0.8)
+        builder._tie(False, 0.1, acistr("B1"), 0.9, acistr("A2"), 0.8)
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         expectedMovers = acilist(['A2', 'A3', 'A4', 'A5', 'B2', 'B3', 'B4', 'B5'])
         self.assertTrue(sameElements(expectedMovers, movers))
@@ -821,7 +887,7 @@ class TestAffineBuilder(unittest.TestCase):
         # add tie between B3 and C3
         movers = builder.gatherRelatedCores(acistr("B3"), acistr("C3"))
         self.assertTrue(sameElements(builder.getCoresBelow(acistr("C3")), movers))
-        builder.tie(False, 0.2, acistr("B3"), 0.3, acistr("C3"), 0.1)
+        builder._tie(False, 0.2, acistr("B3"), 0.3, acistr("C3"), 0.1)
         
         # now shift B1 and below
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
@@ -840,10 +906,10 @@ class TestAffineBuilder(unittest.TestCase):
 
         # reset: ties A1 > B1, B1 > C1, B2 > A3, A3 > B3
         builder.reset()
-        builder.tie(False, 0.2, acistr("A1"), 0.3, acistr("B1"), 0.1) # push B down 0.2
-        builder.tie(False, 0.2, acistr("B1"), 0.1, acistr("C1"), 0.1) # push C down 0.2
-        builder.tie(False, 0.2, acistr("B2"), 2.0, acistr("A3"), 2.0) # push A3 down 0.2
-        builder.tie(False, 0.2, acistr("A3"), 2.4, acistr("B3"), 2.2) # push B3 down 0.2 for total shift of 0.4
+        builder._tie(False, 0.2, acistr("A1"), 0.3, acistr("B1"), 0.1) # push B down 0.2
+        builder._tie(False, 0.2, acistr("B1"), 0.1, acistr("C1"), 0.1) # push C down 0.2
+        builder._tie(False, 0.2, acistr("B2"), 2.0, acistr("A3"), 2.0) # push A3 down 0.2
+        builder._tie(False, 0.2, acistr("A3"), 2.4, acistr("B3"), 2.2) # push B3 down 0.2 for total shift of 0.4
 
         # now shift B1
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
@@ -854,10 +920,10 @@ class TestAffineBuilder(unittest.TestCase):
         # reset, tie B2 > C2 instead of B1 > C1 as above, resulting in three chains:
         # A1 > B1, B2 > C2, B2 > A3 > B3
         builder.reset()
-        builder.tie(False, 0.2, acistr("A1"), 0.3, acistr("B1"), 0.1) # push B1+ down 0.2
-        builder.tie(False, 0.2, acistr("B2"), 1.1, acistr("C2"), 1.1) # push C2+ down 0.2
-        builder.tie(False, 0.2, acistr("B2"), 2.0, acistr("A3"), 2.0) # push A3+ down 0.2
-        builder.tie(False, 0.2, acistr("A3"), 2.4, acistr("B3"), 2.2) # push B3+ down 0.2 for total shift of 0.4
+        builder._tie(False, 0.2, acistr("A1"), 0.3, acistr("B1"), 0.1) # push B1+ down 0.2
+        builder._tie(False, 0.2, acistr("B2"), 1.1, acistr("C2"), 1.1) # push C2+ down 0.2
+        builder._tie(False, 0.2, acistr("B2"), 2.0, acistr("A3"), 2.0) # push A3+ down 0.2
+        builder._tie(False, 0.2, acistr("A3"), 2.4, acistr("B3"), 2.2) # push B3+ down 0.2 for total shift of 0.4
         
         # again, shift B1 - now nothing should move
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
@@ -875,7 +941,7 @@ class TestAffineBuilder(unittest.TestCase):
         # B2 > A2 tie exists. New tie from A1 > B1 shifts only B1 because
         # B2 > A2 is a separate chain.
         builder.reset()
-        builder.tie(False, 0.1, acistr("B2"), 0.9, acistr("A2"), 0.8) # wrong depths
+        builder._tie(False, 0.1, acistr("B2"), 0.9, acistr("A2"), 0.8) # wrong depths
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         self.assertTrue(sameElements([], movers))
 
@@ -883,7 +949,7 @@ class TestAffineBuilder(unittest.TestCase):
         # it's non-chain, but doesn't shift A3+ and B3+ due to the distinct
         # B3 > A3 chain.
         builder.reset()
-        builder.tie(False, 0.1, acistr("B3"), 0.9, acistr("A3"), 0.8)
+        builder._tie(False, 0.1, acistr("B3"), 0.9, acistr("A3"), 0.8)
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         expectedMovers = acilist(['B2'])
         self.assertTrue(sameElements(expectedMovers, movers))
@@ -893,8 +959,8 @@ class TestAffineBuilder(unittest.TestCase):
         # below moving B1, but doesn't shift A2+ and C2+  due to distinct
         # C2 > A2 chain.
         builder.reset()
-        builder.tie(False, 0.1, acistr("B1"), 0.9, acistr("C1"), 0.8)
-        builder.tie(False, 0.1, acistr("C2"), 0.9, acistr("A2"), 0.8)
+        builder._tie(False, 0.1, acistr("B1"), 0.9, acistr("C1"), 0.8)
+        builder._tie(False, 0.1, acistr("C2"), 0.9, acistr("A2"), 0.8)
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
         expectedMovers = acilist(['B2', 'B3', 'B4', 'B5', 'C1'])
         self.assertTrue(sameElements(expectedMovers, movers))
@@ -916,10 +982,38 @@ class TestAffineBuilder(unittest.TestCase):
         # New tie from C2 > B1 shifts B1 and C1, but *cannot* shift C2
         # or anything below it since it's the fixed core.
         builder.reset()
-        builder.tie(False, 0.1, acistr("B1"), 0.9, acistr("C1"), 0.8)
+        builder._tie(False, 0.1, acistr("B1"), 0.9, acistr("C1"), 0.8)
         movers = builder.gatherRelatedCores(acistr("C2"), acistr("B1"))
         expectedMovers = acilist(['B2', 'B3', 'B4', 'B5', 'C1'])
         self.assertTrue(sameElements(expectedMovers, movers))
+
+    def test_find_breaks(self):
+        secsumm = sectionSummary.SectionSummary.createWithFile("testdata/FOO_SectionSummary.csv")
+        builder = AffineBuilder.createWithSectionSummary(secsumm)
+
+        a1, a2, b1, b2, c1, c2 = acistr("A1"), acistr("A2"), acistr("B1"), acistr("B2"), acistr("C1"), acistr("C2")
+
+        # no existing ties, nothing should break
+        breaks = builder.findBreaksForSET([a1, a2, b1, b2, c1, c2])
+        self.assertTrue(breaks == [])
+
+        builder._tie(True, 0.1, a1, 0.1, b1, 0.0)
+        builder._tie(True, 0.1, b1, 0.1, c1, 0.0)
+        breaks = builder.findBreaksForSET([a1])
+        self.assertTrue(breaks == [(a1, b1)])
+        breaks = builder.findBreaksForSET([b1])
+        self.assertTrue(sameElements(breaks, [(a1, b1), (b1, c1)]))
+        breaks = builder.findBreaksForSET([c1])
+        self.assertTrue(sameElements(breaks, [(b1, c1)]))
+
+        # re-tying A1 > B1 is not considered a break
+        breaks = builder.findBreaks(a1, b1, [c1])
+        self.assertTrue(breaks == [])
+
+        # if we TIE A1 > B1 only, C1 doesn't move, thus we expect a B1 > C1 break
+        breaks = builder.findBreaks(a1, b1)
+        self.assertTrue(breaks == [(b1, c1)])
+
    
 
 if __name__ == "__main__":

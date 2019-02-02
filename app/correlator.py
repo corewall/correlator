@@ -612,15 +612,6 @@ class MainFrame(wx.Frame):
 		self.leadLag = leadLag
 		py_correlator.setEvalGraph(self.depthStep, self.winLength, self.leadLag)
 
-	def CanAdjustCore(self, hole, core, shiftBelow):
-		adjust = True
-		allowShift = self.spliceManager.allowAffineShift(hole, core, shiftBelow)
-		if not allowShift:
-			msg = "This affine shift affects cores included in the current splice. These cores will be removed from the splice. Do you want to continue?"
-			override = self.OnShowMessage("Warning", msg, 0)
-			adjust = override == wx.ID_YES
-		return adjust
-	
 	def OnAdjustCore(self, opt, type):
 		self.Window.OnAdjustCore(opt, type)
 
@@ -3066,37 +3057,24 @@ class AffineController:
 	def pushState(self):
 		prevAffine = copy.deepcopy(self.affine)
 		self.undoStack.append(prevAffine)
-		
-	def confirmBreaks(self, fromCoreInfo, coreInfo, coreOnly):
-		confirmed = True
-		if fromCoreInfo is None:
-			fromCoreInfo = AffineCoreInfo.createBogus() # bogus fromCore to ensure no matches
-		needConfirm, msg = self.needConfirmation(fromCoreInfo, coreInfo, coreOnly)
-		if needConfirm:
-			confirmed = self.parent.OnShowMessage("Confirm", msg + "\nDo you want to continue?", 0) == wx.ID_YES
-		return confirmed
-	
-	def formatBreaks(self, breaks):
-		return "\n".join(["- from {} to {}".format(b[0], b[1]) for b in breaks]) + "\n"
-
-	# will shifting core have side effects that require user confirmation to proceed?
-	# returns tuple of form (confirmation needed [boolean], warning message [string])
-	def needConfirmation(self, fromCore, shiftCore, coreOnly):
-		breaks = []
-		msg = "Shifting core {} ".format(shiftCore)
-		msg += "only " if coreOnly else "and related "
-		msg += "will break TIE chain(s):\n"
-		if coreOnly:
-			breaks = self.affine.findBreaks(shiftCore, fromCore)
-		else:
-			relatedCores = self.affine.gatherRelatedCores(fromCore, shiftCore)
-			breaks = self.affine.findBreaks(shiftCore, fromCore, relatedCores)
-
-		needConfirm = len(breaks) > 0
-		return needConfirm, msg + "{}".format(self.formatBreaks(breaks))	
 	
 	def isDirty(self):
 		return self.dirty
+
+	def confirmBreaks(self, breaks):
+		confirmed = True
+		if len(breaks) > 0:
+			msg = "This operation will break the following TIEs:\n\n"
+			msg += "{}\n".format(self._makeBreaksString(breaks))
+			msg += "Do you want to continue?"
+			confirmed = self.parent.OnShowMessage("Confirm Breaks", msg, 0) == wx.ID_YES
+		return confirmed
+
+	def _makeBreaksString(self, breaks):
+		bs = ""
+		for b in breaks:
+			bs += "{} > {}\n".format(b[0], b[1])
+		return bs
 
 	# shift a single untied core with method SET
 	def set(self, hole, core, distance, dataUsed="", comment=""):
@@ -3104,18 +3082,26 @@ class AffineController:
 			errmsg = "Core {}{} is shifted by a TIE and is part of a chain.\nIt cannot be SET unless that TIE is broken first.".format(hole, core)
 			self.parent.OnShowMessage("Error", errmsg, 1)
 			return
-		if self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, core), coreOnly=True):
-			self.pushState()
-			self.affine.set(aci(hole, core), distance, dataUsed, comment)
-			self.dirty = True
-			self.updateGUI()
+
+		setOp = self.affine.set(aci(hole, core), distance, dataUsed, comment)
+		if not self.confirmBreaks(setOp.infoDict['breaks']):
+			return
+		if not self.removeShiftingCoresFromSplice(setOp.getCoresToBeMoved()):
+			return
+		self.pushState()
+		self.affine.execute(setOp)
+		self.dirty = True
+		self.updateGUI()
 
 	# Shift an entire chain by shifting chain root with method SET.
 	# All descendants will remain TIEs.
 	def setChainRoot(self, hole, core, distance, dataUsed="", comment=""):
 		if self.affine.isRoot(aci(hole, core)):
+			setChainOp = self.affine.setChainRoot(aci(hole, core), distance, dataUsed, comment)
+			if not self.removeShiftingCoresFromSplice(setChainOp.getCoresToBeMoved()):
+				return
 			self.pushState()
-			self.affine.setChainRoot(aci(hole, core), distance, dataUsed, comment)
+			self.affine.execute(setChainOp)
 			self.dirty = True
 			self.updateGUI()
 		else:
@@ -3125,43 +3111,34 @@ class AffineController:
 		
 	# shift all untied cores in a hole with method SET
 	def setAll(self, hole, coreList, value, isPercent, dataUsed="", comment=""):
+		site = self.parent.Window.GetHoleSite(hole)
+		setAllOp = self.affine.setAll(hole, coreList, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
+
 		proceed = True
-		tieCores = [c for c in coreList if self.affine.isTie(aci(hole, c))]
+		tieCores = setAllOp.infoDict['tieCores']
 		if len(tieCores) > 0:
-			tieCoreNames = [str(aci(hole, c)) for c in tieCores]
+			tieCoreNames = [str(c) for c in tieCores]
 			msg = "The following cores are shifted by a TIE and are part of a chain:\n\n{}\n\n" \
 			"They will not be SET unless you first break their TIEs. " \
 			"Do you still want to SET untied cores?".format(', '.join(tieCoreNames))
 			proceed = self.parent.OnShowMessage("Warning", msg, 0) == wx.ID_YES
 
 		# warn/confirm about breaks for chain roots that will be moved...
-		chainRoots = [c for c in coreList if self.affine.isRoot(aci(hole, c))]
+		chainRoots = setAllOp.infoDict['chainRoots']
 		if proceed and len(chainRoots) > 0:
-			chainRootNames = [str(aci(hole, c)) for c in chainRoots]
-			breakList = []
-			for cr in chainRoots:
-				kids = self.affine.getChildren(aci(hole, cr))
-				for k in kids:
-					breakList.append("{} > {}".format(aci(hole, cr), k.core))
-
+			chainRootNames = [str(c) for c in chainRoots]
+			breaksStr = self._makeBreaksString(setAllOp.infoDict['breaks'])
 			msg = "The following cores are the root of a TIE chain:\n\n{}\n\n" \
-			"Shifting them by SET will break the following TIEs:\n\n{}\n\n" \
-			"Do you still want to proceed with this SET?".format(', '.join(chainRootNames), '\n'.join(breakList))
-			proceed = self.parent.OnShowMessage("Warning", msg, 0) == wx.ID_YES
-			if not proceed:
-				return
+			"Shifting them by SET will break the following TIEs:\n\n{}\n" \
+			"Do you still want to proceed with this SET?".format(', '.join(chainRootNames), breaksStr)
+			proceed = self.parent.OnShowMessage("Confirm Breaks", msg, 0) == wx.ID_YES
+
+		if proceed: # warn/confirm about removing shifting cores from splice
+			proceed = self.removeShiftingCoresFromSplice(setAllOp.getCoresToBeMoved())
 
 		if proceed:
-			setCoreList = [c for c in coreList if c not in tieCores]
 			self.pushState()
-			site = self.parent.Window.GetHoleSite(hole)
-			for core in setCoreList:
-				if isPercent:
-					coreTop, coreBot = self.parent.sectionSummary.getCoreRange(site, hole, core)
-					shiftDistance = (coreTop * value) - coreTop
-				else:
-					shiftDistance = value
-				self.affine.set(aci(hole, core), shiftDistance, dataUsed, comment)
+			self.affine.execute(setAllOp)
 			self.dirty = True
 			self.updateGUI()
 			
@@ -3176,14 +3153,40 @@ class AffineController:
 		fromDepth = fromDepth - self.affine.getShift(fromCoreInfo).distance
 		depth = depth - self.affine.getShift(coreInfo).distance
 		
-		if self.confirmBreaks(fromCoreInfo, coreInfo, coreOnly):
-			self.pushState()
-			self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
-			self.dirty = True
-			self.updateGUI()
-			return True
-		else:
+		tieOp = self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
+		if not self.confirmBreaks(tieOp.infoDict['breaks']):
 			return False
+		if not self.removeShiftingCoresFromSplice(tieOp.getCoresToBeMoved()):
+			return False
+
+		self.pushState()
+		self.affine.execute(tieOp)
+		self.dirty = True
+		self.updateGUI()
+		return True
+
+	# Find splice intervals with cores in shiftingCores, prompt user and remove
+	# intervals if confirmed.
+	# Return True if user confirmed, or no matching splice intervals were found.
+	# Otherwise return False.
+	def removeShiftingCoresFromSplice(self, shiftingCores):
+		coresInSplice = []
+		intervalsToRemove = []
+		for sc in shiftingCores:
+			intervals = self.parent.spliceManager.findIntervals(sc.hole, sc.core)
+			if len(intervals) > 0:
+				intervalsToRemove += intervals
+				coresInSplice.append(sc)
+		if len(intervalsToRemove) > 0:
+			msg = "This operation affects cores included in the current splice:\n\n"
+			msg += "{}\n\n".format(', '.join(sorted([str(sc) for sc in coresInSplice])))
+			msg += "These cores will be removed from the splice. Do you want to continue?"
+			if self.parent.OnShowMessage("Splice Intervals Affected", msg, 0) == wx.ID_YES:
+				for interval in intervalsToRemove:
+					self.parent.spliceManager.delete(interval)
+			else:
+				return False
+		return True
 
 	def breakTie(self, coreStr):
 		core = acistr(coreStr)
@@ -3644,21 +3647,10 @@ class SpliceController:
 				canApply = False
 				break
 		return canApply
-	
-	# called before an affine shift - are the shifted core(s) included in the splice?
-	# TODO: Update to reflect new chaining logic - a shift could now affect cores in
-	# multiple holes. Should pass this method the entire list of cores to be shifted.
-	def allowAffineShift(self, hole, core, below=False):
-		matches = self.findIntervals(hole, core, below)
-		return len(matches) == 0
-	
-	def findIntervals(self, hole, core, below=False):
-		matches = [i for i in self.splice.ints if i.coreinfo.hole == hole]
-		if core is not None:
-			if below: # include all cores below core
-				matches = [i for i in matches if int(i.coreinfo.holeCore) >= int(core)]
-			else: # single core
-				matches = [i for i in matches if int(i.coreinfo.holeCore) == int(core)]
+
+	# Return list of splice intervals matching specified hole and core.
+	def findIntervals(self, hole, core):
+		matches = [i for i in self.splice.ints if i.coreinfo.hole == hole and i.coreinfo.holeCore == core]
 		return matches
 
 
