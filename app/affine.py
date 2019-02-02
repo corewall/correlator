@@ -364,26 +364,25 @@ class AffineBuilder:
      
     # shift core(s) by a given distance (SET)
     # todo: rename to avoid conflict with Python's built-in set() method?
-    def set(self, coreOnly, core, distance, dataUsed="", comment=""):
+    def set(self, core, distance, dataUsed="", comment=""):
         bogusFromCore = AffineCoreInfo.createBogus() # SET has no fromCore, use bogus to ensure no matches
-        breaks = []
-        if coreOnly:
-            breaks = self.findBreaks(core, bogusFromCore)
-            deltaDistance = distance - self.affine.getShift(core).distance
-            self.affine.addShift(SetShift(core, distance, dataUsed, comment))
-        else: # move only descendants of core, which must be root of TIE chain
-            shift = self.affine.getShift(core)
-            deltaDistance = distance - shift.distance
-            descendants = self.affine.getDescendants(core)
-            self.affine.addShift(SetShift(core, distance, dataUsed, comment))
-            for ci in descendants:
-                if ci != core:
-                    self.affine.adjust(ci, deltaDistance)
-
+        breaks = self.findBreaks(core, bogusFromCore)
+        deltaDistance = distance - self.affine.getShift(core).distance
+        self.affine.addShift(SetShift(core, distance, dataUsed, comment))
         for b in breaks:
             childCore = b[1]
             if childCore != core:
                 self.affine.makeImplicit(childCore)
+    
+    # shift entire TIE chain by SET of chain root
+    def setChainRoot(self, core, distance, dataUsed="", comment=""):
+        shift = self.affine.getShift(core)
+        deltaDistance = distance - shift.distance
+        descendants = self.affine.getDescendants(core)
+        self.affine.addShift(SetShift(core, distance, dataUsed, comment))
+        for ci in descendants:
+            if ci != core:
+                self.affine.adjust(ci, deltaDistance)
 
     # shift core(s) based on a tie between two cores
     # coreOnly - if True, shift core only, else shift core and all related

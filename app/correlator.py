@@ -3106,7 +3106,7 @@ class AffineController:
 			return
 		if self.confirmBreaks(fromCoreInfo=None, coreInfo=aci(hole, core), coreOnly=True):
 			self.pushState()
-			self.affine.set(True, aci(hole, core), distance, dataUsed, comment)
+			self.affine.set(aci(hole, core), distance, dataUsed, comment)
 			self.dirty = True
 			self.updateGUI()
 
@@ -3115,7 +3115,7 @@ class AffineController:
 	def setChainRoot(self, hole, core, distance, dataUsed="", comment=""):
 		if self.affine.isRoot(aci(hole, core)):
 			self.pushState()
-			self.affine.set(False, aci(hole, core), distance, dataUsed, comment)
+			self.affine.setChainRoot(aci(hole, core), distance, dataUsed, comment)
 			self.dirty = True
 			self.updateGUI()
 		else:
@@ -3161,7 +3161,7 @@ class AffineController:
 					shiftDistance = (coreTop * value) - coreTop
 				else:
 					shiftDistance = value
-				self.affine.set(True, aci(hole, core), shiftDistance, dataUsed, comment)
+				self.affine.set(aci(hole, core), shiftDistance, dataUsed, comment)
 			self.dirty = True
 			self.updateGUI()
 			
