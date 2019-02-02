@@ -246,27 +246,6 @@ class AffineTable:
             self._walkChain(self.getChildren(n.core), chainCores)
             chainCores.append(n.core)
             
-    # Currently Unused.
-    # if there's a chain of ties from core to any member of searchCores that doesn't
-    # involve a core in excluded, return True.
-    # core: AffineCoreInfo of core for which connection is sought
-    # searchCores: list of AffineCoreInfos of cores for which connection with core is sought
-    # excluded: cores that cannot be included in the chain
-    # visited: already-seen cores
-    def isConnected(self, core, searchCores, excluded, visited):
-        if core in excluded:
-            return False
-        if core in searchCores:
-            return True
-        visited.append(core)
-        for childShift in self.getChildren(core):
-            if childShift.core not in visited and self.isConnected(childShift.core, searchCores, excluded, visited):
-                return True
-        parentShift = self.getParent(core)
-        if parentShift is not None and parentShift.core not in visited and self.isConnected(parentShift.core, searchCores, excluded, visited):
-            return True
-        return False
-            
     # get shift for immediate parent of core
     def getParent(self, core):
         shift = None
@@ -752,39 +731,6 @@ class TestAffineTable(unittest.TestCase):
         
         # D3 isn't part of any chain
         self.assertTrue(affine.getChainCores(d3) == [])
-
-    def test_connected(self): # AffineTable.isConnected() currently unused
-        secsumm = sectionSummary.SectionSummary.createWithFile('testdata/U1390_reduced_SectionSummary.csv')
-        builder = AffineBuilder.createWithAffineFile('testdata/U1390_reduced_affine1.csv', secsumm)
-        
-        self.assertFalse(builder.affine.isConnected(acistr("C1"), [acistr("A1"), acistr("B1")], [], []))
-        
-        # A1 and B1 are connected - commutative
-        self.assertTrue(builder.affine.isConnected(acistr("A1"), [acistr("B1")], [], []))
-        self.assertTrue(builder.affine.isConnected(acistr("B1"), [acistr("A1")], [], []))
-        
-        # A3 is connected to both C2 and C3 via B2...
-        self.assertTrue(builder.affine.isConnected(acistr("A3"), [acistr("C2")], [], []))
-        self.assertTrue(builder.affine.isConnected(acistr("A3"), [acistr("C3")], [], []))
-        
-        # ...but if B2 is excluded, they're not
-        self.assertFalse(builder.affine.isConnected(acistr("A3"), [acistr("C2")], [acistr("B2")], []))
-        self.assertFalse(builder.affine.isConnected(acistr("A3"), [acistr("C3")], [acistr("B2")], []))
-        
-        # connected in the other direction too, i.e. starting from C2 or C3, seeking A3...
-        self.assertTrue(builder.affine.isConnected(acistr("C2"), [acistr("A3")], [], []))
-        self.assertTrue(builder.affine.isConnected(acistr("C3"), [acistr("A3")], [], []))
-        
-        # ...again, unless B2 is excluded
-        self.assertFalse(builder.affine.isConnected(acistr("C2"), [acistr("A3")], [acistr("B2")], []))
-        self.assertFalse(builder.affine.isConnected(acistr("C3"), [acistr("A3")], [acistr("B2")], []))
-        
-        # now create ties from C3 > B3 > A3...
-        builder.tie(True, 0.0, acistr("C3"), 1.0, acistr("B3"), 0.5)
-        builder.tie(True, 0.0, acistr("B3"), 1.0, acistr("A3"), 0.5)
-        
-        # ...which means there's now a path from A3 to C3 that doesn't involve B2 
-        self.assertTrue(builder.affine.isConnected(acistr("A3"), [acistr("C3")], [acistr("B2")], []))
 
 
 class TestAffineUtils(unittest.TestCase):
