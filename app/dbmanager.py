@@ -7757,7 +7757,7 @@ class DataFrame(wx.Panel):
 				f.close()
 			#----- HYEJUNG
 			
-			popupMenu.Append(7, "&User define")
+			popupMenu.Append(7, "&Custom data type...")
 			wx.EVT_MENU(popupMenu, 7, self.OnCHANGETYPE)
 			self.PopupMenu(popupMenu, pos)
 
@@ -7779,13 +7779,13 @@ class DataFrame(wx.Panel):
 			datatype = "Other"
 		elif opId == 7:
 			while True:
-				dlg = dialog.BoxDialog(self, "User define data type")
+				dlg = dialog.CustomDataTypeDialog(self, "Add Custom Data Type")
 				ret = dlg.ShowModal()
 				datatype = ""
 				if ret == wx.ID_OK:
 					datatype = dlg.txt.GetValue() 
 					if datatype.find("-", 0) >= 0:
-						self.parent.OnShowMessage("Error", "Hyphen(-) is not allowed", 1)
+						self.parent.OnShowMessage("Error", "Hyphens (-) are not allowed in data type names.", 1)
 					else:
 						if dlg.register.GetValue() == True: 
 							type_last = len(datatype) - 1
@@ -7821,9 +7821,7 @@ class DataFrame(wx.Panel):
 						break
 				else:
 					break
-				#dlg.Destory()
 			else:
-				#dlg.Destory()
 				return	
 		else:
 			event_obj = event.GetEventObject()

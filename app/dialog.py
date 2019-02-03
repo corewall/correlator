@@ -185,29 +185,29 @@ class ViewDataFileDialog(wx.Dialog):
 			self.EndModal(wx.ID_OK)
 
 
-class BoxDialog(wx.Dialog):
+class CustomDataTypeDialog(wx.Dialog):
 	def __init__(self, parent, title):
-		wx.Dialog.__init__(self, parent, -1, title, size=(300, 130), style= wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, -1, title, style=wx.DEFAULT_DIALOG_STYLE)
 
 		self.Center()
-		vbox_top = wx.BoxSizer(wx.VERTICAL)
-		self.txt = wx.TextCtrl(self, -1, "", size = (270, 25), style=wx.SUNKEN_BORDER )
+		vbox = wx.BoxSizer(wx.VERTICAL)
+		self.txt = wx.TextCtrl(self, -1, "[new data type]", size=(250,-1))
 
-		vbox_top.Add(self.txt, 0, wx.LEFT | wx.TOP | wx.BOTTOM, 15)
+		vbox.Add(self.txt, 1, wx.LEFT | wx.RIGHT | wx.TOP | wx.EXPAND, 15)
 
-		#self.register = wx.CheckBox(self, -1, 'Register')
-		#vbox_top.Add(self.register, 0, wx.LEFT, 70)
+		self.register = wx.CheckBox(self, -1, 'Add Data Type to List')
+		vbox.Add(self.register, 0, wx.ALL, 10)
 
-		grid = wx.GridSizer(1,3)
-		self.register = wx.CheckBox(self, -1, 'Register')
-		grid.Add(self.register)
+		grid = wx.GridSizer(1,2)
+		# grid.Add(self.register)
 		okBtn = wx.Button(self, wx.ID_OK, "OK")
 		grid.Add(okBtn)
 		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Cancel")
 		grid.Add(cancelBtn, 0, wx.LEFT, 10)
-		vbox_top.Add(grid, 0, wx.LEFT, 20)
-
-		self.SetSizer(vbox_top)
+		vbox.Add(grid, 0, wx.ALL | wx.ALIGN_CENTER, 10)
+		self.SetSizer(vbox)
+		self.Fit()
+		self.txt.SelectAll()
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
 	def OnCharUp(self,event):
@@ -966,7 +966,7 @@ class ColorTableDialog(wx.Dialog):
 		self.Bind(wx.EVT_BUTTON, self.OnApplyColor, applyBtn)
 		grid4.Add(applyBtn, 0)
 
-		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Dismiss")
+		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Close")
 		grid4.Add(cancelBtn, 0, wx.LEFT, 25)		
 
 		vbox_top.Add(grid4, 0, wx.ALL | wx.CENTER, 10)
