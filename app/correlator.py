@@ -261,39 +261,38 @@ class MainFrame(wx.Frame):
 
 		# View 
 		menuView = wx.Menu()
-		self.mitool = menuView.AppendCheckItem(-1, "Toolbar", "Toolbar")
+		self.mitool = menuView.AppendCheckItem(-1, "Show Toolbar", "Show/hide toolbar")
 		self.mitool.Check(True)
 		self.Bind(wx.EVT_MENU, self.SHOWToolbar, self.mitool)
 
 		menuView.AppendSeparator()
-		self.miplot = menuView.AppendCheckItem(-1, "Discrete Points", "Discrete Points")
+		self.miplot = menuView.AppendCheckItem(-1, "Plot Discrete Points", "Plot data as points instead of a line")
 		self.Bind(wx.EVT_MENU, self.SETPlotMode, self.miplot)
 
-		self.miptsizeup = menuView.Append(-1, "Point Size Up", "Point Size Up")
+		self.miptsizeup = menuView.Append(-1, "Increase Point Size", "Make discrete data points larger")
 		self.Bind(wx.EVT_MENU, self.SetPT_SIZEUP, self.miptsizeup)
 		
-		self.miptsizeDown = menuView.Append(-1, "Point Size Down", "Point Size Down")
+		self.miptsizeDown = menuView.Append(-1, "Decrease Point Size", "Make discrete data points smaller")
 		self.Bind(wx.EVT_MENU, self.SetPT_SIZEDOWN, self.miptsizeDown)
 
 		menuView.AppendSeparator()
-		self.mitiesizeup = menuView.Append(-1, "Tie Point Size Up", "Tie Point Size Up")
+		self.mitiesizeup = menuView.Append(-1, "Increase Tie Point Size", "Make affine tie points larger")
 		self.Bind(wx.EVT_MENU, self.SetTIE_SIZEUP, self.mitiesizeup)
 
-		self.mitiesizeDown = menuView.Append(-1, "Tie Point Size Down", "Tie Point Size Down")
+		self.mitiesizeDown = menuView.Append(-1, "Decrease Tie Point Size", "Make affine tie points smaller")
 		self.Bind(wx.EVT_MENU, self.SetTIE_SIZEDOWN, self.mitiesizeDown)
 
-		self.mitiewidthup = menuView.Append(-1, "Tie Line Thickness Up", "Tie Line Thickness Up")
+		self.mitiewidthup = menuView.Append(-1, "Increase Tie Line Thickness", "Make TIE lines thicker")
 		self.Bind(wx.EVT_MENU, self.SetTIE_WIDTHUP, self.mitiewidthup)
-		self.mitiewidthDown = menuView.Append(-1, "Tie Line Thickness Down", "Tie Line Thickness Down")
+		self.mitiewidthDown = menuView.Append(-1, "Decrease Tie Line Thickness", "Make TIE lines thinner")
 		self.Bind(wx.EVT_MENU, self.SetTIE_WIDTHDOWN, self.mitiewidthDown)
 
 		menuView.AppendSeparator()
-		self.misecond = menuView.AppendCheckItem(-1, "Splice Window", "Splice Window")#Splice/Log Window", "Splice/Log window")
+		self.misecond = menuView.AppendCheckItem(-1, "Show Splice Window", "Splice Window")#Splice/Log Window", "Splice/Log window")
 		self.misecond.Check(True)
 		self.Bind(wx.EVT_MENU, self.SHOWSplice, self.misecond)
 
-		menuView.AppendSeparator()
-		self.miscroll = menuView.AppendCheckItem(-1, "Second Scroll", "Second scroll")
+		self.miscroll = menuView.AppendCheckItem(-1, "Independent Splice Scrollbar", "Composite and splice areas scroll independently")
 		self.miscroll.Check(False)
 		self.Bind(wx.EVT_MENU, self.SHOWScroll, self.miscroll)
 
@@ -310,9 +309,9 @@ class MainFrame(wx.Frame):
 		#self.Bind(wx.EVT_MENU, self.SETTextSizeDown, self.mitextsizeDown)
 
 		menuView.AppendSeparator()
-		self.miScrollbigger = menuView.Append(-1, "Bigger Scroll", "Bigger Scroll")
+		self.miScrollbigger = menuView.Append(-1, "Wider Scrollbars", "Make scrollbars wider")
 		self.Bind(wx.EVT_MENU, self.UseWideScrollbars, self.miScrollbigger)
-		self.miScrollnormal = menuView.Append(-1, "Smaller Scroll", "Smaller Scroll")
+		self.miScrollnormal = menuView.Append(-1, "Narrower Scrollbars", "Make scrollbars narrower")
 		self.Bind(wx.EVT_MENU, self.UseNarrowScrollbars, self.miScrollnormal)
 		
 		menuBar.Append(menuView, "&View")
@@ -485,7 +484,7 @@ class MainFrame(wx.Frame):
 				break
 
 	def SHOWToolbar(self, event):
-		self.topMenu.Show(self.mitools.IsChecked())
+		self.topMenu.Show(self.mitool.IsChecked())
 
 	def SETPlotMode(self, event):
 		if self.miplot.IsChecked() == False:

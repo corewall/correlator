@@ -112,7 +112,7 @@ class DataFrame(wx.Panel):
 
 		self.treeListPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.treeListPanel.GetSizer().Add(self.tree, 1, wx.EXPAND)
-		self.sideNote.AddPage(self.treeListPanel, 'Data List')
+		self.sideNote.AddPage(self.treeListPanel, 'Data Manager')
 		self.tree.GetMainWindow().Bind(wx.EVT_RIGHT_DOWN, self.SelectTREE)
 
 		#self.dbPanelParent = wx.Panel(self.sideNote, -1)
