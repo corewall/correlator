@@ -501,7 +501,7 @@ class MainFrame(wx.Frame):
 			self.OnActivateWindow(0)
 
 	def SHOWScroll(self, event):
-		if self.miscroll.IsChecked() == True:
+		if self.miscroll.IsChecked():
 			self.SetSecondScroll(1)
 		else:
 			self.SetSecondScroll(0)
@@ -827,13 +827,16 @@ class MainFrame(wx.Frame):
 			self.optPanel.indSpliceScroll.Enable(True)
 		self.Window.UpdateDrawing()
 
+	# enable/disable independent splice scrolling
 	def SetSecondScroll(self, event):
 		if self.Window.isSecondScroll == 1: 
 			self.Window.isSecondScroll = 0 
 			self.optPanel.indSpliceScroll.SetValue(False)
+			self.miscroll.Check(False)
 		else:
 			self.Window.isSecondScroll = 1 
 			self.optPanel.indSpliceScroll.SetValue(True)
+			self.miscroll.Check(True)
 
 
 	def RebuildComboBox(self, comboBox, typeNames, hasSpliceData, hasLogData):
@@ -2725,13 +2728,11 @@ class MainFrame(wx.Frame):
 		if self.config.has_option("applications", "secondscroll"):
 			str_temp = self.config.get("applications", "secondscroll")
 			if len(str_temp) > 0:
-				conf_value = int ( str_temp )
+				conf_value = int(str_temp)
 			if conf_value == 0:
-				self.Window.isSecondScroll = 0 
-				self.optPanel.indSpliceScroll.SetValue(False)
+				self.SetSecondScroll(0)
 			else:
-				self.Window.isSecondScroll =1 
-				self.optPanel.indSpliceScroll.SetValue(True)
+				self.SetSecondScroll(1)
 
 		if self.config.has_option("applications", "colors"):
 			conf_str = self.config.get("applications", "colors") 
