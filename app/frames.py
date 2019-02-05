@@ -648,14 +648,18 @@ class CompositePanel():
 		self.undoButton.Enable(False)
 		
 	def OnSAVE(self, event):
-		dlg = dialog.Message3Button(self.parent, "Create new affine file?", yesLabel="Create New", okLabel="Update Existing", cancelLabel="Cancel")
-		ret = dlg.ShowModal()
-		dlg.Destroy()
-		if ret == wx.ID_OK or ret == wx.ID_YES :
-			updateExisting = ret == wx.ID_OK
-			filename = self.parent.dataFrame.Add_TABLE("AFFINE", "affine", updateExisting, False, "")
-			print "Save: updateExisting = {}, filename = {}".format(updateExisting, filename)
-			self.parent.affineManager.save(filename)
+		updateExisting = False
+		if self.parent.affineManager.currentAffineFile is not None:
+			dlg = dialog.Message3Button(self.parent, "Create new affine file?", yesLabel="Create New", okLabel="Update Existing", cancelLabel="Cancel")
+			ret = dlg.ShowModal()
+			dlg.Destroy()
+			if ret in [wx.ID_OK, wx.ID_YES]:
+				updateExisting = (ret == wx.ID_OK)
+			else: # canceled
+				return
+		filename = self.parent.dataFrame.Add_TABLE("AFFINE", "affine", updateExisting, False, "")
+		# print "Save: updateExisting = {}, filename = {}".format(updateExisting, filename)
+		self.parent.affineManager.save(filename)
 
 	def OnDismiss(self, evt):
 		self.Hide()

@@ -2997,14 +2997,19 @@ class AffineController:
 		self.affine = AffineBuilder() # AffineBuilder for current affine table
 		self.undoStack = [] # track previous AffineBuilder states for undo
 		self.dirty = False # has affine state changed since last save?
+		self.currentAffineFile = None # most-recently loaded or saved affine file (if any)
 	
-	# remove all shifts
+	# remove all shifts, re-init state members
 	def clear(self):
 		self.affine.clear()
+		self.undoStack = []
+		self.dirty = False
+		self.currentAffineFile = None
 		
 	def load(self, filepath):
 		if filepath is not None:
 			self.affine = AffineBuilder.createWithAffineFile(filepath, self.parent.sectionSummary)
+			self.currentAffineFile = filepath
 		else:
 			self.affine = AffineBuilder.createWithSectionSummary(self.parent.sectionSummary)
 		
@@ -3048,6 +3053,7 @@ class AffineController:
 			df = pandas.DataFrame(columns=tabularImport.AffineFormat.req)
 			df = df.append(affineRows, ignore_index=True)
 			tabularImport.writeToFile(df, affineFilePath)
+			self.currentAffineFile = affineFilePath
 			self.dirty = False
 		
 	def updateGUI(self):

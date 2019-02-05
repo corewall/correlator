@@ -3316,28 +3316,18 @@ class DataFrame(wx.Panel):
 						return child_item 
 		return None
 
-
-	# Find first Enabled Affine, Splice or ELD table
+	# Find first Enabled Affine, Splice or ELD table in provided savedTablesItem node
+	# savedTablesItem: wxTreeListCtrl 'Saved Tables' node to search
+	# tableType: "AFFINE", "SPLICE", or "ELD"
 	def FindSavedTable(self, savedTablesItem, tableType):
 		tableItem = None
-		totalcount = self.tree.GetChildrenCount(savedTablesItem, False)
-		if totalcount > 0:
-			child = self.tree.GetFirstChild(savedTablesItem)
-			childItem = child[0]
-			type = self.tree.GetItemText(childItem, 1)
-			flag = self.tree.GetItemText(childItem, 2)
+		for savedTable in self.GetChildren(savedTablesItem):
+			type = self.tree.GetItemText(savedTable, 1)
+			flag = self.tree.GetItemText(savedTable, 2)
 			if type == tableType and flag == "Enable":
-				tableItem = childItem 
-			for k in range(1, totalcount):
-				if tableItem is not None:
-					break
-				childItem = self.tree.GetNextSibling(childItem)
-				type = self.tree.GetItemText(childItem, 1)
-				flag = self.tree.GetItemText(childItem, 2)
-				if type == tableType and flag == "Enable":
-					tableItem = childItem
+				tableItem = savedTable
+				break
 		return tableItem
-		
 
 	# load and apply affine, splice, and ELD tables if present and enabled
 	def OnLOAD_TABLE(self, parentItem):
