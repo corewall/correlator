@@ -332,17 +332,17 @@ class AffineBuilder:
     def _parseAffineRow(self, row):
         hole = row['Hole']
         core = row['Core']
-        offset = row['Cumulative Offset (m)']
-        shiftType = row['Shift Type']
-        dataUsed = row['Data Used']
-        comment = row['Quality Comment']
+        offset = row['Cumulative offset (m)']
+        shiftType = row['Shift type']
+        dataUsed = row['Data used']
+        comment = row['Quality comment']
         
         fixedCore = fixedCsf = shiftedCsf = ""
         if shiftType == 'TIE':
-            if 'Fixed Core' in row: # new-style affine table
-                fixedCore = row['Fixed Core']
-                fixedCsf = row['Fixed Tie CSF']
-                shiftedCsf = row['Shifted Tie CSF']
+            if 'Reference core' in row: # new-style affine table
+                fixedCore = row['Reference core']
+                fixedCsf = row['Reference tie point CSF-A (m)']
+                shiftedCsf = row['Shift tie point CSF-A (m)']
             else: # older affine with no TIE chain information
                 pass
         
@@ -703,7 +703,7 @@ def convert_pre_v3_AffineTable(prev3df):
             prev3df.loc[index, "Shift Type"] = "REL"
     
     # add empty TIE tracking columns        
-    for index, colname in enumerate(['Fixed Core', 'Fixed Tie CSF', 'Shifted Tie CSF']): 
+    for index, colname in enumerate(['Reference core', 'Reference tie point CSF-A', 'Shift tie point CSF-A']): 
         prev3df.insert(index + 10, colname, "")
     #print prev3df
     return prev3df

@@ -42,9 +42,9 @@ AffineFormat_pre_v3 = TabularFormat("Affine Table pre v3",
                               'Data Used', 'Quality Comment'])
 
 AffineFormat = TabularFormat("Affine Table",
-                             ['Site', 'Hole', 'Core', 'Core Type', 'Depth CSF (m)', 'Depth CCSF (m)', \
-                              'Cumulative Offset (m)', 'Differential Offset (m)', 'Growth Rate', 'Shift Type', \
-                              'Fixed Core', 'Fixed Tie CSF', 'Shifted Tie CSF', 'Data Used', 'Quality Comment'])
+                             ['Site', 'Hole', 'Core', 'Core type', 'Core top depth CSF-A (m)', 'Core top depth CCSF (m)', \
+                              'Cumulative offset (m)', 'Differential offset (m)', 'Growth rate', 'Shift type', \
+                              'Data used', 'Quality comment', 'Reference core', 'Reference tie point CSF-A (m)', 'Shift tie point CSF-A (m)'])
 
 # Splice Interval Table headers: 2.0.2 b8 and earlier
 # brg 1/18/2016: keeping for now, may want to convert from this format

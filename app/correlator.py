@@ -3042,11 +3042,11 @@ class AffineController:
 					shiftedTieCsf = curShift.depth
 					fixedCore = curShift.fromCore.GetHoleCoreStr()
 				
-				series = pandas.Series({'Site':site, 'Hole':hole, 'Core':curShift.core.core, 'Core Type':coreType, \
-										'Depth CSF (m)':csf, 'Depth CCSF (m)':ccsf, 'Cumulative Offset (m)':round(cumOff,3), \
-										'Differential Offset (m)':round(diffOff, 3), 'Growth Rate':growthRate, 'Shift Type':curShift.typeStr(), \
-										'Fixed Core':fixedCore, 'Fixed Tie CSF':fixedTieCsf, 'Shifted Tie CSF':shiftedTieCsf, \
-										'Data Used':curShift.dataUsed, 'Quality Comment':curShift.comment})
+				series = pandas.Series({'Site':site, 'Hole':hole, 'Core':curShift.core.core, 'Core type':coreType, \
+										'Core top depth CSF-A (m)':csf, 'Core top depth CCSF (m)':ccsf, 'Cumulative offset (m)':round(cumOff,3), \
+										'Differential offset (m)':round(diffOff, 3), 'Growth rate':growthRate, 'Shift type':curShift.typeStr(), \
+										'Data used':curShift.dataUsed, 'Quality comment':curShift.comment, 'Reference core':fixedCore, \
+										'Reference tie point CSF-A (m)':fixedTieCsf, 'Shift tie point CSF-A (m)':shiftedTieCsf})
 				
 				affineRows.append(series)
 		if len(affineRows) > 0:
