@@ -1916,7 +1916,7 @@ class DataFrame(wx.Panel):
 	# - test: a lambda f'n that returns a boolean to filter included children
 	def GetChildren(self, parentNode, test=None):
 		kids = []
-		childNode, cookie = self.tree.GetFirstChild(parentNode)
+		childNode, _ = self.tree.GetFirstChild(parentNode) # _ for unused cookie item
 		while childNode.IsOk():
 			if test is None or test(childNode):
 				kids.append(childNode)
@@ -7629,7 +7629,8 @@ class DataFrame(wx.Panel):
 		self.tree.Expand(self.root)
 
 		# update min/max values for datatype
-		dataFileItems = self.GetChildren(dataNode)
+		dataFileTest = lambda node:self.tree.GetItemText(node, 8).endswith(".dat") # omit cull table nodes
+		dataFileItems = self.GetChildren(dataNode, test=dataFileTest)
 		mins = [float(self.tree.GetItemText(dfi, 4)) for dfi in dataFileItems]
 		maxs = [float(self.tree.GetItemText(dfi, 5)) for dfi in dataFileItems]
 		dataMin = str(min(mins))
