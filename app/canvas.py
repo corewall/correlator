@@ -5005,52 +5005,7 @@ class DataCanvas(wxBufferedWindow):
 	def GetDataInfo(self, coreindex):
 		coreInfo = self.findCoreInfoByIndex(coreindex)
 		return (coreInfo.hole, int(coreInfo.holeCore), coreInfo.type, coreInfo.quality, coreInfo.holeCount)
-	
-	# Return dictionary keyed on hole name. Each value is a list of (core, mbsf, mcd, growthRate)
-	# tuples in core order. growthRate is based on all previous cores, i.e. the growth rate for
-	# core A5 is determined by shifts of A1-A4. Growth rate at topmost core is a default of 1.0.
-	def GetGrowthRateData(self):
-		coreDict = {}
-		for hole in self.HoleData:
-			holeName = hole[0][0][7]
-			if holeName not in coreDict:
-				coreDict[holeName] = {}
 
-			# gather core data: core sets may be inconsistent for different datatypes in same hole
-			mbsfVals = []
-			mcdVals = []
-			for core in hole[0][1:len(hole[0])]:
-				coreName = core[0]
-				if coreName not in coreDict[holeName]:
-					mcd = core[9][0] # first element in section depth list
-					mcdVals.append(mcd)
-					mbsf = mcd - core[5] # offset
-					mbsfVals.append(mbsf)
-					numVals = len(mbsfVals)
-					if numVals == 1:
-						growthRate = 1.0
-					elif numVals == 2:
-						 # insufficient points to compute rate at second core, use mcd of top core
-						 # brgtodo - better default for growth rate here?
-						growthRate = mcdVals[0]
-					else:
-						lastElt = numVals - 1
-						rawGrowthTuple = numpy.polyfit(mbsfVals[:lastElt], mcdVals[:lastElt], 1)
-						growthRate = round(rawGrowthTuple[0], 3)
-					coreDict[holeName][coreName] = (coreName, mbsf, mcd, growthRate)
-		
-		# create lists of core tuples sorted by core name, add to outCoreDict (keyed on hole name)
-		outCoreDict = {}
-		for hole in coreDict:
-			sortedList = []
-			sortedCoreTuples = sorted(coreDict[hole], key=int)
-			for key in sortedCoreTuples:
-				sortedList.append(coreDict[hole][key])
-			outCoreDict[hole] = sortedList
-				
-		#print "outCoreDict = {}".format(outCoreDict)
-		return outCoreDict
-	
 	def GetFixedCompositeTie(self):
 		if len(self.TieData) >= 1:
 			return self.TieData[0]
