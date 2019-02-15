@@ -20,6 +20,7 @@ class CoreSheet(sheet.CSheet):
 	 	self.SetWindowStyle(wx.ALWAYS_SHOW_SB)
 		self.SetNumberRows(x)
 		self.SetNumberCols(y)
+		self.EnableEditing(False)
 
 class HoldDialog(wx.Frame):
 	def __init__(self, parent):
