@@ -173,7 +173,10 @@ class ViewDataFileDialog(wx.Dialog):
 		# populate cells
 		for ridx, row in enumerate(self.dataframe.itertuples()):
 			for cidx in range(0, len(row) - 1):
-				self.table.SetCellValue(ridx, cidx, str(row[cidx + 1])) # skip leading index column
+				cellStr = str(row[cidx + 1])
+				if cellStr == "nan":
+					cellStr = ""
+				self.table.SetCellValue(ridx, cidx, cellStr) # skip leading index column
 
 		self.table.AutoSize() # resize columns to fit header+data...bogs things down with large files
 		self.SetClientSize(self.table.GetSize()) # fit dialog to table
