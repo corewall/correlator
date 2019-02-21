@@ -3276,6 +3276,7 @@ class SpliceController:
 		self.parent = parent # MainFrame
 		self.splice = splice.SpliceBuilder() # SpliceBuilder for current splice
 		self.altSplice = splice.SpliceBuilder() # SpliceBuilder for alternate splice
+		self.currentSpliceFile = None
 		
 		self.clear() # init selection, file state members
 		
@@ -3302,6 +3303,7 @@ class SpliceController:
 	def clear(self):
 		self.splice.clear()
 		self.altSplice.clear()
+		self.currentSpliceFile = None
 		self.selected = None # selected SpliceInterval
 		self.selectedTie = None # selected splice handle
 		self.topTie = None # brgtodo: rename to handles since these don't always represent a "TIE"
@@ -3525,10 +3527,12 @@ class SpliceController:
 			df = df.append(rows, ignore_index=True)
 			#print "{}".format(df)
 			tabularImport.writeToFile(df, filepath)
+			self.currentSpliceFile = filepath
 			self.setDirty(False)
 			
 	def load(self, filepath, destSplice, datatype=None):
 		df = tabularImport.readFile(filepath)
+		self.currentSpliceFile = filepath
 		previousSpliceType = None
 		previousAffBot = None
 		for index, row in df.iterrows(): # itertuples() is faster if needed

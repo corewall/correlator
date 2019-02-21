@@ -1620,21 +1620,25 @@ class SpliceIntervalPanel():
 			tie.tie()
 		self.UpdateUI()
 		self.parent.Window.UpdateDrawing()
-		
-	def OnSave(self, event):
-		dlg = dialog.Message3Button(self.parent, "Create new splice file?", yesLabel="Create New", okLabel="Update Existing", cancelLabel="Cancel")
-		ret = dlg.ShowModal()
-		dlg.Destroy()
-		if ret == wx.ID_OK or ret == wx.ID_YES :
-			updateExisting = ret == wx.ID_OK
-			filename = self.parent.dataFrame.Add_TABLE("SPLICE" , "splice", updateExisting, False, "")
-			print "Save: updateExisting = {}, filename = {}".format(updateExisting, filename)
-			self.parent.spliceManager.save(filename)
 
-			s = "Save Splice Table: " + filename + "\n"
-			self.parent.logFileptr.write(s)
-			self.parent.autoPanel.SetCoreList(1, [])
-			self.parent.OnShowMessage("Information", "Successfully Saved", 1)
+	def OnSave(self, event):
+		updateExisting = False
+		if self.parent.spliceManager.currentSpliceFile is not None:
+			dlg = dialog.Message3Button(self.parent, "Create new splice file?", yesLabel="Create New", okLabel="Update Existing", cancelLabel="Cancel")
+			ret = dlg.ShowModal()
+			dlg.Destroy()
+			if ret in [wx.ID_OK, wx.ID_YES]:
+				updateExisting = (ret == wx.ID_OK)
+			else: # canceled
+				return
+		filename = self.parent.dataFrame.Add_TABLE("SPLICE" , "splice", updateExisting, False, "")
+		print "Save: updateExisting = {}, filename = {}".format(updateExisting, filename)
+		self.parent.spliceManager.save(filename)
+
+		s = "Save Splice Table: " + filename + "\n"
+		self.parent.logFileptr.write(s)
+		self.parent.autoPanel.SetCoreList(1, [])
+		self.parent.OnShowMessage("Information", "Successfully Saved", 1)
 	
 	def OnSelectRow(self, event):
 		self.parent.spliceManager.selectByIndex(event.GetRow())
