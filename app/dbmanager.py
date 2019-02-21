@@ -164,12 +164,23 @@ class DataFrame(wx.Panel):
 			self.tree.Delete(self.selectedIdx)
 			self.OnUPDATE_DB_FILE(siteName, siteNode)
 				
-	def EnableTreeItem(self, item, enable):
+	def EnableSavedTablesItem(self, item, enable):
+		if enable: # ensure only one table of a type is enabled at a time
+			savedTablesNode = self.tree.GetItemParent(item)
+			tableType = self.tree.GetItemText(item, 1)
+			for child in self.GetChildren(savedTablesNode, test=lambda c:self.tree.GetItemText(c, 1) == tableType):
+				self._enableSavedTable(child, False) # disable all tables of this type
+		self._enableSavedTable(item, enable) # then enable/disable selected table
+		siteNode = self.GetSiteForNode(item)
+		self.OnUPDATE_DB_FILE(self.tree.GetItemText(siteNode, 0), siteNode)
+			
+		# item = self.tree.GetItemParent(item)
+		# item = self.tree.GetItemParent(item)
+		# self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
+
+	def _enableSavedTable(self, item, enable):
 		self.tree.SetItemText(item, 'Enable' if enable else 'Disable', 2)
 		self.tree.SetItemTextColour(item, wx.BLUE if enable else wx.RED)
-		item = self.tree.GetItemParent(item)
-		item = self.tree.GetItemParent(item)
-		self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
 
 	def ViewDataFile(self, filepath):
 		if filepath[-4:] == ".dat": # Correlator-saved data file
@@ -214,10 +225,10 @@ class DataFrame(wx.Panel):
 		elif opId == 9:
 			# IMPORT CULL TABLE
 			self.OnIMPORT_CULLTABLE(False)
-		elif opId == 10: # Disable
-			self.EnableTreeItem(self.selectedIdx, False)
-		elif opId == 11: # Enable
-			self.EnableTreeItem(self.selectedIdx, True)
+		elif opId == 10: # Disable Saved Tables item
+			self.EnableSavedTablesItem(self.selectedIdx, False)
+		elif opId == 11: # Enable Saved Tables item
+			self.EnableSavedTablesItem(self.selectedIdx, True)
 		elif opId == 12:
 			# IMPORT LOG 
 			self.importType = "LOG"
@@ -283,34 +294,15 @@ class DataFrame(wx.Panel):
 				stamp = tempstamp[0:last]
 				self.tree.SetItemText(self.selectedIdx, stamp, 6)
 				self.OnUPDATE_DB_FILE(title, parentItem)
-		elif opId == 19:
-			totalcount = self.tree.GetChildrenCount(self.selectedIdx, False)
-			item = self.tree.GetItemParent(self.selectedIdx)
-			if totalcount > 0:
-				child = self.tree.GetFirstChild(self.selectedIdx)
-				child_item = child[0]
-				self.tree.SetItemText(child_item, 'Enable', 2)
-				for k in range(1, totalcount):
-					child_item = self.tree.GetNextSibling(child_item)
-					self.tree.SetItemText(child_item, 'Enable', 2)
+		elif opId == 19 or opId == 20: # Enable (19)/Disable (20) one or all files of a data type
+			newState = 'Enable' if opId == 19 else 'Disable'
+			if self.tree.GetChildrenCount(self.selectedIdx, False) > 0:
+				for child in self.GetChildren(self.selectedIdx):
+					self.tree.SetItemText(child, newState, 2)
 			else:
-				self.tree.SetItemText(self.selectedIdx, 'Enable', 2)
-				item = self.tree.GetItemParent(item)
-			self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
-		elif opId == 20:
-			totalcount = self.tree.GetChildrenCount(self.selectedIdx, False)
-			item = self.tree.GetItemParent(self.selectedIdx)
-			if totalcount > 0:
-				child = self.tree.GetFirstChild(self.selectedIdx)
-				child_item = child[0]
-				self.tree.SetItemText(child_item, 'Disable', 2)
-				for k in range(1, totalcount):
-					child_item = self.tree.GetNextSibling(child_item)
-					self.tree.SetItemText(child_item, 'Disable', 2)
-			else:
-				self.tree.SetItemText(self.selectedIdx, 'Disable', 2)
-				item = self.tree.GetItemParent(item)
-			self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
+				self.tree.SetItemText(self.selectedIdx, newState, 2)
+			siteNode = self.GetSiteForNode(self.selectedIdx)
+			self.OnUPDATE_DB_FILE(self.tree.GetItemText(siteNode, 0), siteNode)
 		elif opId == 21:
 			self.OnIMPORT_IMAGE()
 		elif opId == 22:
@@ -4469,16 +4461,35 @@ class DataFrame(wx.Panel):
 
 		return True
 	
-	# assumes self.propertyIdx has been set to "Saved Tables" by Update_PROPERTY_ITEM()
+	# Return path of currently-enabled affine table, or None if no affine is enabled.
 	def GetCurrentAffineTable(self):
-		# search property's children for type matching title, e.g. "AFFINE", "SPLICE", or "ELD"
-		curAffinePath = None
-		for tableNode in self.GetChildren(self.propertyIdx, lambda x: self.tree.GetItemText(x, 1) == "AFFINE"):
-			if self.tree.GetItemText(tableNode, 2) == "Enable":
-				curAffinePath = self.tree.GetItemText(tableNode, 8)
-				break
-		return curAffinePath
+		return self.GetCurrentSavedTable("AFFINE")
 
+	# Return path of currently-enabled splice table, or None if no splice is enabled.
+	def GetCurrentSpliceTable(self):
+		return self.GetCurrentSavedTable("SPLICE")
+
+	# Assumes self.propertyIdx has been set to "Saved Tables" by Update_PROPERTY_ITEM()
+	# Return path to enabled table of tableType or None if no such table is eanbled.
+	# tableType: "AFFINE" or "SPLICE" for affine or splice table, respectively.
+	def GetCurrentSavedTable(self, tableType):
+		# search property's children for type matching title, e.g. "AFFINE", "SPLICE", or "ELD"
+		tablePath = None
+		for tableNode in self.GetChildren(self.propertyIdx, lambda x: self.tree.GetItemText(x, 1) == tableType):
+			if self.tree.GetItemText(tableNode, 2) == "Enable":
+				tablePath = self.tree.GetItemText(tableNode, 8)
+				break
+		return tablePath
+
+	# Return string representing current date and time in YYYY-MM-DD HH:MM format.
+	def _getTimestamp(self):
+		tempstamp = str(datetime.today())
+		last = tempstamp.find(":", 0)
+		last = tempstamp.find(":", last+1)
+		stamp = tempstamp[0:last]
+		return stamp
+
+	# Add new or update existing Saved Table (affine or splice) item.
 	def Add_TABLE(self, title, sub_title, updateflag, importflag, source_filename):
 		if importflag == False and len(self.selectBackup) == 0:
 			self.parent.OnShowMessage("Error", "Could not find selected items", 1)
@@ -4490,45 +4501,27 @@ class DataFrame(wx.Panel):
 		else:
 			items = self.tree.GetSelections()
 
-		# override user choice to Update if there's no current affine table - must save a new one
-		# todo: prevent that option in UI
+		# Override user choice to Update if no affine/splice table is currently enabled,
+		# must save a new one.
 		self.Update_PROPERTY_ITEM(items)
 		savedTablesNode = self.propertyIdx # property is the "Saved Tables" wxTreeItem for this site
-		if self.GetCurrentAffineTable() is None:
+		if title == "AFFINE" and self.GetCurrentAffineTable() is None:
+			updateflag = False
+		if title == "SPLICE" and self.GetCurrentSpliceTable() is None:
 			updateflag = False
 
-		ith = 0
-		max_ith = 0
-		temp_filename = ""
-		
-		# if we need to create a new table, find lowest available number for filename: also
-		# Disable all elements since the newly-created table will be Enabled
+		# if we need to create a new table, find next available number for filename
+		maxFileNum = 0
 		if updateflag == False:
-			totalcount = self.tree.GetChildrenCount(savedTablesNode, False)
-			if totalcount > 0:
-				child = self.tree.GetFirstChild(savedTablesNode)
-				child_item = child[0]
-				if self.tree.GetItemText(child_item, 1) == title:
-					temp_filename = self.tree.GetItemText(child_item, 8) 
-					last = temp_filename.find(".", 0) 
-					start = last + 1
-					last = temp_filename.find(".", start)
-					ith = int(temp_filename[start:last])
-					if max_ith < ith :
-						max_ith = ith
-					self.EnableTreeItem(child_item, False)
-				for k in range(1, totalcount):
-					child_item = self.tree.GetNextSibling(child_item)
-					if self.tree.GetItemText(child_item, 1) == title:
-						temp_filename = self.tree.GetItemText(child_item, 8) 
-						last = temp_filename.find(".", 0) 
-						start = last + 1
-						last = temp_filename.find(".", start)
-						ith = int(temp_filename[start:last])
-						if max_ith < ith :
-							max_ith = ith
-						self.EnableTreeItem(child_item, False)
-		ith = max_ith + 1
+			for child in self.GetChildren(savedTablesNode, test=lambda c:self.tree.GetItemText(c, 1) == title):
+				temp_filename = self.tree.GetItemText(child, 8)
+				last = temp_filename.find(".", 0) 
+				start = last + 1
+				last = temp_filename.find(".", start)
+				curFileNum = int(temp_filename[start:last])
+				if maxFileNum < curFileNum:
+					maxFileNum = curFileNum
+		newFileNum = maxFileNum + 1
 		#print "[DEBUG] file index number is " + str(ith)
 
 		filename = ''
@@ -4541,18 +4534,9 @@ class DataFrame(wx.Panel):
 
 			self.tree.Expand(subroot)
 
-			filename = self.title + '.' + str(ith) + '.' + sub_title + '.table'
+			filename = self.title + '.' + str(newFileNum) + '.' + sub_title + '.table'
 			self.tree.SetItemText(subroot,  filename, 8)
-
-			self.tree.SetItemText(subroot, "Enable", 2)
-			self.tree.SetItemTextColour(subroot, wx.BLUE)
-
-			tempstamp = str(datetime.today())
-			last = tempstamp.find(":", 0)
-			last = tempstamp.find(":", last+1)
-			#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
-			stamp = tempstamp[0:last] 
-
+			stamp = self._getTimestamp()
 			self.tree.SetItemText(subroot, stamp, 6)
 
 			self.tree.SetItemText(subroot, self.parent.user, 7)
@@ -4569,13 +4553,7 @@ class DataFrame(wx.Panel):
 		else: # found enabled item of table type being saved - update it
 			subroot = child[1]
 
-			tempstamp = str(datetime.today())
-			last = tempstamp.find(":", 0)
-			last = tempstamp.find(":", last+1)
-			#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
-			stamp = tempstamp[0:last]
-
-			self.tree.SetItemText(subroot, stamp, 6)
+			self.tree.SetItemText(subroot, self._getTimestamp(), 6)
 			self.tree.SetItemText(subroot, self.parent.user, 7)
 
 			parentItem = self.tree.GetItemParent(savedTablesNode)
@@ -4587,6 +4565,8 @@ class DataFrame(wx.Panel):
 				fullname = self.parent.DBPath + 'db\\' + self.title + '\\' + filename
 			else:
 				fullname = self.parent.DBPath + 'db/' + self.title + '/' + filename
+
+		self.EnableSavedTablesItem(subroot, True)
 		return fullname
 
 
