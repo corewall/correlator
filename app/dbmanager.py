@@ -103,8 +103,10 @@ class DataFrame(wx.Panel):
 		self.tree.SetColumnWidth(10, 150)
 		self.tree.AddColumn("Data Index")
 		self.tree.AddColumn("Smooth")
-		self.tree.SetColumnWidth(12, 250)
+		self.tree.SetColumnWidth(12, 150)
 		self.tree.AddColumn("Y")
+		self.tree.SetColumnWidth(13, 20)
+		self.tree.AddColumn("Cull Table") # column index 14
 
 		self.tree.SetMainColumn(0)
 		self.root = self.tree.AddRoot("Root")
@@ -173,10 +175,6 @@ class DataFrame(wx.Panel):
 		self._enableSavedTable(item, enable) # then enable/disable selected table
 		siteNode = self.GetSiteForNode(item)
 		self.OnUPDATE_DB_FILE(self.tree.GetItemText(siteNode, 0), siteNode)
-			
-		# item = self.tree.GetItemParent(item)
-		# item = self.tree.GetItemParent(item)
-		# self.OnUPDATE_DB_FILE(self.tree.GetItemText(item, 0), item)
 
 	def _enableSavedTable(self, item, enable):
 		self.tree.SetItemText(item, 'Enable' if enable else 'Disable', 2)
@@ -4696,7 +4694,7 @@ class DataFrame(wx.Panel):
 		selectItem = None
 		#for selectItem in self.currentIdx:
 		for selectItem in self.selectBackup:
-			if len(self.tree.GetItemText(selectItem, 8)) > 0:
+			if len(self.tree.GetItemText(selectItem, 8)) > 0: # selection is a data file node
 				parentItem = self.tree.GetItemParent(selectItem)
 				type = self.tree.GetItemText(parentItem, 0)
 				if cullType == "All Holes" or cullType == type:
@@ -4710,9 +4708,9 @@ class DataFrame(wx.Panel):
 
 				parentItem = self.tree.GetItemParent(parentItem)
 				title = self.tree.GetItemText(parentItem, 0)
-			else:
+			else: # selection is site or data type node
 				type = self.tree.GetItemText(selectItem, 0)
-				if type.find("-", 0) == -1:
+				if type.find("-", 0) == -1: # selection is a data type node
 					if cullType == "All Holes" or cullType == type:
 						ret = py_correlator.getRange(type)
 						if ret != None:
@@ -4724,8 +4722,7 @@ class DataFrame(wx.Panel):
 
 					parentItem = self.tree.GetItemParent(selectItem)
 					title = self.tree.GetItemText(parentItem, 0)
-				else:
-					# TITLE-LEG-SITE
+				else: # selection is a site node
 					parentItem = selectItem
 					title = self.tree.GetItemText(parentItem, 0)
 
@@ -4790,7 +4787,7 @@ class DataFrame(wx.Panel):
 
 	def Add_CULLTABLE(self, item, type, isUniversal, source_path):
 		parentItem = self.tree.GetItemParent(item)
-		child = self.FindItem(item, '-Cull Table')
+		child = self.FindItem(item, '-Cull Table') # find existing culltable for type
 		filename = ''
 		title = ''
 		if child[0] == False:
@@ -5257,7 +5254,7 @@ class DataFrame(wx.Panel):
 
 	# 	return loadedSites
 
-	# brg 12/4/2013: Builds data manager UI
+	# Build Data Manager tree from sites in database
 	def OnLOADCONFIG(self):
 		#self.LoadDatabase() # 9/12/2014 brg: for new db manager, don't bother loading for now
 
@@ -5291,16 +5288,16 @@ class DataFrame(wx.Panel):
 
 				#curSite = SiteData(data_item)
 
-				root = self.tree.AppendItem(self.root, data_item) # site name
-				self.tree.SetItemBold(root, True)
-				property_child = self.tree.AppendItem(root, 'Saved Tables')
-				log_child = self.tree.AppendItem(root, 'Downhole Log Data')
-				strat_child = self.tree.AppendItem(root, 'Stratigraphy')
-				age_child = self.tree.AppendItem(root, 'Age Models')
-				image_child = self.tree.AppendItem(root, 'Image Data')
-				secSummRoot = self.tree.AppendItem(root, 'Section Summaries')
-				self.tree.SortChildren(root)
-				child = None
+				siteNode = self.tree.AppendItem(self.root, data_item) # site name
+				self.tree.SetItemBold(siteNode, True)
+				property_child = self.tree.AppendItem(siteNode, 'Saved Tables')
+				log_child = self.tree.AppendItem(siteNode, 'Downhole Log Data')
+				strat_child = self.tree.AppendItem(siteNode, 'Stratigraphy')
+				age_child = self.tree.AppendItem(siteNode, 'Age Models')
+				image_child = self.tree.AppendItem(siteNode, 'Image Data')
+				secSummRoot = self.tree.AppendItem(siteNode, 'Section Summaries')
+				self.tree.SortChildren(siteNode)
+				typeNode = None
 				hole_child = None
 				cmd = None
 				token_nums = 0
@@ -5316,17 +5313,17 @@ class DataFrame(wx.Panel):
 						token_nums = len(token) 
 						if token[0] == "hole": # start a new hole
 							hole = token[1]
-							child = None
+							typeNode = None
 							hole_child = None
 						elif token[0] == "type":
-							ret = self.FindItem(root, token[1])
-							if ret[0] == False:
-								child = self.tree.AppendItem(root, token[1])
-								self.tree.SortChildren(root)
-							else:
-								child = ret[1]
-							hole_child = self.tree.AppendItem(child, hole)
-							self.tree.SortChildren(child)
+							typeExists, existingTypeNode = self.FindItem(siteNode, token[1])
+							if typeExists:
+								typeNode = existingTypeNode
+							else: # data type subnode doesn't exist for this site, create
+								typeNode = self.tree.AppendItem(siteNode, token[1])
+								self.tree.SortChildren(siteNode)
+							hole_child = self.tree.AppendItem(typeNode, hole)
+							self.tree.SortChildren(typeNode)
 							self.tree.SetItemText(hole_child, data_item+'/', 10)
 						elif token[0] == "dataName":
 							if hole_child != None:
@@ -5358,22 +5355,22 @@ class DataFrame(wx.Panel):
 							if hole_child != None:
 								self.tree.SetItemText(hole_child, token[1], 7)
 						elif token[0] == "typeDecimate":
-							if child != None:
-								self.tree.SetItemText(child, token[1], 3)
+							if typeNode:
+								self.tree.SetItemText(typeNode, token[1], 3)
 						elif token[0] == "typeData":
-							if child != None:
-								self.tree.SetItemText(child, token[1], 1)
+							if typeNode:
+								self.tree.SetItemText(typeNode, token[1], 1)
 						elif token[0] == "typeMin":
-							if child != None:
-								self.tree.SetItemText(child, token[1], 4)
+							if typeNode:
+								self.tree.SetItemText(typeNode, token[1], 4)
 						elif token[0] == "typeMax":
-							if child != None:
-								self.tree.SetItemText(child, token[1], 5)
+							if typeNode:
+								self.tree.SetItemText(typeNode, token[1], 5)
 						elif token[0] == "typeSmooth":
-							if child != None:
+							if typeNode:
 								temp_max = len(line)
 								s = line[12:temp_max]
-								self.tree.SetItemText(child, s, 12)
+								self.tree.SetItemText(typeNode, s, 12)
 						elif token[0] == "source":
 							if hole_child != None:
 								self.tree.SetItemText(hole_child, token[1], 9)
@@ -5452,24 +5449,8 @@ class DataFrame(wx.Panel):
 						elif token[0] == "eld" and token[1] == "Yes":
 							if property_child != None:
 								self.tree.AppendItem(property_child, "ELD Table")
-						elif token[0] == "culltable":
-							if child != None:
-								temp_child = self.tree.AppendItem(child, "-Cull Table")
-								self.tree.SetItemText(temp_child, token[1], 8)
-
-								self.tree.SetItemText(temp_child, token[2], 6)
-								self.tree.SetItemText(temp_child, token[3], 7)
-
-								self.tree.SetItemText(temp_child, token[4], 2)
-								if token[4] == "Enable":
-									self.tree.SetItemTextColour(temp_child, wx.BLUE)
-								else:
-									self.tree.SetItemTextColour(temp_child, wx.RED)
-								if token_nums > 5 and token[5] != "-":
-									self.tree.SetItemText(temp_child, token[5], 9)
-
-								self.tree.SetItemText(temp_child, data_item + '/', 10)
-								self.tree.SortChildren(child)
+						elif token[0] == "culltable": # change column 14 (Cull Table) instead
+							self.tree.SetItemText(typeNode, token[1], 14)
 						elif token[0] == "log":
 							if log_child != None:
 								temp_child = self.tree.AppendItem(log_child, "Log Data")
