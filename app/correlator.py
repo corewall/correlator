@@ -1521,7 +1521,7 @@ class MainFrame(wx.Frame):
 
 		self.WritePreferenceItem("startdepth", self.Window.rulerStartDepth, f)
 		self.WritePreferenceItem("secondstartdepth", self.Window.SPrulerStartDepth, f)
-		self.WritePreferenceItem("datawidth", self.optPanel.slider1.GetValue(), f)
+		self.WritePreferenceItem("datawidth", self.optPanel.plotWidthSlider.GetValue(), f)
 		self.WritePreferenceItem("rulerunits", self.Window.GetRulerUnitsStr(), f)
 		self.WritePreferenceItem("rulerscale", self.optPanel.depthZoomSlider.GetValue(), f)
 
@@ -2952,7 +2952,7 @@ class MainFrame(wx.Frame):
 			str_temp = self.config.get("applications", "datawidth")
 			if len(str_temp) > 0:
 				conf_value = int ( str_temp )
-				self.optPanel.slider1.SetValue(conf_value)
+				self.optPanel.plotWidthSlider.SetValue(conf_value)
 				self.optPanel.OnChangeWidth(None)
 
 		img = wx.Image(opj("images/scrollbutton1.jpg"))

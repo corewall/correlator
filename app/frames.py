@@ -3546,7 +3546,6 @@ class FilterPanel():
 
 		deciValue = int(self.decimate.GetValue())
 
-		site = self.parent.GetLoadedSite()
 		if type == "All Holes" :
 			for index in range(1, self.all.GetCount()):
 				allType = self.all.GetString(index)
@@ -3632,7 +3631,6 @@ class FilterPanel():
 		smoothStyle = self.GetSmoothStyle()
 		smoothStyleStr = self.plotcmd.GetStringSelection()
 
-		site = self.parent.GetLoadedSite()
 		type = self.all.GetStringSelection()
 
 		# 1/29/2014 brg: Looks like this takes effect when only smoothStyle has changed.
@@ -3893,14 +3891,6 @@ class PreferencesPanel():
 				self.OnChangeMinMax(1)
 				return
 
-	def OnUPDATEWidth(self):
-		type = self.variableChoice.GetStringSelection()
-		idx = self.slider1.GetValue() - 10
-		holeWidth = 300 + (idx * 10)
-		self.parent.Window.holeWidth = holeWidth 
-		self.parent.Window.spliceHoleWidth = holeWidth
-		self.parent.Window.logHoleWidth = holeWidth 
-
 	def SetTYPE(self, event):
 		type = self.variableChoice.GetStringSelection()
 
@@ -3970,8 +3960,8 @@ class PreferencesPanel():
 		self.parent.Window.UpdateDrawing()
 
 	def OnChangeWidth(self, event):
-		idx = self.slider1.GetValue() - 10
 		holeWidth = 300 + (idx * 10)
+		idx = self.plotWidthSlider.GetValue() - 10
 
 		self.parent.Window.holeWidth = holeWidth
 		self.parent.Window.spliceHoleWidth = holeWidth
@@ -4158,11 +4148,11 @@ class PreferencesPanel():
 		varScaleSizer.Add(varApply, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnChangeMinMax, varApply)
 
-		self.slider1 = wx.Slider(varScalePanel, -1, 10, 1, 20)
-		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangeWidth, self.slider1)
+		self.plotWidthSlider = wx.Slider(varScalePanel, -1, value=10, minValue=1, maxValue=20)
+		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangeWidth, self.plotWidthSlider)
 		varSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
 		varSliderSizer.Add(wx.StaticText(varScalePanel, -1, "Zoom"))
-		varSliderSizer.Add(self.slider1, 1, wx.EXPAND)
+		varSliderSizer.Add(self.plotWidthSlider, 1, wx.EXPAND)
 		varSliderSizer.Add(wx.StaticText(varScalePanel, -1, "Width*2"))
 
 		varScaleSizer.Add(varSliderSizer, 0, wx.EXPAND)
