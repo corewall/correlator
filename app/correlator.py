@@ -838,44 +838,28 @@ class MainFrame(wx.Frame):
 			self.optPanel.indSpliceScroll.SetValue(True)
 			self.miscroll.Check(True)
 
-
-	def RebuildComboBox(self, comboBox, typeNames, hasSpliceData, hasLogData):
-		prevSelected = comboBox.GetCurrentSelection()
-		if prevSelected == -1:
-			prevSelected = 0
-
+	def RebuildComboBox(self, comboBox, typeNames):
 		comboBox.Clear()
-		comboBox.Append("All Holes")
-		for type in typeNames:
-			typeStr = "All " + type
-			if comboBox.FindString(typeStr) == wx.NOT_FOUND:
-				comboBox.Append(typeStr)
-
-		if hasSpliceData == True:
-			comboBox.Append("Spliced Records")
-		if hasLogData == True:
-			comboBox.Append("Log")
-
-		comboBox.SetSelection(prevSelected)
-
-		return prevSelected
-
+		if len(typeNames) > 0:
+			for datatype in typeNames:
+				if comboBox.FindString(datatype) == wx.NOT_FOUND:
+					comboBox.Append(datatype)
+			comboBox.SetSelection(0)
 
 	def RefreshTypeComboBoxes(self):
 		if self.filterPanel.locked == False:
 			holeData = self.Window.HoleData
-			hasSpliceData = (self.Window.SpliceData != [])
-			hasLogData = (self.Window.LogData != [])
 
-			# extract type names
+			# extract type names from self.Window.HoleData
 			typeNames = []
 			if len(holeData) > 0:
 				for holeIdx in range(len(holeData)):
 					typeNames.append(holeData[holeIdx][0][0][2])
 
-			self.filterPanel.prevSelected = self.RebuildComboBox(self.filterPanel.all, typeNames, hasSpliceData, hasLogData)
-			self.optPanel.prevSelected = self.RebuildComboBox(self.optPanel.variableChoice, typeNames, hasSpliceData, hasLogData)
-
+			self.RebuildComboBox(self.filterPanel.all, typeNames)
+			self.filterPanel.SetTYPE(event=None) # update controls to reflect current selection
+			self.RebuildComboBox(self.optPanel.variableChoice, typeNames)
+			self.optPanel.SetTYPE(event=None)
 
 	def UpdateSECTION(self):
 		self.Window.SectionData = []
@@ -893,8 +877,6 @@ class MainFrame(wx.Frame):
 			self.UpdateMinMax()
 			self.LOCK = 1
 
-			self.RefreshTypeComboBoxes()
-
 	def UpdateSMOOTH_CORE(self):
 		self.Window.SmoothData = []
 		ret = py_correlator.getData(1)
@@ -903,12 +885,10 @@ class MainFrame(wx.Frame):
 			self.ParseData(ret, self.Window.SmoothData)
 			self.filterPanel.OnRelease()
 
-
 	def InitSPLICE(self):
 		ret = py_correlator.getData(2)
 		if ret != "":
 			self.ParseSpliceData(ret, False)
-
 
 	# 2/22/2017 does this do anything at this point? Shouldn't be any splice data on C++ side
 	def UpdateSPLICE(self, locked):
@@ -991,13 +971,8 @@ class MainFrame(wx.Frame):
 		self.UpdateCORE()
 		self.UpdateSMOOTH_CORE()
 		self.UpdateSPLICE(False)
-		#self.UpdateSMOOTH_SPLICE(False)
 		self.UpdateShiftTie()
-
-		# splice
-		# UpdateStratData
 		self.Window.UpdateDrawing()
-		return
 
 	def UpdateShiftTie(self):
 		ret = py_correlator.getData(21)
@@ -2077,16 +2052,6 @@ class MainFrame(wx.Frame):
 		# hole-name
 		last = data.find(",", start)
 		holename = data[start:last] 
-
-		# register Hole and Type
-		if self.PrevDataType != type and self.LOCK == 0: 
-			self.filterPanel.OnRegisterHole("All " + type)
-			#if self.noOfHoles != 0 and self.filterPanel.locked == False:
-			#	self.noOfSameTypeHoles = self.noOfHoles - self.noOfSameTypeHoles
-			#	for n in range(self.noOfSameTypeHoles): 
-			#		self.Window.OnChangeHoleRange(self.min, self.max)
-			#	self.min = 999
-			#	self.max = -999
 
 		# BLOCKED DETAILED TYPE  
 		#regHole = type + " Hole " + holename

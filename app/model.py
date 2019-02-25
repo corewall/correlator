@@ -780,7 +780,6 @@ class DBView:
 			self.parent.InitSPLICE()
 			self.parent.UpdateSPLICE(False)
 			self.parent.autoPanel.SetCoreList(1, [])
-			self.parent.filterPanel.OnRegisterHole("Spliced Records")
 
 			holeSet = holeList[0].holeSet
 			hsMin = float(holeSet.min)
@@ -798,9 +797,6 @@ class DBView:
 			self.parent.autoPanel.SetCoreList(0, self.parent.Window.HoleData)
 
 		self.parent.Window.ShowLog = False
-		if logLoaded:
-			self.parent.Window.ShowLog = True
-			self.parent.filterPanel.OnRegisterHole("Log")
 
 		self.parent.OnDisableMenu(1, True)
  		self.parent.LOCK = 1

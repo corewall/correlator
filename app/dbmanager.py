@@ -53,7 +53,8 @@ class DataFrame(wx.Panel):
 		self.importLabel = [] 
 		self.logHole = "" 
 		self.cullData = [] 
-		self.selectBackup = None
+		self.selectBackup = None # selected node at Load
+		self.loadedSiteNode = None # site node of selected node at Load
 		self.selectedDataType = ""
 		self.selectedDepthType = ""
 		self.SetBackgroundColour(wx.Colour(255, 255, 255))
@@ -2215,6 +2216,7 @@ class DataFrame(wx.Panel):
 					if ret == wx.ID_OK:
 						self.parent.OnNewData(None)
 						self.selectBackup = []
+						self.loadedSiteNode = None
 					else:
 						return
 
@@ -4005,6 +4007,7 @@ class DataFrame(wx.Panel):
 
 		items = self.tree.GetSelections()
 		self.selectBackup = self.tree.GetSelections()
+		self.loadedSiteNode = self.GetSiteForNode(self.selectBackup[0])
 
 		if len(items) > 0:
 			self.parent.OnNewData(None)
@@ -4371,9 +4374,6 @@ class DataFrame(wx.Panel):
 				self.parent.UpdateELD(True)
 
 		self.parent.Window.ShowLog = False 
-		if logLoaded == True:
-			self.parent.Window.ShowLog = True
-			self.parent.filterPanel.OnRegisterHole("Log")
 
 		# self.parent.OnDisableMenu(1, True)
 		self.parent.LOCK = 1
@@ -4381,6 +4381,7 @@ class DataFrame(wx.Panel):
 		if self.parent.showReportPanel == 1:
 			self.parent.OnUpdateReport()
 
+		self.parent.RefreshTypeComboBoxes()
 		self.parent.ShowDisplay()
 
 		# LOAD SECTION
@@ -4517,7 +4518,7 @@ class DataFrame(wx.Panel):
 		self.EnableSavedTablesItem(subroot, True)
 		return fullname
 
-
+	# Update self.tree and database to reflect updated smoothing.
 	def OnUPDATE_SMOOTH(self, smType, method, value, opt, mode):
 		s = ""
 		if method != "None":
@@ -4630,7 +4631,7 @@ class DataFrame(wx.Panel):
 		if parentItem != None:
 			self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
 
-
+	# Update tree and database to reflect updated cull.
 	def OnUPDATE_CULLTABLE(self, cullType):
 		#if self.currentIdx == []:
 		if self.selectBackup == []:
@@ -4812,145 +4813,23 @@ class DataFrame(wx.Panel):
 						return self.tree.GetItemText(selectItem, 3), self.tree.GetItemText(selectItem, 12)
 		return None
 
-
+	# Update self.tree and database files to reflect change to decimate value.
+	# deciType - string indicating decimated type
+	# deciValue - integer decimate value
 	def OnUPDATEDECIMATE(self, deciType, deciValue):
-		#if self.currentIdx == []:
-		if self.selectBackup == []:
+		if self.loadedSiteNode is None:
 			return
 
-		if deciType == 'Log':
-			self.Update_PROPERTY_ITEM(self.selectBackup)
-			if self.propertyIdx != None:
-				parentItem = self.tree.GetItemParent(self.propertyIdx)
-				child = self.FindItem(parentItem, "Downhole Log Data")
-				if child[0] == True:
-					selectItem = child[1]
-					totalcount = self.tree.GetChildrenCount(selectItem, False)
-					if totalcount > 0:
-						child = self.tree.GetFirstChild(selectItem)
-						child_item = child[0]
-						if self.tree.GetItemText(child_item, 2) == "Enable":
-							self.tree.SetItemText(child_item, str(deciValue), 3)
-							self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
-						else:
-							for k in range(1, totalcount):
-								child_item = self.tree.GetNextSibling(child_item)
-								if self.tree.GetItemText(child_item, 2) == "Enable":
-									self.tree.SetItemText(child_item, str(deciValue), 3)
-									self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
-									break
-			return 
-
-		titleItems = None
-		#for selectItem in self.currentIdx:
-		for selectItem in self.selectBackup:
-			if len(self.tree.GetItemText(selectItem, 8)) > 0:
-				parentItem = self.tree.GetItemParent(selectItem)
-				if self.tree.GetItemText(selectItem, 0) == '-Cull Table':
-					continue
-
-				type = "All " + self.tree.GetItemText(selectItem, 0)
-				if deciType == "All Holes" or deciType == type:
-					self.tree.SetItemText(selectItem, str(deciValue), 3)
-					self.tree.SetItemText(parentItem, str(deciValue), 3)
-
-					parentItem = self.tree.GetItemParent(parentItem)
-					title = self.tree.GetItemText(parentItem, 0)
-					self.OnUPDATE_DB_FILE(title, parentItem)
-			else:
-				type = self.tree.GetItemText(selectItem, 0)
-				if type.find("-", 0) == -1:
-					parentItem = self.tree.GetItemParent(selectItem)
-					type = "All " + type
-					if deciType == "All Holes" or deciType == type:
-						self.tree.SetItemText(selectItem, str(deciValue), 3)
-						totalcount = self.tree.GetChildrenCount(selectItem, False)
-						if totalcount > 0:
-							child = self.tree.GetFirstChild(selectItem)
-							child_item = child[0]
-							if self.tree.GetItemText(child_item, 0) != '-Cull Table':
-								self.tree.SetItemText(child_item, str(deciValue), 3)
-								for k in range(1, totalcount):
-									child_item = self.tree.GetNextSibling(child_item)
-									if self.tree.GetItemText(child_item, 0) != '-Cull Table':
-										self.tree.SetItemText(child_item, str(deciValue), 3)
-
-						title = self.tree.GetItemText(parentItem, 0)
-						self.OnUPDATE_DB_FILE(title, parentItem)
-				else:
-					# TITLE-LEG-SITE
-					parentItem = selectItem
-					total = self.tree.GetChildrenCount(parentItem, False)
-					if total > 0:
-						child = self.tree.GetFirstChild(parentItem)
-						selectItem = child[0]
-						# HYEJUNG
-						str_txt = self.tree.GetItemText(selectItem, 0)
-						if str_txt not in STD_SITE_NODES:
-							type = "All " + str_txt
-							if deciType == "All Holes" or deciType == type:
-								self.tree.SetItemText(selectItem, str(deciValue), 3)
-								totalcount = self.tree.GetChildrenCount(selectItem, False)
-								if totalcount > 0:
-									child = self.tree.GetFirstChild(selectItem)
-									child_item = child[0]
-									if self.tree.GetItemText(child_item, 0) != '-Cull Table':
-										self.tree.SetItemText(child_item, str(deciValue), 3)
-										for k in range(1, totalcount):
-											child_item = self.tree.GetNextSibling(child_item)
-											if self.tree.GetItemText(child_item, 0) != '-Cull Table':
-												self.tree.SetItemText(child_item, str(deciValue), 3)
-
-						for k in range(1, total):
-							selectItem = self.tree.GetNextSibling(selectItem)
-							str_txt = self.tree.GetItemText(selectItem, 0)
-							if str_txt not in STD_SITE_NODES:
-								type = "All " + str_txt
-								if deciType == "All Holes" or deciType == type:
-									self.tree.SetItemText(selectItem, str(deciValue), 3)
-									totalcount = self.tree.GetChildrenCount(selectItem, False)
-									if totalcount > 0:
-										child = self.tree.GetFirstChild(selectItem)
-										child_item = child[0]
-										if self.tree.GetItemText(child_item, 0) != '-Cull Table':
-											self.tree.SetItemText(child_item, str(deciValue), 3)
-											for l in range(1, totalcount):
-												child_item = self.tree.GetNextSibling(child_item)
-												if self.tree.GetItemText(child_item, 0) != '-Cull Table':
-													self.tree.SetItemText(child_item, str(deciValue), 3)
-
-						title = self.tree.GetItemText(parentItem, 0)
-						self.OnUPDATE_DB_FILE(title, parentItem)
-
-
-	# brgtodo never used
-# 	def OnUPDATEMINMAX(self, min, max, type):
-# 		#selectrows = self.listPanel.GetSelectedRows()
-# 		strdatatype = ""
-# 		if type == "All Natural Gamma":
-# 			strdatatype = "NaturalGamma"	
-# 		elif type == "All Susceptibility":
-# 			strdatatype = "Susceptibility"
-# 		elif type == "All Reflectance":
-# 			strdatatype = "Reflectance"
-# 		elif type == "All Bulk Density(GRA)": 
-# 			strdatatype = "Bulk Density(GRA)"
-# 		elif type == "All Pwave": 
-# 			strdatatype = "Pwave"
-# 		elif type == "All Other": 
-# 			strdatatype = "Other"
-#			
-		#if strdatatype != "":
-		#	for row in selectrows:
-		#		if self.listPanel.GetCellValue(row, 10) == strdatatype:
-		#			self.listPanel.SetCellValue(row, 18, str(min))
-		#			self.listPanel.SetCellValue(row, 19, str(max))
-		#			break
-		#elif type == "All Holes":
-		#	for row in selectrows:
-		#		self.listPanel.SetCellValue(row, 18, str(min))
-		#		self.listPanel.SetCellValue(row, 19, str(max))
-
+		if deciType == "Natural Gamma":
+			deciType = "NaturalGamma"
+		typeNodes = self.GetChildren(self.loadedSiteNode, test=lambda c: self.tree.GetItemText(c, 0) == deciType)
+		if len(typeNodes) > 0:
+			typeNode = typeNodes[0]
+			for dataNode in self.GetChildren(typeNode):
+				self.tree.SetItemText(dataNode, str(deciValue), 3)
+			self.tree.SetItemText(typeNode, str(deciValue), 3)
+			siteName = self.tree.GetItemText(self.loadedSiteNode, 0)
+			self.OnUPDATE_DB_FILE(siteName, self.loadedSiteNode)
 
 	""" Confirm existence of dirs and files corresponding to sites listed in root-level
 	datalist.db. If not, regenerate root datalist.db to reflect filesystem state. """

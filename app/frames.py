@@ -3351,51 +3351,6 @@ class FilterPanel():
 	def OnRelease(self):
 		self.locked = False 
 
-	def OnUPDATEDECIMATE(self, selection, deciValue) :
-		n = self.all.GetCount()
-		for i in range(n) :
-			if self.all.GetString(i) == selection :
-				self.all.SetSelection(i)
-				self.decimate.SetValue(deciValue)
-				self.OnDecimate(1)
-				return
-
-
-# 	def OnRegisterClear(self):
-# 		if self.locked == False :
-# 			self.prevSelected = self.all.GetCurrentSelection()
-# 			if self.prevSelected == -1 :
-# 				self.prevSelected = 0			
-# 			self.all.Clear()
-# 			self.all.Append("All Holes")
-# 			self.all.SetSelection(0)
-# 			#self.all.Append("Log")
-			
-# 			if platform_name[0] == "Windows":
-# 				self.all.SetValue(self.all.GetString(self.prevSelected))			
-# 			self.parent.optPanel.OnRegisterClear()
-
-
-	def OnRegisterSplice(self):
-		n = self.all.GetCount()
-		for i in range(n) :
-			if self.all.GetString(i) == "Spliced Records" :
-				return False
-		name = "Spliced Records"
-		self.all.Append(name)
-		self.parent.optPanel.OnRegisterHole(name)
-		return True 
-
-	def OnRegisterHole(self, holename):
-		if self.locked == False :
-			n = self.all.GetCount()
-			for i in range(n) :
-				if self.all.GetString(i) == holename :
-					return
-
-			self.all.Append(holename)
-			self.parent.optPanel.OnRegisterHole(holename)
-
 	def ParseSmoothString(self, smoothStr):
 		tokens = smoothStr.split(' ')
 		if len(tokens) != 3:
@@ -3414,38 +3369,11 @@ class FilterPanel():
 		self.unitscmd.SetStringSelection(smoothList[1])
 		self.plotcmd.SetStringSelection(smoothList[2])
 
-	# brg 1/29/2014: new-fangled SetTYPE()
-	def TypeChoiceChanged(self, event):
-		typeStr = self.all.GetValue()
-		if typeStr == 'All Holes' or typeStr == 'Log' or typeStr == 'Spliced Records':
-			return
-
-# 		site = self.parent.GetLoadedSite()
-# 		strippedType = typeStr[4:] # strip off 'All '
-# 		if strippedType in site.holeSets:
-# 			holeSet = site.holeSets[strippedType]
-# 		else:
-# 			print "Couldn't find type " + strippedType + " in site.holeSets, bailing"
-# 			return
-
-		self.decimate.SetValue(str(holeSet.decimate))
-		self.UpdateSmooth(holeSet.smooth)
-
-
 	def SetTYPE(self, event):
 		type = self.all.GetStringSelection()
-		if type == 'All Holes':
-			return
-		elif type == 'Log':
-			return
-		elif type == 'Spliced Records':
-			return
-		else:
-			size = len(type)
-			type = type[4:size] # strip off 'All '
 
 		# Update decivalue & smooth
-		if type == "Natural Gamma" :
+		if type == "Natural Gamma":
 			type = "NaturalGamma"
 		data = self.parent.dataFrame.GetDECIMATE(type)
 		
@@ -3533,45 +3461,22 @@ class FilterPanel():
 		self.all.SetStringSelection(opt)
 		self.OnDecimate(event)
 		
-
 	# brg 1/29/2014: Ignore undo for now - seems pointless for decimate
 	def OnDecimate(self, event):
-		type = self.all.GetStringSelection()
-		if type == 'Spliced Records' :
-			self.parent.OnShowMessage("Error", "Splice Records can not be decimated", 1)
-			return
-
+		datatype = self.all.GetStringSelection()
 		self.deciUndo = self.deciBackup
 		self.deciundoBtn.Enable(True)
 
-		deciValue = int(self.decimate.GetValue())
-
-		if type == "All Holes" :
-			for index in range(1, self.all.GetCount()):
-				allType = self.all.GetString(index)
-				if allType == 'Spliced Records' :
-					continue
-				py_correlator.decimate(allType, deciValue)
-				#site.SetDecimate(allType[4:], deciValue)
-		else :
-			py_correlator.decimate(type, deciValue)
-			#site.SetDecimate(type[4:], deciValue)
+		deciValue = int(self.decimate.GetValue()) # todo validate input
+		py_correlator.decimate(datatype, deciValue)
 
 		self.deciBackup = [ self.all.GetStringSelection(), self.decimate.GetValue() ]
 
-		if type != "Log" :
-			self.parent.LOCK = 0 
-			self.parent.UpdateCORE()
-			self.parent.UpdateSMOOTH_CORE()
-			self.parent.LOCK = 1 
-		else :
-			self.parent.UpdateLogData()
-
-		#if type == "All Natural Gamma" :
-		#	type = "All NaturalGamma"
-		#self.parent.dataFrame.OnUPDATEDECIMATE(type, deciValue)
-
-		#site.SyncToData()
+		self.parent.LOCK = 0
+		self.parent.UpdateCORE()
+		self.parent.UpdateSMOOTH_CORE()
+		self.parent.LOCK = 1
+		self.parent.dataFrame.OnUPDATEDECIMATE(datatype, deciValue)
 		self.parent.Window.UpdateDrawing()
 
 	""" Return integer smooth style (unsmoothed, smoothed, or combo) based on current smooth combobox selection """
@@ -3862,10 +3767,6 @@ class PreferencesPanel():
 		self.prevSelected = 0
 		self.depthmax = 20.0
 
-	def OnRegisterHole(self, holename):
-		self.variableChoice.Append(holename)
-		self.variableChoice.SetSelection(self.prevSelected)
-
 	def OnActivateWindow(self, event):
 		if self.showSpliceWindow.IsChecked() == True : 
 			self.parent.OnActivateWindow(1)
@@ -3892,71 +3793,26 @@ class PreferencesPanel():
 				return
 
 	def SetTYPE(self, event):
-		type = self.variableChoice.GetStringSelection()
-
-		if type  == 'All Holes' :
-			print "[DEBUG] SET All Holes"
-		elif type == 'Log' :
-			type = "log"
-		elif type == 'Spliced Records' :
-			type = "splice"
-		else :
-			size = len(type)
-			type = type[4:size]
-
-			if type == "Natural Gamma" :
-				type = "NaturalGamma"
-
-		ret = self.parent.Window.GetMINMAX(type)
-		if ret != None :
+		datatype = self.variableChoice.GetStringSelection()
+		if datatype == "Natural Gamma":
+			datatype = "NaturalGamma"
+		ret = self.parent.Window.GetMINMAX(datatype)
+		if ret is not None:
 			self.varMin.SetValue(str(ret[0]))
 			self.varMax.SetValue(str(ret[1]))
 
 	# convert self.variableChoice string ("All Susceptibility") to type string ("Susceptibility")
 	def _FixListTypeStr(self, type):
-		if type.find("All ") == 0:
-			type = type[4:]
-			if type == "Natural Gamma":
-				type = "NaturalGamma"
-		elif type == "Spliced Records":
-			type = "splice"
-		elif type == "Log":
-			type = "log"
+		if type == "Natural Gamma":
+			type = "NaturalGamma"
 		return type
-	
-	# get all hole types in self.variableChoice - no splice or log
-	def _GetHoleTypes(self):
-		result = []
-		for str in self.variableChoice.GetStrings():
-			print str
-			if str.find("All ") != -1 and str != "All Holes":
-				result.append(self._FixListTypeStr(str))
-		return result
-	
-	# return list of types to apply min/max range change to - builds
-	# list if All Holes is selected, otherwise selected non-Log/Splice type
-	def _GetApplyList(self, allowSpliceAndLog=False):
-		result = []
-		curType = self.variableChoice.GetStringSelection()
-		if curType == "All Holes":
-			result = self._GetHoleTypes()
-		elif (curType != "Log" and curType != "Spliced Records") or allowSpliceAndLog:
-			result.append(self._FixListTypeStr(curType))
-		return result
-	
+
 	def OnChangeMinMax(self, event):
-		type = self.variableChoice.GetStringSelection()
+		datatype = self.variableChoice.GetStringSelection()
 		minRange = float(self.varMin.GetValue())
 		maxRange = float(self.varMax.GetValue())
-
-		if type == 'Log' :
-			self.parent.Window.UpdateRANGE("log", minRange, maxRange)
-		elif type == 'Spliced Records' :
-			self.parent.Window.UpdateRANGE("splice", minRange, maxRange)
-		else: # holes
-			for applyType in self._GetApplyList():
-				self.parent.dataFrame.UpdateMINMAX(applyType, minRange, maxRange)
-
+		applyType = self._FixListTypeStr(datatype)
+		self.parent.dataFrame.UpdateMINMAX(applyType, minRange, maxRange)
 		self.parent.Window.UpdateDrawing()
 
 	def OnChangeWidth(self, event):
@@ -4129,7 +3985,7 @@ class PreferencesPanel():
 		varScalePanel.Bind(wx.EVT_CHOICE, self.SetTYPE, self.variableChoice)
 
 		varSizer = wx.BoxSizer(wx.HORIZONTAL)
-		varSizer.Add(wx.StaticText(varScalePanel, -1, "Variable"))
+		varSizer.Add(wx.StaticText(varScalePanel, -1, "Data Type"))
 		varSizer.Add(self.variableChoice, 1, wx.LEFT | wx.EXPAND, 5)
 		varScaleSizer.Add(varSizer,  0, wx.BOTTOM, 10)
 
