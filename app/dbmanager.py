@@ -2883,17 +2883,20 @@ class DataFrame(wx.Panel):
 		#	idx = idx + 1
 		#py_correlator.saveAttributeFile(path, 6)
 
+	# Write record of cull table to site database (datalist.db).
+	# dbfile - already-opened output file handle
+	# cullFile - cull table filename
+	def WriteCullTableToDB(self, dbfile, cullFile):
+		cullstr = "\nculltable: " + cullFile + '\n'
+		dbfile.write(cullstr)
+		return
 
-	def OnSAVE_DB_ITEM(self, db_f, type, item, source_filename):
+	# Write record of measurement data file to site database (datalist.db).
+	# db_f - already-opened output file handle
+	# type - data type string
+	# item - self.tree node representing this measurement datafile
+	def OnSAVE_DB_ITEM(self, db_f, type, item):
 		holename = self.tree.GetItemText(item, 0)
-
-		if holename == "-Cull Table":
-			if source_filename == "":
-				source_filename = "-"
-			s = '\nculltable: ' + self.tree.GetItemText(item, 8) + ': ' + self.tree.GetItemText(item, 6) + ': ' + self.tree.GetItemText(item, 7) + ': ' + self.tree.GetItemText(item, 2) + ': ' + source_filename  + '\n'
-			db_f.write(s)
-			return
-
 		s = '\nhole: ' + holename + '\n'
 		db_f.write(s)
 		s = 'type: ' + type + '\n'
@@ -2933,6 +2936,11 @@ class DataFrame(wx.Panel):
 				ssLine = '\nsecsumm: {}: {}: {}: {}: {}: {}\n'.format(ssName, ssTime, ssUser, ssFilename, ssSourcePath, ssDbPath)
 				fileOut.write(ssLine)
 
+	# Rewrite site's datalist.db file based on self.tree contents.
+	# title - name of site for which to rewrite datalist.db
+	# parentItem - self.tree site node
+	# 2/25/2019 TODO for 4.0: Deal with duplicate code blocks for First Child and subsequent children.
+	# We're too close to 3.0 release to rock the boat right now.
 	def OnUPDATE_DB_FILE(self, title, parentItem):
 		filename = self.parent.DBPath + 'db/' + title + '/datalist.db'
 
@@ -3037,58 +3045,41 @@ class DataFrame(wx.Panel):
 						fout.write(s)
 			elif type == "Section Summaries":
 				self.WriteSectionSummaryLine(selectItem, fout)
-			else:  
+			else:  # data type node
 				totalcount = self.tree.GetChildrenCount(selectItem, False)
-				culltable_item = None
 				if totalcount > 0:
 					child = self.tree.GetFirstChild(selectItem)
 					child_item = child[0]
 
-					if self.tree.GetItemText(child_item, 0) == "-Cull Table":
-						culltable_item = child_item
+					# Write first measurement data item, then save data type-level properties,
+					# which are only written for the first encountered file of a data type
+					self.OnSAVE_DB_ITEM(fout, type, child_item)
+					if len(self.tree.GetItemText(selectItem, 1)) == 0:
+						s = 'typeData: Continuous\n'
+						fout.write(s)
 					else:
-						self.OnSAVE_DB_ITEM(fout, type, child_item, "")
-						if len(self.tree.GetItemText(selectItem, 1)) == 0:
-							s = 'typeData: Continuous\n'
-							fout.write(s)
-						else:
-							s = 'typeData: ' + self.tree.GetItemText(selectItem, 1) + '\n'
-							fout.write(s)
-						s = 'typeDecimate: ' + self.tree.GetItemText(selectItem, 3) + '\n'
+						s = 'typeData: ' + self.tree.GetItemText(selectItem, 1) + '\n'
 						fout.write(s)
-						if self.tree.GetItemText(selectItem, 12) != "":
-							s = 'typeSmooth: ' + self.tree.GetItemText(selectItem, 12) + '\n'
-							fout.write(s)
-						s = 'typeMin: ' + self.tree.GetItemText(selectItem, 4) + '\n'
+					s = 'typeDecimate: ' + self.tree.GetItemText(selectItem, 3) + '\n'
+					fout.write(s)
+					if self.tree.GetItemText(selectItem, 12) != "":
+						s = 'typeSmooth: ' + self.tree.GetItemText(selectItem, 12) + '\n'
 						fout.write(s)
-						s = 'typeMax: ' + self.tree.GetItemText(selectItem, 5) + '\n'
-						fout.write(s)
+					s = 'typeMin: ' + self.tree.GetItemText(selectItem, 4) + '\n'
+					fout.write(s)
+					s = 'typeMax: ' + self.tree.GetItemText(selectItem, 5) + '\n'
+					fout.write(s)
 
-					for l in range(1, totalcount):
+					for l in range(1, totalcount): # Write remaining measurement data items
 						child_item = self.tree.GetNextSibling(child_item)
-						source_filename = self.tree.GetItemText(child_item, 9) 
-						self.OnSAVE_DB_ITEM(fout, type, child_item, source_filename)
+						self.OnSAVE_DB_ITEM(fout, type, child_item)
 
-						if culltable_item != None and self.tree.GetItemText(child_item, 0) != "-Cull Table":
-							source_filename = self.tree.GetItemText(culltable_item, 9) 
-							self.OnSAVE_DB_ITEM(fout, type, culltable_item, source_filename)
-
-							if len(self.tree.GetItemText(selectItem, 1)) == 0:
-								s = 'typeData: Continuous\n'
-								fout.write(s)
-							else:
-								s = 'typeData: ' + self.tree.GetItemText(selectItem, 1) + '\n'
-								fout.write(s)
-							s = 'typeDecimate: ' + self.tree.GetItemText(selectItem, 3) + '\n'
-							fout.write(s)
-							if self.tree.GetItemText(selectItem, 12) != "":
-								s = 'typeSmooth: ' + self.tree.GetItemText(selectItem, 12) + '\n'
-								fout.write(s)
-							s = 'typeMin: ' + self.tree.GetItemText(selectItem, 4) + '\n'
-							fout.write(s)
-							s = 'typeMax: ' + self.tree.GetItemText(selectItem, 5) + '\n'
-							fout.write(s)
-							culltable_item = None
+					# Save data type cull table if any. Cull table must be written
+					# *after* measurement data items due to order-dependence of database
+					# loading process.
+					cullFile = self.tree.GetItemText(selectItem, 14)
+					if cullFile != "":
+						self.WriteCullTableToDB(fout, cullFile)
 
 			for k in range(1, total):
 				selectItem = self.tree.GetNextSibling(selectItem)
@@ -3188,61 +3179,39 @@ class DataFrame(wx.Panel):
 					self.WriteSectionSummaryLine(selectItem, fout)
 				else:
 					totalcount = self.tree.GetChildrenCount(selectItem, False)
-					culltable_item = None
 					if totalcount > 0:
 						child = self.tree.GetFirstChild(selectItem)
 						child_item = child[0]
 
-						if self.tree.GetItemText(child_item, 0) == "-Cull Table":
-							culltable_item = child_item
+						# Write first measurement data item, then save data type-level properties,
+						# which are only written for the first encountered file of a data type
+						self.OnSAVE_DB_ITEM(fout, type, child_item)
+						if len(self.tree.GetItemText(selectItem, 1)) == 0:
+							s = 'typeData: Continuous\n'
+							fout.write(s)
 						else:
-							self.OnSAVE_DB_ITEM(fout, type, child_item, "")
+							s = 'typeData: ' + self.tree.GetItemText(selectItem, 1) + '\n'
+							fout.write(s)
+						s = 'typeDecimate: ' + self.tree.GetItemText(selectItem, 3) + '\n'
+						fout.write(s)
+						if self.tree.GetItemText(selectItem, 12) != "":
+							s = 'typeSmooth: ' + self.tree.GetItemText(selectItem, 12) + '\n'
+							fout.write(s)
+						s = 'typeMin: ' + self.tree.GetItemText(selectItem, 4) + '\n'
+						fout.write(s)
+						s = 'typeMax: ' + self.tree.GetItemText(selectItem, 5) + '\n'
+						fout.write(s)
 
-							# DUPLICATE AAA
-							if len(self.tree.GetItemText(selectItem, 1)) == 0:
-								s = 'typeData: Continuous\n'
-								fout.write(s)
-							else:
-								s = 'typeData: ' + self.tree.GetItemText(selectItem, 1) + '\n'
-								fout.write(s)
-							s = 'typeDecimate: ' + self.tree.GetItemText(selectItem, 3) + '\n'
-							fout.write(s)
-							if self.tree.GetItemText(selectItem, 12) != "":
-								s = 'typeSmooth: ' + self.tree.GetItemText(selectItem, 12) + '\n'
-								fout.write(s)
-							s = 'typeMin: ' + self.tree.GetItemText(selectItem, 4) + '\n'
-							fout.write(s)
-							s = 'typeMax: ' + self.tree.GetItemText(selectItem, 5) + '\n'
-							fout.write(s)
-							#END DUPLICATE AAA
-
-						for l in range(1, totalcount):
+						for l in range(1, totalcount): # write remaining measurement data items
 							child_item = self.tree.GetNextSibling(child_item)
-							source_filename = self.tree.GetItemText(child_item, 9) 
-							self.OnSAVE_DB_ITEM(fout, type, child_item, source_filename)
+							self.OnSAVE_DB_ITEM(fout, type, child_item)
 
-							if culltable_item != None and self.tree.GetItemText(child_item, 0) != "-Cull Table":
-								source_filename = self.tree.GetItemText(culltable_item, 9) 
-								self.OnSAVE_DB_ITEM(fout, type, culltable_item, source_filename)
-
-								# DUPLICATE AAA
-								if len(self.tree.GetItemText(selectItem, 1)) == 0:
-									s = 'typeData: Continuous\n'
-									fout.write(s)
-								else:
-									s = 'typeData: ' + self.tree.GetItemText(selectItem, 1) + '\n'
-									fout.write(s)
-								s = 'typeDecimate: ' + self.tree.GetItemText(selectItem, 3) + '\n'
-								fout.write(s)
-								if self.tree.GetItemText(selectItem, 12) != "":
-									s = 'typeSmooth: ' + self.tree.GetItemText(selectItem, 12) + '\n'
-									fout.write(s)
-								s = 'typeMin: ' + self.tree.GetItemText(selectItem, 4) + '\n'
-								fout.write(s)
-								s = 'typeMax: ' + self.tree.GetItemText(selectItem, 5) + '\n'
-								fout.write(s)
-								# END DUPLICATE AAA
-								culltable_item = None
+						# Save data type cull table if any. Cull table must be written
+						# *after* measurement data items due to order-dependence of database
+						# loading process.
+						cullFile = self.tree.GetItemText(selectItem, 14)
+						if cullFile != "":
+							self.WriteCullTableToDB(fout, cullFile)
 
 		fout.close()
 
@@ -3688,7 +3657,7 @@ class DataFrame(wx.Panel):
 							self.parent.UpdateStratData()
 							self.parent.agePanel.OnAddStratToList()
 
-
+	# Universal cull tables aren't supported at present.
 	def OnLOAD_UCULLTABLE(self, selectItem, type):
 		if selectItem ==  None:
 			return
@@ -3748,72 +3717,61 @@ class DataFrame(wx.Panel):
 					break
 				icount += 1
 
-
+	# Load cull table for given data type if one exists.
+	# - selectItem: data type node for given type
+	# - type: data type string
 	def OnLOAD_CULLTABLE(self, selectItem, type):
-		totalcount = self.tree.GetChildrenCount(selectItem, False)
-		if totalcount > 0:
-			child = self.tree.GetFirstChild(selectItem)
-			child_item = child[0]
-			filename = ""
+		cullFile = self.tree.GetItemText(selectItem, 14)
+		if cullFile != "":
+			cullFile = self.parent.CurrentDir + cullFile
+			coretype, annot = self.parent.TypeStrToInt(type)
 
-			if self.tree.GetItemText(child_item, 0) == "-Cull Table" and self.tree.GetItemText(child_item, 2) == "Enable":
-				filename = self.parent.CurrentDir + self.tree.GetItemText(child_item, 8)
-			else:
-				for k in range(1, totalcount):
-					child_item = self.tree.GetNextSibling(child_item)
-					if self.tree.GetItemText(child_item, 0) == "-Cull Table" and self.tree.GetItemText(child_item, 2) == "Enable":
-						filename = self.parent.CurrentDir + self.tree.GetItemText(child_item, 8)
-						break
+			py_correlator.openCullTable(cullFile, coretype, annot)
+			s = "Cull Table: " + cullFile + " For type-" + type + "\n"
+			self.parent.logFileptr.write(s)
 
-			if filename != "":
-				coretype, annot = self.parent.TypeStrToInt(type)
+			if coretype == 4:
+				type = "Natural Gamma"
 
-				py_correlator.openCullTable(filename, coretype, annot)
-				s = "Cull Table: " + filename + " For type-" + type + "\n"
-				self.parent.logFileptr.write(s)
-
-				if coretype == 4:
-					type = "Natural Gamma"
-
-				f = open(filename, 'r+')
-				l = []
-				l.append(type)
-				l.append(True)
-				for line in f:
-					modifiedLine = line[0:-1].split()
-					if modifiedLine[0] == 'null':
-						continue
-					max = len(modifiedLine)
-					if modifiedLine[1] == 'Top':
+			f = open(cullFile, 'r+')
+			l = []
+			l.append(type)
+			l.append(True)
+			for line in f:
+				modifiedLine = line[0:-1].split()
+				if modifiedLine[0] == 'null':
+					continue
+				max = len(modifiedLine)
+				if modifiedLine[1] == 'Top':
+					value = modifiedLine[2]
+					l.append(value)
+				elif modifiedLine[1] == 'Range':
+					if max >= 4: 
 						value = modifiedLine[2]
 						l.append(value)
-					elif modifiedLine[1] == 'Range':
-						if max >= 4: 
-							value = modifiedLine[2]
-							l.append(value)
-							value = modifiedLine[3]
-							l.append(value)
-						if max == 6: 
-							#l.append(True)
-							value = modifiedLine[4]
-							l.append(value)
-							value = modifiedLine[5]
-							l.append(value)
-					elif modifiedLine[1] == 'Core':
-						value = modifiedLine[2]
+						value = modifiedLine[3]
 						l.append(value)
-					elif modifiedLine[1] == 'Type':
-						break
-				f.close()
-				#print "[DEBUG] UPDATE CULL INFO: " + str(l)
-				self.cullData.append(l) 
-			else:
-				l = []
-				l.append(type)
-				l.append(False)
-				self.cullData.append(l) 
+					if max == 6: 
+						#l.append(True)
+						value = modifiedLine[4]
+						l.append(value)
+						value = modifiedLine[5]
+						l.append(value)
+				elif modifiedLine[1] == 'Core':
+					value = modifiedLine[2]
+					l.append(value)
+				elif modifiedLine[1] == 'Type':
+					break
+			f.close()
+			#print "[DEBUG] UPDATE CULL INFO: " + str(l)
+			self.cullData.append(l) 
+		else:
+			l = []
+			l.append(type)
+			l.append(False)
+			self.cullData.append(l) 
 
-			return filename
+		return cullFile
 
 
 	def UpdateRANGE(self, type, item):
@@ -4137,12 +4095,12 @@ class DataFrame(wx.Panel):
 							previousType = type 
 							previousItem = selectItem
 
-				else: # not hole node, other types?
+				else: # selection is not a hole node, handle data type and site nodes
 					type = self.tree.GetItemText(selectItem, 0)
-					if type.find("-", 0) == -1: # if non-site node, appears to be measurement data node (e.g. NaturalGamma)
+					if type.find("-", 0) == -1: # data type node: TODO guard against data types with '-' in names
 						parentItem = self.tree.GetItemParent(selectItem)
-						if universal_cull_item == None:
-							universal_cull_item = self.Find_UCULL(parentItem) 
+						# if universal_cull_item == None:
+						# 	universal_cull_item = self.Find_UCULL(parentItem) 
 
 						totalcount = self.tree.GetChildrenCount(selectItem, False)
 						if totalcount > 0:
@@ -4167,8 +4125,6 @@ class DataFrame(wx.Panel):
 										
 							if count_load > 0:
 								ret = self.OnLOAD_CULLTABLE(selectItem, type)
-								if ret == "":
-									self.OnLOAD_UCULLTABLE(universal_cull_item, type)
 
 								smooth = -1
 								smooth_data = self.tree.GetItemText(selectItem, 12)
@@ -4230,8 +4186,6 @@ class DataFrame(wx.Panel):
 
 								if count_load > 0:
 									ret = self.OnLOAD_CULLTABLE(selectItem, str_txt)
-									if ret == "":
-										self.OnLOAD_UCULLTABLE(universal_cull_item, str_txt)
 
 									smooth = -1
 									smooth_data = self.tree.GetItemText(selectItem, 12)
@@ -4285,8 +4239,6 @@ class DataFrame(wx.Panel):
 
 									if count_load > 0:
 										ret = self.OnLOAD_CULLTABLE(selectItem, str_txt)
-										if ret == "":
-											self.OnLOAD_UCULLTABLE(universal_cull_item, str_txt)
 
 										smooth = -1
 										smooth_data = self.tree.GetItemText(selectItem, 12)
@@ -4321,8 +4273,6 @@ class DataFrame(wx.Panel):
 		if previousType != "":
 			titleItem = self.tree.GetItemParent(parentItem)
 			ret = self.OnLOAD_CULLTABLE(parentItem, previousType)
-			if ret == "":
-				self.OnLOAD_UCULLTABLE(universal_cull_item, type)
 
 			smooth = -1
 			smooth_data = self.tree.GetItemText(parentItem, 12)
@@ -4757,8 +4707,7 @@ class DataFrame(wx.Panel):
 
 		if parentItem != None:
 			type = self.tree.GetItemText(selectItem, 0)
-			source_path = self.tree.GetItemText(selectItem, 9)
-			filename = self.Add_CULLTABLE(selectItem, type, False, source_path)
+			filename = self.Add_CULLTABLE(selectItem, type)
 			self.OnUPDATE_DB_FILE(title, parentItem)
 			py_correlator.saveCullTable(filename, type)
 
@@ -4784,81 +4733,24 @@ class DataFrame(wx.Panel):
 			filename = title + '.' + datatype + '.' + filetype + '.table' 
 			return filename
 
+	# Create or update cull file in data type node's cull table column
+	def Add_CULLTABLE(self, typeNode, type):
+		siteNode = self.tree.GetItemParent(typeNode)
+		siteName = self.tree.GetItemText(siteNode, 0)
+		cullFile = self.Set_NAMING(type, siteName, 'cull')
+		self.tree.SetItemText(typeNode, cullFile, 14)
+		self.OnUPDATE_DB_FILE(siteName, siteNode)
+		cullFilePath = self.parent.DBPath + 'db/' + siteName + '/' + cullFile
+		return cullFilePath
 
-	def Add_CULLTABLE(self, item, type, isUniversal, source_path):
-		parentItem = self.tree.GetItemParent(item)
-		child = self.FindItem(item, '-Cull Table') # find existing culltable for type
-		filename = ''
-		title = ''
-		if child[0] == False:
-			# HYEJUNG
-			subroot = None
-			if isUniversal == True:
-				subroot = self.tree.AppendItem(item, 'Table' )
-				self.tree.SetItemText(subroot, "CULL", 1)
-			else:
-				subroot = self.tree.AppendItem(item, '-Cull Table' )
-			self.tree.Expand(subroot)
-
-			self.tree.SetItemText(subroot, type + '.' +  self.parent.user + '.cull.table', 8)
-
-			self.tree.SetItemTextColour(subroot, wx.BLUE)
-			self.tree.SetItemText(subroot, "Enable", 2)
-
-			tempstamp = str(datetime.today())
-			last = tempstamp.find(":", 0)
-			last = tempstamp.find(":", last+1)
-			#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
-			stamp = tempstamp[0:last]
-			self.tree.SetItemText(subroot, stamp, 6)
-			self.tree.SetItemText(subroot, self.parent.user, 7)
-
-			title = self.tree.GetItemText(parentItem, 0)
-
-			filename = self.Set_NAMING(type, title, 'cull')
-			self.tree.SetItemText(subroot, filename, 8)
-			self.tree.SetItemText(subroot, source_path, 9)
-
-			self.tree.SetItemText(subroot, title + '/', 10)
-
-			#dblist_f = open(self.parent.DBPath +'db/' + title + '/datalist.db', 'a+')
-			#s = '\nculltable: ' + filename + ': ' + stamp + ': ' + self.parent.user + ': ' + self.tree.GetItemText(subroot, 2) + '\n'
-			#dblist_f.write(s)
-			#dblist_f.close()
-
-			if isUniversal == True:
-				dblist_f = open(self.parent.DBPath +'db/' + title + '/datalist.db', 'a+')
-				s = '\nuni_culltable: ' + filename + ': ' + stamp + ': ' + self.parent.user + ': ' + self.tree.GetItemText(subroot, 2) + ': ' + source_path + '\n'
-				dblist_f.write(s)
-				dblist_f.close()
-			else:
-				self.OnUPDATE_DB_FILE(title, parentItem)
-		else:
-			selectItem = child[1]
-			tempstamp = str(datetime.today())
-			last = tempstamp.find(":", 0)
-			last = tempstamp.find(":", last+1)
-			#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
-			stamp = tempstamp[0:last]
-			self.tree.SetItemText(selectItem, stamp, 6)
-			self.tree.SetItemText(selectItem, self.parent.user, 7)
-
-			title = self.tree.GetItemText(parentItem, 0)
-			#self.OnUPDATE_DB_FILE(title, parentItem)
-			filename = self.tree.GetItemText(selectItem, 8)
-			# why does not update db file here ????
-
-		fullname = self.parent.DBPath + 'db/' + title + '/' + filename
-		return fullname
-
-
+	# Get cull data from self.cullData for specified type.
 	def GetCULL(self, type):
 		for data in self.cullData:
 			if str(data[0]) == type:
 				return data 
 		return None
 
-
+	# Update self.cullData to cull parameters for specified type.
 	def UpdateCULL(self, type, bcull, cullValue, cullNumber, value1, value2, sign1, sign2, join):
 		if type == 'Log':
 			print "[DEBUG] Log cull"
@@ -5254,7 +5146,7 @@ class DataFrame(wx.Panel):
 
 	# 	return loadedSites
 
-	# Build Data Manager tree from sites in database
+	# Build Data Manager tree from sites in database.
 	def OnLOADCONFIG(self):
 		#self.LoadDatabase() # 9/12/2014 brg: for new db manager, don't bother loading for now
 
@@ -5299,7 +5191,6 @@ class DataFrame(wx.Panel):
 				self.tree.SortChildren(siteNode)
 				typeNode = None
 				hole_child = None
-				cmd = None
 				token_nums = 0
 
 				for sub_line in sub_f:
@@ -5748,7 +5639,7 @@ class DataFrame(wx.Panel):
 		self.dataPanel.SetColLabelValue(6, "Section")
 		self.dataPanel.SetColLabelValue(7, "TopOffset")
 
-
+	# 2/25/2019 Cull Table import is currently unsupported.
 	def OnIMPORT_CULLTABLE(self, isUniversal):
 		opendlg = wx.FileDialog(self, "Select a property file", self.parent.Directory, "", "*.*")
 		ret = opendlg.ShowModal()
@@ -5817,7 +5708,7 @@ class DataFrame(wx.Panel):
 						print "[ERROR] Data type is different"
 
 			if valid == True:
-				filename = self.Add_CULLTABLE(item, type, isUniversal, source_path)
+				filename = self.Add_CULLTABLE(item, type)
 				if sys.platform == 'win32':
 					workingdir = os.getcwd()
 					os.chdir(self.parent.Directory)
