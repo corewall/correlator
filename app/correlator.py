@@ -1355,7 +1355,6 @@ class MainFrame(wx.Frame):
 		self.eldPanel.OnInitUI()
 		self.autoPanel.OnInitUI(True)
 		self.agePanel.OnInitUI()
-		self.filterPanel.OnInitUI()
 
 		py_correlator.cleanData(1)
 		self.OnClearData()

@@ -4509,7 +4509,7 @@ class DataFrame(wx.Panel):
 			self.OnUPDATE_DB_FILE(siteName, self.loadedSiteNode)
 
 	# Update tree and database to reflect updated cull.
-	def OnUPDATE_CULLTABLE(self, cullType):
+	def OnUPDATE_CULLTABLE(self, cullType, deleteTable):
 		#if self.currentIdx == []:
 		if self.selectBackup == []:
 			return
@@ -4585,12 +4585,15 @@ class DataFrame(wx.Panel):
 
 		if parentItem != None:
 			type = self.tree.GetItemText(selectItem, 0)
-			filename = self.Add_CULLTABLE(selectItem, type)
-			self.OnUPDATE_DB_FILE(title, parentItem)
-			py_correlator.saveCullTable(filename, type)
-
-			s = "Save Cull Table: " + filename + " For type-" + type + "\n"
-			self.parent.logFileptr.write(s)
+			if deleteTable:
+				self.DeleteCullTable(type)
+				self.OnUPDATE_DB_FILE(title, parentItem)
+			else:
+				filename = self.Add_CULLTABLE(selectItem, type)
+				self.OnUPDATE_DB_FILE(title, parentItem)
+				py_correlator.saveCullTable(filename, type)
+				s = "Save Cull Table: " + filename + " For type-" + type + "\n"
+				self.parent.logFileptr.write(s)
 
 
 	def Set_NAMING(self, type, title, filetype):
@@ -4628,14 +4631,15 @@ class DataFrame(wx.Panel):
 				return data 
 		return None
 
+	def DeleteCullTable(self, type):
+		typeNodes = self.GetChildren(self.loadedSiteNode, test=lambda c: self.tree.GetItemText(c, 0) == type)
+		if len(typeNodes) > 0:
+			# todo: delete actual file!
+			# But for now...removing reference in self.tree will prevent it from being loaded.
+			self.tree.SetItemText(typeNodes[0], "", 14)
+
 	# Update self.cullData to cull parameters for specified type.
 	def UpdateCULL(self, type, bcull, cullValue, cullNumber, value1, value2, sign1, sign2, join):
-		if type == 'Log':
-			print "[DEBUG] Log cull"
-		else:
-			size = len(type)
-			type = type[4:size]
-
 		if type == "Natural Gamma":
 			type = "NaturalGamma"
 

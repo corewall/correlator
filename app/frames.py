@@ -3217,94 +3217,29 @@ class FilterPanel():
 		cullPanel = wx.Panel(self.mainPanel, -1)
 		cullSizer = wx.StaticBoxSizer(wx.StaticBox(cullPanel, -1, 'Cull'), orient=wx.VERTICAL)
 
-		grid3 = wx.FlexGridSizer(2, 2)
-		self.nocull = wx.RadioButton(cullPanel, -1, "No cull", style=wx.RB_GROUP)
-		self.nocull.SetValue(True)
-		grid3.Add(self.nocull)
-		self.cull = wx.RadioButton(cullPanel, -1, "Use parameters ")
-		self.cull.SetValue(False)
-		grid3.Add(self.cull, 0, wx.BOTTOM, 15)
-
-		self.valueD = wx.TextCtrl(cullPanel, -1, "5.0", size=(80, 25), style=wx.SUNKEN_BORDER )
-		grid3.Add(self.valueD, 0, wx.RIGHT, 9)
-		grid3.Add(wx.StaticText(cullPanel, -1, "cm from each core top "), 0, wx.BOTTOM, 9)
-		cullSizer.Add(grid3, 0, wx.BOTTOM, 9)
-
-		grid31 = wx.FlexGridSizer(2, 4)
-		grid31.Add(wx.StaticText(cullPanel, -1, ""), 0, wx.RIGHT, 3)
-		self.cmd = wx.Choice(cullPanel, -1, (0,0), (50,-1), ("<", ">"))
-		self.cmd.SetForegroundColour(wx.BLACK)
-
-		grid31.Add(self.cmd, 0, wx.RIGHT, 9)
-		self.valueA = wx.TextCtrl(cullPanel, -1, "9999.99", size=(80, 25), style=wx.SUNKEN_BORDER )
-		grid31.Add(self.valueA, 0, wx.RIGHT, 9)
-
-		self.onlyCheck = wx.CheckBox(cullPanel, -1, ' ')
-		self.onlyCheck.SetValue(True)
-		self.onlyCheck.Enable(False)
-		grid31.Add(self.onlyCheck, 0, wx.BOTTOM, 9)
-
-		grid31.Add(wx.StaticText(cullPanel, -1, "                     "), 0, wx.RIGHT, 3)
-		self.signcmd = wx.Choice(cullPanel, -1, (0,0), (50,-1), ("<", ">")) 
-		self.signcmd.SetForegroundColour(wx.BLACK)
-		grid31.Add(self.signcmd, 0, wx.RIGHT, 9)
-		self.valueB = wx.TextCtrl(cullPanel, -1, "-9999.99", size=(80, 25), style=wx.SUNKEN_BORDER )
-		grid31.Add(self.valueB, 0, wx.RIGHT, 9)
-		self.orCheck = wx.CheckBox(cullPanel, -1, ' ')
-		grid31.Add(self.orCheck, 0, wx.BOTTOM, 15)
-
-		# manually position "data value" static text
-		dataValuePos = (5, 100) if platform_name[0] == "Windows" else (20, 100)
-		wx.StaticText(cullPanel, -1, "data value", dataValuePos)
-
-		cullSizer.Add(grid31)
-
-		buttonsize = 180
-		grid32 = wx.FlexGridSizer(1, 2)
-		self.optcmd = wx.Choice(cullPanel, -1, (0,0), (buttonsize, -1), ("Use all cores", "Use cores numbered <="))
-		grid32.Add(self.optcmd, 0, wx.RIGHT, 5)
-		self.valueE = wx.TextCtrl(cullPanel, -1, "999", size=(80, 25), style=wx.SUNKEN_BORDER )
-		grid32.Add(self.valueE, 0, wx.BOTTOM, 9)
-		cullSizer.Add(grid32)
-
+		self.cullState1 = wx.StaticText(cullPanel, -1, "[Cull from section tops]")
+		self.cullState2 = wx.StaticText(cullPanel, -1, "[Cull data values > X]")
+		self.cullState3 = wx.StaticText(cullPanel, -1, "[Cull data values < X]")
+		cullSizer.Add(self.cullState1)
+		cullSizer.Add(self.cullState2)
+		cullSizer.Add(self.cullState3, 1, wx.BOTTOM, 10)
 		cullPanel.SetSizer(cullSizer)
 
 		cullBtnPanel = wx.Panel(cullPanel, -1)
-		cullBtn = wx.Button(cullBtnPanel, -1, "Apply", size=(120, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCull, cullBtn)
-		self.cullundoBtn = wx.Button(cullBtnPanel, -1, "Undo", size=(120, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUNDOCull, self.cullundoBtn)
-		self.cullundoBtn.Enable(False)
+		self.cullCreate = wx.Button(cullBtnPanel, -1, "Create", size=(120, 30))
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCreateCull, self.cullCreate)
+		self.cullDelete = wx.Button(cullBtnPanel, -1, "Delete", size=(120, 30))
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnClearCull, self.cullDelete)
+		self.cullDelete.Enable(False)
 
 		cullBtnSizer = wx.BoxSizer(wx.HORIZONTAL)
-		cullBtnSizer.Add(cullBtn)
-		cullBtnSizer.Add(self.cullundoBtn)
+		cullBtnSizer.Add(self.cullCreate)
+		cullBtnSizer.Add(self.cullDelete)
 		cullBtnPanel.SetSizer(cullBtnSizer)
 		cullSizer.Add(cullBtnPanel)
 
 		vbox_top.Add(cullPanel, 0, wx.TOP | wx.EXPAND, 5)
-
 		self.mainPanel.SetSizer(vbox_top)
-
-	def OnInitUI(self):
-		self.all.SetStringSelection("All Holes")
-		self.nocull.SetValue(True)
-		self.valueD.SetValue("5.0")
-		self.cmd.SetStringSelection(">")
-		self.valueA.SetValue("9999.99")
-		self.onlyCheck.SetValue(True)
-		self.signcmd.SetStringSelection("<")
-		self.valueB.SetValue("-9999.99")
-		self.orCheck.SetValue(False)
-		self.optcmd.SetStringSelection("Use all cores")
-		self.valueE.SetValue("999")
-		self.deciBackup = [ "All Holes", "1"]
-		self.smBackup = []
-		self.cullBackup = [ "All Holes", False, "5.0", ">", "9999.99", True, "<", "-9999.99", False, "Use all cores", "999" ]
-		self.deciUndo = [ "All Holes", "1"]
-		self.smUndo = []
-		self.cullUndo = [ "All Holes", False, "5.0", ">", "9999.99", True, "<", "-9999.99", False, "Use all cores", "999" ]
-		self.cullundoBtn.Enable(False)
 
 	def OnLock(self):
 		self.locked = True 
@@ -3312,6 +3247,88 @@ class FilterPanel():
 	def OnRelease(self):
 		self.locked = False 
 
+	def OnClearCull(self, event):
+		datatype = self._curType()
+		self.ApplyCull(datatype) # clear cull
+		# delete cull file or cull will return on next load!
+
+	def OnCreateCull(self, event):
+		dlg = dialog.CullDialog(self.parent, self._curCull())
+		pos = self.cullCreate.GetScreenPositionTuple()
+		dlg.SetPosition(pos)
+		if dlg.ShowModal() != wx.ID_OK:
+			return
+		self.ApplyCull(self._curType(), True, dlg.outCullTops, dlg.outCullValue1, dlg.outCullValue2, dlg.outSign1, dlg.outSign2, dlg.outJoin)
+
+	# bcull = 0 no cull, 1 apply cull
+	# cullValue: amount to trim from top
+	# cullNumber: -1 to use all cores, other to use cores numbered [number and less]: always set to -1
+	# cullStrength, always 167.0 for some reason
+	# value1 = > cull value, 9999.99 or -9999.99 indicates dummy, no actual culling
+	# value2 = < cull value
+	# sign1 = 1 for greater than, 2 for less than
+	# sign2 = same as sign1
+	# join = 1 if only sign1 + value1 is used, 2 if both are used
+	def ApplyCull(self, datatype, bcull=False, cullValue=0.0, value1=9999.99, value2=-9999.99, sign1=1, sign2=2, join=1):
+		cullStrength = 167.0 # always use this magic number
+		cullNumber = -1 # always show all cores
+		self.parent.dataFrame.UpdateCULL(datatype, bcull, cullValue, cullNumber, value1, value2, sign1, sign2, join)
+		py_correlator.cull(datatype, bcull, cullValue, cullNumber, cullStrength, value1, value2, sign1, sign2, join)
+
+		self.parent.LOCK = 0 
+		self.parent.UpdateCORE()
+		self.parent.UpdateSMOOTH_CORE()
+		self.parent.LOCK = 1 
+
+		if datatype == "Natural Gamma":
+			datatype = "NaturalGamma"
+
+		deleteTable = not bcull
+		self.parent.dataFrame.OnUPDATE_CULLTABLE(datatype, deleteTable)
+		self.UpdateCullState(self._curCull())
+		self.parent.Window.UpdateDrawing()
+
+	def UpdateCullState(self, cullData):
+		if cullData is None or cullData[1] == False:
+			self.cullState1.SetLabel("No cull applied.")
+			self.cullState2.SetLabel("")
+			self.cullState3.SetLabel("")
+			self.cullCreate.SetLabel("Create")
+			self.cullDelete.Enable(False)
+		elif cullData[1] == True:
+			print("cullData = {}".format(cullData))
+			statuses = self.GetCullStatusStrings(cullData)
+			# fill cullStateX text with applied culling parameters, maximum 3.
+			for index, cullState in enumerate([self.cullState1, self.cullState2, self.cullState3]):
+				if index < len(statuses):
+					cullState.SetLabel(statuses[index])
+				else:
+					cullState.SetLabel("")
+			self.cullCreate.SetLabel("Edit")
+			self.cullDelete.Enable(True)
+
+	# Return true if the cull sign and value aren't the '9999.9' or '-9999.9' dummy values
+	# passed to py_correlator.cull() to indicate no cull depending on associated sign (<, >).
+	def _nonDummyValue(self, cullSign, cullValue):
+		return (cullSign == '>' and float(cullValue) < 9999.0) or (cullSign == '<' and float(cullValue) > -9999.0)
+
+	# Create cull status strings for display based on variable-length cullData list.
+	def GetCullStatusStrings(self, cullData):
+		strs = []
+		datalen = len(cullData)
+		if datalen >= 3:
+			strs.append("Culling {} cm from core tops".format(cullData[2]))
+		if datalen == 5 or datalen == 6:
+			if self._nonDummyValue(cullData[3], cullData[4]):
+				strs.append("Culling data values {} {}".format(cullData[3], cullData[4]))
+		elif datalen == 7 or datalen == 8:
+			if self._nonDummyValue(cullData[3], cullData[4]):
+				strs.append("Culling data values {} {}".format(cullData[3], cullData[4]))
+			if self._nonDummyValue(cullData[5], cullData[6]):
+				strs.append("Culling data values {} {}".format(cullData[5], cullData[6]))
+		return strs
+
+	# Update filter panels to reflect change in selected filter data type.
 	def SetTYPE(self, event):
 		type = self._curType() # get self.all type, correcting for "Natural Gamma" spacing
 		data = self.parent.dataFrame.GetDECIMATE(type) # returns tuple of decimate, smooth data
@@ -3322,64 +3339,11 @@ class FilterPanel():
 		else:
 			self.UpdateSmoothState(None)
 
-		# Update cull
 		cullData = self.parent.dataFrame.GetCULL(type)
 		if cullData == None and type == "NaturalGamma":
 			type = "Natural Gamma"
 			cullData = self.parent.dataFrame.GetCULL(type)
-
-		self.nocull.SetValue(True)
-		self.valueD.SetValue("5.0")
-		self.cmd.SetStringSelection(">")
-		self.valueA.SetValue("9999.99")
-		self.onlyCheck.SetValue(True)
-		self.signcmd.SetStringSelection("<")
-		self.valueB.SetValue("-9999.99")
-		self.orCheck.SetValue(False)
-		self.optcmd.SetStringSelection("Use all cores")
-		self.valueE.SetValue("999")
-
-		if cullData != None :
-			if cullData[1] == False :
-				self.nocull.SetValue(True)
-			else :
-				self.cull.SetValue(True)
-
-				max  = len(cullData)
-				if max >= 3 :
-					self.valueD.SetValue(cullData[2])
-				#self.cmd.SetStringSelection(">")
-
-				if max == 4 :
-					self.orCheck.SetValue(False)
-					self.optcmd.SetStringSelection("Use cores numbered <=")
-					self.valueE.SetValue(cullData[3])
-				elif max == 5 :
-					self.valueA.SetValue(cullData[4])
-					self.cmd.SetStringSelection(cullData[3])
-					self.orCheck.SetValue(False)
-					self.optcmd.SetStringSelection("Use all cores")
-				elif max == 6 :
-					self.valueA.SetValue(cullData[4])
-					self.cmd.SetStringSelection(cullData[3])
-					self.orCheck.SetValue(False)
-					self.optcmd.SetStringSelection("Use cores numbered <=")
-					self.valueE.SetValue(cullData[5])
-				elif max == 7 :
-					self.valueA.SetValue(cullData[4])
-					self.cmd.SetStringSelection(cullData[3])
-					self.orCheck.SetValue(True)
-					self.valueB.SetValue(cullData[6])
-					self.signcmd.SetStringSelection(cullData[5])
-					self.optcmd.SetStringSelection("Use all cores")
-				elif max == 8 :
-					self.valueA.SetValue(cullData[4])
-					self.cmd.SetStringSelection(cullData[3])
-					self.orCheck.SetValue(True)
-					self.valueB.SetValue(cullData[6])
-					self.signcmd.SetStringSelection(cullData[5])
-					self.optcmd.SetStringSelection("Use cores numbered <=")
-					self.valueE.SetValue(cullData[7])
+		self.UpdateCullState(cullData)
 
 	# Apply decimate value to given datatype.
 	# datatype: data type string
@@ -3413,7 +3377,7 @@ class FilterPanel():
 	# Update GUI to reflect current type's decimate filter.
 	def UpdateDecimateState(self, deci):
 		if int(deci) == 1:
-			self.deciState.SetLabel("None (show all points)")
+			self.deciState.SetLabel("None (show all points).")
 			self.deciCreate.SetLabel("Create")
 			self.deciDelete.Enable(False)
 		else:
@@ -3440,9 +3404,17 @@ class FilterPanel():
 		else:
 			return None
 
+	def _curCull(self):
+		datatype = self._curType()
+		cullData = self.parent.dataFrame.GetCULL(datatype)
+		if cullData == None and datatype == "NaturalGamma":
+			datatype = "Natural Gamma"
+			cullData = self.parent.dataFrame.GetCULL(datatype)
+		return cullData
+
 	def UpdateSmoothState(self, smoothData):
 		if smoothData is None:
-			self.smoothState1.SetLabel("No smoothing")
+			self.smoothState1.SetLabel("No smoothing applied.")
 			self.smoothState2.SetLabel("")
 			self.smCreate.SetLabel("Create")
 			self.smDelete.Enable(False)
@@ -3476,104 +3448,6 @@ class FilterPanel():
 		self.parent.UpdateSMOOTH_CORE()
 		self.parent.dataFrame.OnUPDATE_SMOOTH(datatype, params)
 		self.UpdateSmoothState(self._curSmooth())
-		self.parent.Window.UpdateDrawing()
-
-	def OnUNDOCull(self, event):
-		opt = self.cullUndo[0]
-		cull = self.cullUndo[1]
-		top = self.cullUndo[2]
-		sign1 = self.cullUndo[3]
-		value1 = self.cullUndo[4]
-		flag1 = self.cullUndo[5]
-		sign2 = self.cullUndo[6]
-		value2 = self.cullUndo[7]
-		flag2 = self.cullUndo[8]
-		type = self.cullUndo[9]
-		coreno = self.cullUndo[10]
-
-		# [ "All Holes", "False", "5.0", ">", "999.99", True, "<", "-999.99", False, "Use all cores", "999" ]
-		self.cullUndo = [ self.all.GetStringSelection(), self.nocull.GetValue(), self.valueD.GetValue(), self.cmd.GetStringSelection(), self.valueA.GetValue(), self.onlyCheck.GetValue(), self.signcmd.GetValue(), self.valueB.GetValue(), self.orCheck.GetValue(), self.optcmd.GetStringSelection(), self.valueE.GetValue()]
-
-		self.all.SetStringSelection(opt)
-		self.nocull.SetValue(cull)
-		self.cull.SetValue(True)
-		if cull == True : 
-			self.cull.SetValue(False)
-			self.nocull.SetValue(True)
-		self.valueD.SetValue(top)
-		self.cmd.SetStringSelection(sign1)
-		self.valueA.SetValue(value1)
-		self.onlyCheck.SetValue(flag1)
-		self.signcmd.SetStringSelection(sign2)
-		self.valueB.SetValue(value2)
-		self.orCheck.SetValue(flag2)
-		self.optcmd.SetStringSelection(type)
-		self.valueE.SetValue(coreno)
-
-		self.OnCull(event)
-
-
-	def OnCull(self, event):
-		datatype = self.all.GetStringSelection()
-		self.cullundoBtn.Enable(True)
-		self.cullUndo = self.cullBackup
-
-		cullValue = 0.0
-		if self.valueD.GetValue() != "" :
-			cullValue = float(self.valueD.GetValue())
-		else :
-			self.valueD.SetValue("0.0")
-
-		bcull = 0
-		if self.cull.GetValue() == True :
-			bcull = 1
-
-		value1 = 999.99 
-		value2 = -999.99 
-		if self.valueA.GetValue() != "" :
-			value1 = float(self.valueA.GetValue())
-		else :
-			self.valueA.SetValue("999.99")
-
-		if self.valueB.GetValue() != "" :
-			value2 = float(self.valueB.GetValue())
-		else :
-			self.valueB.SetValue("-999.99")
-
-		sign1 = 1
-		if self.cmd.GetStringSelection() == "<" :
-			sign1 = 2
-		sign2 = 1
-		if self.signcmd.GetStringSelection() == "<" :
-			sign2 = 2
-
-		join = 1
-		if self.orCheck.GetValue() == True :
-			join = 2
-
-		cullNumber = -1
-		if self.optcmd.GetStringSelection() != "Use all cores" :
-			if self.valueE.GetValue() != "" :
-				cullNumber = int(self.valueE.GetValue())
-			else :
-				self.valueE.SetValue("999")
-
-		#cullStrength = float(self.valueC.GetValue())
-		cullStrength = 167.0
-		self.parent.dataFrame.UpdateCULL(datatype, bcull, cullValue, cullNumber, value1, value2, sign1, sign2, join)
-		py_correlator.cull(datatype, bcull, cullValue, cullNumber, cullStrength, value1, value2, sign1, sign2, join)
-
-		self.parent.LOCK = 0 
-		self.parent.UpdateCORE()
-		self.parent.UpdateSMOOTH_CORE()
-		self.parent.LOCK = 1 
-
-		self.cullBackup = [ self.all.GetStringSelection(), self.nocull.GetValue(), self.valueD.GetValue(), self.cmd.GetStringSelection(), self.valueA.GetValue(), self.onlyCheck.GetValue(), self.signcmd.GetStringSelection(), self.valueB.GetValue(), self.orCheck.GetValue(), self.optcmd.GetStringSelection(), self.valueE.GetValue()]
-
-		if datatype == "Natural Gamma":
-			datatype = "NaturalGamma"
-
-		self.parent.dataFrame.OnUPDATE_CULLTABLE(datatype)
 		self.parent.Window.UpdateDrawing()
 
 

@@ -1495,7 +1495,7 @@ class DepthRangeDialog(wx.Dialog):
 
 class DecimateDialog(wx.Dialog):
 	def __init__(self, parent, deciValue):
-		wx.Dialog.__init__(self, parent, -1, "Create Decimate Filter")
+		wx.Dialog.__init__(self, parent, -1, "Create Decimate Filter", style=wx.CAPTION)
 		self.deciValue = deciValue
 		self.createGUI()
 
@@ -1537,7 +1537,7 @@ class DecimateDialog(wx.Dialog):
 
 class SmoothDialog(wx.Dialog):
 	def __init__(self, parent, width=9, units=1, style=1):
-		wx.Dialog.__init__(self, parent, -1, "Create Smooth Filter")
+		wx.Dialog.__init__(self, parent, -1, "Create Smooth Filter", style=wx.CAPTION)
 		self.parent = parent
 		self.createGUI()
 		self.width.SetValue(str(width))
@@ -1580,6 +1580,118 @@ class SmoothDialog(wx.Dialog):
 		units = self.units.GetSelection() + 1
 		style = self.style.GetSelection()
 		self.outSmoothParams = smooth.SmoothParameters(width, units, style)
+		self.EndModal(wx.ID_OK)
+
+
+class CullDialog(wx.Dialog):
+	def __init__(self, parent, cullData):
+		wx.Dialog.__init__(self, parent, -1, "Create Cull Filter", style=wx.CAPTION)
+		self.parent = parent
+		self.createGUI()
+		self.fillValues(cullData)
+
+	def createGUI(self):
+		cullSizer = wx.BoxSizer(wx.VERTICAL)
+
+		edgesSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Cull data from sample edges'))
+		cullTopsPanel = wx.Panel(self, -1)
+		ctSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.cullTops = wx.TextCtrl(cullTopsPanel, -1, "", size=(50,-1))
+		ctSizer.Add(wx.StaticText(cullTopsPanel, -1, "Cull"), 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+		ctSizer.Add(self.cullTops, 0, wx.ALIGN_CENTER_VERTICAL)
+		ctSizer.Add(wx.StaticText(cullTopsPanel, -1, "cm from core tops"), 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+		cullTopsPanel.SetSizer(ctSizer)
+		edgesSizer.Add(cullTopsPanel, 0, wx.ALL, 5)
+		cullSizer.Add(edgesSizer, 0, wx.ALL, 5)
+
+		outlierSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Cull outliers'), orient=wx.VERTICAL)
+		cullGTPanel = wx.Panel(self, -1)
+		cgtSizer = wx.BoxSizer(wx.HORIZONTAL)
+		cgtSizer.Add(wx.StaticText(cullGTPanel, -1, "Cull data values > "), 0)
+		self.cullGT = wx.TextCtrl(cullGTPanel, -1, "")
+		cgtSizer.Add(self.cullGT, 0)
+		cullGTPanel.SetSizer(cgtSizer)
+		outlierSizer.Add(cullGTPanel, 0, wx.EXPAND | wx.ALL, 5)
+
+		cullLTPanel = wx.Panel(self, -1)
+		cltSizer = wx.BoxSizer(wx.HORIZONTAL)
+		cltSizer.Add(wx.StaticText(cullLTPanel, -1, "Cull data values < "), 0)
+		self.cullLT = wx.TextCtrl(cullLTPanel, -1, "")
+		cltSizer.Add(self.cullLT, 0)
+		cullLTPanel.SetSizer(cltSizer)
+		outlierSizer.Add(cullLTPanel, 0, wx.EXPAND | wx.ALL, 5)
+
+		cullSizer.Add(outlierSizer, 0, wx.ALL, 5)
+
+		btnPanel = OkButtonPanel(self, okName="Apply")
+		self.Bind(wx.EVT_BUTTON, self.OnApply, btnPanel.ok)
+		cullSizer.Add(btnPanel, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+		self.SetSizer(cullSizer)
+		self.Fit()
+
+	def _nonDummyValue(self, cullSign, cullValue):
+		return (cullSign == '>' and float(cullValue) < 9999.0) or (cullSign == '<' and float(cullValue) > -9999.0)
+
+	# Populate fields with values from cull data, omitting dummy values
+	def fillValues(self, cullData):
+		datalen = len(cullData)
+		if datalen >= 3:
+			self.cullTops.SetValue(cullData[2])
+		if datalen == 5 or datalen == 6:
+			if self._nonDummyValue(cullData[3], cullData[4]):
+				if cullData[3] == ">":
+					self.cullGT.SetValue(cullData[4])
+				else:
+					self.cullLT.SetValue(cullData[4])
+		elif datalen == 7 or datalen == 8:
+			if self._nonDummyValue(cullData[3], cullData[4]):
+				if cullData[3] == ">":
+					self.cullGT.SetValue(cullData[4])
+				else:
+					self.cullLT.SetValue(cullData[4])
+			if self._nonDummyValue(cullData[5], cullData[6]):
+				if cullData[5] == ">":
+					self.cullGT.SetValue(cullData[6])
+				else:
+					self.cullLT.SetValue(cullData[6])
+
+	def OnInvalid(self):
+		dlg = MessageDialog(self, "Error", "Invalid cull parameter", 1)
+		dlg.ShowModal()
+		dlg.Destroy()
+
+	def hasTops(self):
+		return self.cullTops.GetValue() != ""
+
+	def hasGT(self):
+		return self.cullGT.GetValue() != ""
+
+	def hasLT(self):
+		return self.cullLT.GetValue() != ""
+
+	def OnApply(self, evt):
+		try:
+			self.outCullTops = 0.0 if not self.hasTops() else float(self.cullTops.GetValue())
+			self.outCullValue1 = 9999.99
+			self.outCullValue2 = -9999.99
+			self.outSign1 = 1
+			self.outSign2 = 2
+			self.outJoin = 1
+			if self.hasGT() and self.hasLT():
+				self.outSign1 = 1
+				self.outCullValue1 = float(self.cullGT.GetValue())
+				self.outSign2 = 2
+				self.outCullValue2 = float(self.cullLT.GetValue())
+				self.outJoin = 2
+			elif self.hasGT() and not self.hasLT():
+				self.outCullValue1 = float(self.cullGT.GetValue())
+				self.outSign1 = 1
+			elif self.hasLT() and not self.hasGT():
+				self.outCullValue1 = float(self.cullLT.GetValue())
+				self.outSign1 = 2
+		except ValueError:
+			self.OnInvalid()
+			return
 		self.EndModal(wx.ID_OK)
 
 
