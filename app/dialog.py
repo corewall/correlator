@@ -1492,6 +1492,48 @@ class DepthRangeDialog(wx.Dialog):
 		self.EndModal(wx.ID_OK)
 
 
+class DecimateDialog(wx.Dialog):
+	def __init__(self, parent, deciValue):
+		wx.Dialog.__init__(self, parent, -1, "Create Decimate Filter")
+		self.deciValue = deciValue
+		self.createGUI()
+
+	def createGUI(self):
+		decValPanel = wx.Panel(self, -1)
+		self.decimate = wx.TextCtrl(decValPanel, -1, str(self.deciValue))
+		dvSizer = wx.BoxSizer(wx.HORIZONTAL)
+		dvSizer.Add(wx.StaticText(decValPanel,  -1, "Show every"), 0, wx.LEFT | wx.RIGHT, 5)
+		dvSizer.Add(self.decimate, 0, wx.RIGHT, 5)
+		dvSizer.Add(wx.StaticText(decValPanel,  -1, "points"), 0, wx.LEFT | wx.RIGHT, 5)
+		decValPanel.SetSizer(dvSizer)
+
+		btnPanel = OkButtonPanel(self, okName="Apply")
+		self.Bind(wx.EVT_BUTTON, self.OnApply, btnPanel.ok)
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		sizer.Add(decValPanel, 1, wx.ALL, 10)
+		sizer.Add(btnPanel, 0, wx.ALIGN_CENTER)
+		self.SetSizer(sizer)
+		self.Fit()
+
+	def OnInvalid(self):
+		dlg = MessageDialog(self, "Error", "Value must be a positive integer.", 1)
+		dlg.ShowModal()
+		dlg.Destroy()
+
+	def OnApply(self, evt):
+		deciValue = None
+		try:
+			deciValue = int(self.decimate.GetValue())
+		except ValueError:
+			self.OnInvalid()
+			return
+		if deciValue < 1:
+			self.OnInvalid()
+			return
+		self.deciValue = deciValue
+		self.EndModal(wx.ID_OK)
+
+
 class ApplicationPreferencesDialog(wx.Dialog):
 	def __init__(self, parent, prefs):
 		wx.Dialog.__init__(self, parent, -1, "Correlator Preferences", size=(200,200), style=wx.CAPTION)

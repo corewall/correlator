@@ -3219,9 +3219,6 @@ class DataFrame(wx.Panel):
 
 
 	def OnLOAD_ITEM(self, selectItem):
-		#if self.tree.GetItemText(selectItem, 0) == "-Cull Table":
-		#	return 1 
-
 		parentItem = self.tree.GetItemParent(selectItem)
 
 		if self.firstIdx == None:
@@ -3230,7 +3227,6 @@ class DataFrame(wx.Panel):
 		self.parent.CurrentDir = self.parent.DBPath + "db/" + self.tree.GetItemText(selectItem, 10)
 
 		decivalue = self.tree.GetItemText(parentItem, 3)
-		self.parent.filterPanel.decimate.SetValue(str(decivalue))
 		ndecivalue = 1
 		if decivalue != '':
 			ndecivalue = int(decivalue)

@@ -3166,38 +3166,30 @@ class FilterPanel():
 		vbox_top.Add(self.all, 0, wx.LEFT | wx.TOP, 9)
 		self.mainPanel.Bind(wx.EVT_CHOICE, self.SetTYPE, self.all)
 
-		# Decimate
+		### Decimate
 		decPanel = wx.Panel(self.mainPanel, -1)
 		decSizer = wx.StaticBoxSizer(wx.StaticBox(decPanel, -1, 'Decimate'), orient=wx.VERTICAL)
-
-		decValPanel = wx.Panel(decPanel, -1)
-		self.decimate = wx.TextCtrl(decValPanel, -1, "1", size=(80, 25), style=wx.SUNKEN_BORDER)
-		dvSizer = wx.BoxSizer(wx.HORIZONTAL)
-		dvSizer.Add(wx.StaticText(decValPanel,  -1, "Use every"), 0, wx.LEFT | wx.RIGHT, 5)
-		dvSizer.Add(self.decimate, 0, wx.RIGHT, 5)
-		dvSizer.Add(wx.StaticText(decValPanel,  -1, "points"), 0, wx.LEFT | wx.RIGHT, 5)
-		decValPanel.SetSizer(dvSizer)
-
+		self.deciState = wx.StaticText(decPanel, -1, "None (show every point)")
 		decBtnPanel = wx.Panel(decPanel, -1)
 		decBtnSizer = wx.BoxSizer(wx.HORIZONTAL)
 
-		decApply = wx.Button(decBtnPanel, -1, "Apply", size=(120, 30))
-		decPanel.Bind(wx.EVT_BUTTON, self.OnDecimate, decApply)
+		self.deciCreate = wx.Button(decBtnPanel, -1, "Create", size=(120, 30))
+		decPanel.Bind(wx.EVT_BUTTON, self.OnCreateDecimate, self.deciCreate)
 
-		self.deciundoBtn = wx.Button(decBtnPanel, -1, "Undo", size=(120, 30))
-		self.deciundoBtn.Enable(False)
-		decPanel.Bind(wx.EVT_BUTTON, self.OnUNDODecimate, self.deciundoBtn)
+		self.deciDelete = wx.Button(decBtnPanel, -1, "Delete", size=(120, 30))
+		self.deciDelete.Enable(False)
+		decPanel.Bind(wx.EVT_BUTTON, self.OnClearDecimate, self.deciDelete)
 
-		decBtnSizer.Add(decApply, 0)
-		decBtnSizer.Add(self.deciundoBtn, 0)
+		decBtnSizer.Add(self.deciCreate, 0)
+		decBtnSizer.Add(self.deciDelete, 0)
 		decBtnPanel.SetSizer(decBtnSizer)
 
-		decSizer.Add(decValPanel, 1, wx.EXPAND)
+		decSizer.Add(self.deciState, 1, wx.BOTTOM, 10)
 		decSizer.Add(decBtnPanel, 1, wx.EXPAND)
 		decPanel.SetSizer(decSizer)
 		vbox_top.Add(decPanel, 0, wx.TOP | wx.EXPAND, 5)
 
-		# Smoothing
+		### Smoothing
 		smoothPanel = wx.Panel (self.mainPanel, -1)
 		smoothSizer = wx.StaticBoxSizer(wx.StaticBox(smoothPanel, -1, 'Smooth'), orient=wx.VERTICAL)
 		smoothParamsSizer = wx.GridBagSizer(3, 3)
@@ -3238,7 +3230,7 @@ class FilterPanel():
 		smoothPanel.SetSizer(smoothSizer)
 		vbox_top.Add(smoothPanel, 0, wx.TOP | wx.EXPAND, 5)
 
-		# Culling
+		### Culling
 		cullPanel = wx.Panel(self.mainPanel, -1)
 		cullSizer = wx.StaticBoxSizer(wx.StaticBox(cullPanel, -1, 'Cull'), orient=wx.VERTICAL)
 
@@ -3313,7 +3305,7 @@ class FilterPanel():
 
 	def OnInitUI(self):
 		self.all.SetStringSelection("All Holes")
-		self.decimate.SetValue("1")
+		# self.decimate.SetValue("1")
 		self.smoothcmd.SetStringSelection("Gaussian")
 		self.unitscmd.SetStringSelection("Points")
 		self.width.SetValue("9")
@@ -3336,7 +3328,7 @@ class FilterPanel():
 		self.cullUndo = [ "All Holes", False, "5.0", ">", "9999.99", True, "<", "-9999.99", False, "Use all cores", "999" ]
 		self.smundoBtn.Enable(False)
 		self.cullundoBtn.Enable(False)
-		self.deciundoBtn.Enable(False)
+		# self.deciundoBtn.Enable(False)
 
 	def SetUNIT(self, event):
 	 	self.width.Clear()
@@ -3370,16 +3362,11 @@ class FilterPanel():
 		self.plotcmd.SetStringSelection(smoothList[2])
 
 	def SetTYPE(self, event):
-		type = self.all.GetStringSelection()
-
-		# Update decivalue & smooth
-		if type == "Natural Gamma":
-			type = "NaturalGamma"
-		data = self.parent.dataFrame.GetDECIMATE(type)
-		
-		if data != None :
-			self.decimate.SetValue(data[0])
-			if data[1] != "" :
+		type = self._curType() # get self.all type, correcting for "Natural Gamma" spacing
+		data = self.parent.dataFrame.GetDECIMATE(type) # returns tuple of decimate, smooth data
+		if data != None:
+			self.UpdateDecimateState(data[0])
+			if data[1] != "":
 				smooth_array = data[1].split(' ')
 				self.smoothcmd.SetStringSelection("Gaussian")
 				self.width.SetValue(smooth_array[0])
@@ -3450,34 +3437,57 @@ class FilterPanel():
 					self.optcmd.SetStringSelection("Use cores numbered <=")
 					self.valueE.SetValue(cullData[7])
 
-
-	# brg 1/29/2014: Ignore undo for now - seems pointless for decimate
-	def OnUNDODecimate(self, event):
-		opt = self.deciUndo[0]
-		deci = self.deciUndo[1]
-		self.deciUndo = [ self.all.GetStringSelection(), self.decimate.GetValue() ]
-
-		self.decimate.SetValue(deci)
-		self.all.SetStringSelection(opt)
-		self.OnDecimate(event)
-		
-	# brg 1/29/2014: Ignore undo for now - seems pointless for decimate
-	def OnDecimate(self, event):
-		datatype = self.all.GetStringSelection()
-		self.deciUndo = self.deciBackup
-		self.deciundoBtn.Enable(True)
-
-		deciValue = int(self.decimate.GetValue()) # todo validate input
+	# Apply decimate value to given datatype.
+	# datatype: data type string
+	# deciValue: integer decimate value
+	def ApplyDecimate(self, datatype, deciValue):
 		py_correlator.decimate(datatype, deciValue)
-
-		self.deciBackup = [ self.all.GetStringSelection(), self.decimate.GetValue() ]
-
 		self.parent.LOCK = 0
 		self.parent.UpdateCORE()
 		self.parent.UpdateSMOOTH_CORE()
 		self.parent.LOCK = 1
 		self.parent.dataFrame.OnUPDATEDECIMATE(datatype, deciValue)
+		self.UpdateDecimateState(deciValue)
 		self.parent.Window.UpdateDrawing()
+
+	# Pop DecimateDialog to Create/Edit decimate filter.
+	def OnCreateDecimate(self, event):
+		datatype = self._curType()
+		curdec = self._curDecimate()
+		decdlg = dialog.DecimateDialog(self.parent, curdec)
+		pos = self.deciCreate.GetScreenPositionTuple()
+		decdlg.SetPosition(pos)
+		if decdlg.ShowModal() != wx.ID_OK:
+			return
+		deciValue = decdlg.deciValue
+		self.ApplyDecimate(datatype, deciValue)
+
+	# Reset decimate filter to 1.
+	def OnClearDecimate(self, evt):
+		self.ApplyDecimate(self._curType(), 1)
+
+	# Update GUI to reflect current type's decimate filter.
+	def UpdateDecimateState(self, deci):
+		if int(deci) == 1:
+			self.deciState.SetLabel("None (show all points).")
+			self.deciCreate.SetLabel("Create")
+			self.deciDelete.Enable(False)
+		else:
+			self.deciState.SetLabel("Show every {} points".format(deci))
+			self.deciCreate.SetLabel("Edit")
+			self.deciDelete.Enable(True)
+
+	def _curType(self):
+		datatype = self.all.GetStringSelection()
+		if datatype == "Natural Gamma":
+			datatype = "NaturalGamma"
+		return datatype
+
+	def _curDecimate(self):
+		datatype = self._curType()
+		decimate, _ = self.parent.dataFrame.GetDECIMATE(datatype) # _ = smooth dummy
+		return decimate
+
 
 	""" Return integer smooth style (unsmoothed, smoothed, or combo) based on current smooth combobox selection """
 	def GetSmoothStyle(self):
