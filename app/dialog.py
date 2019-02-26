@@ -1599,8 +1599,7 @@ class BackgroundPanel(wx.Panel):
 	def OnPaint(self, evt):
 		dc = wx.BufferedPaintDC(self, self.buffer)
 
-# 9/17/2013 brg: rename to splash?
-class OpenFrame(wx.Dialog):
+class SplashScreen(wx.Dialog):
 	def __init__(self, parent, id, user, version):
 		panel_size=(800, 370)
 		wx.Dialog.__init__(self, parent, id, "Correlator " + version, size=panel_size,style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)

@@ -2584,7 +2584,7 @@ class MainFrame(wx.Frame):
 		#print "[DEBUG] Window Position:" + str(win_x) + " " + str(win_y)
 
 		# 1/8/2019 brg: Logic to handle multiple displays, hook up once we have
-		# OpenFrame (splash screen) opening after prefs loading (as MainFrame is)
+		# SplashScreen opening after prefs loading (as MainFrame is)
 		# so it too can be placed in the appropriate display (currently always opens
 		# in primary display).
 		# displays = [wx.Display(didx) for didx in range(wx.Display.GetCount())]
@@ -3639,11 +3639,11 @@ class CorrelatorApp(wx.App):
 	def OnInit(self):
 		user = getpass.getuser()
 		if self.showSplash:
-			openframe = dialog.OpenFrame(None, -1, user, vers.ShortVersion)
-			openframe.Centre()
-			ret =  openframe.ShowModal()
-			user = openframe.user
-			openframe.Destroy()
+			splash = dialog.SplashScreen(None, -1, user, vers.ShortVersion)
+			splash.Centre()
+			ret =  splash.ShowModal()
+			user = splash.user
+			splash.Destroy()
 			if ret == wx.ID_CANCEL:
 				if global_logFile != None:
 					global_logFile.close()
@@ -3713,9 +3713,6 @@ class CorrelatorApp(wx.App):
 		self.frame.dataFrame.Show(True)
 		self.frame.topMenu.Show(True)
 
-		#if platform_name[0] != "Windows": 
-		#openframe.Hide()
-		#openframe.Destroy()
 		self.SetExitOnFrameDelete(False)
 
 		return True
