@@ -618,7 +618,7 @@ class CompositePanel():
 		# Project... button
 		projectPanel = wx.Panel(self.mainPanel, -1)
 		setSizer = wx.StaticBoxSizer(wx.StaticBox(projectPanel, -1, "SET Dialog"), orient=wx.VERTICAL)
-		self.projectButton = wx.Button(projectPanel, -1, "SET By Growth Rate or %...")
+		self.projectButton = wx.Button(projectPanel, -1, "SET...")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnProject, self.projectButton)
 		setSizer.Add(self.projectButton, 1, wx.EXPAND)
 		projectPanel.SetSizer(setSizer)
@@ -1639,7 +1639,7 @@ class SpliceIntervalPanel():
 		s = "Save Splice Table: " + filename + "\n"
 		self.parent.logFileptr.write(s)
 		self.parent.autoPanel.SetCoreList(1, [])
-		self.parent.OnShowMessage("Information", "Successfully Saved", 1)
+		# self.parent.OnShowMessage("Information", "Successfully Saved", 1)
 	
 	def OnSelectRow(self, event):
 		self.parent.spliceManager.selectByIndex(event.GetRow())

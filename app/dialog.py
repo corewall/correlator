@@ -674,21 +674,27 @@ class ExportCoreDialog(wx.Dialog):
 		sizer = wx.StaticBoxSizer(wx.StaticBox(opt_panel, -1, 'Apply Options'), orient=wx.VERTICAL)
 
 		self.cull = wx.CheckBox(opt_panel, -1, 'Apply Cull')
-		sizer.Add(self.cull, 1)
-		self.cull.SetValue(True)
+		sizer.Add(self.cull, 1, wx.EXPAND)
+		self.cull.SetValue(False)
 
+		# 2/26/2019: Hide unused items rather than removing them entirely since
+		# the export process refers to them and I don't want to shake the jello further.
 		self.affine = wx.CheckBox(opt_panel, -1, 'Apply Affine')
-		sizer.Add(self.affine, 1)
+		self.affine.Show(False)
+		# sizer.Add(self.affine, 1)
 		self.splice = wx.CheckBox(opt_panel, -1, 'Apply Splice')
-		sizer.Add(self.splice, 1)
+		self.splice.Show(False)
+		# sizer.Add(self.splice, 1)
 		opt_panel.Bind(wx.EVT_CHECKBOX, self.OnSPLICE, self.splice)
 
 		self.eld = wx.CheckBox(opt_panel, -1, 'Apply ELD')
-		sizer.Add(self.eld, 1)
+		self.eld.Show(False)
+		# sizer.Add(self.eld, 1)
 		opt_panel.Bind(wx.EVT_CHECKBOX, self.OnELD, self.eld)
 
 		self.age = wx.CheckBox(opt_panel, -1, 'Apply Age Model')
-		sizer.Add(self.age, 1)
+		self.age.Show(False)
+		# sizer.Add(self.age, 1)
 		#opt_panel.Bind(wx.EVT_CHECKBOX, self.OnAGE, self.age)
 
 		opt_panel.SetSizer(sizer)
@@ -717,12 +723,10 @@ class ExportCoreDialog(wx.Dialog):
 
 	def OnSPLICE(self, event):
 		ret = self.splice.GetValue()
-
 		self.affine.SetValue(ret)
 
 	def OnELD(self, event):
 		ret = self.eld.GetValue()
-
 		self.affine.SetValue(ret)
 		#self.splice.SetValue(ret)
 

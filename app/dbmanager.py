@@ -635,8 +635,8 @@ class DataFrame(wx.Panel):
 					popupMenu.Append(2, "&View")
 					wx.EVT_MENU(popupMenu, 2, self.OnPOPMENU)
 
-					popupMenu.Append(3, "&Edit")
-					wx.EVT_MENU(popupMenu, 3, self.OnPOPMENU)
+					# popupMenu.Append(3, "&Edit")
+					# wx.EVT_MENU(popupMenu, 3, self.OnPOPMENU)
 
 					if self.tree.GetItemText(self.selectedIdx, 2) == "Disable":
 						popupMenu.Append(19, "&Enable")
@@ -723,15 +723,15 @@ class DataFrame(wx.Panel):
 
 					parentItem = self.tree.GetItemParent(self.selectedIdx)
 					if self.tree.GetItemText(parentItem, 0) != "Root":
-						popupMenu.Append(3, "&Edit")
-						wx.EVT_MENU(popupMenu, 3, self.OnPOPMENU)
+						# popupMenu.Append(3, "&Edit")
+						# wx.EVT_MENU(popupMenu, 3, self.OnPOPMENU)
 
-						if self.tree.GetItemText(self.selectedIdx, 1) == "Continuous":
-							popupMenu.Append(26, "&Discrete")
-							wx.EVT_MENU(popupMenu, 26, self.OnPOPMENU)
-						else:
-							popupMenu.Append(27, "&Continuous")
-							wx.EVT_MENU(popupMenu, 27, self.OnPOPMENU)
+						# if self.tree.GetItemText(self.selectedIdx, 1) == "Continuous":
+						# 	popupMenu.Append(26, "&Discrete")
+						# 	wx.EVT_MENU(popupMenu, 26, self.OnPOPMENU)
+						# else:
+						# 	popupMenu.Append(27, "&Continuous")
+						# 	wx.EVT_MENU(popupMenu, 27, self.OnPOPMENU)
 
 						popupMenu.Append(19, "&Enable")
 						wx.EVT_MENU(popupMenu, 19, self.OnPOPMENU)
@@ -741,8 +741,8 @@ class DataFrame(wx.Panel):
 						popupMenu.Append(6, "&Delete")
 						wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
 
-						popupMenu.Append(9, "&Import cull table")
-						wx.EVT_MENU(popupMenu, 9, self.OnPOPMENU)
+						# popupMenu.Append(9, "&Import cull table")
+						# wx.EVT_MENU(popupMenu, 9, self.OnPOPMENU)
 
 						popupMenu.Append(7, "&Update")
 						wx.EVT_MENU(popupMenu, 7, self.OnPOPMENU)

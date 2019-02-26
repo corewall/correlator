@@ -534,17 +534,17 @@ class DataCanvas(wxBufferedWindow):
 		#self.reportText.SetEditable(False)
 
 		self.sideNote.AddPage(self.closePanel, 'Close')
-		self.sideNote.AddPage(self.compPanel, 'Composite')
+		self.sideNote.AddPage(self.compPanel, 'Shift Cores')
 		#self.sideNote.AddPage(self.splicePanel, 'Splice')
-		self.sideNote.AddPage(self.spliceIntervalPanel, "Splice Interval")
+		self.sideNote.AddPage(self.spliceIntervalPanel, "Splice Cores")
 		# self.sideNote.AddPage(self.eldPanel, 'Core-Log Integration')
 		#self.sideNote.AddPage(self.eldPanel, 'Correlation')
 
 		#self.sideNote.AddPage(self.autoPanel, 'Auto Correlation')
 		# self.sideNote.AddPage(self.agePanel, 'Age Depth Model')
 
-		self.sideNote.AddPage(self.filterPanel, 'Filter')
-		self.sideNote.AddPage(self.optPanel, 'Preferences')
+		self.sideNote.AddPage(self.filterPanel, 'Data Filters')
+		self.sideNote.AddPage(self.optPanel, 'Display Preferences')
 		#self.sideNote.AddPage(self.logPanel, 'Report')
 
 		#self.sideNote.AddPage(self.helpPanel, 'Help')
