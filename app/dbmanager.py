@@ -24,6 +24,7 @@ import splice
 import xml_handler
 from affine import convert_pre_v3_AffineTable
 from sectionSummary import SectionSummary, SectionSummaryRow
+from smooth import SmoothParameters
 
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
@@ -3992,7 +3993,17 @@ class DataFrame(wx.Panel):
 				success = False
 
 		return success
-			
+
+	# Apply smoothing, if any, to selectItem.
+	def ApplySmooth(self, datatype, selectItem):
+		smooth = -1
+		smooth_data = self.tree.GetItemText(selectItem, 12)
+		if smooth_data != "":
+			smoothParams = SmoothParameters.createWithString(smooth_data)
+			py_correlator.smooth(datatype, smoothParams.width, smoothParams.units)
+			smooth = smoothParams.style
+		return smooth
+
 	def OnLOAD(self):
 		self.propertyIdx = None
 		self.title = ""
@@ -4124,21 +4135,22 @@ class DataFrame(wx.Panel):
 										
 							if count_load > 0:
 								ret = self.OnLOAD_CULLTABLE(selectItem, type)
+								smooth = self.ApplySmooth(type, selectItem)
 
-								smooth = -1
-								smooth_data = self.tree.GetItemText(selectItem, 12)
-								if smooth_data != "":
-									smooth_array = smooth_data.split()
-									if "UnsmoothedOnly" == smooth_array[2]:
-										smooth = 0 
-									elif "SmoothedOnly" == smooth_array[2]:
-										smooth = 1 
-									elif "Smoothed&Unsmoothed" == smooth_array[2]:
-										smooth = 2 
-									if smooth_array[1] == "Depth(cm)":
-										py_correlator.smooth(type, int(smooth_array[0]), 2)
-									else:
-										py_correlator.smooth(type, int(smooth_array[0]), 1)
+								# smooth = -1
+								# smooth_data = self.tree.GetItemText(selectItem, 12)
+								# if smooth_data != "":
+								# 	smooth_array = smooth_data.split()
+								# 	if "UnsmoothedOnly" == smooth_array[2]:
+								# 		smooth = 0 
+								# 	elif "SmoothedOnly" == smooth_array[2]:
+								# 		smooth = 1 
+								# 	elif "Smoothed&Unsmoothed" == smooth_array[2]:
+								# 		smooth = 2 
+								# 	if smooth_array[1] == "Depth(cm)":
+								# 		py_correlator.smooth(type, int(smooth_array[0]), 2)
+								# 	else:
+								# 		py_correlator.smooth(type, int(smooth_array[0]), 1)
 
 								continue_flag = True 
 								if self.tree.GetItemText(selectItem, 1) == "Discrete":
@@ -4186,20 +4198,7 @@ class DataFrame(wx.Panel):
 								if count_load > 0:
 									ret = self.OnLOAD_CULLTABLE(selectItem, str_txt)
 
-									smooth = -1
-									smooth_data = self.tree.GetItemText(selectItem, 12)
-									if smooth_data != "":
-										smooth_array = smooth_data.split()
-										if "UnsmoothedOnly" == smooth_array[2]:
-											smooth = 0 
-										elif "SmoothedOnly" == smooth_array[2]:
-											smooth = 1 
-										elif "Smoothed&Unsmoothed" == smooth_array[2]:
-											smooth = 2 
-										if smooth_array[1] == "Depth(cm)":
-											py_correlator.smooth(str_txt, int(smooth_array[0]), 2)
-										else:
-											py_correlator.smooth(str_txt, int(smooth_array[0]), 1)
+									smooth = self.ApplySmooth(str_txt, selectItem)
 
 									continue_flag = True 
 									if self.tree.GetItemText(selectItem, 1) == "Discrete":
@@ -4239,21 +4238,7 @@ class DataFrame(wx.Panel):
 									if count_load > 0:
 										ret = self.OnLOAD_CULLTABLE(selectItem, str_txt)
 
-										smooth = -1
-										smooth_data = self.tree.GetItemText(selectItem, 12)
-										if smooth_data != "":
-											smooth_array = smooth_data.split()
-											if "UnsmoothedOnly" == smooth_array[2]:
-												smooth = 0 
-											elif "SmoothedOnly" == smooth_array[2]:
-												smooth = 1 
-											elif "Smoothed&Unsmoothed" == smooth_array[2]:
-												smooth = 2 
-											if smooth_array[1] == "Depth(cm)":
-												py_correlator.smooth(str_txt, int(smooth_array[0]), 2)
-											else:
-												py_correlator.smooth(str_txt, int(smooth_array[0]), 1)
-
+										smooth = self.ApplySmooth(str_txt, selectItem)
 										continue_flag = True 
 										if self.tree.GetItemText(selectItem, 1) == "Discrete":
 											continue_flag = False 
@@ -4273,21 +4258,7 @@ class DataFrame(wx.Panel):
 			titleItem = self.tree.GetItemParent(parentItem)
 			ret = self.OnLOAD_CULLTABLE(parentItem, previousType)
 
-			smooth = -1
-			smooth_data = self.tree.GetItemText(parentItem, 12)
-			if smooth_data != "":
-				smooth_array = smooth_data.split()
-				if "UnsmoothedOnly" == smooth_array[2]:
-					smooth = 0 
-				elif "SmoothedOnly" == smooth_array[2]:
-					smooth = 1 
-				elif "Smoothed&Unsmoothed" == smooth_array[2]:
-					smooth = 2 
-				if smooth_array[1] == "Depth(cm)":
-					py_correlator.smooth(previousType, int(smooth_array[0]), 2)
-				else:
-					py_correlator.smooth(previousType, int(smooth_array[0]), 1)
-
+			smooth = self.ApplySmooth(previousType, parentItem)
 			continue_flag = True 
 			if self.tree.GetItemText(parentItem, 1) == "Discrete":
 				continue_flag = False 
@@ -4515,30 +4486,24 @@ class DataFrame(wx.Panel):
 		return fullname
 
 	# Update self.tree and database to reflect updated smoothing.
-	def OnUPDATE_SMOOTH(self, smType, method, value, opt, mode):
+	# datatype - string representing data type
+	# params - SmoothParams object
+	def OnUPDATE_SMOOTH(self, datatype, params):
 		if self.loadedSiteNode is None:
 			return
 
-		if smType == "Natural Gamma":
-			smType = "NaturalGamma"
+		if datatype == "Natural Gamma":
+			datatype = "NaturalGamma"
 
-		smoothString = str(value) + " " + str(opt) + " " + str(mode) if method != "None" else ""
-		typeNodes = self.GetChildren(self.loadedSiteNode, test=lambda c: self.tree.GetItemText(c, 0) == smType)
+		smoothString = params.toString() if params is not None else ""
+		typeNodes = self.GetChildren(self.loadedSiteNode, test=lambda c: self.tree.GetItemText(c, 0) == datatype)
 		if len(typeNodes) > 0:
 		 	typeNode = typeNodes[0]
 			for dataNode in self.GetChildren(typeNode):
 				self.tree.SetItemText(dataNode, smoothString, 12)
-				smooth = -1
-				if "UnsmoothedOnly" == mode:
-					smooth = 0 
-				elif "SmoothedOnly" == mode:
-					smooth = 1 
-				elif "Smoothed&Unsmoothed" == mode:
-					smooth = 2 
-				if method == "None":
-					smooth = -1
+				smooth = -1 if params is None else params.style
 				self.tree.SetItemText(dataNode, smoothString, 12)
-			self.parent.Window.UpdateSMOOTH(smType, smooth)
+			self.parent.Window.UpdateSMOOTH(datatype, smooth)
 			self.tree.SetItemText(typeNode, smoothString, 12)
 			siteName = self.tree.GetItemText(self.loadedSiteNode, 0)
 			self.OnUPDATE_DB_FILE(siteName, self.loadedSiteNode)

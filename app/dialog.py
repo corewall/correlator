@@ -12,6 +12,7 @@ from wx.lib import plot
 import random, sys, os, re, time, ConfigParser, string
 import numpy
 
+import smooth
 from importManager import py_correlator
 
 class CoreSheet(sheet.CSheet):
@@ -1531,6 +1532,54 @@ class DecimateDialog(wx.Dialog):
 			self.OnInvalid()
 			return
 		self.deciValue = deciValue
+		self.EndModal(wx.ID_OK)
+
+
+class SmoothDialog(wx.Dialog):
+	def __init__(self, parent, width=9, units=1, style=1):
+		wx.Dialog.__init__(self, parent, -1, "Create Smooth Filter")
+		self.parent = parent
+		self.createGUI()
+		self.width.SetValue(str(width))
+		self.units.SetSelection(units - 1)
+		self.style.SetSelection(style)
+
+	def createGUI(self):
+		smoothPanel = wx.Panel(self, -1)
+		smoothParamsSizer = wx.GridBagSizer(3, 3)
+		
+		smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Width"), (0,0), flag=wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, border=5)
+		self.width = wx.TextCtrl(smoothPanel, -1, "9", size=(60, 25))
+		smoothParamsSizer.Add(self.width, (0,1), flag=wx.BOTTOM, border=3)
+
+		self.units = wx.Choice(smoothPanel, -1, choices=["Points", "Depth (cm)"])
+		self.units.SetForegroundColour(wx.BLACK)
+		smoothParamsSizer.Add(self.units, (0,2), flag=wx.ALIGN_CENTER_VERTICAL)
+
+		smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Display"), (1,0), flag=wx.RIGHT, border=5)
+		self.style = wx.Choice(smoothPanel, -1, (0,0), (180, -1), ("Original Only", "Smoothed Only", "Original & Smoothed"))
+		self.style.SetForegroundColour(wx.BLACK)
+		smoothParamsSizer.Add(self.style, (1,1), span=(1,2), flag=wx.BOTTOM, border=5)
+		smoothPanel.SetSizer(smoothParamsSizer)
+
+		btnPanel = OkButtonPanel(self, okName="Apply")
+		self.Bind(wx.EVT_BUTTON, self.OnApply, btnPanel.ok)
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		sizer.Add(smoothPanel, 1, wx.EXPAND | wx.ALL, 10)
+		sizer.Add(btnPanel, 0, wx.ALIGN_CENTER)
+		self.SetSizer(sizer)
+		self.Fit()
+
+	def OnInvalid(self):
+		dlg = MessageDialog(self, "Error", "Bad smoothing", 1)
+		dlg.ShowModal()
+		dlg.Destroy()
+
+	def OnApply(self, evt):
+		width = int(self.width.GetValue())
+		units = self.units.GetSelection() + 1
+		style = self.style.GetSelection()
+		self.outSmoothParams = smooth.SmoothParameters(width, units, style)
 		self.EndModal(wx.ID_OK)
 
 

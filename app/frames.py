@@ -24,6 +24,7 @@ from importManager import py_correlator
 
 import canvas
 import dialog
+from smooth import SmoothParameters
 import splice
 
 def opj(path):
@@ -3159,11 +3160,11 @@ class FilterPanel():
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
 
 		# Filter Range
-		vbox_top.Add(wx.StaticText(self.mainPanel, -1, "Set Filter Range : "), 0, wx.LEFT | wx.TOP, 9)
+		vbox_top.Add(wx.StaticText(self.mainPanel, -1, "Apply Filters to Data Type: "), 0, wx.LEFT | wx.TOP, 9)
 		buttonsize = 290
 		self.all = wx.Choice(self.mainPanel, -1, (0,0), (buttonsize,-1))
 		self.all.SetForegroundColour(wx.BLACK)
-		vbox_top.Add(self.all, 0, wx.LEFT | wx.TOP, 9)
+		vbox_top.Add(self.all, 0, wx.ALL, 5)
 		self.mainPanel.Bind(wx.EVT_CHOICE, self.SetTYPE, self.all)
 
 		### Decimate
@@ -3190,40 +3191,22 @@ class FilterPanel():
 		vbox_top.Add(decPanel, 0, wx.TOP | wx.EXPAND, 5)
 
 		### Smoothing
-		smoothPanel = wx.Panel (self.mainPanel, -1)
-		smoothSizer = wx.StaticBoxSizer(wx.StaticBox(smoothPanel, -1, 'Smooth'), orient=wx.VERTICAL)
-		smoothParamsSizer = wx.GridBagSizer(3, 3)
-		
-		smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Type"), (0,0), flag=wx.RIGHT, border=5)
-				
-		self.smoothcmd = wx.Choice(smoothPanel, -1, (0,0), (180, -1), ("None", "Gaussian"))
-		self.smoothcmd.SetForegroundColour(wx.BLACK)
-		smoothParamsSizer.Add(self.smoothcmd, (0,1), span=(1,2))					
-		smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Width"), (1,0), flag=wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, border=5)
-		
-		self.width = wx.TextCtrl(smoothPanel, -1, "9", size=(60, 25), style=wx.SUNKEN_BORDER)
-		smoothParamsSizer.Add(self.width, (1,1), flag=wx.BOTTOM, border=3)
-
-		self.unitscmd = wx.Choice(smoothPanel, -1, choices=["Points", "Depth(cm)"])
-		self.unitscmd.SetForegroundColour(wx.BLACK)
-		self.mainPanel.Bind(wx.EVT_CHOICE, self.SetUNIT, self.unitscmd)
-		smoothParamsSizer.Add(self.unitscmd, (1,2), flag=wx.ALIGN_CENTER_VERTICAL)
-
-		smoothParamsSizer.Add(wx.StaticText(smoothPanel, -1, "Display"), (2,0), flag=wx.RIGHT, border=5)
-		self.plotcmd = wx.Choice(smoothPanel, -1, (0,0), (180, -1), ("UnsmoothedOnly", "SmoothedOnly", "Smoothed&Unsmoothed"))
-		self.plotcmd.SetForegroundColour(wx.BLACK)
-		smoothParamsSizer.Add(self.plotcmd, (2,1), span=(1,2))
-		smoothSizer.Add(smoothParamsSizer, 1, wx.BOTTOM, 10)
+		smoothPanel = wx.Panel(self.mainPanel, -1)
+		smoothSizer = wx.StaticBoxSizer(wx.StaticBox(smoothPanel, -1, 'Gaussian Smoothing'), orient=wx.VERTICAL)
+		self.smoothState1 = wx.StaticText(smoothPanel, -1, "[Current smoothing state]")
+		self.smoothState2 = wx.StaticText(smoothPanel, -1, "[Smoothing style]")
+		smoothSizer.Add(self.smoothState1, 0, wx.BOTTOM)
+		smoothSizer.Add(self.smoothState2, 1, wx.BOTTOM, 10)
 
 		smoothBtnPanel = wx.Panel(smoothPanel, -1)
 		smoothBtnSizer = wx.BoxSizer(wx.HORIZONTAL)
 		
-		smBtn = wx.Button(smoothBtnPanel, -1, "Apply", size=(120, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSmooth, smBtn)
-		self.smundoBtn = wx.Button(smoothBtnPanel, -1, "Undo", size=(120, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUNDOSmooth, self.smundoBtn)
-		smoothBtnSizer.Add(smBtn)
-		smoothBtnSizer.Add(self.smundoBtn)
+		self.smCreate = wx.Button(smoothBtnPanel, -1, "Create", size=(120, 30))
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCreateSmooth, self.smCreate)
+		self.smDelete = wx.Button(smoothBtnPanel, -1, "Delete", size=(120, 30))
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnClearSmooth, self.smDelete)
+		smoothBtnSizer.Add(self.smCreate)
+		smoothBtnSizer.Add(self.smDelete)
 		smoothBtnPanel.SetSizer(smoothBtnSizer)
 		smoothSizer.Add(smoothBtnPanel)
 
@@ -3305,11 +3288,6 @@ class FilterPanel():
 
 	def OnInitUI(self):
 		self.all.SetStringSelection("All Holes")
-		# self.decimate.SetValue("1")
-		self.smoothcmd.SetStringSelection("Gaussian")
-		self.unitscmd.SetStringSelection("Points")
-		self.width.SetValue("9")
-		self.plotcmd.SetStringSelection("Smoothed&Unsmoothed")
 		self.nocull.SetValue(True)
 		self.valueD.SetValue("5.0")
 		self.cmd.SetStringSelection(">")
@@ -3326,16 +3304,7 @@ class FilterPanel():
 		self.deciUndo = [ "All Holes", "1"]
 		self.smUndo = []
 		self.cullUndo = [ "All Holes", False, "5.0", ">", "9999.99", True, "<", "-9999.99", False, "Use all cores", "999" ]
-		self.smundoBtn.Enable(False)
 		self.cullundoBtn.Enable(False)
-		# self.deciundoBtn.Enable(False)
-
-	def SetUNIT(self, event):
-	 	self.width.Clear()
-		if self.unitscmd.GetStringSelection() == "Depth(cm)" :
-			self.width.SetValue("40")
-		else :
-			self.width.SetValue("9")
 
 	def OnLock(self):
 		self.locked = True 
@@ -3343,40 +3312,15 @@ class FilterPanel():
 	def OnRelease(self):
 		self.locked = False 
 
-	def ParseSmoothString(self, smoothStr):
-		tokens = smoothStr.split(' ')
-		if len(tokens) != 3:
-			return []
-		return tokens
-
-	def MakeSmoothString(self, width, units, smoothStyle):
-		return width + " " + units + " " + smoothStyle
-
-	def UpdateSmooth(self, smoothStr):
-		smoothList = self.ParseSmoothString(smoothStr)
-		if smoothList == []:
-			return
-		self.smoothcmd.SetStringSelection("Gaussian")
-		self.width.SetValue(smoothList[0])
-		self.unitscmd.SetStringSelection(smoothList[1])
-		self.plotcmd.SetStringSelection(smoothList[2])
-
 	def SetTYPE(self, event):
 		type = self._curType() # get self.all type, correcting for "Natural Gamma" spacing
 		data = self.parent.dataFrame.GetDECIMATE(type) # returns tuple of decimate, smooth data
-		if data != None:
-			self.UpdateDecimateState(data[0])
-			if data[1] != "":
-				smooth_array = data[1].split(' ')
-				self.smoothcmd.SetStringSelection("Gaussian")
-				self.width.SetValue(smooth_array[0])
-				self.unitscmd.SetStringSelection(smooth_array[1])
-				self.plotcmd.SetStringSelection(smooth_array[2])
-			else :
-				self.smoothcmd.SetStringSelection("None")
-		else :
-			self.smoothcmd.SetStringSelection("None")
-		self.smBackup = [ self.all.GetStringSelection(), self.smoothcmd.GetStringSelection(), self.width.GetValue(), self.unitscmd.GetStringSelection(), self.plotcmd.GetStringSelection()]
+		self.UpdateDecimateState(data[0])
+		if data[1] != "":
+			smoothParams = SmoothParameters.createWithString(data[1])
+			self.UpdateSmoothState(smoothParams)
+		else:
+			self.UpdateSmoothState(None)
 
 		# Update cull
 		cullData = self.parent.dataFrame.GetCULL(type)
@@ -3469,7 +3413,7 @@ class FilterPanel():
 	# Update GUI to reflect current type's decimate filter.
 	def UpdateDecimateState(self, deci):
 		if int(deci) == 1:
-			self.deciState.SetLabel("None (show all points).")
+			self.deciState.SetLabel("None (show all points)")
 			self.deciCreate.SetLabel("Create")
 			self.deciDelete.Enable(False)
 		else:
@@ -3488,77 +3432,51 @@ class FilterPanel():
 		decimate, _ = self.parent.dataFrame.GetDECIMATE(datatype) # _ = smooth dummy
 		return decimate
 
+	def _curSmooth(self):
+		datatype = self._curType()
+		_, smooth = self.parent.dataFrame.GetDECIMATE(datatype) # _ = decimate dummy
+		if smooth != "":
+			return SmoothParameters.createWithString(smooth)
+		else:
+			return None
 
-	""" Return integer smooth style (unsmoothed, smoothed, or combo) based on current smooth combobox selection """
-	def GetSmoothStyle(self):
-		smoothStyle = 0 # no smooth - should really define constant, named values
-		if self.plotcmd.GetStringSelection() == "SmoothedOnly":
-			smoothStyle = 1
-		elif self.plotcmd.GetStringSelection() == "Smoothed&Unsmoothed":
-			smoothStyle = 2
-		return smoothStyle
+	def UpdateSmoothState(self, smoothData):
+		if smoothData is None:
+			self.smoothState1.SetLabel("No smoothing")
+			self.smoothState2.SetLabel("")
+			self.smCreate.SetLabel("Create")
+			self.smDelete.Enable(False)
+		else:
+			self.smoothState1.SetLabel("Width: {} {}".format(smoothData.getWidthString(), smoothData.getUnitsString()))
+			self.smoothState2.SetLabel("Display: {}".format(smoothData.getStyleString().replace('&', '&&')))
+			self.smCreate.SetLabel("Edit")
+			self.smDelete.Enable(True)
 
-	""" Return integer width or -1 if "None" smooth type is selected """
-	def GetSmoothWidth(self):
-		smoothWidth = -1
-		if self.smoothcmd.GetStringSelection() == "Gaussian":
-			smoothWidth = int(self.width.GetValue())
-		return smoothWidth
+	def OnClearSmooth(self, event):
+		datatype = self._curType()
+		self.ApplySmooth(datatype, params=None)
 
-	""" Return current smooth unit """
-	def GetSmoothUnit(self):
-		smoothUnit = 2 if self.unitscmd.GetStringSelection() == "Depth(cm)" else 1
-		return smoothUnit
+	def OnCreateSmooth(self, event):
+		curSmooth = self._curSmooth()
+		if curSmooth is None:
+			smdlg = dialog.SmoothDialog(self.parent)
+		else:
+			smdlg = dialog.SmoothDialog(self.parent, curSmooth.width, curSmooth.units, curSmooth.style)
+		pos = self.smCreate.GetScreenPositionTuple()
+		smdlg.SetPosition(pos)
+		if smdlg.ShowModal() == wx.ID_OK:
+			datatype = self._curType()
+			self.ApplySmooth(datatype, smdlg.outSmoothParams)
 
-	""" Return True if smooth is enabled ("Gaussian" type is selected) else False """
-	def GetSmoothEnable(self):
-		return False if self.smoothcmd.GetStringSelection() == "None" else True
-
-	def OnUNDOSmooth(self, event):
-		if self.smUndo == [] :
-			self.smundoBtn.Enable(False)
-			return
-
-		opt = self.smUndo[0]
-		filter = self.smUndo[1]
-		value = self.smUndo[2]
-		unit = self.smUndo[3]
-		plotting = self.smUndo[4]
-		#self.smUndo = [ self.all.GetValue(), self.smoothcmd.GetValue(), self.width.GetValue(), self.plotcmd.GetValue()]
-
-		self.all.SetStringSelection(opt)
-		self.smoothcmd.SetStringSelection(filter)
-		self.width.SetValue(value)
-		self.unitscmd.SetStringSelection(unit)
-		self.plotcmd.SetStringSelection(plotting)
-		self.OnSmooth(event)
-		self.smundoBtn.Enable(False)
-
-	def OnSmooth(self, event):
-		self.smundoBtn.Enable(True)
-		self.smUndo = self.smBackup
-
-		# smoothEnable = self.GetSmoothEnable()
-		smoothWidth = self.GetSmoothWidth()
-		smoothUnit = self.GetSmoothUnit()
-		smoothUnitStr = self.unitscmd.GetStringSelection()
-		# smoothStyle = self.GetSmoothStyle()
-		smoothStyleStr = self.plotcmd.GetStringSelection()
-
-		datatype = self.all.GetStringSelection()
-		if datatype == "Natural Gamma":
-			datatype = "NaturalGamma"
-
-		py_correlator.smooth(datatype, smoothWidth, smoothUnit)
-
-		# if not smoothEnable:
-		# 	smoothUnit = -1
-
+	def ApplySmooth(self, datatype, params):
+		if params:
+			py_correlator.smooth(datatype, params.width, params.units)
+		else: # remove smoothing
+			py_correlator.smooth(datatype, -1, -1)
 		self.parent.UpdateSMOOTH_CORE()
-		self.smBackup = [ self.all.GetStringSelection(), self.smoothcmd.GetStringSelection(), self.width.GetValue(), smoothUnitStr, smoothStyleStr]
-		self.parent.dataFrame.OnUPDATE_SMOOTH(datatype, self.smoothcmd.GetStringSelection(), str(self.width.GetValue()), smoothUnitStr, smoothStyleStr)
+		self.parent.dataFrame.OnUPDATE_SMOOTH(datatype, params)
+		self.UpdateSmoothState(self._curSmooth())
 		self.parent.Window.UpdateDrawing()
-
 
 	def OnUNDOCull(self, event):
 		opt = self.cullUndo[0]
