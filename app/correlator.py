@@ -3155,6 +3155,7 @@ class AffineController:
 				for interval in intervalsToRemove:
 					self.parent.spliceManager.delete(interval)
 			else:
+				self.parent.Window.ClearCompositeTies()
 				return False
 		return True
 
