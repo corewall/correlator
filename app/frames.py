@@ -3524,106 +3524,29 @@ class FilterPanel():
 		self.OnSmooth(event)
 		self.smundoBtn.Enable(False)
 
-
 	def OnSmooth(self, event):
 		self.smundoBtn.Enable(True)
 		self.smUndo = self.smBackup
 
-		smoothEnable = self.GetSmoothEnable()
+		# smoothEnable = self.GetSmoothEnable()
 		smoothWidth = self.GetSmoothWidth()
 		smoothUnit = self.GetSmoothUnit()
 		smoothUnitStr = self.unitscmd.GetStringSelection()
-		smoothStyle = self.GetSmoothStyle()
+		# smoothStyle = self.GetSmoothStyle()
 		smoothStyleStr = self.plotcmd.GetStringSelection()
 
-		type = self.all.GetStringSelection()
+		datatype = self.all.GetStringSelection()
+		if datatype == "Natural Gamma":
+			datatype = "NaturalGamma"
 
-		# 1/29/2014 brg: Looks like this takes effect when only smoothStyle has changed.
-		if self.smBackup != [] : 
-			if type == self.smBackup[0] and self.smoothcmd.GetStringSelection() == self.smBackup[1] and self.width.GetValue() == self.smBackup[2] and self.unitscmd.GetStringSelection() == self.smBackup[3] :
-				if type  != 'All Holes' and type != 'Log' and type != 'Spliced Records' :
-					size = len(type)
-					type = type[4:size]
-				if type == "Natural Gamma" :
-					type = "NaturalGamma"
+		py_correlator.smooth(datatype, smoothWidth, smoothUnit)
 
-				if type == 'Spliced Records' :
-					self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
-				elif type == 'Log' :
-					self.parent.Window.UpdateSMOOTH('log', smoothStyle)
-				else :
-					self.parent.dataFrame.OnUPDATE_SMOOTH(type, self.smoothcmd.GetStringSelection(), str(self.width.GetValue()), self.unitscmd.GetStringSelection(), self.plotcmd.GetStringSelection() )
-					if type == 'All Holes' :
-						self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
-						
-				self.parent.Window.UpdateDrawing()
-				#print "[DEBUG] Display is updated : " + self.plotcmd.GetValue()
-				return
+		# if not smoothEnable:
+		# 	smoothUnit = -1
 
-		if not smoothEnable:
-			smoothUnit = -1
-
-		# brgtodo 1/29/2014: ??? If type is spliced records, why are we doing everything
-		# *but* modifying spliced records???
-#  		if type == 'Spliced Records' : 
-#  			max = self.all.GetCount()
-#  			start = 1
-#  			#if self.parent.Window.LogData == [] :
-#  			#	start = 2
-#  			for i in range(start, max) :
-#  				all_type = self.all.GetString(i)
-#  				if all_type == 'Spliced Records' :
-#  					continue
-#  				start = all_type.find("All", 0)
-#  				if start >= 0 : 
-#  					py_correlator.smooth(all_type, smoothWidth, smoothUnit)
-
-		# brgtodo 1/29/2014: Pretty sure this does exactly the same thing as above block
-		if type == 'All Holes' : 
-			for i in range(1, self.all.GetCount()) :
-				all_type = self.all.GetString(i)
-				if all_type == 'Spliced Records' :
-					continue
-				start = all_type.find("All", 0)
-				if start >= 0 or all_type == 'Log':
-					py_correlator.smooth(all_type, smoothWidth, smoothUnit)
-					#site.SetSmooth(all_type[4:], self.MakeSmoothString(str(smoothWidth), smoothUnitStr, smoothStyleStr))
-				#elif all_type == 'Log' :
-					#py_correlator.smooth(all_type, smoothWidth, smoothUnit)
-		else :
-			py_correlator.smooth(type, smoothWidth, smoothUnit)
-			#site.SetSmooth(type[4:], self.MakeSmoothString(str(smoothWidth), smoothUnitStr, smoothStyleStr))
-
-		#site.SyncToData()
-
-		#HYEJUNG CHANGING NOW
-		if type == 'Spliced Records' :
-			self.parent.UpdateSMOOTH_SPLICE(False)
-			if self.parent.Window.LogData != [] and self.parent.Window.SpliceData != [] :
-				self.parent.UpdateSMOOTH_LOGSPLICE(True)
-			self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
-		elif type == 'Log' :
-			#self.parent.UpdateLogData()
-			self.parent.UpdateSMOOTH_LogData()
-			self.parent.Window.UpdateSMOOTH('log', smoothStyle)
-		else :
-			self.parent.UpdateSMOOTH_CORE()
-			if type == 'All Holes' :
-				self.parent.UpdateSMOOTH_SPLICE(False)
-				self.parent.Window.UpdateSMOOTH('splice', smoothStyle)
-		###
-
-		self.smBackup = [ self.all.GetStringSelection(), self.smoothcmd.GetStringSelection(), self.width.GetValue(), self.unitscmd.GetStringSelection(), self.plotcmd.GetStringSelection()]
-
-		if type  != 'All Holes' and type != 'Log' and type != 'Spliced Records' :
-			size = len(type)
-			type = type[4:size]
-
-		if type == "Natural Gamma" :
-			type = "NaturalGamma"
-
-		self.parent.dataFrame.OnUPDATE_SMOOTH(type, self.smoothcmd.GetStringSelection(), str(self.width.GetValue()), self.unitscmd.GetStringSelection(), self.plotcmd.GetStringSelection())
-
+		self.parent.UpdateSMOOTH_CORE()
+		self.smBackup = [ self.all.GetStringSelection(), self.smoothcmd.GetStringSelection(), self.width.GetValue(), smoothUnitStr, smoothStyleStr]
+		self.parent.dataFrame.OnUPDATE_SMOOTH(datatype, self.smoothcmd.GetStringSelection(), str(self.width.GetValue()), smoothUnitStr, smoothStyleStr)
 		self.parent.Window.UpdateDrawing()
 
 
@@ -3850,7 +3773,7 @@ class PreferencesPanel():
 	def OnChangeColor(self, event):
 		dlg = dialog.ColorTableDialog(self.parent)
 		dlg.Centre()
-		ret = dlg.ShowModal()
+		dlg.ShowModal()
 		dlg.Destroy()
 
 	def OnShowLine(self, event):

@@ -4520,116 +4520,32 @@ class DataFrame(wx.Panel):
 
 	# Update self.tree and database to reflect updated smoothing.
 	def OnUPDATE_SMOOTH(self, smType, method, value, opt, mode):
-		s = ""
-		if method != "None":
-			s = str(value) + " " + str(opt) + " " + str(mode)
-
-		#if self.currentIdx == []: 
-		if self.selectBackup == []:
+		if self.loadedSiteNode is None:
 			return
 
-		if smType == 'Log':
-			self.Update_PROPERTY_ITEM(self.selectBackup)
+		if smType == "Natural Gamma":
+			smType = "NaturalGamma"
 
-			if self.propertyIdx != None:
-				parentItem = self.tree.GetItemParent(self.propertyIdx)
-				child = self.FindItem(parentItem, "Downhole Log Data")
-				if child[0] == True:
-					selectItem = child[1]
-					totalcount = self.tree.GetChildrenCount(selectItem, False)
-					if totalcount > 0:
-						child = self.tree.GetFirstChild(selectItem)
-						child_item = child[0]
-						if self.tree.GetItemText(child_item, 2) == "Enable":
-							self.tree.SetItemText(child_item, s, 12)
-							self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
-						else:
-							for k in range(1, totalcount):
-								child_item = self.tree.GetNextSibling(child_item)
-								if self.tree.GetItemText(child_item, 2) == "Enable":
-									self.tree.SetItemText(child_item, s, 12)
-									self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
-									break
-			return 
-
-
-		parentItem = None
-		#for selectItem in self.currentIdx:
-		for selectItem in self.selectBackup:
-			if len(self.tree.GetItemText(selectItem, 8)) > 0:
-				if self.tree.GetItemText(selectItem, 0) == '-Cull Table':
-					continue
-
-				parentItem = self.tree.GetItemParent(selectItem)
-				type = self.tree.GetItemText(parentItem, 0)
-
-				if smType == "All Holes" or smType == type:
-					self.tree.SetItemText(parentItem, s, 12)
+		smoothString = str(value) + " " + str(opt) + " " + str(mode) if method != "None" else ""
+		typeNodes = self.GetChildren(self.loadedSiteNode, test=lambda c: self.tree.GetItemText(c, 0) == smType)
+		if len(typeNodes) > 0:
+		 	typeNode = typeNodes[0]
+			for dataNode in self.GetChildren(typeNode):
+				self.tree.SetItemText(dataNode, smoothString, 12)
+				smooth = -1
+				if "UnsmoothedOnly" == mode:
+					smooth = 0 
+				elif "SmoothedOnly" == mode:
+					smooth = 1 
+				elif "Smoothed&Unsmoothed" == mode:
+					smooth = 2 
+				if method == "None":
 					smooth = -1
-					if "UnsmoothedOnly" == mode:
-						smooth = 0 
-					elif "SmoothedOnly" == mode:
-						smooth = 1 
-					elif "Smoothed&Unsmoothed" == mode:
-						smooth = 2 
-					if method == "None":
-						smooth = -1
-					self.parent.Window.UpdateSMOOTH(type, smooth)
-				parentItem = self.tree.GetItemParent(parentItem)
-			else:
-				type = self.tree.GetItemText(selectItem, 0)
-				if type.find("-", 0) == -1:
-					if smType == "All Holes" or smType == type:
-						self.tree.SetItemText(selectItem, s, 12)
-						smooth = -1
-						if "UnsmoothedOnly" == mode:
-							smooth = 0 
-						elif "SmoothedOnly" == mode:
-							smooth = 1 
-						elif "Smoothed&Unsmoothed" == mode:
-							smooth = 2 
-						if method == "None":
-							smooth = -1
-						self.parent.Window.UpdateSMOOTH(type, smooth)
-					parentItem = self.tree.GetItemParent(selectItem)
-				else:
-					# TITLE-LEG-SITE
-					parentItem = selectItem
-					total = self.tree.GetChildrenCount(parentItem, False)
-					if total > 0:
-						child = self.tree.GetFirstChild(parentItem)
-						selectItem = child[0]
-						type = self.tree.GetItemText(selectItem, 0)
-						if smType == "All Holes" or smType == type:
-							self.tree.SetItemText(selectItem, s, 12)
-							smooth = -1
-							if "UnsmoothedOnly" == mode:
-								smooth = 0 
-							elif "SmoothedOnly" == mode:
-								smooth = 1 
-							elif "Smoothed&Unsmoothed" == mode:
-								smooth = 2 
-							if method == "None":
-								smooth = -1
-							self.parent.Window.UpdateSMOOTH(type, smooth)
-						for k in range(1, total):
-							selectItem = self.tree.GetNextSibling(selectItem)
-							type = self.tree.GetItemText(selectItem, 0)
-							if smType == "All Holes" or smType == type:
-								self.tree.SetItemText(selectItem, s, 12)
-								smooth = -1
-								if "UnsmoothedOnly" == mode:
-									smooth = 0 
-								elif "SmoothedOnly" == mode:
-									smooth = 1 
-								elif "Smoothed&Unsmoothed" == mode:
-									smooth = 2 
-								if method == "None":
-									smooth = -1
-								self.parent.Window.UpdateSMOOTH(type, smooth)
-
-		if parentItem != None:
-			self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
+				self.tree.SetItemText(dataNode, smoothString, 12)
+			self.parent.Window.UpdateSMOOTH(smType, smooth)
+			self.tree.SetItemText(typeNode, smoothString, 12)
+			siteName = self.tree.GetItemText(self.loadedSiteNode, 0)
+			self.OnUPDATE_DB_FILE(siteName, self.loadedSiteNode)
 
 	# Update tree and database to reflect updated cull.
 	def OnUPDATE_CULLTABLE(self, cullType):
