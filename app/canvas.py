@@ -1313,12 +1313,13 @@ class DataCanvas(wxBufferedWindow):
 		# DRAWING TITLE
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		if (drawComposite and smoothed == 0) or smoothed == 1:
-			dc.DrawText("Leg: " + holeInfo[1] + " Site: " + holeInfo[0] + " Hole: " + holeInfo[7], rangeMax, 5) 
-			dc.DrawText(holeInfo[2] + ", Range: " + str(holeInfo[5]) + ":" + str(holeInfo[6]), rangeMax, 25)
+			dc.DrawText(holeInfo[1] + "-" + holeInfo[0] + holeInfo[7], rangeMax, 5)
+			dc.DrawText(holeInfo[2], rangeMax, 25) # omit Range for now
+			# dc.DrawText(holeInfo[2] + ", Range: " + str(holeInfo[5]) + ":" + str(holeInfo[6]), rangeMax, 25)
 		if smoothed >= 5:
 			title_pos = self.splicerX + (self.holeWidth * 2) + (50 * 2) + 50
 			# rangeMax
-			dc.DrawText("Leg: " + holeInfo[1] + " Site: " + holeInfo[0] + " Hole: " + holeInfo[7], title_pos, 5)
+			dc.DrawText(holeInfo[1] + "-" + holeInfo[0] + holeInfo[7], title_pos, 5)
 			dc.DrawText("Log, Range: " + str(holeInfo[5]) + ":" + str(holeInfo[6]), title_pos, 25)
 
 		return holeType
