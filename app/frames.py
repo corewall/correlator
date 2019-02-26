@@ -3586,13 +3586,8 @@ class FilterPanel():
 
 
 	def OnCull(self, event):
-		type = self.all.GetStringSelection()
-		if type == 'Spliced Records' :
-			self.parent.OnShowMessage("Error", "Splice Records can not be culled", 1)
-			return
-
+		datatype = self.all.GetStringSelection()
 		self.cullundoBtn.Enable(True)
-
 		self.cullUndo = self.cullBackup
 
 		cullValue = 0.0
@@ -3637,48 +3632,20 @@ class FilterPanel():
 
 		#cullStrength = float(self.valueC.GetValue())
 		cullStrength = 167.0
+		self.parent.dataFrame.UpdateCULL(datatype, bcull, cullValue, cullNumber, value1, value2, sign1, sign2, join)
+		py_correlator.cull(datatype, bcull, cullValue, cullNumber, cullStrength, value1, value2, sign1, sign2, join)
 
-		# HYEJUNG
-		if type == 'All Holes' : 
-			max = self.all.GetCount()
-			start = 1
-			#if self.parent.Window.LogData == [] :
-			#	start = 2
-			for i in range(start, max) :
-				all_type = self.all.GetString(i)
-				if all_type == 'Spliced Records' : 
-					continue
-				start = all_type.find("All", 0)
-				if start >= 0 or all_type == 'Log' : 
-					self.parent.dataFrame.UpdateCULL(all_type, bcull, cullValue, cullNumber, value1, value2, sign1, sign2, join)
-
-					py_correlator.cull(all_type, bcull, cullValue, cullNumber, cullStrength, value1, value2, sign1, sign2, join)
-
-		else :
-			self.parent.dataFrame.UpdateCULL(type, bcull, cullValue, cullNumber, value1, value2, sign1, sign2, join)
-			py_correlator.cull(type, bcull, cullValue, cullNumber, cullStrength, value1, value2, sign1, sign2, join)
-
-		if type != "Log" :
-			self.parent.LOCK = 0 
-			self.parent.UpdateCORE()
-			self.parent.UpdateSMOOTH_CORE()
-			self.parent.LOCK = 1 
-		else :
-			self.parent.UpdateLogData()
+		self.parent.LOCK = 0 
+		self.parent.UpdateCORE()
+		self.parent.UpdateSMOOTH_CORE()
+		self.parent.LOCK = 1 
 
 		self.cullBackup = [ self.all.GetStringSelection(), self.nocull.GetValue(), self.valueD.GetValue(), self.cmd.GetStringSelection(), self.valueA.GetValue(), self.onlyCheck.GetValue(), self.signcmd.GetStringSelection(), self.valueB.GetValue(), self.orCheck.GetValue(), self.optcmd.GetStringSelection(), self.valueE.GetValue()]
 
+		if datatype == "Natural Gamma":
+			datatype = "NaturalGamma"
 
-		if type  != 'All Holes' and type != 'Log' and type != 'Spliced Records' :
-			size = len(type)
-			type = type[4:size]
-
-		if type == "Natural Gamma" :
-			type = "NaturalGamma"
-
-		if type != "Log" :
-			self.parent.dataFrame.OnUPDATE_CULLTABLE(type)
-
+		self.parent.dataFrame.OnUPDATE_CULLTABLE(datatype)
 		self.parent.Window.UpdateDrawing()
 
 
