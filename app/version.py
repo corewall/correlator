@@ -1,6 +1,6 @@
 BaseVersion = "3.0"
-VersionSuffix = "b14"
-LongVersionSuffix = "beta 14"
+VersionSuffix = "b15"
+LongVersionSuffix = "beta 15"
 
 def GetShortVersion():
 	if VersionSuffix != "":
