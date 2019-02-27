@@ -6,10 +6,13 @@ rm dbmanager.py
 rm dialog.py
 rm frames.py
 rm importManager.py
-rm model.py
+#rm model.py # unused at present
+rm prefs.py
 rm sectionSummary.py
+rm smooth.py
 rm splice.py
 rm tabularImport.py
+#rm tracker.py # disabled
 rm version.py
 rm xml_handler.py
 rm *.pyc
@@ -29,10 +32,13 @@ cp dbmanager.py ../bin/static/
 cp dialog.py ../bin/static/
 cp frames.py ../bin/static/
 cp importManager.py ../bin/static/
-cp model.py ../bin/static/
+#cp model.py ../bin/static/
+cp prefs.py ../bin/static/
 cp sectionSummary.py ../bin/static/
+cp smooth.py ../bin/static/
 cp splice.py ../bin/static/
 cp tabularImport.py ../bin/static/
+#cp tracker.py ../bin/static/
 cp version.py ../bin/static/
 cp xml_handler.py ../bin/static/
 
