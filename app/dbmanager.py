@@ -159,7 +159,7 @@ class DataFrame(wx.Panel):
 
 	def DeleteSecSummFile(self, event=None):
 		secsummname = self.tree.GetItemText(self.selectedIdx, 1)
-		ret = self.parent.OnShowMessage("Information", "Are you sure you want to delete {}?".format(secsummname), 2)
+		ret = self.parent.OnShowMessage("Confirm Delete", "Are you sure you want to delete {}?".format(secsummname), 2)
 		if ret == wx.ID_OK:
 			siteName = self.GetSelectedSiteName()
 			siteNode = self.GetSiteForNode(self.selectedIdx)
@@ -202,12 +202,12 @@ class DataFrame(wx.Panel):
 			if filename != "":
 				filename = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + filename
 				self.ViewDataFile(filename)
-		elif opId == 3: # EDIT CORE
-			self.importType = "CORE"
-			self.importLabel = []
-			self.selectedDataType = ""
-			self.selectedDepthType = ""
-			self.OnEDIT()
+		# elif opId == 3: # EDIT CORE # 2/28/2019 Edit has been disabled.
+		# 	self.importType = "CORE"
+		# 	self.importLabel = []
+		# 	self.selectedDataType = ""
+		# 	self.selectedDepthType = ""
+		# 	self.OnEDIT()
 		elif opId == 4:
 			# IMPORT AFFINE TABLE
 			self.OnIMPORT_TABLE("Affine")
@@ -488,7 +488,16 @@ class DataFrame(wx.Panel):
 					break
 			item = parent
 		return item
+
+	# Is self.tree node a measurement data node e.g. Susceptibility, Natural Gamma?
+	def IsDatatypeNode(self, node):
+		datatypeNode = False
+		parent = self.tree.GetItemParent(node)
+		if parent.IsOk() and self.IsSiteNode(parent) and self.tree.GetItemText(node, 0) not in STD_SITE_NODES:
+			datatypeNode = True
+		return datatypeNode
 	
+	# Is self.tree node a Site node?
 	def IsSiteNode(self, node):
 		siteNode = False
 		parent = self.tree.GetItemParent(node)
@@ -496,8 +505,24 @@ class DataFrame(wx.Panel):
 			siteNode = self.IsRootNode(parent)
 		return siteNode
 	
+	# Is self.tree node a Root node?
+	# Appears that in modern versions of wx (4.0+), the root node
+	# is invisible and never accessible. In the older version used
+	# by Correlator (2.9.5.0), for which the docs are hard to find,
+	# the root node is created directly through tree.AddRoot().
+	# tl;dr: our root is the real root!
 	def IsRootNode(self, node):
-		return self.tree.GetItemText(node, 0) == "Root"
+		return node == self.tree.GetRootItem()
+
+	# If no data has been imported, add a bit of help text to the Root item.
+	def UpdateRootNodeText(self):
+		rootNode = self.tree.GetRootItem()
+		if self.tree.GetChildrenCount(rootNode, False) == 0:
+			self.tree.SetItemText(rootNode, "Root: right-click to add data")
+			self.tree.SetItemBold(rootNode, True)
+		else:
+			self.tree.SetItemText(rootNode, "Root")
+			self.tree.SetItemBold(rootNode, False)
 	
 	# find Site node for given node
 	def GetSiteForNode(self, node):
@@ -535,7 +560,6 @@ class DataFrame(wx.Panel):
 			self.tree.SelectItem(idx) # ensure right-clicked item is selected
 			self.selectedIdx = idx
 			popupMenu = wx.Menu()
-
 			str_name = self.tree.GetItemText(self.selectedIdx, 8)
 			if str_name != "":
 				parentItem = self.tree.GetItemParent(self.selectedIdx)
@@ -659,7 +683,10 @@ class DataFrame(wx.Panel):
 
 			else:
 				str_name = self.tree.GetItemText(self.selectedIdx, 0)
-				if str_name == "Session Reports":
+				if self.IsRootNode(self.selectedIdx):
+					popupMenu.Append(5, "&Add new data")
+					wx.EVT_MENU(popupMenu, 5, self.OnPOPMENU)
+				elif str_name == "Session Reports":
 					popupMenu.Append(30, "&Empty")
 					wx.EVT_MENU(popupMenu, 30, self.OnPOPMENU)
 				elif str_name == "Report":
@@ -678,8 +705,8 @@ class DataFrame(wx.Panel):
 					popupMenu.Append(15, "&Import splice table")
 					wx.EVT_MENU(popupMenu, 15, self.OnPOPMENU)
 
-					popupMenu.Append(17, "&Import ELD table")
-					wx.EVT_MENU(popupMenu, 17, self.OnPOPMENU)
+					# popupMenu.Append(17, "&Import ELD table")
+					# wx.EVT_MENU(popupMenu, 17, self.OnPOPMENU)
 					
 					popupMenu.AppendSeparator()
 					popupMenu.Append(66, "&Import legacy affine table")
@@ -691,15 +718,6 @@ class DataFrame(wx.Panel):
 				elif str_name == "Downhole Log Data":
 					popupMenu.Append(12, "&Import log")
 					wx.EVT_MENU(popupMenu, 12, self.OnPOPMENU)
-				elif str_name == "Root":
-					popupMenu.Append(5, "&Add new data")
-					wx.EVT_MENU(popupMenu, 5, self.OnPOPMENU)
-
-					popupMenu.Append(6, "&Delete")
-					wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
-
-					#popupMenu.Append(7, "&Update")
-					#wx.EVT_MENU(popupMenu, 7, self.OnPOPMENU)
 				elif str_name == "Stratigraphy":
 					popupMenu.Append(14, "&Import stratigraphy data")
 					wx.EVT_MENU(popupMenu, 14, self.OnPOPMENU)
@@ -722,7 +740,7 @@ class DataFrame(wx.Panel):
 					wx.EVT_MENU(popupMenu, 1, self.OnPOPMENU)
 
 					parentItem = self.tree.GetItemParent(self.selectedIdx)
-					if self.tree.GetItemText(parentItem, 0) != "Root":
+					if not self.IsRootNode(parentItem):
 						# popupMenu.Append(3, "&Edit")
 						# wx.EVT_MENU(popupMenu, 3, self.OnPOPMENU)
 
@@ -2182,7 +2200,7 @@ class DataFrame(wx.Panel):
 			back_title = self.title 
 			for selectItem in self.selectBackup:
 				parentItem = self.tree.GetItemParent(selectItem)
-				if self.tree.GetItemText(parentItem, 0) == "Root":
+				if self.IsRootNode(parentItem):
 					back_type = "*"
 				elif len(self.tree.GetItemText(selectItem, 8)) > 0:
 					back_type = self.tree.GetItemText(parentItem, 0)
@@ -2191,9 +2209,9 @@ class DataFrame(wx.Panel):
 
 			if items != []:
 				for selectItem in items:
-					if self.tree.GetItemText(selectItem, 0) != "Root":
+					if not self.IsRootNode(selectItem):
 						parentItem = self.tree.GetItemParent(selectItem)
-						if self.tree.GetItemText(parentItem, 0) == "Root":
+						if self.IsRootNode(parentItem):
 							type = "*"
 							title = self.tree.GetItemText(selectItem, 0)
 						elif len(self.tree.GetItemText(selectItem, 8)) > 0:
@@ -2228,29 +2246,33 @@ class DataFrame(wx.Panel):
 		titleItem = None
 		for selectItem in items:
 			label = self.tree.GetItemText(selectItem, 0)
-			
-			if label == "Root":
-				if self.tree.GetChildrenCount(selectItem, False) == 0:
-					self.parent.OnShowMessage("Error", "There is no data to delete", 1)
-					return
 
-				ret = self.parent.OnShowMessage("About", "Do you want to delete all data?", 2)
-				if ret == wx.ID_OK:
-					self.OnDELETEALL()
-					return
-				break
+			# 2/28/2019: Ability to delete all sites from Root node has been disabled.
+			# if label == "Root":
+			# 	if self.tree.GetChildrenCount(selectItem, False) == 0:
+			# 		self.parent.OnShowMessage("Error", "There is no data to delete", 1)
+			# 		return
+
+			# 	ret = self.parent.OnShowMessage("About", "Do you want to delete all data?", 2)
+			# 	if ret == wx.ID_OK:
+			# 		self.OnDELETEALL()
+			# 		return
+			# 	break
 
 			if label in STD_SITE_NODES:
 				self.parent.OnShowMessage("Error", "{} can not be deleted.".format(label), 1)
 				break
 
 			if idx == 0:
-				if label == "Table" or label == "Model":
-					label = self.tree.GetItemText(selectItem, 8) # filename
-				else:
-					label = self.tree.GetItemText(selectItem, 0) # site name or data type
-
-				ret = self.parent.OnShowMessage("About", "Do you want to delete " + label + "?", 2)
+				msg = "Are you sure you want to delete "
+				label = self.tree.GetItemText(selectItem, 0)
+				if self.IsSiteNode(selectItem):
+					msg += "all data for site " + label + "?"
+				elif self.IsDatatypeNode(selectItem):
+					msg += "all data of type " + label + "?"
+				else: # measurement data node
+					msg += self.tree.GetItemText(selectItem, 8) + "?"
+				ret = self.parent.OnShowMessage("Confirm Delete", msg, 2)
 				if ret == wx.ID_OK:
 					idx = 1
 				else:
@@ -2354,6 +2376,7 @@ class DataFrame(wx.Panel):
 						os.system('rm -rf ' + self.parent.DBPath + 'db/' + title)
 						self.parent.logFileptr.write("Delete " + self.parent.DBPath + 'db/' + title + "\n\n")
 					self.UpdateSiteDatabaseFile() # remove deleted site from site database file
+					self.UpdateRootNodeText()
 
 			#self.OnSAVE_DB_FILE(title, type, hole)
 			self.tree.Delete(selectItem)
@@ -2374,6 +2397,9 @@ class DataFrame(wx.Panel):
 			# desirable. Users can still delete a site by right-clicking the site and choosing Delete.
 			# if siteNode:
 			# 	self.DeleteSiteNodeIfEmpty(siteNode)
+
+		self.UpdateRootNodeText()
+
 
 	# If siteNode only contains standard nodes and those nodes have
 	# no children, remove siteNode from tree.
@@ -4039,7 +4065,7 @@ class DataFrame(wx.Panel):
 		previousItem = None 
 		count_load = 0
 		for selectItem in items:
-			if self.tree.GetItemText(selectItem, 0) == "Root":
+			if self.IsRootNode(selectItem):
 				self.parent.OnShowMessage("Error", "Cannot load Root item: select a site item or subitem.", 1)
 				return False
 			elif self.tree.GetItemText(selectItem, 0) == "Saved Tables":
@@ -5208,6 +5234,7 @@ class DataFrame(wx.Panel):
 		root_f.close()
 		self.tree.SortChildren(self.root)
 		self.tree.Expand(self.root)
+		self.UpdateRootNodeText()
 
 	def changeFORMAT(self, filename, ith):
 		# change format
@@ -5253,108 +5280,108 @@ class DataFrame(wx.Panel):
 
 		self.sideNote.SetSelection(1)
 
+	# 2/28/2019 Edit has been disabled.
+	# def OnEDIT(self):
+	# 	self.importbtn.Enable(True)
+	# 	self.importbtn.SetLabel("Change")
 
-	def OnEDIT(self):
-		self.importbtn.Enable(True)
-		self.importbtn.SetLabel("Change")
+	# 	self.dataPanel.ClearGrid()
+	# 	self.OnINITGENERICSHEET()
 
-		self.dataPanel.ClearGrid()
-		self.OnINITGENERICSHEET()
+	# 	ith = 0
+	# 	type = ""
+	# 	items = self.tree.GetSelections()
+	# 	selectItem = None
+	# 	for selectItem in items:
+	# 		if self.IsRootNode(selectItem): #self.tree.GetItemText(selectItem, 0) == "Root":
+	# 			self.parent.OnShowMessage("Error", "Root is not allowed to select", 1)
+	# 			return False
+	# 		elif self.tree.GetItemText(selectItem, 0) == "Saved Tables":
+	# 			self.parent.OnShowMessage("Error", "Table is not allowed to select", 1)
+	# 			return False
+	# 		else:
+	# 			if len(self.tree.GetItemText(selectItem, 8)) > 0:
+	# 				parentItem = self.tree.GetItemParent(selectItem)
+	# 				type = self.tree.GetItemText(parentItem, 0) 
 
-		ith = 0
-		type = ""
-		items = self.tree.GetSelections()
-		selectItem = None
-		for selectItem in items:
-			if self.tree.GetItemText(selectItem, 0) == "Root":
-				self.parent.OnShowMessage("Error", "Root is not allowed to select", 1)
-				return False
-			elif self.tree.GetItemText(selectItem, 0) == "Saved Tables":
-				self.parent.OnShowMessage("Error", "Table is not allowed to select", 1)
-				return False
-			else:
-				if len(self.tree.GetItemText(selectItem, 8)) > 0:
-					parentItem = self.tree.GetItemParent(selectItem)
-					type = self.tree.GetItemText(parentItem, 0) 
+	# 				path = self.tree.GetItemText(selectItem, 9)
+	# 				xml_flag = path.find(".xml", 0)
+	# 				if xml_flag >= 0:
+	# 					self.handler.init()
+	# 					self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+	# 					self.parser.parse(path)
+	# 					self.handler.closeFile()
+	# 					path = self.parent.DBPath+"tmp/.tmp"
 
-					path = self.tree.GetItemText(selectItem, 9)
-					xml_flag = path.find(".xml", 0)
-					if xml_flag >= 0:
-						self.handler.init()
-						self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
-						self.parser.parse(path)
-						self.handler.closeFile()
-						path = self.parent.DBPath+"tmp/.tmp"
+	# 				ith = self.changeFORMAT(path, ith)
 
-					ith = self.changeFORMAT(path, ith)
+	# 				self.selectedDataType = self.tree.GetItemText(selectItem, 1)
+	# 				end = len(self.selectedDataType) -1
+	# 				if self.selectedDataType[end] == '\n' or self.selectedDataType[end] == 'r':
+	# 					self.selectedDataType = self.selectedDataType[0:end]
+	# 				self.selectedDataType = self.RemoveBACK(self.selectedDataType)
+	# 			else:
+	# 				type = self.tree.GetItemText(selectItem, 0)
+	# 				if type.find("-", 0) == -1:
+	# 					totalcount = self.tree.GetChildrenCount(selectItem, False)
+	# 					if totalcount > 0:
+	# 						child = self.tree.GetFirstChild(selectItem)
+	# 						child_item = child[0]
+	# 						selectItem = None
 
-					self.selectedDataType = self.tree.GetItemText(selectItem, 1)
-					end = len(self.selectedDataType) -1
-					if self.selectedDataType[end] == '\n' or self.selectedDataType[end] == 'r':
-						self.selectedDataType = self.selectedDataType[0:end]
-					self.selectedDataType = self.RemoveBACK(self.selectedDataType)
-				else:
-					type = self.tree.GetItemText(selectItem, 0)
-					if type.find("-", 0) == -1:
-						totalcount = self.tree.GetChildrenCount(selectItem, False)
-						if totalcount > 0:
-							child = self.tree.GetFirstChild(selectItem)
-							child_item = child[0]
-							selectItem = None
+	# 						if self.tree.GetItemText(child_item, 0) != "-Cull Table":
+	# 							selectItem = child_item
+	# 							path = self.tree.GetItemText(child_item, 9)
+	# 							xml_flag = path.find(".xml", 0)
+	# 							if xml_flag >= 0:
+	# 								self.handler.init()
+	# 								self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+	# 								self.parser.parse(path)
+	# 								self.handler.closeFile()
+	# 								path = self.parent.DBPath+"tmp/.tmp"
 
-							if self.tree.GetItemText(child_item, 0) != "-Cull Table":
-								selectItem = child_item
-								path = self.tree.GetItemText(child_item, 9)
-								xml_flag = path.find(".xml", 0)
-								if xml_flag >= 0:
-									self.handler.init()
-									self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
-									self.parser.parse(path)
-									self.handler.closeFile()
-									path = self.parent.DBPath+"tmp/.tmp"
+	# 							ith = self.changeFORMAT(path, ith)
+	# 							self.selectedDataType = self.tree.GetItemText(child_item, 1)
+	# 							end = len(self.selectedDataType) -1
+	# 							if self.selectedDataType[end] == '\n' or self.selectedDataType[end] == 'r':
+	# 								self.selectedDataType = self.selectedDataType[0:end]
+	# 							self.selectedDataType = self.RemoveBACK(self.selectedDataType)
 
-								ith = self.changeFORMAT(path, ith)
-								self.selectedDataType = self.tree.GetItemText(child_item, 1)
-								end = len(self.selectedDataType) -1
-								if self.selectedDataType[end] == '\n' or self.selectedDataType[end] == 'r':
-									self.selectedDataType = self.selectedDataType[0:end]
-								self.selectedDataType = self.RemoveBACK(self.selectedDataType)
+	# 						for k in range(1, totalcount):
+	# 							child_item = self.tree.GetNextSibling(child_item)
 
-							for k in range(1, totalcount):
-								child_item = self.tree.GetNextSibling(child_item)
+	# 							if self.tree.GetItemText(child_item, 0) != "-Cull Table":
+	# 								if selectItem == None:
+	# 									selectItem = child_item
+	# 								path = self.tree.GetItemText(child_item, 9)
+	# 								xml_flag = path.find(".xml", 0)
+	# 								if xml_flag >= 0:
+	# 									self.handler.init()
+	# 									self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+	# 									self.parser.parse(path)
+	# 									self.handler.closeFile()
+	# 									path = self.parent.DBPath+"tmp/.tmp"
 
-								if self.tree.GetItemText(child_item, 0) != "-Cull Table":
-									if selectItem == None:
-										selectItem = child_item
-									path = self.tree.GetItemText(child_item, 9)
-									xml_flag = path.find(".xml", 0)
-									if xml_flag >= 0:
-										self.handler.init()
-										self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
-										self.parser.parse(path)
-										self.handler.closeFile()
-										path = self.parent.DBPath+"tmp/.tmp"
-
-									ith = self.changeFORMAT(path, ith)
-					else:
-						self.parent.OnShowMessage("Error", type + " is not allowed to select", 1)
-						return False
+	# 								ith = self.changeFORMAT(path, ith)
+	# 				else:
+	# 					self.parent.OnShowMessage("Error", type + " is not allowed to select", 1)
+	# 					return False
 
 
-		if selectItem != None:
-			str_idx = self.tree.GetItemText(selectItem, 11)
-			idx = str_idx[0:-1].split()
-			self.UpdateDATAHEADER('')
-			self.dataPanel.SetColLabelValue(int(idx[0])+1, "TopOffset")
-			if idx[0] != idx[1]:
-				self.dataPanel.SetColLabelValue(int(idx[1])+1, "BottomOffset")
-			self.dataPanel.SetColLabelValue(int(idx[2])+1, "Depth")
-			self.dataPanel.SetColLabelValue(int(idx[3])+1, "Data")
-			rows = self.dataPanel.GetNumberRows()
-			for i in range(rows):
-				self.dataPanel.SetCellValue(i, 0, type)
+	# 	if selectItem != None:
+	# 		str_idx = self.tree.GetItemText(selectItem, 11)
+	# 		idx = str_idx[0:-1].split()
+	# 		self.UpdateDATAHEADER('')
+	# 		self.dataPanel.SetColLabelValue(int(idx[0])+1, "TopOffset")
+	# 		if idx[0] != idx[1]:
+	# 			self.dataPanel.SetColLabelValue(int(idx[1])+1, "BottomOffset")
+	# 		self.dataPanel.SetColLabelValue(int(idx[2])+1, "Depth")
+	# 		self.dataPanel.SetColLabelValue(int(idx[3])+1, "Data")
+	# 		rows = self.dataPanel.GetNumberRows()
+	# 		for i in range(rows):
+	# 			self.dataPanel.SetCellValue(i, 0, type)
 
-		self.sideNote.SetSelection(1)
+	# 	self.sideNote.SetSelection(1)
 
 
 	def UpdateDATAHEADER(self, header, delim=' '):
@@ -7239,6 +7266,7 @@ class DataFrame(wx.Panel):
 		self.tree.SortChildren(dataNode)
 		self.tree.SortChildren(self.root)
 		self.tree.Expand(self.root)
+		self.UpdateRootNodeText()
 
 		# update min/max values for datatype
 		dataFileTest = lambda node:self.tree.GetItemText(node, 8).endswith(".dat") # omit cull table nodes

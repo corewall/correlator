@@ -208,12 +208,7 @@ class MainFrame(wx.Frame):
 		menuFile = wx.Menu()
 		menuBar = wx.MenuBar()
 
-		miFileNew = menuFile.Append(-1, "&New\tCtrl-N", "New data")
-		self.Bind(wx.EVT_MENU, self.OnNewData, miFileNew)
-
-		menuFile.AppendSeparator()
-
-		prefsItem = menuFile.Append(wx.ID_PREFERENCES, "&Preferences...\tCTRL+,", "Application preferences")
+		prefsItem = menuFile.Append(wx.ID_PREFERENCES, "&Preferences...\tCTRL+,", "Edit application preferences")
 		self.Bind(wx.EVT_MENU, self.OnPreferences, prefsItem)
 
 		#self.miFileDB = menuFile.Append(-1, "&Access Database\tCtrl-E", "Access database")
@@ -221,10 +216,10 @@ class MainFrame(wx.Frame):
 		#self.miCleanFiles = menuFile.Append(-1, "Formatting Data Files", "Formatting data file")
 		#self.Bind(wx.EVT_MENU, self.OnFormatData, self.miCleanFiles)
 
-		self.miPath = menuFile.Append(-1, "Data Repository Path", "Data repository path")
+		self.miPath = menuFile.Append(-1, "Change Data Repository Path", "Edit current data repository path")
 		self.Bind(wx.EVT_MENU, self.OnPATH, self.miPath)
 
-		self.miImport = menuFile.Append(-1, "Import Data Repository", "Import Data repository")
+		self.miImport = menuFile.Append(-1, "Import Data from Existing Repository", "Import data from one or more sites in an existing repository")
 		self.Bind(wx.EVT_MENU, self.OnIMPORT_DATA, self.miImport)
 
 		menuFile.AppendSeparator()
@@ -986,7 +981,7 @@ class MainFrame(wx.Frame):
 		dlg.ShowModal()
 		dlg.Destroy()
 
-	def OnShowMessage(self, type, msg, numButton): 
+	def OnShowMessage(self, type, msg, numButton):
 		dlg = dialog.MessageDialog(self, type, msg, numButton)
 		dlg.Centre(wx.CENTER_ON_SCREEN)
 		ret = dlg.ShowModal()
