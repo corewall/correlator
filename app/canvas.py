@@ -203,6 +203,8 @@ class DataCanvas(wxBufferedWindow):
 		stdFontSize = 9 if platform_name[0] == "Windows" else 12 # 12 point too large on Windows, just right on Mac
 		self.stdFont = wx.Font(stdFontSize, wx.SWISS, wx.NORMAL, wx.BOLD)
 		self.ageFont = wx.Font(9, wx.SWISS, wx.NORMAL, wx.BOLD) # used only for drawing label in age depth model points
+		holeInfoFontSize = 8 if platform_name[0] == "Windows" else 11
+		self.holeInfoFont = wx.Font(holeInfoFontSize, wx.SWISS, wx.NORMAL, wx.BOLD) # used for info above each hole plot
 					
 		self.parent = parent
 		self.DrawData = {}
@@ -1310,13 +1312,21 @@ class DataCanvas(wxBufferedWindow):
 
 			self.coreCount = self.coreCount + 1
 
-		# DRAWING TITLE
+		# Draw hole info above hole plot area. Three lines: hole ID, hole datatype, and hole data range.
+		# Uses self.holeInfoFont, which is slightly smaller than self.stdFont to accommodate three lines
+		# in available space.
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		if (drawComposite and smoothed == 0) or smoothed == 1:
-			dc.DrawText(holeInfo[1] + "-" + holeInfo[0] + holeInfo[7], rangeMax, 5)
-			dc.DrawText(holeInfo[2], rangeMax, 25) # omit Range for now
-			# dc.DrawText(holeInfo[2] + ", Range: " + str(holeInfo[5]) + ":" + str(holeInfo[6]), rangeMax, 25)
-		if smoothed >= 5:
+			dc.SetFont(self.holeInfoFont)
+			holeInfo_x = rangeMax
+			holeInfo_y = 3
+			hiLineSpacing = 13 # fudge factor, looks good on Win and Mac
+			dc.DrawText(holeInfo[1] + "-" + holeInfo[0] + holeInfo[7], holeInfo_x, holeInfo_y) # hole ID
+			dc.DrawText(holeInfo[2], holeInfo_x, holeInfo_y + hiLineSpacing) # hole datatype
+			rangeStr = "Range: {} : {}".format(str(holeInfo[5]), str(holeInfo[6]))
+			dc.DrawText(rangeStr, holeInfo_x, holeInfo_y + hiLineSpacing * 2) # range
+			dc.SetFont(self.stdFont) # reset to standard font
+		if smoothed >= 5: # Log column, currently unused.
 			title_pos = self.splicerX + (self.holeWidth * 2) + (50 * 2) + 50
 			# rangeMax
 			dc.DrawText(holeInfo[1] + "-" + holeInfo[0] + holeInfo[7], title_pos, 5)
