@@ -219,6 +219,7 @@ class DataCanvas(wxBufferedWindow):
 		self.showAffineShiftInfo = True  # brgtodo 6/25/2014 grab state from checkbox in frames and dump this var
 		self.showAffineTieArrows = True
 		self.showSectionDepths = True
+		self.showCoreInfo = False # show hole, core, min/max, quality, stretch on mouseover - see DrawGraphInfo()
 		self.LogTieList = []
 		self.LogClue = True    # brgtodo ditto
 
@@ -2760,7 +2761,9 @@ class DataCanvas(wxBufferedWindow):
 					coreIndex, x, y, startx, flag = r
 					coreInfo = self.findCoreInfoByIndex(coreIndex)
 					if coreInfo is not None:
-						holeType, holeName = self.DrawGraphInfo(dc, coreInfo, flag)
+						if self.showCoreInfo:
+							self.DrawGraphInfo(dc, coreInfo, flag)
+						holeType, holeName = coreInfo.type, coreInfo.hole
 						self.selectedHoleType = holeType
 						self.DrawMouseInfo(dc, coreInfo, x, y, startx, flag, holeType)
 			if holeType != "":

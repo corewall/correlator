@@ -1507,6 +1507,9 @@ class MainFrame(wx.Frame):
 		showSectionDepths = 1 if self.Window.showSectionDepths == True else 0
 		self.WritePreferenceItem("showSectionDepths", showSectionDepths, f)
 
+		showCoreInfo = 1 if self.Window.showCoreInfo == True else 0
+		self.WritePreferenceItem("showCoreInfo", showCoreInfo, f)
+
 		showlineInt = 1 if self.Window.showHoleGrid == True else 0
 		self.WritePreferenceItem("showline", showlineInt, f)
 
@@ -2759,6 +2762,12 @@ class MainFrame(wx.Frame):
 			if len(str_temp) > 0:
 				self.Window.showAffineTieArrows = True if str_temp == '1' else False 
 				self.optPanel.showAffineTieArrows.SetValue(self.Window.showAffineTieArrows)
+
+		if self.config.has_option("applications", "showCoreInfo"):
+			str_temp = self.config.get("applications", "showCoreInfo")
+			if len(str_temp) > 0:
+				self.Window.showCoreInfo = True if str_temp == '1' else False 
+				self.optPanel.showCoreInfo.SetValue(self.Window.showCoreInfo)
 
 		if self.config.has_option("applications", "scrollsize"):
 			str_temp = self.config.get("applications", "scrollsize")

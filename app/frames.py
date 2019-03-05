@@ -3571,6 +3571,10 @@ class PreferencesPanel():
 	def OnShowAffineTieArrows(self, event):
 		self.parent.Window.showAffineTieArrows = self.showAffineTieArrows.IsChecked()
 		self.parent.Window.UpdateDrawing()
+
+	def OnShowCoreInfo(self, event):
+		self.parent.Window.showCoreInfo = self.showCoreInfo.IsChecked()
+		self.parent.Window.UpdateDrawing()
 		
 	# def OnShowLogShiftArrows(self, event):
 	# 	self.parent.Window.LogClue = self.showLogShiftArrows.IsChecked()
@@ -3597,6 +3601,8 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftInfo, self.showAffineShiftInfo)
 		self.showAffineTieArrows = wx.CheckBox(viewPanel, -1, "Show core tie arrows")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineTieArrows, self.showAffineTieArrows)
+		self.showCoreInfo = wx.CheckBox(viewPanel, -1, "Show core info on mouseover")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowCoreInfo, self.showCoreInfo)
 		# self.showLogShiftArrows = wx.CheckBox(viewPanel, -1, "Show log shift arrows")
 		# self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)
 
@@ -3605,6 +3611,7 @@ class PreferencesPanel():
 		viewSizer.Add(self.showSectionDepths, 0, wx.TOP | wx.BOTTOM, 5)		
 		viewSizer.Add(self.showAffineShiftInfo, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showAffineTieArrows, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.showCoreInfo, 0, wx.BOTTOM, 5)
 		# viewSizer.Add(self.showLogShiftArrows, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)		
 		viewPanel.SetSizer(viewSizer)
