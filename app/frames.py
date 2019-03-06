@@ -39,48 +39,50 @@ class TopMenuFrame(wx.Frame):
 						 style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.FRAME_FLOAT_ON_PARENT | wx.FRAME_TOOL_WINDOW)
 
 		self.parent = parent
-		
 		frameSizer = wx.BoxSizer(wx.VERTICAL)
-		
-		vbox = wx.FlexGridSizer(9, 1, vgap=5)
-		self.dbbtn = wx.Button(self, -1, "Go to Display")
+
+		# initially use wider string so SetSizerAndFit() below makes frame wide enough.
+		self.dbbtn = wx.Button(self, -1, "Go to Data Manager")
 		self.Bind(wx.EVT_BUTTON, self.OnDB, self.dbbtn)
-		vbox.Add(self.dbbtn, 0, wx.EXPAND)
+		frameSizer.Add(self.dbbtn, 1, wx.EXPAND | wx.BOTTOM, 5)
 
 		savebtn = wx.Button(self, -1, "Save")
 		self.Bind(wx.EVT_BUTTON, self.OnSAVE, savebtn)
-		vbox.Add(savebtn, 0, wx.EXPAND)
+		frameSizer.Add(savebtn, 1, wx.EXPAND | wx.BOTTOM, 5)
 
-		self.cntbtn = wx.Button(self, -1, "Connect to Corelyzer")
-		self.Bind(wx.EVT_BUTTON, self.OnCONNECT, self.cntbtn)
-		vbox.Add(self.cntbtn, 0, wx.EXPAND)
+		# # self.cntbtn = wx.Button(self, -1, "Connect to Corelyzer")
+		# # self.Bind(wx.EVT_BUTTON, self.OnCONNECT, self.cntbtn)
+		# # vbox.Add(self.cntbtn, 0, wx.EXPAND)
 
 		self.drawingbtn = wx.Button(self, -1, "Discrete Points")
+		frameSizer.Add(self.drawingbtn, 1, wx.EXPAND | wx.BOTTOM, 5)
 		self.Bind(wx.EVT_BUTTON, self.OnDRAWMODE, self.drawingbtn)
-		vbox.Add(self.drawingbtn, 0, wx.EXPAND)
 		
 		self.compositeBtn = wx.Button(self, -1, "Go to Composite")
-		vbox.Add(self.compositeBtn, 0, wx.EXPAND)
+		frameSizer.Add(self.compositeBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
 		self.Bind(wx.EVT_BUTTON, self.OnComposite, self.compositeBtn)
 		
 		self.spliceBtn = wx.Button(self, -1, "Go to Splice")
-		vbox.Add(self.spliceBtn, 0, wx.EXPAND)
+		frameSizer.Add(self.spliceBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
 		self.Bind(wx.EVT_BUTTON, self.OnSplice, self.spliceBtn)
 
 		self.filterBtn = wx.Button(self, -1, "Go to Filters")
-		vbox.Add(self.filterBtn, 0, wx.EXPAND)
+		frameSizer.Add(self.filterBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
 		self.Bind(wx.EVT_BUTTON, self.OnFilter, self.filterBtn)
 		
 		self.prefsBtn = wx.Button(self, -1, "Go to Display Prefs")
-		vbox.Add(self.prefsBtn, 0, wx.EXPAND)
+		frameSizer.Add(self.prefsBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
 		self.Bind(wx.EVT_BUTTON, self.OnPrefs, self.prefsBtn)
 
 		exitbtn = wx.Button(self, -1, "Exit Correlator")
+		frameSizer.Add(exitbtn, 1, wx.EXPAND)
 		self.Bind(wx.EVT_BUTTON, self.OnEXIT, exitbtn)
-		vbox.Add(exitbtn, 0, wx.EXPAND)
 
-		frameSizer.Add(vbox, 1, wx.EXPAND | wx.ALL, 2)
 		self.SetSizerAndFit(frameSizer)
+
+ 		# Now that we've fit to wider "Go to Data Manager" string,
+		# set dbbtn to correct initial string.
+		self.dbbtn.SetLabel("Go to Display")
 
 		self.SetBackgroundColour(wx.Colour(255, 255, 255))
 		wx.EVT_CLOSE(self, self.OnHide)
@@ -90,27 +92,28 @@ class TopMenuFrame(wx.Frame):
 		self.parent.mitool.Check(False)
 		self.parent.Window.SetFocusFromKbd()
 
-	def OnNEW(self, event):
-		if self.parent.CurrentDir != '' :
-			if self.parent.CHECK_CHANGES() == True :
-				ret = self.parent.OnShowMessage("About", "Do you want to save changes?", 2)		
-				if ret == wx.ID_OK :
-					self.OnSAVE(event)
-		if self.parent.client != None and self.parent.Window.HoleData != [] :
-			#ret = py_correlator.getData(18)
-			#self.parent.ParseSectionSend(ret, "delete_section")
-			self.parent.client.send("delete_all\n")
+	# unused
+	# def OnNEW(self, event):
+	# 	if self.parent.CurrentDir != '' :
+	# 		if self.parent.UnsavedChanges() == True :
+	# 			ret = self.parent.OnShowMessage("About", "Do you want to save changes?", 2)		
+	# 			if ret == wx.ID_OK :
+	# 				self.OnSAVE(event)
+	# 	if self.parent.client != None and self.parent.Window.HoleData != [] :
+	# 		#ret = py_correlator.getData(18)
+	# 		#self.parent.ParseSectionSend(ret, "delete_section")
+	# 		self.parent.client.send("delete_all\n")
 
-		self.parent.CurrentDir = ''
+	# 	self.parent.CurrentDir = ''
 
-		self.parent.compositePanel.saveButton.Enable(False)
-		self.parent.splicePanel.saveButton.Enable(False)
-		self.parent.eldPanel.saveButton.Enable(False)
-		self.parent.autoPanel.saveButton.Enable(False)
-		self.parent.INIT_CHANGES()
+	# 	self.parent.compositePanel.saveButton.Enable(False)
+	# 	self.parent.splicePanel.saveButton.Enable(False)
+	# 	self.parent.eldPanel.saveButton.Enable(False)
+	# 	self.parent.autoPanel.saveButton.Enable(False)
+	# 	self.parent.INIT_CHANGES()
 
-		self.parent.OnNewData(None)
-		self.parent.Window.SetFocusFromKbd()
+	# 	self.parent.OnNewData(None)
+	# 	self.parent.Window.SetFocusFromKbd()
 
 
 	def OnDRAWMODE(self, event):
@@ -123,12 +126,12 @@ class TopMenuFrame(wx.Frame):
 		if self.parent.dataFrame.IsShown() == False :
 			self.parent.Window.UpdateDrawing()
 
-	def OnCONNECT(self, event):
-		ret = self.parent.OnCONNECTION(event)
-		if ret == True :
-			self.cntbtn.SetLabel("Close Connection")
-		else :
-			self.cntbtn.SetLabel("Connect to Corelyzer")
+	# def OnCONNECT(self, event):
+	# 	ret = self.parent.OnCONNECTION(event)
+	# 	if ret == True :
+	# 		self.cntbtn.SetLabel("Close Connection")
+	# 	else :
+	# 		self.cntbtn.SetLabel("Connect to Corelyzer")
 
 	def OnDB(self, event):
 		if self.dbbtn.GetLabel() == "Go to Data Manager" :
@@ -1060,7 +1063,7 @@ class SplicePanel():
 
 	def OnNEWSPLICE(self, event):
 		if self.parent.Window.SpliceData != [] :
-			if self.parent.CHECK_CHANGES() == True :
+			if self.parent.UnsavedChanges() == True :
 				ret = self.parent.OnShowMessage("About", "Do you want to save?", 2)
 				if ret == wx.ID_OK :
 					self.OnSAVE(event)

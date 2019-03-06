@@ -224,10 +224,10 @@ class MainFrame(wx.Frame):
 
 		menuFile.AppendSeparator()
 
-		self.miConnection = menuFile.Append(-1, "Connect to Corelyzer", "Connect to Corelyzer")
-		self.Bind(wx.EVT_MENU, self.OnCONNECTION, self.miConnection)
+		# self.miConnection = menuFile.Append(-1, "Connect to Corelyzer", "Connect to Corelyzer")
+		# self.Bind(wx.EVT_MENU, self.OnCONNECTION, self.miConnection)
 
-		menuFile.AppendSeparator()
+		# menuFile.AppendSeparator()
 
 		self.miFileSave = menuFile.Append(-1, "Save", "Save changes")
 		self.Bind(wx.EVT_MENU, self.OnSave, self.miFileSave)
@@ -768,7 +768,7 @@ class MainFrame(wx.Frame):
 			self.client = None
 			print "[DEBUG] Close connection to Corelyzer"
 
-		if self.CurrentDir != '' and self.CHECK_CHANGES():
+		if self.CurrentDir != '' and self.UnsavedChanges():
 			ret = self.OnShowMessage("About", "Do you want to save changes?", 2)
 			if ret == wx.ID_OK:
 				self.topMenu.OnSAVE(event)
@@ -794,13 +794,10 @@ class MainFrame(wx.Frame):
 		self.Window.Close(True)
 		self.dataFrame.Close(True)
 		self.topMenu.Close(True)
-
 		self.Close(True)
-
 		app.ExitMainLoop()
 
-
-	def CHECK_CHANGES(self):
+	def UnsavedChanges(self):
 		affineChange = self.affineManager.isDirty()
 		spliceChange = self.spliceManager.isDirty()
 		return affineChange or spliceChange or self.EldChange or self.AgeChange or self.TimeChange
@@ -1035,82 +1032,82 @@ class MainFrame(wx.Frame):
 		if ret == wx.ID_OK:
 			py_correlator.saveAttributeFile(path, 1)
 
-	def OnCONNECTION(self, event):
-		if self.client is None:
-			#HOST = '127.0.0.1'
-			HOST = 'localhost'
-			PORT = 17799
-			for res in socket.getaddrinfo(HOST, PORT, socket.AF_INET, socket.SOCK_STREAM):
-				af, socktype, proto, canonname, sa = res
-				try:
-					self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM, proto)
-				except socket.error, msg:
-					self.client = None
-					continue
-				try: 
-					self.client.connect(sa)
-				except socket.error, msg:
-					self.client.close()
-					self.client = None
-					continue
-				break
+	# def OnCONNECTION(self, event):
+	# 	if self.client is None:
+	# 		#HOST = '127.0.0.1'
+	# 		HOST = 'localhost'
+	# 		PORT = 17799
+	# 		for res in socket.getaddrinfo(HOST, PORT, socket.AF_INET, socket.SOCK_STREAM):
+	# 			af, socktype, proto, canonname, sa = res
+	# 			try:
+	# 				self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM, proto)
+	# 			except socket.error, msg:
+	# 				self.client = None
+	# 				continue
+	# 			try: 
+	# 				self.client.connect(sa)
+	# 			except socket.error, msg:
+	# 				self.client.close()
+	# 				self.client = None
+	# 				continue
+	# 			break
 
-			if self.client is None:
-				#print "[DEBUG] Could not open socket to Corelyzer"
-				self.OnShowMessage("Error", "Could not open socket to Corelyzer", 1)
-				return False 
-			else:
-				#print "[DEBUG] Connected to Corelyzer"
-				self.OnShowMessage("Information", "Connected to Corelyzer", 1)
-				if self.Window.HoleData != []:
-					# TEST
-					#self.client.send("load_section\t199\t1218\ta\t1\th\t1\t10\n")
-					#self.client.send("load_section\t199\t1218\ta\t1\th\t2\t11\n")
-					#self.client.send("load_section\t199\t1218\ta\t1\th\t3\t12\n")
-					##########
+	# 		if self.client is None:
+	# 			#print "[DEBUG] Could not open socket to Corelyzer"
+	# 			self.OnShowMessage("Error", "Could not open socket to Corelyzer", 1)
+	# 			return False 
+	# 		else:
+	# 			#print "[DEBUG] Connected to Corelyzer"
+	# 			self.OnShowMessage("Information", "Connected to Corelyzer", 1)
+	# 			if self.Window.HoleData != []:
+	# 				# TEST
+	# 				#self.client.send("load_section\t199\t1218\ta\t1\th\t1\t10\n")
+	# 				#self.client.send("load_section\t199\t1218\ta\t1\th\t2\t11\n")
+	# 				#self.client.send("load_section\t199\t1218\ta\t1\th\t3\t12\n")
+	# 				##########
 
-					self.client.send("delete_all\n")
+	# 				self.client.send("delete_all\n")
 
-					# load_lims_table
-					filename = self.dataFrame.OnGET_IMAGE_FILENAME()
-					for name in filename:
-						cmd = "load_lims_table\t" + name + "\n"
-						self.client.send(cmd)
-						#print "[DEBUG] send to Corelyzer: "  + str(cmd)
+	# 				# load_lims_table
+	# 				filename = self.dataFrame.OnGET_IMAGE_FILENAME()
+	# 				for name in filename:
+	# 					cmd = "load_lims_table\t" + name + "\n"
+	# 					self.client.send(cmd)
+	# 					#print "[DEBUG] send to Corelyzer: "  + str(cmd)
 
-					# load_core JULIAN
-					#ret = py_correlator.getData(18)
-					#self.ParseSectionSend(ret)
+	# 				# load_core JULIAN
+	# 				#ret = py_correlator.getData(18)
+	# 				#self.ParseSectionSend(ret)
 
-					cmd = "affine_table\t" + self.CurrentDir + "tmp.affine.table\n" 
-					#print "[DEBUG] send to Corelyzer: "  + str(cmd)
-					self.client.send(cmd)
+	# 				cmd = "affine_table\t" + self.CurrentDir + "tmp.affine.table\n" 
+	# 				#print "[DEBUG] send to Corelyzer: "  + str(cmd)
+	# 				self.client.send(cmd)
 
-					#client.send("load_lims_table\t/Users/julian/Desktop/CRDownloader-data/1239/holeBC.dat\n")
-					# self.client.send("show_depth_range\t"+str(self.Window.rulerStartDepth)+"\t"+str(self.Window.rulerEndDepth)+"\n")
-					# self.client.send("jump_to_depth\t"+str(self.Window.rulerStartDepth)+"\n")
-					#print "[DEBUG] " + str(self.Window.rulerStartDepth) + "\t" + str(self.Window.rulerEndDepth)
-					_depth = (self.Window.rulerStartDepth + self.Window.rulerEndDepth) / 2.0
-					self.client.send("show_depth_range\t" + str(_depth-0.7) + "\t" + str(_depth+0.7) + "\n")
+	# 				#client.send("load_lims_table\t/Users/julian/Desktop/CRDownloader-data/1239/holeBC.dat\n")
+	# 				# self.client.send("show_depth_range\t"+str(self.Window.rulerStartDepth)+"\t"+str(self.Window.rulerEndDepth)+"\n")
+	# 				# self.client.send("jump_to_depth\t"+str(self.Window.rulerStartDepth)+"\n")
+	# 				#print "[DEBUG] " + str(self.Window.rulerStartDepth) + "\t" + str(self.Window.rulerEndDepth)
+	# 				_depth = (self.Window.rulerStartDepth + self.Window.rulerEndDepth) / 2.0
+	# 				self.client.send("show_depth_range\t" + str(_depth-0.7) + "\t" + str(_depth+0.7) + "\n")
 
-				self.miConnection.SetText("Close Connection to Corelyzer")
-				return True 
-		else:
-			if self.Window.HoleData != []:
-				try:
-					self.client.send("delete_all\n")
-				except Exception, E:
-					print "[DEBUG] Disconnect to the corelyzer"
-			try:
-				self.client.send("quit\n")
-			except Exception, E:
-				print "[DEBUG] Disconnect to the corelyzer"
-			self.client.close()
-			self.client = None
-			self.miConnection.SetText("Connect to Corelyzer")
-			print "[DEBUG] Close connection to Corelyzer"
-			self.OnShowMessage("Information", "Close connection to Corelyzer", 1)
-			return False 
+	# 			self.miConnection.SetText("Close Connection to Corelyzer")
+	# 			return True 
+	# 	else:
+	# 		if self.Window.HoleData != []:
+	# 			try:
+	# 				self.client.send("delete_all\n")
+	# 			except Exception, E:
+	# 				print "[DEBUG] Disconnect to the corelyzer"
+	# 		try:
+	# 			self.client.send("quit\n")
+	# 		except Exception, E:
+	# 			print "[DEBUG] Disconnect to the corelyzer"
+	# 		self.client.close()
+	# 		self.client = None
+	# 		self.miConnection.SetText("Connect to Corelyzer")
+	# 		print "[DEBUG] Close connection to Corelyzer"
+	# 		self.OnShowMessage("Information", "Close connection to Corelyzer", 1)
+	# 		return False 
 			
 
 	def OnPATH(self, event):
@@ -2452,7 +2449,7 @@ class MainFrame(wx.Frame):
 		self.Window.UpdateDrawing()
 
 	def ShowDataManager(self):
-		if self.CHECK_CHANGES() == True:
+		if self.UnsavedChanges() == True:
 			ret = self.OnShowMessage("About", "Do you want to save?", 0)
 			if ret == wx.ID_YES:
 				self.topMenu.OnSAVE(None) # dummy event
