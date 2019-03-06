@@ -3471,8 +3471,7 @@ class PreferencesPanel():
 			self.parent.misecond.Check(False)
 
 	def OnActivateScroll(self, event):
-		setSecondScroll = 1 if self.indSpliceScroll.IsChecked() else 0
-		self.parent.SetSecondScroll(setSecondScroll)
+		self.parent.SetIndependentScroll(self.indSpliceScroll.IsChecked())
 
 	def OnUndoMinMax(self, event):
 		pass

@@ -287,9 +287,9 @@ class MainFrame(wx.Frame):
 		self.misecond.Check(True)
 		self.Bind(wx.EVT_MENU, self.SHOWSplice, self.misecond)
 
-		self.miscroll = menuView.AppendCheckItem(-1, "Independent Splice Scrollbar", "Composite and splice areas scroll independently")
-		self.miscroll.Check(False)
-		self.Bind(wx.EVT_MENU, self.SHOWScroll, self.miscroll)
+		self.miIndependentScroll = menuView.AppendCheckItem(-1, "Independent Splice Scrollbar", "Composite and splice areas scroll independently")
+		self.miIndependentScroll.Check(False)
+		self.Bind(wx.EVT_MENU, self.IndependentScrollSelected, self.miIndependentScroll)
 
 		# 11/2/2013 brg: Removing for now - graph area layouts can get pretty screwed up
 		# with repeated font size changes (the top graph info area can end up in negative
@@ -495,11 +495,8 @@ class MainFrame(wx.Frame):
 		else:
 			self.OnActivateWindow(0)
 
-	def SHOWScroll(self, event):
-		if self.miscroll.IsChecked():
-			self.SetSecondScroll(1)
-		else:
-			self.SetSecondScroll(0)
+	def IndependentScrollSelected(self, event):
+		self.SetIndependentScroll(self.miIndependentScroll.IsChecked())
 
 	def OnUpdateHelp(self):
 		self.Window.helpText.Clear()
@@ -804,31 +801,26 @@ class MainFrame(wx.Frame):
 
 	def OnActivateWindow(self, event):
 		if self.Window.spliceWindowOn == 1:
-			self.Window.isSecondScrollBackup = self.Window.isSecondScroll 
-			self.Window.isSecondScroll = 0
+			self.Window.independentScrollBackup = self.Window.independentScroll 
+			self.Window.independentScroll = False
 			self.Window.spliceWindowOn = 0
 			self.Window.splicerBackX = self.Window.splicerX
 			self.Window.splicerX = self.Window.Width + 45 
 			self.optPanel.showSpliceWindow.SetValue(False)
 			self.optPanel.indSpliceScroll.Enable(False)
 		else:
-			self.Window.isSecondScroll = self.Window.isSecondScrollBackup 
-			self.Window.spliceWindowOn = 1 
+			self.Window.independentScroll = self.Window.independentScrollBackup 
+			self.Window.spliceWindowOn = 1
 			self.Window.splicerX = self.Window.splicerBackX
 			self.optPanel.showSpliceWindow.SetValue(True)
 			self.optPanel.indSpliceScroll.Enable(True)
 		self.Window.UpdateDrawing()
 
 	# enable/disable independent splice scrolling
-	def SetSecondScroll(self, event):
-		if self.Window.isSecondScroll == 1: 
-			self.Window.isSecondScroll = 0 
-			self.optPanel.indSpliceScroll.SetValue(False)
-			self.miscroll.Check(False)
-		else:
-			self.Window.isSecondScroll = 1 
-			self.optPanel.indSpliceScroll.SetValue(True)
-			self.miscroll.Check(True)
+	def SetIndependentScroll(self, enable):
+		self.Window.independentScroll = enable
+		self.optPanel.indSpliceScroll.SetValue(enable)
+		self.miIndependentScroll.Check(enable)
 
 	def RebuildComboBox(self, comboBox, typeNames):
 		comboBox.Clear()
@@ -1479,7 +1471,7 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("width", width, f)
 		self.WritePreferenceItem("height", height, f)
 
-		self.WritePreferenceItem("secondscroll", self.Window.isSecondScroll, f)
+		self.WritePreferenceItem("secondscroll", 1 if self.Window.independentScroll else 0, f)
 
 		if (width - self.Window.splicerX) < 10:
 			self.Window.splicerX = width / 2
@@ -2688,10 +2680,11 @@ class MainFrame(wx.Frame):
 			str_temp = self.config.get("applications", "secondscroll")
 			if len(str_temp) > 0:
 				conf_value = int(str_temp)
+				print("Read second scroll value = {}".format(conf_value))
 			if conf_value == 0:
-				self.SetSecondScroll(0)
+				self.SetIndependentScroll(False)
 			else:
-				self.SetSecondScroll(1)
+				self.SetIndependentScroll(True)
 
 		if self.config.has_option("applications", "colors"):
 			conf_str = self.config.get("applications", "colors") 

@@ -260,8 +260,8 @@ class DataCanvas(wxBufferedWindow):
 		# 0 , 1 - Composite, 2 - Splice
 		self.Process = 0 
 		self.Constrained = 1 
-		self.isSecondScroll = 1 # if 1, composite and splice windows scroll separately
-		self.isSecondScrollBackup = 1 # appears to backup isSecondScroll value 
+		self.independentScroll = True # scroll composite and splice windows separately
+		self.independentScrollBackup = True # appears to backup independentScroll value 
 		self.ScrollUpdate = 0
 		self.isLogMode = 0 
 		self.closeFlag = True 
@@ -4209,21 +4209,21 @@ class DataCanvas(wxBufferedWindow):
 		rot = event.GetWheelRotation() 
 		pos = event.GetPositionTuple()
 
-		if pos[0] <= self.splicerX or self.isSecondScroll == 0:
+		if pos[0] <= self.splicerX or not self.independentScroll:
 			if self.parent.ScrollMax > 0:
 				if rot < 0:
 					self.rulerStartDepth += self.rulerTickRate
-					if self.isSecondScroll == 0: 
+					if not self.independentScroll:
 						self.SPrulerStartDepth = self.rulerStartDepth 
 				else: 
 					self.rulerStartDepth -= self.rulerTickRate
 					if self.rulerStartDepth < 0:
 						self.rulerStartDepth = 0.0
-					if self.isSecondScroll == 0: 
+					if not self.independentScroll:
 						self.SPrulerStartDepth = self.rulerStartDepth 
 				self.UpdateScroll(1)
 		else:
-			if self.isSecondScroll == 1 and self.parent.ScrollMax > 0: 
+			if self.independentScroll and self.parent.ScrollMax > 0: 
 				if rot < 0:
 					self.SPrulerStartDepth += self.rulerTickRate
 				else: 
@@ -4268,7 +4268,7 @@ class DataCanvas(wxBufferedWindow):
 				_depth = (self.rulerStartDepth + self.rulerEndDepth) / 2.0
 				self.parent.client.send("jump_to_depth\t" + str(_depth) + "\n")
 
-		if self.isSecondScroll == 0: # if composite/splice windows scroll together, scroll splice too
+		if not self.independentScroll: # if composite/splice windows scroll together, scroll splice too
 			scroll_flag = 2
 
 		# brgtodo 4/23/2014: MovableInterface/Skin and Interface/Skin appear to be duplicating
@@ -4316,7 +4316,7 @@ class DataCanvas(wxBufferedWindow):
 			self.pressedkeyShift = 1 
 		elif keyid == wx.WXK_DOWN and self.parent.ScrollMax > 0:
 			if self.activeTie == -1 and self.activeSPTie == -1 and self.activeSATie == -1:
-				if self.isSecondScroll == 0:
+				if not self.independentScroll:
 					self.rulerStartDepth += self.rulerTickRate
 					if self.rulerStartDepth > self.parent.ScrollMax:
 						self.rulerStartDepth = self.parent.ScrollMax
@@ -4333,7 +4333,7 @@ class DataCanvas(wxBufferedWindow):
 				self.UPDATE_TIE(False)
 		elif keyid == wx.WXK_UP and self.parent.ScrollMax > 0:
 			if self.activeTie == -1 and self.activeSPTie == -1 and self.activeSATie == -1:
-				if self.isSecondScroll == 0:
+				if not self.independentScroll:
 					self.rulerStartDepth -= self.rulerTickRate
 					if self.rulerStartDepth < 0:
 						self.rulerStartDepth = 0.0
@@ -4668,9 +4668,9 @@ class DataCanvas(wxBufferedWindow):
 				w, h = bmp.GetWidth(), bmp.GetHeight()
 				reg = wx.Rect(x, y, w, h)
 				if reg.Inside(wx.Point(pos[0], pos[1])):				 
-					if self.isSecondScroll == 1:
+					if self.independentScroll:# and self.spliceWindowOn == 1:
 						self.grabScrollB = 1	
-					elif self.isSecondScroll == 0:
+					elif not self.independentScroll:# or self.spliceWindowOn == 0:
 						self.grabScrollA = 1	
 					self.UpdateDrawing()
 			elif key == "MovableInterface":
@@ -5873,7 +5873,7 @@ class DataCanvas(wxBufferedWindow):
 			self.rulerStartAgeDepth = tempDepth * 10
 			self.SPrulerStartAgeDepth = tempDepth * 10
 
-		if self.isSecondScroll == 0: 
+		if not self.independentScroll:
 			bmp, x, y = self.DrawData["Interface"]
 			self.DrawData["Interface"] = (bmp, x, scroll_y)
 
