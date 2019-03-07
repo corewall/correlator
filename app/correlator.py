@@ -3213,6 +3213,11 @@ class AffineController:
 				shiftType += " ({})".format(shift.fromCore)
 			rows.append((core, offset, shiftType))
 		return rows
+
+	# Return list of TIE chain roots as (hole, core) tuples
+	def getChainRoots(self):
+		roots = self.affine.getChainRoots()
+		return [(str(r.hole), str(r.core)) for r in roots]
 	
 	# moveCore and fixedCore are CoreInfo objects
 	def isLegalTie(self, moveCore, fixedCore):

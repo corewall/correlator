@@ -1226,21 +1226,30 @@ class SetDialog(wx.Dialog):
 
 		coreSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Apply shift to:"), orient=wx.VERTICAL)
 		hsz = wx.BoxSizer(wx.HORIZONTAL)
-		hsz.Add(wx.StaticText(self, -1, "Hole:"), 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+		self.holeText = wx.StaticText(self, -1, "Hole:")
+		hsz.Add(self.holeText, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
 		self.holeChoice = wx.Choice(self, -1, size=(70,-1))
 		hsz.Add(self.holeChoice, 0, wx.ALL, 5)
 		self.coreChoice = wx.Choice(self, -1, size=(70,-1))
-		hsz.Add(wx.StaticText(self, -1, "Core:"), 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+		self.coreText = wx.StaticText(self, -1, "Core:")
+		hsz.Add(self.coreText, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
 		hsz.Add(self.coreChoice, 0, wx.ALL, 5)
 		coreSizer.Add(hsz, 0, wx.EXPAND)		
 
 		self.coreAndBelow = wx.RadioButton(self, -1, "Selected core and all untied cores below in this hole", style=wx.RB_GROUP)
-		self.coreAndChain = wx.RadioButton(self, -1, "Selected core and all tied cores (entire chain)")
 		self.coreOnly = wx.RadioButton(self, -1, "Selected core only")
+
+		chainSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.coreAndChain = wx.RadioButton(self, -1, "Entire TIE chain starting from core:")
+		self.rootCoreChoice = wx.Choice(self, -1)
+		self.rootCoreChoice.Enable(False)
+		chainSizer.Add(self.coreAndChain, 0, wx.EXPAND | wx.RIGHT, 5)
+		chainSizer.Add(self.rootCoreChoice, 0)
+
 		self.coreAndBelow.SetValue(True)
 		coreSizer.Add(self.coreAndBelow, 0, wx.EXPAND | wx.TOP, 5)
-		coreSizer.Add(self.coreAndChain, 0, wx.EXPAND | wx.TOP, 5)		
 		coreSizer.Add(self.coreOnly, 0, wx.EXPAND | wx.TOP, 5)
+		coreSizer.Add(chainSizer, 0, wx.EXPAND | wx.TOP, 5)
 		
 		methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Shift by:"), orient=wx.VERTICAL)
 		hsz = wx.BoxSizer(wx.HORIZONTAL)
@@ -1285,13 +1294,14 @@ class SetDialog(wx.Dialog):
 		self.Fit()
 
 		self.InitChoices()
+		self.InitChainRoots()
 
 		self.Bind(wx.EVT_CHOICE, self.UpdateCoreChoice, self.holeChoice)
 		self.Bind(wx.EVT_CHOICE, self.UpdateData, self.coreChoice)
 		self.Bind(wx.EVT_BUTTON, self.OnApply, self.applyButton)
-		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateMethodRadios, self.coreAndBelow)
-		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateMethodRadios, self.coreAndChain)
-		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateMethodRadios, self.coreOnly)
+		self.Bind(wx.EVT_RADIOBUTTON, self.MethodRadioChanged, self.coreAndBelow)
+		self.Bind(wx.EVT_RADIOBUTTON, self.MethodRadioChanged, self.coreAndChain)
+		self.Bind(wx.EVT_RADIOBUTTON, self.MethodRadioChanged, self.coreOnly)
 		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.percentRadio)
 		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.fixedRadio)
 		self.Bind(wx.EVT_TEXT, self.UpdateData, self.percentField)
@@ -1311,13 +1321,28 @@ class SetDialog(wx.Dialog):
 			return
 
 		# str() to convert from type unicode
-		self.outHole = str(self.holeChoice.GetStringSelection())
-		self.outCore = str(self.coreChoice.GetStringSelection())
+		if self.coreAndChain.GetValue():
+			hcstr = str(self.rootCoreChoice.GetStringSelection())
+			charNumPattern = "([A-Z]+)([0-9]+)"
+			hc_items = re.match(charNumPattern, hcstr)
+			if hc_items and len(hc_items.groups()) == 2:
+				self.outHole = hc_items.groups()[0]
+				self.outCore = hc_items.groups()[1]
+			else:
+				# In the unlikely event someone got this far with non-standard hole and core naming,
+				# notify and refuse to proceed with this method.
+				errstr = "Couldn't parse hole-core string {}, expected alphabetic hole (A-Z) and numeric core (1+)".format(hcstr)
+				self.parent.OnShowMessage("Error", errstr, 1)
+				return
+		else:
+			self.outHole = str(self.holeChoice.GetStringSelection())
+			self.outCore = str(self.coreChoice.GetStringSelection())
 
 		self.outComment = self.commentField.GetValue()
 		# self.outType already set
 		self.EndModal(wx.ID_OK)
 
+	# Populate self.coreData with loaded holes and cores
 	def InitChoices(self):
 		self.coreData = {}
 		self.holeChoice.Clear()
@@ -1353,6 +1378,18 @@ class SetDialog(wx.Dialog):
 			self.holeChoice.Select(0)
 			self.UpdateCoreChoice()
 
+	# Populate self.rootCoreChoice with TIE chain roots, or disable
+	# chain root controls if no roots exist.
+	def InitChainRoots(self):
+		roots = self.parent.affineManager.getChainRoots()
+		if len(roots) > 0:
+			for crstr in sorted([cr[0] + cr[1] for cr in roots]):
+				self.rootCoreChoice.Append(crstr)
+		else:
+			self.coreAndChain.Enable(False)
+			self.rootCoreChoice.Enable(False)
+
+	# Update core dropdown with available cores for currently-selected hole
 	def UpdateCoreChoice(self, evt=None):
 		curHoleIndex = self.holeChoice.GetSelection()
 		if self.lastHole == curHoleIndex:
@@ -1367,19 +1404,26 @@ class SetDialog(wx.Dialog):
 			self.coreChoice.Select(0)
 			self.UpdateData()
 
-	# disable/enable Percentage option if 'Selected core and all tied cores
-	# (entire chain)' radio is selected/deselected.
-	def UpdateMethodRadios(self, evt=None):
-		enablePct = True
-		if self.coreAndChain.GetValue():
+	# Enable/disable controls based on 'Entire TIE chain...' radio state.
+	def MethodRadioChanged(self, evt=None):
+		chainSelected = self.coreAndChain.GetValue()
+		if chainSelected:
 			if self.percentRadio.GetValue():
 				self.fixedRadio.SetValue(True)
-			enablePct = False
-		self.percentRadio.Enable(enablePct)
-		self.percentField.Enable(enablePct)
-		self.percentLabel.Enable(enablePct)
 
-	# update growth rate, current core shift, etc 
+		self.rootCoreChoice.Enable(chainSelected) # only enabled if chain radio is selected
+
+		# percent and hole/core dropdowns aren't used in chain SET, disable if selected
+		self.holeText.Enable(not chainSelected)
+		self.holeChoice.Enable(not chainSelected)
+		self.coreText.Enable(not chainSelected)
+		self.coreChoice.Enable(not chainSelected)
+		self.percentRadio.Enable(not chainSelected)
+		self.percentField.Enable(not chainSelected)
+		self.percentLabel.Enable(not chainSelected)
+
+	# Based on selected hole/core pair, update list of affected cores in
+	# self.outCoreList, and udpate current core shift text.
 	def UpdateData(self, evt=None):
 		curHole = self.holeChoice.GetStringSelection()
 		coreIndex = self.coreChoice.GetSelection()

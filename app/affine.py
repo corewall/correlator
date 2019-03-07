@@ -553,6 +553,11 @@ class AffineBuilder:
     def getSortedHoles(self):
         holeSet = set([x.core.hole for x in self.affine.shifts])
         return sorted(list(holeSet))
+
+    # return list of AffineCoreInfos for TIE chain roots
+    def getChainRoots(self):
+        roots = [s.core for s in self.affine.shifts if self.affine.isRoot(s.core)]
+        return roots
     
     def isTie(self, core):
         return isTie(self.getShift(core))
