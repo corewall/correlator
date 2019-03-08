@@ -3968,8 +3968,7 @@ class DataFrame(wx.Panel):
 
 				self.parent.logFileptr.write("Load Files: \n")
 
-				# hole node
-				if len(self.tree.GetItemText(selectItem, 8)) > 0:
+				if len(self.tree.GetItemText(selectItem, 8)) > 0: # Load a single data file
 					parentItem = self.tree.GetItemParent(selectItem)
 					type = self.tree.GetItemText(parentItem, 0)
 					if universal_cull_item == None:
@@ -4015,7 +4014,8 @@ class DataFrame(wx.Panel):
 					if self.tree.GetItemText(selectItem, 2) == "Enable" and self.tree.GetItemText(selectItem, 0) != "-Cull Table":
 						if self.OnLOAD_ITEM(selectItem) == 0:
 							self.parent.OnNewData(None)
-							self.parent.OnShowMessage("Error", "Can not Load File", 1)
+							filename = self.tree.GetItemText(selectItem, 8)
+							self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
 							return
 						else:
 							count_load += 1 
@@ -4036,7 +4036,8 @@ class DataFrame(wx.Panel):
 							if self.tree.GetItemText(child_item, 2) == "Enable" and self.tree.GetItemText(child_item, 0) != "-Cull Table":
 								if self.OnLOAD_ITEM(child_item) == 0:
 									self.parent.OnNewData(None)
-									self.parent.OnShowMessage("Error", "Can not Load File", 1)
+									filename = self.tree.GetItemText(child_item, 8)
+									self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
 									return
 								else:
 									count_load += 1 
@@ -4045,7 +4046,8 @@ class DataFrame(wx.Panel):
 								if self.tree.GetItemText(child_item, 2) == "Enable" and self.tree.GetItemText(child_item, 0) != "-Cull Table":
 									if self.OnLOAD_ITEM(child_item) == 0:
 										self.parent.OnNewData(None)
-										self.parent.OnShowMessage("Error", "Can not Load File", 1)
+										filename = self.tree.GetItemText(child_item, 8)
+										self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
 										return
 									else:
 										count_load += 1 
@@ -4053,22 +4055,6 @@ class DataFrame(wx.Panel):
 							if count_load > 0:
 								ret = self.OnLOAD_CULLTABLE(selectItem, type)
 								smooth = self.ApplySmooth(type, selectItem)
-
-								# smooth = -1
-								# smooth_data = self.tree.GetItemText(selectItem, 12)
-								# if smooth_data != "":
-								# 	smooth_array = smooth_data.split()
-								# 	if "UnsmoothedOnly" == smooth_array[2]:
-								# 		smooth = 0 
-								# 	elif "SmoothedOnly" == smooth_array[2]:
-								# 		smooth = 1 
-								# 	elif "Smoothed&Unsmoothed" == smooth_array[2]:
-								# 		smooth = 2 
-								# 	if smooth_array[1] == "Depth(cm)":
-								# 		py_correlator.smooth(type, int(smooth_array[0]), 2)
-								# 	else:
-								# 		py_correlator.smooth(type, int(smooth_array[0]), 1)
-
 								continue_flag = True 
 								if self.tree.GetItemText(selectItem, 1) == "Discrete":
 									continue_flag = False 
@@ -4097,7 +4083,8 @@ class DataFrame(wx.Panel):
 									if self.tree.GetItemText(child_item, 2) == "Enable" and self.tree.GetItemText(child_item, 0) != "-Cull Table":
 										if self.OnLOAD_ITEM(child_item) == 0:
 											self.parent.OnNewData(None)
-											self.parent.OnShowMessage("Error", "Can not Load File", 1)
+											filename = self.tree.GetItemText(child_item, 8)
+											self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
 											return
 										else:
 											count_load += 1
@@ -4106,7 +4093,8 @@ class DataFrame(wx.Panel):
 										if self.tree.GetItemText(child_item, 2) == "Enable"  and self.tree.GetItemText(child_item, 0) != "-Cull Table":
 											if self.OnLOAD_ITEM(child_item) == 0 :
 												self.parent.OnNewData(None)
-												self.parent.OnShowMessage("Error", "Can not Load File", 1)
+												filename = self.tree.GetItemText(child_item, 8)
+												self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
 												return
 											else:
 												count_load += 1
@@ -4137,7 +4125,8 @@ class DataFrame(wx.Panel):
 										if self.tree.GetItemText(child_item, 2) == "Enable"  and self.tree.GetItemText(child_item, 0) != "-Cull Table":
 											if self.OnLOAD_ITEM(child_item) == 0:
 												self.parent.OnNewData(None)
-												self.parent.OnShowMessage("Error", "Can not Load File", 1)
+												filename = self.tree.GetItemText(child_item, 8)
+												self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
 												return
 											else:
 												count_load += 1
@@ -4146,7 +4135,8 @@ class DataFrame(wx.Panel):
 											if self.tree.GetItemText(child_item, 2) == "Enable"  and self.tree.GetItemText(child_item, 0) != "-Cull Table":
 												if self.OnLOAD_ITEM(child_item) == 0:
 													self.parent.OnNewData(None)
-													self.parent.OnShowMessage("Error", "Can not Load File", 1)
+													filename = self.tree.GetItemText(child_item, 8)
+													self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
 													return
 												else:
 													count_load += 1
