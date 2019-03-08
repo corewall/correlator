@@ -2323,7 +2323,7 @@ class DataFrame(wx.Panel):
 					self.parent.logFileptr.write("Delete " + filename + "\n\n")
 			else: # otherwise, a parent node (data type or site) was selected
 				type = self.tree.GetItemText(selectItem, 0)
-				if type.find("-", 0) == -1: # is a data type node selected?
+				if self.IsDatatypeNode(selectItem):
 					title = self.tree.GetItemText(parentItem, 0)
 					titleItem = parentItem
 					hole = '*'
@@ -3849,9 +3849,9 @@ class DataFrame(wx.Panel):
 				break
 			else:
 				type = self.tree.GetItemText(item, 0)
-				if type.find("-", 0) == -1:
+				if self.IsDatatypeNode(item):
 					parentItem = self.tree.GetItemParent(item)
-				else:
+				else: # site node
 					parentItem = item
 				break
 
@@ -4133,7 +4133,7 @@ class DataFrame(wx.Panel):
 
 				else: # selection is not a hole node, handle data type and site nodes
 					type = self.tree.GetItemText(selectItem, 0)
-					if type.find("-", 0) == -1: # data type node: TODO guard against data types with '-' in names
+					if self.IsDatatypeNode(selectItem):
 						parentItem = self.tree.GetItemParent(selectItem)
 						# if universal_cull_item == None:
 						# 	universal_cull_item = self.Find_UCULL(parentItem) 
@@ -4187,8 +4187,7 @@ class DataFrame(wx.Panel):
 								coef = max - min
 								newrange = type, min, max, coef, smooth, continue_flag
 								self.parent.Window.range.append(newrange) 
-
-					else: # must be a site node
+					else: # selectItem is a site node
 						parentItem = selectItem
 						if universal_cull_item == None:
 							universal_cull_item = self.Find_UCULL(parentItem) 
@@ -4564,7 +4563,7 @@ class DataFrame(wx.Panel):
 				title = self.tree.GetItemText(parentItem, 0)
 			else: # selection is site or data type node
 				type = self.tree.GetItemText(selectItem, 0)
-				if type.find("-", 0) == -1: # selection is a data type node
+				if self.IsDatatypeNode(selectItem):
 					if cullType == "All Holes" or cullType == type:
 						ret = py_correlator.getRange(type)
 						if ret != None:
@@ -6345,8 +6344,7 @@ class DataFrame(wx.Panel):
 				self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
 		else:
 			type = self.tree.GetItemText(selectItem, 0)
-			if type.find("-", 0) == -1: # data type
-				# type 
+			if self.IsDatatypeNode(selectItem):
 				totalcount = self.tree.GetChildrenCount(selectItem, False)
 				if totalcount > 0:
 					child = self.tree.GetFirstChild(selectItem)
@@ -6359,7 +6357,7 @@ class DataFrame(wx.Panel):
 							self.OnUPDATEDATA(child_item, type)
 				parentItem = self.tree.GetItemParent(selectItem)
 				self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
-			else: # leg-site
+			else: # leg-site node
 				totalcount = self.tree.GetChildrenCount(selectItem, False)
 				if totalcount > 0:
 					child = self.tree.GetFirstChild(selectItem)
