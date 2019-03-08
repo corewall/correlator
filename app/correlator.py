@@ -797,7 +797,7 @@ class MainFrame(wx.Frame):
 	def UnsavedChanges(self):
 		affineChange = self.affineManager.isDirty()
 		spliceChange = self.spliceManager.isDirty()
-		return affineChange or spliceChange or self.EldChange or self.AgeChange or self.TimeChange
+		return affineChange or spliceChange
 
 	def OnActivateWindow(self, event):
 		if self.Window.spliceWindowOn == 1:
