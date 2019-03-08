@@ -175,27 +175,27 @@ class TopMenuFrame(wx.Frame):
 				self.parent.logFileptr.write(s)
 				self.parent.SpliceChange = False  
 
-		if eld_flag == True :
-			if self.parent.Window.LogData != [] :
-				filename = self.parent.dataFrame.Add_TABLE("ELD" , "eld", savedialog.eldUpdate.GetValue(), False, "")
-				py_correlator.saveAttributeFile(filename, 4)
+		# if eld_flag == True :
+		# 	if self.parent.Window.LogData != [] :
+		# 		filename = self.parent.dataFrame.Add_TABLE("ELD" , "eld", savedialog.eldUpdate.GetValue(), False, "")
+		# 		py_correlator.saveAttributeFile(filename, 4)
 
-				s = "Save ELD Table: " + filename + "\n\n"
-				self.parent.logFileptr.write(s)
-				self.parent.EldChange = False  
+		# 		s = "Save ELD Table: " + filename + "\n\n"
+		# 		self.parent.logFileptr.write(s)
+		# 		self.parent.EldChange = False  
 
-		if age_flag == True :
-			filename = self.parent.dataFrame.OnSAVE_AGES(savedialog.ageUpdate.GetValue(), False)
-			s = "Save Age/Depth: " + filename + "\n\n"
-			self.parent.logFileptr.write(s)
-			self.parent.AgeChange = False  
+		# if age_flag == True :
+		# 	filename = self.parent.dataFrame.OnSAVE_AGES(savedialog.ageUpdate.GetValue(), False)
+		# 	s = "Save Age/Depth: " + filename + "\n\n"
+		# 	self.parent.logFileptr.write(s)
+		# 	self.parent.AgeChange = False  
 
-		if series_flag == True :
-			if self.parent.Window.AgeDataList != [] :
-				filename = self.parent.dataFrame.OnSAVE_SERIES(savedialog.seriesUpdate.GetValue(), False)
-				s = "Save Age Model : " + filename + "\n\n"
-				self.parent.logFileptr.write(s)
-				self.parent.TimeChange = False  
+		# if series_flag == True :
+		# 	if self.parent.Window.AgeDataList != [] :
+		# 		filename = self.parent.dataFrame.OnSAVE_SERIES(savedialog.seriesUpdate.GetValue(), False)
+		# 		s = "Save Age Model : " + filename + "\n\n"
+		# 		self.parent.logFileptr.write(s)
+		# 		self.parent.TimeChange = False  
 
 		savedialog.Destroy()
 		self.parent.OnShowMessage("Information", "Successfully Saved", 1)
