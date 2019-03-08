@@ -3175,7 +3175,7 @@ class DataCanvas(wxBufferedWindow):
 		# Drawing Black Box for Erasing the Parts
 		dc.SetBrush(wx.Brush(self.colorDict['background']))
 		dc.SetPen(wx.Pen(self.colorDict['background'], 1))
-		dc.DrawRectangle(0, 0, self.compositeX, self.Height)
+		dc.DrawRectangle(0, 0, self.compositeX, self.Height) # is this necessary?
 
 		self.DrawRuler(dc)
 
@@ -3317,7 +3317,7 @@ class DataCanvas(wxBufferedWindow):
 			radius = self.tieDotSize / 2
 
 			fixedTieDepth = 0
-			for compTie in self.TieData: # draw composite ties
+			for compTie in self.TieData: # draw in-progress composite ties (not established TIE arrows)
 				if compTie.fixed == 1:
 					dc.SetBrush(wx.Brush(self.colorDict['fixedTie']))
 					dc.SetPen(wx.Pen(self.colorDict['fixedTie'], 1))
