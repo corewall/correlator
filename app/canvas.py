@@ -2241,7 +2241,7 @@ class DataCanvas(wxBufferedWindow):
 						x = x - self.minRange
 						x = (x * self.coefRange) + spliceholewidth
 
-						if i > 0: 
+						if i > 0: # need at least two points to draw a line
 							lines.append((px, py, x, y))
 						if log_min > x:
 							log_min = x
@@ -2258,7 +2258,7 @@ class DataCanvas(wxBufferedWindow):
 						x = x - self.minRange
 						x = (x * self.coefRange) + startX 
 
-						if i > 0: 
+						if i > 0: # need at least two points to draw a line
 							lines.append((px, py, x, y))
 						px = x
 						py = y
