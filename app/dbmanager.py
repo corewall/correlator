@@ -3843,17 +3843,8 @@ class DataFrame(wx.Panel):
 		
 		# find site parent for selected tree item (or items? I don't think multiple selection is possible)
 		for item in items:
-			if len(self.tree.GetItemText(item, 8)) > 0:
-				parentItem = self.tree.GetItemParent(item)
-				parentItem = self.tree.GetItemParent(parentItem)
-				break
-			else:
-				type = self.tree.GetItemText(item, 0)
-				if self.IsDatatypeNode(item):
-					parentItem = self.tree.GetItemParent(item)
-				else: # site node
-					parentItem = item
-				break
+			parentItem = self.GetSiteForNode(item)
+			break
 
 		if parentItem is not None:
 			child = self.FindItem(parentItem, 'Saved Tables')
@@ -3861,7 +3852,7 @@ class DataFrame(wx.Panel):
 				self.propertyIdx = child[1]
 
 		if self.propertyIdx is None:
-			self.parent.OnShowMessage("Error", "Could not find Property", 1)
+			self.parent.OnShowMessage("Error", "Could not find Saved Tables node for selected item", 1)
 
 
 	def UpdateMINMAX(self, type, min, max):
