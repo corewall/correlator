@@ -3179,6 +3179,11 @@ class DataCanvas(wxBufferedWindow):
 
 		self.DrawRuler(dc)
 
+ 		# If no data is loaded, show help text.
+		if len(self.HoleData) == 0 and len(self.SmoothData) == 0:
+			msg = "No Data has been loaded. In Data Manager, right-click on a Site, data type, or data file and choose Load."
+			dc.DrawText(msg, self.compositeX + 10, self.getCoord(self.rulerStartDepth))
+
 		if self.spliceWindowOn == 1:
 			for data in self.AltSpliceData:
 				for r in data:
