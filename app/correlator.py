@@ -1345,12 +1345,14 @@ class MainFrame(wx.Frame):
 		# self.OnDisableMenu(0, False)
 		self.Window.UpdateDrawing()
 
-	def OnClearAllData(self, event):
-		self.OnClearData()
+	# unused at present
+	# def OnClearAllData(self, event):
+	# 	self.OnClearData()
 
 	def OnClearData(self):
 		py_correlator.cleanData(2)
 		self.Window.ClearCompositeTies()
+		self.dataFrame.needsReload = False
 		self.affineManager.clear()
 		self.spliceManager.clear()
 		self.Window.SpliceHole = []
@@ -2453,6 +2455,15 @@ class MainFrame(wx.Frame):
 		self.Layout()
 
 	def ShowDisplay(self):
+		if self.dataFrame.needsReload:
+			msg = "The Enable/Disable state of files was changed. " \
+				"To display these changes, select Load from the right-click menu.\n\n" \
+				"Continue to the Display?"
+			# warn only once?
+			# self.dataFrame.needsReload = False
+			if self.OnShowMessage("Data Manager Change(s) Detected", msg, 0) != wx.ID_YES:
+				return
+
 		self.dataFrame.propertyIdx = None
 		self.dataFrame.Show(False)
 

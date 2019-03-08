@@ -56,6 +56,10 @@ class DataFrame(wx.Panel):
 		self.cullData = [] 
 		self.selectBackup = None # selected node at Load
 		self.loadedSiteNode = None # site node of selected node at Load
+
+		 # has enabled state of hole data or affine/splice tables changed since last Load?
+		self.needsReload = False
+
 		self.selectedDataType = ""
 		self.selectedDepthType = ""
 		self.SetBackgroundColour(wx.Colour(255, 255, 255))
@@ -177,6 +181,7 @@ class DataFrame(wx.Panel):
 		self._enableSavedTable(item, enable) # then enable/disable selected table
 		siteNode = self.GetSiteForNode(item)
 		self.OnUPDATE_DB_FILE(self.tree.GetItemText(siteNode, 0), siteNode)
+		self.needsReload = True
 
 	def _enableSavedTable(self, item, enable):
 		self.tree.SetItemText(item, 'Enable' if enable else 'Disable', 2)
@@ -303,6 +308,7 @@ class DataFrame(wx.Panel):
 				self.tree.SetItemText(self.selectedIdx, newState, 2)
 			siteNode = self.GetSiteForNode(self.selectedIdx)
 			self.OnUPDATE_DB_FILE(self.tree.GetItemText(siteNode, 0), siteNode)
+			self.needsReload = True
 		elif opId == 21:
 			self.OnIMPORT_IMAGE()
 		elif opId == 22:
@@ -469,6 +475,7 @@ class DataFrame(wx.Panel):
 		if len(secSummMap) > 0:
 			for path, secsumm in secSummMap.iteritems():
 				self.AddSectionSummary(secsumm, path)
+			self.needsReload = True
 
 	# get name of parent Site (child of Root node) for current selection in self.tree
 	def GetSelectedSiteName(self):
