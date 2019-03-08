@@ -3148,7 +3148,6 @@ class DataCanvas(wxBufferedWindow):
 		self.HoleCount = 0
 		self.coreCount = 0 
 		self.newHoleX = 30.0
-		icount = 0
 		holeType = ""
 
 		self.InitHoleWidths()
@@ -3158,13 +3157,11 @@ class DataCanvas(wxBufferedWindow):
 				hole = r 
 				holeType = self.DrawHoleGraph(dc, hole, 0, holeType) 
 				self.HoleCount = self.HoleCount + 1 
-			icount = icount + 1
 
 		self.HoleCount = 0
 		self.coreCount = 0 
 		self.newHoleX = 30.0
 		smooth_flag = 3 
-		icount = 0
 		holeType = ""
 		if len(self.HoleData) == 0: 
 			smooth_flag = 1 
@@ -3173,7 +3170,6 @@ class DataCanvas(wxBufferedWindow):
 				hole = r 
 				holeType = self.DrawHoleGraph(dc, hole, smooth_flag, holeType) 
 				self.HoleCount = self.HoleCount + 1 
-			icount = icount + 1
 			
 		self.HoleCount = -2 
 		# Drawing Black Box for Erasing the Parts
