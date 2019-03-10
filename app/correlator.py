@@ -229,7 +229,7 @@ class MainFrame(wx.Frame):
 
 		# menuFile.AppendSeparator()
 
-		self.miFileSave = menuFile.Append(-1, "Save", "Save changes")
+		self.miFileSave = menuFile.Append(wx.ID_SAVE, "", "Save changes")
 		self.Bind(wx.EVT_MENU, self.OnSave, self.miFileSave)
 
 		menuFile.AppendSeparator()
