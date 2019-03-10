@@ -801,15 +801,12 @@ class MainFrame(wx.Frame):
 
 	def OnActivateWindow(self, event):
 		if self.Window.spliceWindowOn == 1:
-			self.Window.independentScrollBackup = self.Window.independentScroll 
-			self.Window.independentScroll = False
 			self.Window.spliceWindowOn = 0
 			self.Window.splicerBackX = self.Window.splicerX
 			self.Window.splicerX = self.Window.Width + 45 
 			self.optPanel.showSpliceWindow.SetValue(False)
 			self.optPanel.indSpliceScroll.Enable(False)
 		else:
-			self.Window.independentScroll = self.Window.independentScrollBackup 
 			self.Window.spliceWindowOn = 1
 			self.Window.splicerX = self.Window.splicerBackX
 			self.optPanel.showSpliceWindow.SetValue(True)
@@ -1473,7 +1470,8 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("width", width, f)
 		self.WritePreferenceItem("height", height, f)
 
-		self.WritePreferenceItem("secondscroll", 1 if self.Window.independentScroll else 0, f)
+		ssvalue = 1 if self.Window.independentScroll else 0
+		self.WritePreferenceItem("secondscroll", ssvalue, f)
 
 		if (width - self.Window.splicerX) < 10:
 			self.Window.splicerX = width / 2
@@ -2691,7 +2689,6 @@ class MainFrame(wx.Frame):
 			str_temp = self.config.get("applications", "secondscroll")
 			if len(str_temp) > 0:
 				conf_value = int(str_temp)
-				print("Read second scroll value = {}".format(conf_value))
 			if conf_value == 0:
 				self.SetIndependentScroll(False)
 			else:

@@ -261,7 +261,6 @@ class DataCanvas(wxBufferedWindow):
 		self.Process = 0 
 		self.Constrained = 1 
 		self.independentScroll = True # scroll composite and splice windows separately
-		self.independentScrollBackup = True # appears to backup independentScroll value 
 		self.ScrollUpdate = 0
 		self.isLogMode = 0 
 		self.closeFlag = True 
