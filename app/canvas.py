@@ -4668,7 +4668,7 @@ class DataCanvas(wxBufferedWindow):
 				w, h = bmp.GetWidth(), bmp.GetHeight()
 				reg = wx.Rect(x, y, w, h)
 				if reg.Inside(wx.Point(pos[0], pos[1])):				 
-					if self.independentScroll:# and self.spliceWindowOn == 1:
+					if self.independentScroll and self.spliceWindowOn == 1:
 						self.grabScrollB = 1	
 					elif not self.independentScroll:# or self.spliceWindowOn == 0:
 						self.grabScrollA = 1	
@@ -5873,7 +5873,10 @@ class DataCanvas(wxBufferedWindow):
 			self.rulerStartAgeDepth = tempDepth * 10
 			self.SPrulerStartAgeDepth = tempDepth * 10
 
-		if not self.independentScroll:
+		if not self.independentScroll or self.spliceWindowOn == 0:
+			# 3/10/2019 TODO? "Interface" seems to be redundant, we never actually draw
+			# its bitmap (search on dc.DrawBitmap()) as we do for "Skin". Leaving for
+			# now since it's harmless.
 			bmp, x, y = self.DrawData["Interface"]
 			self.DrawData["Interface"] = (bmp, x, scroll_y)
 
