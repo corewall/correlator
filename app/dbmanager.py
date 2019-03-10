@@ -171,8 +171,13 @@ class DataFrame(wx.Panel):
 			os.remove(filepath)
 			self.tree.Delete(self.selectedIdx)
 			self.OnUPDATE_DB_FILE(siteName, siteNode)
-				
-	def EnableSavedTablesItem(self, item, enable):
+	
+	# Enable specified item in Data Manager. Enforces single Enabled table per type (affine, splice).
+	# item - self.tree node of item to enable/disable
+	# enable - if True, enable item, else disable it
+	# programmatic - if True, will not update self.needsReload state. (If new table is created on Save,
+	# it is automatically Enabled. Don't want to pester user to re-Load in this case.)
+	def EnableSavedTablesItem(self, item, enable, programmatic=False):
 		if enable: # ensure only one table of a type is enabled at a time
 			savedTablesNode = self.tree.GetItemParent(item)
 			tableType = self.tree.GetItemText(item, 1)
@@ -181,7 +186,8 @@ class DataFrame(wx.Panel):
 		self._enableSavedTable(item, enable) # then enable/disable selected table
 		siteNode = self.GetSiteForNode(item)
 		self.OnUPDATE_DB_FILE(self.tree.GetItemText(siteNode, 0), siteNode)
-		self.needsReload = True
+		if not programmatic:
+			self.needsReload = True
 
 	def _enableSavedTable(self, item, enable):
 		self.tree.SetItemText(item, 'Enable' if enable else 'Disable', 2)
@@ -4388,7 +4394,7 @@ class DataFrame(wx.Panel):
 			else:
 				fullname = self.parent.DBPath + 'db/' + self.title + '/' + filename
 
-		self.EnableSavedTablesItem(subroot, True)
+		self.EnableSavedTablesItem(subroot, enable=True, programmatic=True)
 		return fullname
 
 	# Update self.tree and database to reflect updated smoothing.

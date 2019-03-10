@@ -2455,10 +2455,9 @@ class MainFrame(wx.Frame):
 	def ShowDisplay(self):
 		if self.dataFrame.needsReload:
 			msg = "The Enable/Disable state of files was changed. " \
-				"To display these changes, select Load from the right-click menu.\n\n" \
+				"To apply these changes, select Load from the right-click menu.\n\n" \
 				"Continue to the Display?"
-			# warn only once?
-			# self.dataFrame.needsReload = False
+			self.dataFrame.needsReload = False # warn only once
 			if self.OnShowMessage("Data Manager Change(s) Detected", msg, 0) != wx.ID_YES:
 				return
 
