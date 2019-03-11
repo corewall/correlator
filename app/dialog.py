@@ -1852,8 +1852,8 @@ class BackgroundPanel(wx.Panel):
 
 class SplashScreen(wx.Dialog):
 	def __init__(self, parent, id, user, version):
-		panel_size=(800, 370)
-		wx.Dialog.__init__(self, parent, id, "Correlator " + version, size=panel_size,style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
+		panel_size=(800, 380)
+		wx.Dialog.__init__(self, parent, id, "Correlator " + version, size=panel_size, style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
 		panel = BackgroundPanel(self, 'images/corewall_suite.jpg', panel_size)
 
@@ -1870,10 +1870,7 @@ class SplashScreen(wx.Dialog):
 		if platform_name[0] == "Windows":
 			cancelBtn = wx.Button(panel, wx.ID_CANCEL, "Cancel", (580, 213), size=(80, 30))
 
-		corryUrl = "https://csdco.umn.edu/resources/software/correlator"
-		wx.HyperlinkCtrl(self, -1, "Correlator Website", corryUrl, (60, 300))
-
-		aboutBtn = wx.Button(panel, -1, "About", (200, 290), size=(80, 30))
+		aboutBtn = wx.Button(panel, -1, "About", (50, 290), size=(80, 30))
 		self.Bind(wx.EVT_BUTTON, self.OnABOUT, aboutBtn)
 
 		wx.EVT_KEY_DOWN(self.name, self.OnPanelChar)
