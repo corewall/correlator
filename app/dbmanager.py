@@ -588,11 +588,11 @@ class DataFrame(wx.Panel):
 						popupMenu.Append(10, "&Disable")
 						wx.EVT_MENU(popupMenu, 10, self.OnPOPMENU)
 
-					popupMenu.Append(6, "&Delete")
-					wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
 					popupMenu.Append(16, "&Export")
 					wx.EVT_MENU(popupMenu, 16, self.OnPOPMENU)
 
+					popupMenu.Append(6, "&Delete")
+					wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
 					#popupMenu.Append(22, "&Export in XML")
 					#wx.EVT_MENU(popupMenu, 22, self.OnPOPMENU)
 
@@ -682,18 +682,17 @@ class DataFrame(wx.Panel):
 						popupMenu.Append(20, "&Disable")
 						wx.EVT_MENU(popupMenu, 20, self.OnPOPMENU)
 
-					popupMenu.Append(6, "&Delete")
-					wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
-
 					popupMenu.Append(7, "&Update")
 					wx.EVT_MENU(popupMenu, 7, self.OnPOPMENU)
 
 					popupMenu.Append(23, "&Export")
 					wx.EVT_MENU(popupMenu, 23, self.OnPOPMENU)
 
+					popupMenu.Append(6, "&Delete")
+					wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
+
 					#popupMenu.Append(23, "&Export in XML")
 					#wx.EVT_MENU(popupMenu, 23, self.OnPOPMENU)
-
 			else:
 				str_name = self.tree.GetItemText(self.selectedIdx, 0)
 				if self.IsRootNode(self.selectedIdx):
@@ -769,9 +768,6 @@ class DataFrame(wx.Panel):
 						popupMenu.Append(20, "&Disable")
 						wx.EVT_MENU(popupMenu, 20, self.OnPOPMENU)
 
-						popupMenu.Append(6, "&Delete")
-						wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
-
 						# popupMenu.Append(9, "&Import cull table")
 						# wx.EVT_MENU(popupMenu, 9, self.OnPOPMENU)
 
@@ -780,12 +776,15 @@ class DataFrame(wx.Panel):
 
 						popupMenu.Append(25, "&Export")
 						wx.EVT_MENU(popupMenu, 25, self.OnPOPMENU)
-					else:
+
 						popupMenu.Append(6, "&Delete")
 						wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
-
+					else:
 						popupMenu.Append(7, "&Update")
 						wx.EVT_MENU(popupMenu, 7, self.OnPOPMENU)
+
+						popupMenu.Append(6, "&Delete")
+						wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
 
 			self.tree.PopupMenu(popupMenu, pos)
 		return
