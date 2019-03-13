@@ -4317,8 +4317,39 @@ class DataFrame(wx.Panel):
 		stamp = tempstamp[0:last]
 		return stamp
 
+	# Return integer of lowest unused number for tableType ("AFFINE" or "SPLICE")
+	def _getNextTableNumber(self, savedTablesNode, tableType):
+		maxFileNum = 0
+		for child in self.GetChildren(savedTablesNode, test=lambda c:self.tree.GetItemText(c, 1) == tableType):
+			filename = self.tree.GetItemText(child, 8)
+			last = filename.find(".", 0) 
+			start = last + 1
+			last = filename.find(".", start)
+			curFileNum = int(filename[start:last])
+			if curFileNum > maxFileNum:
+				maxFileNum = curFileNum
+		return maxFileNum + 1
+
+	# Return integer of lowest unused number for affine table or splice table.
+	# If both affine and splice are set to True, return max of affine and splice number.
+	# affine - if True, find lowest unused number for affine tables
+	# splice - if True, find lowest unused number for splice tables
+	def GetNextSavedTableNumber(self, affine, splice):
+		items = self.selectBackup
+		self.Update_PROPERTY_ITEM(items)
+		savedTablesNode = self.propertyIdx # property is the "Saved Tables" wxTreeItem for this site
+
+		affineNum = self._getNextTableNumber(savedTablesNode, "AFFINE")
+		spliceNum = self._getNextTableNumber(savedTablesNode, "SPLICE")
+		if affine and splice:
+			return max(affineNum, spliceNum)
+		elif affine:
+			return affineNum
+		else: # splice
+			return spliceNum
+
 	# Add new or update existing Saved Table (affine or splice) item.
-	def Add_TABLE(self, title, sub_title, updateflag, importflag, source_filename):
+	def Add_TABLE(self, title, sub_title, updateflag, importflag, source_filename, newFileNum=None):
 		if importflag == False and len(self.selectBackup) == 0:
 			self.parent.OnShowMessage("Error", "Could not find selected items", 1)
 			return
@@ -4338,26 +4369,17 @@ class DataFrame(wx.Panel):
 		if title == "SPLICE" and self.GetCurrentSpliceTable() is None:
 			updateflag = False
 
-		# if we need to create a new table, find next available number for filename
-		maxFileNum = 0
-		if updateflag == False:
-			for child in self.GetChildren(savedTablesNode, test=lambda c:self.tree.GetItemText(c, 1) == title):
-				temp_filename = self.tree.GetItemText(child, 8)
-				last = temp_filename.find(".", 0) 
-				start = last + 1
-				last = temp_filename.find(".", start)
-				curFileNum = int(temp_filename[start:last])
-				if maxFileNum < curFileNum:
-					maxFileNum = curFileNum
-		newFileNum = maxFileNum + 1
-		#print "[DEBUG] file index number is " + str(ith)
+		# if we need to create a new table and no number has been provided,
+		# find next available number for filename.
+		if not newFileNum:
+			newFileNum = self._getNextTableNumber(savedTablesNode, title)
 
 		filename = ''
 		child = self.FindItemProperty(savedTablesNode, title)
 		if child[0] == False or updateflag == False:
 			# Didn't find enabled item of table type being saved ("AFFINE", "SPLICE", or "ELD").
 			# Add a new item of this table type and enable it.
-			subroot = self.tree.AppendItem(savedTablesNode, "Table" )
+			subroot = self.tree.AppendItem(savedTablesNode, "Table")
 			self.tree.SetItemText(subroot, title, 1)
 
 			self.tree.Expand(subroot)
@@ -4394,7 +4416,9 @@ class DataFrame(wx.Panel):
 			else:
 				fullname = self.parent.DBPath + 'db/' + self.title + '/' + filename
 
-		self.EnableSavedTablesItem(subroot, enable=True, programmatic=True)
+		enableAddedTable = False if importflag else True
+		self.EnableSavedTablesItem(subroot, enable=enableAddedTable, programmatic=True)
+
 		return fullname
 
 	# Update self.tree and database to reflect updated smoothing.

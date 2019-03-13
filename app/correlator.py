@@ -3320,6 +3320,7 @@ class SpliceController:
 			self.deleteSelected()
 		else:
 			self.splice.delete(interval)
+		self.setDirty(self.count() > 0) # can't save a splice with zero intervals
 		self._onDelete()
 			
 	def select(self, depth):
@@ -3349,7 +3350,7 @@ class SpliceController:
 		if self.splice.delete(self.selected):
 			self.selected = None
 			self.selectTie(None)
-			self.setDirty()
+			self.setDirty(self.count() > 0) # can't save a splice with zero intervals
 			self._onSelChange()
 			
 	def selectTie(self, siTie):

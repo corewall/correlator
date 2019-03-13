@@ -140,67 +140,45 @@ class TopMenuFrame(wx.Frame):
 			self.parent.ShowDisplay()
 
 	def OnSAVE(self, event):
-		if self.parent.CurrentDir == '' : 
-			self.parent.OnShowMessage("Error", "There is no data loaded", 1)
+		if self.parent.CurrentDir == '': 
+			self.parent.OnShowMessage("Error", "There is no data loaded.", 1)
 			return
 
-		savedialog = dialog.SaveTableDialog(None, -1, self.parent.affineManager.isDirty(), self.parent.spliceManager.isDirty())
-		savedialog.Centre()
-		ret = savedialog.ShowModal()
-		
-		eld_flag = False #savedialog.eldCheck.GetValue()
-		age_flag =  False #savedialog.ageCheck.GetValue()
-		series_flag = False #savedialog.seriesCheck.GetValue()
+		# todo?: don't show dialog if there isn't an affine or splice enabled - just Create New
+		updateExisting = False
 
-		if ret == wx.ID_CANCEL :
+		# We want to encourage users to save affine and splices together in the hopes that for
+		# the most part, the file numbers of comapatible affines and splices will be the same.
+		# Save splice if it's changed, or if there's at least one interval to save, even if
+		# nothing has changed. spliceManager.dirty implies at least one interval - it's set to
+		# False if the only interval in the splice was deleted.
+		saveSplice = self.parent.spliceManager.dirty or self.parent.spliceManager.count() > 0
+
+		msg = "Save new affine{}, or update existing file{}?".format(" and splice" if saveSplice else "", "s" if saveSplice else "")
+		dlg = dialog.Message3Button(self.parent, msg, yesLabel="Create New", okLabel="Update Existing", cancelLabel="Cancel")
+		ret = dlg.ShowModal()
+		dlg.Destroy()
+		if ret in [wx.ID_OK, wx.ID_YES]:
+			updateExisting = (ret == wx.ID_OK)
+		else: # canceled
 			return
-		
-		# affine
-		affine_filename = ""
-		if savedialog.affineCheck.GetValue():
-			affine_filename = self.parent.dataFrame.Add_TABLE("AFFINE" , "affine", savedialog.affineUpdate.GetValue(), False, "")
-			self.parent.affineManager.save(affine_filename)
-			#py_correlator.saveAttributeFile(affine_filename, 1)
 
-			s = "Save Affine Table: " + affine_filename + "\n\n"
-			self.parent.logFileptr.write(s)
-			self.parent.AffineChange = False  
-		# splice
-		if savedialog.spliceCheck.GetValue():
-			if self.parent.spliceManager.count() > 0:
-				filename = self.parent.dataFrame.Add_TABLE("SPLICE" , "splice", savedialog.spliceUpdate.GetValue(), False, "")
-				self.parent.spliceManager.save(filename)
+		# If we add an entry to the Data Manager, there must be a file to save! Don't want to end up
+		# adding an entry and not saving the associated file. Shouldn't be a problem with affines, but
+		# SpliceController will not save an empty splice. saveSplice var should prevent that situation.
+		if updateExisting: # save each as normal
+			affineFile = self.parent.dataFrame.Add_TABLE("AFFINE", "affine", updateExisting, False, "")
+			if saveSplice:
+				spliceFile = self.parent.dataFrame.Add_TABLE("SPLICE", "splice", updateExisting, False, "")
+		else: # Create New - find lowest available table number and use to save affine or both files
+			newFileNum = self.parent.dataFrame.GetNextSavedTableNumber(affine=True, splice=saveSplice)
+			affineFile = self.parent.dataFrame.Add_TABLE("AFFINE", "affine", updateExisting, False, "", newFileNum)
+			if saveSplice:
+				spliceFile = self.parent.dataFrame.Add_TABLE("SPLICE", "splice", updateExisting, False, "", newFileNum)
 
-				s = "Save Splice Table: " + filename + "\n\n"
-				self.parent.logFileptr.write(s)
-				self.parent.SpliceChange = False  
-
-		# if eld_flag == True :
-		# 	if self.parent.Window.LogData != [] :
-		# 		filename = self.parent.dataFrame.Add_TABLE("ELD" , "eld", savedialog.eldUpdate.GetValue(), False, "")
-		# 		py_correlator.saveAttributeFile(filename, 4)
-
-		# 		s = "Save ELD Table: " + filename + "\n\n"
-		# 		self.parent.logFileptr.write(s)
-		# 		self.parent.EldChange = False  
-
-		# if age_flag == True :
-		# 	filename = self.parent.dataFrame.OnSAVE_AGES(savedialog.ageUpdate.GetValue(), False)
-		# 	s = "Save Age/Depth: " + filename + "\n\n"
-		# 	self.parent.logFileptr.write(s)
-		# 	self.parent.AgeChange = False  
-
-		# if series_flag == True :
-		# 	if self.parent.Window.AgeDataList != [] :
-		# 		filename = self.parent.dataFrame.OnSAVE_SERIES(savedialog.seriesUpdate.GetValue(), False)
-		# 		s = "Save Age Model : " + filename + "\n\n"
-		# 		self.parent.logFileptr.write(s)
-		# 		self.parent.TimeChange = False  
-
-		savedialog.Destroy()
-		self.parent.OnShowMessage("Information", "Successfully Saved", 1)
-
-		#self.parent.Window.SetFocusFromKbd()
+		self.parent.affineManager.save(affineFile)
+		if saveSplice:
+			self.parent.spliceManager.save(spliceFile)
 
 	def OnSPLICE(self, event):
 		if self.parent.Window.ShowSplice == True :
@@ -636,12 +614,12 @@ class CompositePanel():
 		sizer32.Add(self.undoButton, 0, wx.EXPAND)
 
 		undoPanel.SetSizer(sizer32)
-		vbox.Add(undoPanel, 0, wx.EXPAND)
-		vbox.Add(wx.StaticText(self.mainPanel, -1, '* Right-click tie for context menu', (5, 5)), 0, wx.BOTTOM, 5)
+		vbox.Add(undoPanel, 0, wx.EXPAND | wx.BOTTOM, 10)
+		# vbox.Add(wx.StaticText(self.mainPanel, -1, '* Right-click tie for context menu', (5, 5)), 0, wx.BOTTOM, 5)
 
-		self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine Table", size =(150, 30))
+		self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine (and Splice if non-empty)...")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
-		vbox.Add(self.saveButton, 0, wx.ALIGN_CENTER_VERTICAL)
+		vbox.Add(self.saveButton, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL | wx.BOTTOM, 2)
 		self.saveButton.Enable(False)
 
 		self.mainPanel.SetSizer(vbox)
@@ -652,18 +630,7 @@ class CompositePanel():
 		self.undoButton.Enable(False)
 		
 	def OnSAVE(self, event):
-		updateExisting = False
-		if self.parent.affineManager.currentAffineFile is not None:
-			dlg = dialog.Message3Button(self.parent, "Create new affine file?", yesLabel="Create New", okLabel="Update Existing", cancelLabel="Cancel")
-			ret = dlg.ShowModal()
-			dlg.Destroy()
-			if ret in [wx.ID_OK, wx.ID_YES]:
-				updateExisting = (ret == wx.ID_OK)
-			else: # canceled
-				return
-		filename = self.parent.dataFrame.Add_TABLE("AFFINE", "affine", updateExisting, False, "")
-		# print "Save: updateExisting = {}, filename = {}".format(updateExisting, filename)
-		self.parent.affineManager.save(filename)
+		self.parent.topMenu.OnSAVE(event=None)
 
 	def OnDismiss(self, evt):
 		self.Hide()
@@ -864,7 +831,8 @@ class CompositePanel():
 	def GetComment(self):
 		return self.comment.GetValue()
 		
-
+# Obsolete, replaced by SpliceIntervalPanel but left as-is for now
+# to avoid issues with its tendrils in MainFrame. TODO 3/10/2019
 class SplicePanel():
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
@@ -1479,7 +1447,7 @@ class SpliceIntervalPanel():
 		self.altSpliceButton.Bind(wx.EVT_BUTTON, self.OnAltSplice)
 		psz.Add(self.altSpliceButton, 0, wx.EXPAND | wx.ALL, 10)
 		
-		self.saveButton = wx.Button(panel, -1, "Save Splice...")
+		self.saveButton = wx.Button(panel, -1, "Save Splice and Affine...")
 		self.saveButton.Bind(wx.EVT_BUTTON, self.OnSave)
 		psz.Add(self.saveButton, 0, wx.EXPAND | wx.ALL, 10)
 				
@@ -1626,23 +1594,7 @@ class SpliceIntervalPanel():
 		self.parent.Window.UpdateDrawing()
 
 	def OnSave(self, event):
-		updateExisting = False
-		if self.parent.spliceManager.currentSpliceFile is not None:
-			dlg = dialog.Message3Button(self.parent, "Create new splice file?", yesLabel="Create New", okLabel="Update Existing", cancelLabel="Cancel")
-			ret = dlg.ShowModal()
-			dlg.Destroy()
-			if ret in [wx.ID_OK, wx.ID_YES]:
-				updateExisting = (ret == wx.ID_OK)
-			else: # canceled
-				return
-		filename = self.parent.dataFrame.Add_TABLE("SPLICE" , "splice", updateExisting, False, "")
-		print "Save: updateExisting = {}, filename = {}".format(updateExisting, filename)
-		self.parent.spliceManager.save(filename)
-
-		s = "Save Splice Table: " + filename + "\n"
-		self.parent.logFileptr.write(s)
-		self.parent.autoPanel.SetCoreList(1, [])
-		# self.parent.OnShowMessage("Information", "Successfully Saved", 1)
+		self.parent.topMenu.OnSAVE(event=None)
 	
 	def OnSelectRow(self, event):
 		self.parent.spliceManager.selectByIndex(event.GetRow())
