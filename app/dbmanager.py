@@ -5314,8 +5314,8 @@ class DataFrame(wx.Panel):
 	
 				# try to auto-fill data type based on last column's text
 				type = ""
-				typeDict = {"GRA":"Bulk Density(GRA)", "PWAVE":"Pwave", "SUSCEPTIBILITY":"Susceptibility",
-							"REFLECTANCE":"Reflectance", "NATURAL":"NaturalGamma"}
+				typeDict = {"GRA":"Bulk Density(GRA)", "VELOCITY_XY":"Pwave", "SUSCEPTIBILITY":"Susceptibility",
+							"REFLECTANCE":"Reflectance", "TOTAL_COUNTS_PER_SEC":"NaturalGamma"}
 				possibleType = colNames[-1].upper()
 				for testStr,typeName in typeDict.items():
 					if possibleType.find(testStr) != -1:
