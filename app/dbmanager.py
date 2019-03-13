@@ -6033,7 +6033,6 @@ class DataFrame(wx.Panel):
 					self.handler.closeFile()
 					path = self.parent.Directory + "/.tmp" 
 
-				header = ""
 				if ith == 0:
 					f = open(path, 'rU')
 					for line in f:
