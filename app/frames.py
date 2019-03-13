@@ -31,7 +31,7 @@ def opj(path):
 	"""Convert paths to the platform-specific separator"""
 	return apply(os.path.join, tuple(path.split('/')))
 
-
+# The Toolbar.
 class TopMenuFrame(wx.Frame):
 	def __init__(self, parent):
 		wx.Frame.__init__(self, parent, -1, "Tool Bar",
@@ -58,21 +58,21 @@ class TopMenuFrame(wx.Frame):
 		frameSizer.Add(self.drawingbtn, 1, wx.EXPAND | wx.BOTTOM, 5)
 		self.Bind(wx.EVT_BUTTON, self.OnDRAWMODE, self.drawingbtn)
 		
-		self.compositeBtn = wx.Button(self, -1, "Go to Composite")
-		frameSizer.Add(self.compositeBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
-		self.Bind(wx.EVT_BUTTON, self.OnComposite, self.compositeBtn)
+		# self.compositeBtn = wx.Button(self, -1, "Go to Composite")
+		# frameSizer.Add(self.compositeBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
+		# self.Bind(wx.EVT_BUTTON, self.OnComposite, self.compositeBtn)
 		
-		self.spliceBtn = wx.Button(self, -1, "Go to Splice")
-		frameSizer.Add(self.spliceBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
-		self.Bind(wx.EVT_BUTTON, self.OnSplice, self.spliceBtn)
+		# self.spliceBtn = wx.Button(self, -1, "Go to Splice")
+		# frameSizer.Add(self.spliceBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
+		# self.Bind(wx.EVT_BUTTON, self.OnSplice, self.spliceBtn)
 
-		self.filterBtn = wx.Button(self, -1, "Go to Filters")
-		frameSizer.Add(self.filterBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
-		self.Bind(wx.EVT_BUTTON, self.OnFilter, self.filterBtn)
+		# self.filterBtn = wx.Button(self, -1, "Go to Filters")
+		# frameSizer.Add(self.filterBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
+		# self.Bind(wx.EVT_BUTTON, self.OnFilter, self.filterBtn)
 		
-		self.prefsBtn = wx.Button(self, -1, "Go to Display Prefs")
-		frameSizer.Add(self.prefsBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
-		self.Bind(wx.EVT_BUTTON, self.OnPrefs, self.prefsBtn)
+		# self.prefsBtn = wx.Button(self, -1, "Go to Display Prefs")
+		# frameSizer.Add(self.prefsBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
+		# self.Bind(wx.EVT_BUTTON, self.OnPrefs, self.prefsBtn)
 
 		exitbtn = wx.Button(self, -1, "Exit Correlator")
 		frameSizer.Add(exitbtn, 1, wx.EXPAND)
@@ -204,19 +204,19 @@ class TopMenuFrame(wx.Frame):
 		self.parent.Window.UpdateDrawing()
 		self.parent.Window.SetFocusFromKbd()
 
-	def OnComposite(self, event):
-		self.parent.Window.sideNote.SetSelection(1)
+	# def OnComposite(self, event):
+	# 	self.parent.Window.sideNote.SetSelection(1)
 	
-	def OnSplice(self, event):
-		self.parent.Window.sideNote.SetSelection(2)
+	# def OnSplice(self, event):
+	# 	self.parent.Window.sideNote.SetSelection(2)
 
-	def OnFilter(self, event):
-		self.parent.Window.sideNote.SetSelection(3)
-		# self.parent.Window.sideNote.SetSelection(5)
+	# def OnFilter(self, event):
+	# 	self.parent.Window.sideNote.SetSelection(3)
+	# 	# self.parent.Window.sideNote.SetSelection(5)
 	
-	def OnPrefs(self, event):
-		self.parent.Window.sideNote.SetSelection(4)
-		# self.parent.Window.sideNote.SetSelection(6)
+	# def OnPrefs(self, event):
+	# 	self.parent.Window.sideNote.SetSelection(4)
+	# 	# self.parent.Window.sideNote.SetSelection(6)
 
 	def OnEXIT(self, event):
 		self.parent.OnExitButton(event)
