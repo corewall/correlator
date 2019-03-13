@@ -3422,8 +3422,8 @@ class PreferencesPanel():
 			self.parent.OnActivateWindow(0)
 			self.parent.misecond.Check(False)
 
-	def OnActivateScroll(self, event):
-		self.parent.SetIndependentScroll(self.indSpliceScroll.IsChecked())
+	# def OnActivateScroll(self, event):
+	# 	self.parent.SetIndependentScroll(self.indSpliceScroll.IsChecked())
 
 	def OnUndoMinMax(self, event):
 		pass
@@ -3543,9 +3543,9 @@ class PreferencesPanel():
 
 		self.showSpliceWindow = wx.CheckBox(viewPanel, -1, 'Show Splice window partition')
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnActivateWindow, self.showSpliceWindow)
-		self.indSpliceScroll = wx.CheckBox(viewPanel, -1, 'Independent Splice scrollbar')
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnActivateScroll, self.indSpliceScroll)
-		self.indSpliceScroll.SetValue(False)
+		# self.indSpliceScroll = wx.CheckBox(viewPanel, -1, 'Independent Splice scrollbar')
+		# self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnActivateScroll, self.indSpliceScroll)
+		# self.indSpliceScroll.SetValue(False)
 		self.showPlotLines = wx.CheckBox(viewPanel, -1, 'Show lines between plot tracks')
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLine, self.showPlotLines)
 		self.showPlotLines.SetValue(True)
@@ -3561,8 +3561,8 @@ class PreferencesPanel():
 		# self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)
 
 		viewSizer.Add(self.showSpliceWindow, 0, wx.BOTTOM, 5)
-		viewSizer.Add(self.indSpliceScroll, 0, wx.LEFT, 20)
-		viewSizer.Add(self.showSectionDepths, 0, wx.TOP | wx.BOTTOM, 5)		
+		# viewSizer.Add(self.indSpliceScroll, 0, wx.LEFT, 20)
+		viewSizer.Add(self.showSectionDepths, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showAffineShiftInfo, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showAffineTieArrows, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showCoreInfo, 0, wx.BOTTOM, 5)
