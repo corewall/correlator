@@ -502,6 +502,7 @@ class OkButtonPanel(wx.Panel):
 	def __init__(self, parent, okName="OK", cancelName="Cancel"):
 		wx.Panel.__init__(self, parent, -1)
 		self.ok = wx.Button(self, wx.ID_OK, okName)
+		self.ok.SetDefault()
 		self.cancel = wx.Button(self, wx.ID_CANCEL, cancelName)
 		sz = wx.BoxSizer(wx.HORIZONTAL)
 		sz.Add(self.cancel, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 10)
