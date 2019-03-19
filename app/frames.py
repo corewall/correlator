@@ -599,9 +599,9 @@ class CompositePanel():
 		# Project... button
 		projectPanel = wx.Panel(self.mainPanel, -1)
 		setSizer = wx.StaticBoxSizer(wx.StaticBox(projectPanel, -1, "SET Dialog"), orient=wx.VERTICAL)
-		self.projectButton = wx.Button(projectPanel, -1, "SET...")
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnProject, self.projectButton)
-		setSizer.Add(self.projectButton, 1, wx.EXPAND)
+		self.setButton = wx.Button(projectPanel, -1, "SET...")
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnProject, self.setButton)
+		setSizer.Add(self.setButton, 1, wx.EXPAND)
 		projectPanel.SetSizer(setSizer)
 		vbox.Add(projectPanel, 0, wx.EXPAND)
 
@@ -630,7 +630,7 @@ class CompositePanel():
 		self.undoButton.Enable(False)
 
 	def EnableSETButton(self, enable):
-		self.projectButton.Enable(enable)
+		self.setButton.Enable(enable)
 		
 	def OnSAVE(self, event):
 		self.parent.topMenu.OnSAVE(event=None)
