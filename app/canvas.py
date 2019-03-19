@@ -14,12 +14,13 @@ from wx.lib import plot
 import numpy
 
 from datetime import datetime
-import random, sys, os, re, time, ConfigParser, string
+import random, sys, os, re, time, ConfigParser, string, traceback
 
 from importManager import py_correlator
 
 import frames
 import splice
+
 
 # brg 4/9/2014: Why are we defining our own wxBufferedWindow when
 # wx.BufferedWindow already exists (same interface 'n all) in wx?
@@ -199,6 +200,7 @@ class DataCanvas(wxBufferedWindow):
 		## Any data the Draw() function needs must be initialized before
 		## calling wxBufferedWindow.__init__, as it will call the Draw
 		## function.
+		self.drawCount = 0
 
 		stdFontSize = 9 if platform_name[0] == "Windows" else 12 # 12 point too large on Windows, just right on Mac
 		self.stdFont = wx.Font(stdFontSize, wx.SWISS, wx.NORMAL, wx.BOLD)
@@ -2676,6 +2678,17 @@ class DataCanvas(wxBufferedWindow):
 		dc.BeginDrawing()
 		dc.SetBackground(wx.Brush(self.colorDict['background']))
 		dc.Clear() # make sure you clear the bitmap!
+
+		# 3/18/2019: Attempt to debug double-drawing issue after initial Load
+		# of data, which seems to be fixed by clicking anywhere on the right-hand
+		# panels, resulting in noticeably faster response. Looks like OnMainMotion()
+		# is being called twice but thus far can't figure out why.
+		# print("Draw() {}".format(self.drawCount))
+		# self.drawCount += 1
+		# stk = traceback.format_stack()
+		# for thing in stk[len(stk) - 5:]:
+		# 	print("{}".format(thing.strip()))
+		# print("------\n")
 
 		if self.WindowUpdate == 1: 
 			self.Width, self.Height = self.parent.GetClientSizeTuple()
