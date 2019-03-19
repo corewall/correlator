@@ -3130,6 +3130,13 @@ class DataCanvas(wxBufferedWindow):
 			# store as a tuple - DrawStratCore() logic still uses index to access value
 			self.WidthsControl.append((holeX, holeKey))
 
+	# Disable controls in CompositePanel and FilterPanel that require loaded data to
+	# function and aren't otherwise en/disabled by their respective panel's logic (e.g.
+	# if data is loaded, the Create/Edit buttons in FilterPanel will always be enabled).
+	def DisableDisplayControls(self):
+		self.parent.compositePanel.EnableSETButton(False)
+		self.parent.filterPanel.DisableAllControls()
+
 	def DrawMainView(self, dc):
 		self.DrawData["CoreArea"] = [] 
 		self.DrawData["SpliceArea"] = [] 

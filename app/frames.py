@@ -617,7 +617,7 @@ class CompositePanel():
 		vbox.Add(undoPanel, 0, wx.EXPAND | wx.BOTTOM, 10)
 		# vbox.Add(wx.StaticText(self.mainPanel, -1, '* Right-click tie for context menu', (5, 5)), 0, wx.BOTTOM, 5)
 
-		self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine (and Splice if non-empty)...")
+		self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine (and Splice if one exists)...")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
 		vbox.Add(self.saveButton, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL | wx.BOTTOM, 2)
 		self.saveButton.Enable(False)
@@ -628,12 +628,12 @@ class CompositePanel():
 		self.adjustButton.Enable(False)
 		self.clearButton.Enable(False)
 		self.undoButton.Enable(False)
+
+	def EnableSETButton(self, enable):
+		self.projectButton.Enable(enable)
 		
 	def OnSAVE(self, event):
 		self.parent.topMenu.OnSAVE(event=None)
-
-	def OnDismiss(self, evt):
-		self.Hide()
 
 	def OnAdjust(self, evt):
 		adjustCoreOnly = (self.applyCore.GetSelection() == 1) # 0 = this core and all below, 1 = this core only
@@ -642,16 +642,22 @@ class CompositePanel():
 		self.parent.Window.activeTie = -1
 		self.UpdateGrowthPlot()
 
-	# AffineTiePointChangeListener - update button state depending on
+	# AffineTiePointChangeListener - update controls' state depending on
     # new number of active affine tie points
 	def TiePointCountChanged(self, count):
 		if count == 0:
+			self.applyCore.Enable(False)
+			self.actionType.Enable(False)
 			self.adjustButton.Enable(False)
 			self.clearButton.Enable(False)
+			self.comment.Enable(False)
 		elif count == 1:
 			self.clearButton.Enable(True)
 		elif count == 2:
+			self.applyCore.Enable(True)
+			self.actionType.Enable(True)
 			self.adjustButton.Enable(True)
+			self.comment.Enable(True)
 
 	def OnClearTie(self, evt):
 		self.parent.Window.ClearCompositeTies()
@@ -1531,11 +1537,13 @@ class SpliceIntervalPanel():
 			label = "Split {}".format(tie.getButtonName())
 		return label
 
-	# update delete button, tie/split button label and enabled state
+	# Enable/disable buttons and update button text to reflect splice state
 	def _updateButtons(self):
 		hasSel = self.parent.spliceManager.hasSelection() 
 		self.delButton.Enable(hasSel)
-		self.saveButton.Enable(self.parent.spliceManager.count() > 0)
+		hasIntervals = self.parent.spliceManager.count() > 0
+		self.saveButton.Enable(hasIntervals)
+		self.altSpliceButton.Enable(hasIntervals)
 		if hasSel:
 			self.delButton.SetLabel("Delete Interval {}".format(self.parent.spliceManager.getSelected().getHoleCoreStr()))
 			
@@ -3159,6 +3167,7 @@ class FilterPanel():
 		self.smCreate = wx.Button(smoothBtnPanel, -1, "Create", size=(120, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCreateSmooth, self.smCreate)
 		self.smDelete = wx.Button(smoothBtnPanel, -1, "Delete", size=(120, 30))
+		self.smDelete.Enable(False)
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnClearSmooth, self.smDelete)
 		smoothBtnSizer.Add(self.smCreate)
 		smoothBtnSizer.Add(self.smDelete)
@@ -3196,16 +3205,34 @@ class FilterPanel():
 		vbox_top.Add(cullPanel, 0, wx.TOP | wx.EXPAND, 5)
 		self.mainPanel.SetSizer(vbox_top)
 
+	# Disable all controls and re-init status text. Used when no data is loaded.
+	def DisableAllControls(self):
+		self.all.Enable(False)
+		self.all.Clear()
+		self.deciCreate.Enable(False)
+		self.deciDelete.Enable(False)
+		self.ClearDecimateStateText()
+		self.smCreate.Enable(False)
+		self.smDelete.Enable(False)
+		self.ClearSmoothStateText()
+		self.cullCreate.Enable(False)
+		self.cullDelete.Enable(False)
+		self.ClearCullStateText()
+
 	def OnLock(self):
 		self.locked = True 
 
 	def OnRelease(self):
 		self.locked = False 
 
+	def ClearCullStateText(self):
+		self.cullState1.SetLabel("No cull applied.")
+		self.cullState2.SetLabel("")
+		self.cullState3.SetLabel("")
+
 	def OnClearCull(self, event):
 		datatype = self._curType()
 		self.ApplyCull(datatype) # clear cull
-		# delete cull file or cull will return on next load!
 
 	def OnCreateCull(self, event):
 		dlg = dialog.CullDialog(self.parent, self._curCull())
@@ -3238,19 +3265,16 @@ class FilterPanel():
 		if datatype == "Natural Gamma":
 			datatype = "NaturalGamma"
 
+		# Delete cull file if it's been cleared. We no longer have an enable/disable mechanism
+		# for cull tables. If a cull file exists, it's "enabled" and we always apply it.
 		deleteTable = not bcull
 		self.parent.dataFrame.OnUPDATE_CULLTABLE(datatype, deleteTable)
 		self.UpdateCullState(self._curCull())
 		self.parent.Window.UpdateDrawing()
 
 	def UpdateCullState(self, cullData):
-		if cullData is None or cullData[1] == False:
-			self.cullState1.SetLabel("No cull applied.")
-			self.cullState2.SetLabel("")
-			self.cullState3.SetLabel("")
-			self.cullCreate.SetLabel("Create")
-			self.cullDelete.Enable(False)
-		elif cullData[1] == True:
+		hasCull = cullData is not None and cullData[1] == True
+		if hasCull:
 			print("cullData = {}".format(cullData))
 			statuses = self.GetCullStatusStrings(cullData)
 			# fill cullStateX text with applied culling parameters, maximum 3.
@@ -3259,8 +3283,11 @@ class FilterPanel():
 					cullState.SetLabel(statuses[index])
 				else:
 					cullState.SetLabel("")
-			self.cullCreate.SetLabel("Edit")
-			self.cullDelete.Enable(True)
+		else:
+			self.ClearCullStateText()
+		self.cullCreate.Enable(True)
+		self.cullCreate.SetLabel("Edit" if hasCull else "Create")
+		self.cullDelete.Enable(hasCull)
 
 	# Return true if the cull sign and value aren't the '9999.9' or '-9999.9' dummy values
 	# passed to py_correlator.cull() to indicate no cull depending on associated sign (<, >).
@@ -3285,6 +3312,7 @@ class FilterPanel():
 
 	# Update filter panels to reflect change in selected filter data type.
 	def SetTYPE(self, event):
+		self.all.Enable(True) # ensure dropdown is enabled
 		type = self._curType() # get self.all type, correcting for "Natural Gamma" spacing
 		data = self.parent.dataFrame.GetDECIMATE(type) # returns tuple of decimate, smooth data
 		self.UpdateDecimateState(data[0])
@@ -3325,20 +3353,25 @@ class FilterPanel():
 		deciValue = decdlg.deciValue
 		self.ApplyDecimate(datatype, deciValue)
 
+	def ClearDecimateStateText(self):
+		self.deciState.SetLabel("None (show all points).")
+
 	# Reset decimate filter to 1.
 	def OnClearDecimate(self, evt):
 		self.ApplyDecimate(self._curType(), 1)
 
 	# Update GUI to reflect current type's decimate filter.
-	def UpdateDecimateState(self, deci):
-		if int(deci) == 1:
-			self.deciState.SetLabel("None (show all points).")
-			self.deciCreate.SetLabel("Create")
-			self.deciDelete.Enable(False)
+	# deciStr: string representing decimate value for current type
+	def UpdateDecimateState(self, deciStr):
+		decimate = int(deciStr) > 1
+		if decimate:
+			self.deciState.SetLabel("Show every {} points".format(deciStr))
 		else:
-			self.deciState.SetLabel("Show every {} points".format(deci))
-			self.deciCreate.SetLabel("Edit")
-			self.deciDelete.Enable(True)
+			self.ClearDecimateStateText()
+			self.deciCreate.SetLabel("Create")
+		self.deciCreate.Enable(True)
+		self.deciCreate.SetLabel("Edit" if decimate else "Create")
+		self.deciDelete.Enable(decimate)
 
 	def _curType(self):
 		datatype = self.all.GetStringSelection()
@@ -3368,16 +3401,18 @@ class FilterPanel():
 		return cullData
 
 	def UpdateSmoothState(self, smoothData):
-		if smoothData is None:
-			self.smoothState1.SetLabel("No smoothing applied.")
-			self.smoothState2.SetLabel("")
-			self.smCreate.SetLabel("Create")
-			self.smDelete.Enable(False)
-		else:
+		if smoothData is not None:
 			self.smoothState1.SetLabel("Width: {} {}".format(smoothData.getWidthString(), smoothData.getUnitsString()))
 			self.smoothState2.SetLabel("Display: {}".format(smoothData.getStyleString().replace('&', '&&')))
-			self.smCreate.SetLabel("Edit")
-			self.smDelete.Enable(True)
+		else:
+			self.ClearSmoothStateText()
+		self.smCreate.Enable(True)
+		self.smCreate.SetLabel("Create" if smoothData is None else "Edit")
+		self.smDelete.Enable(smoothData is not None)
+
+	def ClearSmoothStateText(self):
+		self.smoothState1.SetLabel("No smoothing applied.")
+		self.smoothState2.SetLabel("")
 
 	def OnClearSmooth(self, event):
 		datatype = self._curType()

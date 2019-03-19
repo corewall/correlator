@@ -1312,6 +1312,7 @@ class MainFrame(wx.Frame):
 				if start == last:
 					break
 
+	# Clear all loaded data.
 	def OnNewData(self, event):
 		if self.Window.HoleData != []:
 			#self.logFileptr.write("Closed All Files Loaded. \n\n")
@@ -1322,12 +1323,10 @@ class MainFrame(wx.Frame):
 					print "[DEBUG] Disconnect to the corelyzer"
 					self.client.close()
 					self.client = None
-
 		self.RawData = ""
 		self.SmoothData = "" 
 		self.CurrentDataNo = -1
 		self.Window.OnInit()
-
 		self.compositePanel.OnInitUI()
 		self.sectionSummary = None # brg?
 		self.affineManager.clear()
@@ -1336,17 +1335,7 @@ class MainFrame(wx.Frame):
 		self.eldPanel.OnInitUI()
 		self.autoPanel.OnInitUI(True)
 		self.agePanel.OnInitUI()
-
 		py_correlator.cleanData(1)
-		self.OnClearData()
-		# self.OnDisableMenu(0, False)
-		self.Window.UpdateDrawing()
-
-	# unused at present
-	# def OnClearAllData(self, event):
-	# 	self.OnClearData()
-
-	def OnClearData(self):
 		py_correlator.cleanData(2)
 		self.Window.ClearCompositeTies()
 		self.dataFrame.needsReload = False
@@ -1366,6 +1355,8 @@ class MainFrame(wx.Frame):
 		self.UpdateLogData()
 		self.UpdateData()
 		self.OnClearSAGANTie(None)
+		self.Window.UpdateDrawing()
+		self.Window.DisableDisplayControls()
 
 	def OnClearSpliceTie(self, event):
 		py_correlator.cleanData(4)
@@ -3719,6 +3710,9 @@ class CorrelatorApp(wx.App):
 		self.frame.Window.Hide()
 		self.frame.dataFrame.Show(True)
 		self.frame.topMenu.Show(True)
+
+		# ensure all data is cleared and all data-dependent Display controls are disabled
+		self.frame.OnNewData(None)
 
 		self.SetExitOnFrameDelete(False)
 
