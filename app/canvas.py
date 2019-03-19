@@ -1566,7 +1566,7 @@ class DataCanvas(wxBufferedWindow):
 					self.DrawSelectedSpliceGuide(dc, si, drawing_start, startX + self.holeWidth)
 		else:
 			ypos = self.getSpliceCoord(self.SPrulerStartDepth)
-			dc.DrawText("Drag a core from the left to start a splice.", self.splicerX + 20, ypos)
+			dc.DrawText("Drag a core from the left to start a splice.", self.splicerX + 20, ypos + 20)
 					
 		self.DrawAlternateSplice(dc, hole, smoothed)
 		
