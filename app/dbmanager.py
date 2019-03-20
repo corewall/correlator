@@ -3926,12 +3926,14 @@ class DataFrame(wx.Panel):
 
 				if len(failedInferredCores) == 0: # ensure all missing cores were inferred
 					self.parent.sectionSummary = sectionSummary
-					self.parent.OnShowMessage("Info", "Section summary data was inferred for cores {}.".format(missingStr), 1)
+					self.parent.OnShowMessage("Info", "Section summary data was inferred for cores:\n\n{}.".format(missingStr), 1)
 				else:
-					self.parent.OnShowMessage("Error", "Section summary data could not be loaded or inferred for cores {}.".format(','.join(failedInferredCores)), 1)
+					self.parent.OnShowMessage("Error", "Section summary data could not be loaded or inferred for cores:\n\n{}.".format(','.join(failedInferredCores)), 1)
 					success = False
 			else:
-				self.parent.OnShowMessage("Error", "No section summary data was found for cores {}.\nData cannot be loaded.".format(missingStr), 1)				
+				msg = "No section summary data was found for cores:\n\n{}.".format(missingStr)
+				msg += "\n\nCannot load without section summary data for all cores in measurement data."
+				self.parent.OnShowMessage("Error", msg, 1)
 				success = False
 
 		return success
