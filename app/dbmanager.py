@@ -806,7 +806,7 @@ class DataFrame(wx.Panel):
 		return
 	
 	def EXPORT_CORE_DATA(self, selectedIdx, isType):
-		if len(self.parent.Window.HoleData) > 0 or len(self.parent.Window.SmoothData) > 0:
+		if self.DisplayContainsData():
 			if not self.ConfirmClearDisplayData():
 				return
 		
@@ -6000,8 +6000,14 @@ class DataFrame(wx.Panel):
 				return line[0:ith-1]
 		return line 
 
+	def DisplayContainsData(self):
+		return len(self.parent.Window.HoleData) > 0 or len(self.parent.Window.SmoothData) > 0
+
 	# open data file(s) and display in generic Import spreadsheet
 	def OnOPEN(self):
+		if self.DisplayContainsData() and not self.ConfirmClearDisplayData():
+			return
+
 		self.importbtn.Enable(True)
 		self.importbtn.SetLabel("Import")
 		self.OnINITGENERICSHEET()
@@ -6269,6 +6275,9 @@ class DataFrame(wx.Panel):
 
 
 	def OnUPDATE(self):
+		if self.DisplayContainsData() and not self.ConfirmClearDisplayData():
+			return
+
 		selectItem = self.selectedIdx
 		if len(self.tree.GetItemText(selectItem, 8)) > 0: # single file
 			parentItem = self.tree.GetItemParent(selectItem)
