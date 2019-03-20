@@ -3142,7 +3142,8 @@ class AffineController:
 		if len(intervalsToRemove) > 0:
 			msg = "This operation affects cores included in the current splice:\n\n"
 			msg += "{}\n\n".format(', '.join(sorted([str(sc) for sc in coresInSplice])))
-			msg += "These cores will be removed from the splice. Do you want to continue?"
+			msg += "These cores will be removed from the splice, which cannot be undone.\n\n"
+			msg += "Do you want to continue?"
 			if self.parent.OnShowMessage("Splice Intervals Affected", msg, 0) == wx.ID_YES:
 				for interval in intervalsToRemove:
 					self.parent.spliceManager.delete(interval)
