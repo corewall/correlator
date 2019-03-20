@@ -32,7 +32,7 @@ class HoldDialog(wx.Frame):
 		#self.EndModal(wx.ID_OK)
 
 
-def MessageDialog(parent, title, msg, nobutton):
+def MessageDialog(parent, title, msg, nobutton, makeNoDefault=False):
 	style = 0
 	if title == "Error":
 		style = wx.ICON_ERROR
@@ -41,6 +41,8 @@ def MessageDialog(parent, title, msg, nobutton):
 
 	if nobutton == 0:
 		style = style | wx.YES_NO
+		if makeNoDefault:
+			style = style | wx.NO_DEFAULT
 	elif nobutton == 1:
 		style = style | wx.OK
 	elif nobutton == 2:

@@ -967,8 +967,8 @@ class MainFrame(wx.Frame):
 		dlg.ShowModal()
 		dlg.Destroy()
 
-	def OnShowMessage(self, type, msg, numButton):
-		dlg = dialog.MessageDialog(self, type, msg, numButton)
+	def OnShowMessage(self, type, msg, numButton, makeNoDefault=False):
+		dlg = dialog.MessageDialog(self, type, msg, numButton, makeNoDefault)
 		dlg.Centre(wx.CENTER_ON_SCREEN)
 		ret = dlg.ShowModal()
 		dlg.Destroy()
@@ -2449,7 +2449,7 @@ class MainFrame(wx.Frame):
 				"To apply these changes, select Load from the right-click menu.\n\n" \
 				"Continue to the Display?"
 			self.dataFrame.needsReload = False # warn only once
-			if self.OnShowMessage("Data Manager Change(s) Detected", msg, 0) != wx.ID_YES:
+			if self.OnShowMessage("Data Manager Change(s) Detected", msg, 0, makeNoDefault=True) != wx.ID_YES:
 				return
 
 		self.dataFrame.propertyIdx = None
