@@ -1523,11 +1523,11 @@ class MainFrame(wx.Frame):
 
 		f.close()
 
-
-	def OnInitDataUpdate(self):
+	def OnInitDataUpdate(self, redraw=True):
 		self.UpdateCORE()
 		self.UpdateSMOOTH_CORE()
-		self.Window.UpdateDrawing()
+		if redraw:
+			self.Window.UpdateDrawing()
 		return
 
 	################################################################################################

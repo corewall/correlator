@@ -6266,9 +6266,11 @@ class DataFrame(wx.Panel):
 		self.parent.OnNewData(None)
 		self.parent.LOCK = 0
 		py_correlator.openHoleFile(filename, -1, type, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
-		self.parent.OnInitDataUpdate()
+		# 3/19/2019: Don't redraw, it can throw an error due to lack of affine information.
+		# And we immediately clear the data anyway...
+		self.parent.OnInitDataUpdate(redraw=False)
 		self.parent.LOCK = 1
-		self.parent.OnNewData(None)
+		self.parent.OnNewData(None) # ...here!
 
 		self.AutoImportSectionSummary(source) # update section summary
 
