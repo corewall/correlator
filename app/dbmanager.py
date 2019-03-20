@@ -575,6 +575,11 @@ class DataFrame(wx.Panel):
 		popupMenu.Append(1, "&Import Section Summary File(s)...")
 		wx.EVT_MENU(popupMenu, 1, self.OnSecSummMenu)
 
+	def ConfirmClearDisplayData(self):
+		msg = "This operation will clear all data in the Display, including "
+		msg += "unsaved affine and splice tables. Continue?"
+		return self.parent.OnShowMessage("Warning", msg, 2) == wx.ID_OK
+
 	# build appropriate right-click menu based on selection type - rather than pulling
 	# text strings from the View to determine what's what, we should be asking the Model!
 	def SelectTREE(self, event):
@@ -801,9 +806,8 @@ class DataFrame(wx.Panel):
 		return
 	
 	def EXPORT_CORE_DATA(self, selectedIdx, isType):
-		if len(self.parent.Window.HoleData) > 0:
-			msg = "Exporting core data will clear the current session, including unsaved affine and splice tables. Continue?"
-			if self.parent.OnShowMessage("Warning", msg, 0) != wx.ID_YES:
+		if len(self.parent.Window.HoleData) > 0 or len(self.parent.Window.SmoothData) > 0:
+			if not self.ConfirmClearDisplayData():
 				return
 		
 		dlg = dialog.ExportCoreDialog(self)
@@ -2254,8 +2258,7 @@ class DataFrame(wx.Panel):
 
 			if title == back_title:
 				if type == "*" or back_type == "*" or type == back_type:
-					ret = self.parent.OnShowMessage("Information", "Loaded data will be cleared. Continue?", 2)
-					if ret == wx.ID_OK:
+					if self.ConfirmClearDisplayData():
 						self.parent.OnNewData(None)
 						self.selectBackup = []
 						self.loadedSiteNode = None
