@@ -3632,10 +3632,10 @@ class PreferencesPanel():
 		depthRangeSizer = wx.BoxSizer(wx.HORIZONTAL)
 		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, "Interval"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 15)
 		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, 'min'), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.depthRangeMin = wx.TextCtrl(depthRangePanel, -1, "11.0", size=(50,-1))
+		self.depthRangeMin = wx.TextCtrl(depthRangePanel, -1, "11.0", size=(65,-1))
 		depthRangeSizer.Add(self.depthRangeMin, 0, wx.LEFT, 5)
 		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, 'max'), 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
-		self.depthRangeMax = wx.TextCtrl(depthRangePanel, -1, "25.0", size=(50, -1))
+		self.depthRangeMax = wx.TextCtrl(depthRangePanel, -1, "25.0", size=(65, -1))
 		depthRangeSizer.Add(self.depthRangeMax, 0, wx.LEFT, 5)
 
 		depthRangePanel.SetSizer(depthRangeSizer)
@@ -3688,10 +3688,10 @@ class PreferencesPanel():
 		varRangeSizer.Add(wx.StaticText(varScalePanel, -1, "Range"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 15)
 
 		varRangeSizer.Add(wx.StaticText(varScalePanel, -1, "min"), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.varMin = wx.TextCtrl(varScalePanel, -1, "0", size=(50,-1))
+		self.varMin = wx.TextCtrl(varScalePanel, -1, "0", size=(65,-1))
 		varRangeSizer.Add(self.varMin, 0, wx.LEFT, 5)
 		varRangeSizer.Add(wx.StaticText(varScalePanel, -1, "max"), 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
-		self.varMax = wx.TextCtrl(varScalePanel, -1, "20", size=(50,-1))
+		self.varMax = wx.TextCtrl(varScalePanel, -1, "20", size=(65,-1))
 		varRangeSizer.Add(self.varMax, 0, wx.LEFT, 5)
 
 		varScaleSizer.Add(varRangeSizer, 0, wx.BOTTOM, 5)
