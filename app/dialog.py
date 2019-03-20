@@ -182,7 +182,11 @@ class ViewDataFileDialog(wx.Dialog):
 				self.table.SetCellValue(ridx, cidx, cellStr) # skip leading index column
 
 		self.table.AutoSize() # resize columns to fit header+data...bogs things down with large files
-		self.SetClientSize(self.table.GetSize()) # fit dialog to table
+		tableWidth, tableHeight = self.table.GetSize()
+		# 50 is a fudge factor to account for the window's titlebar and Close button panel.
+		# Without it, window was too short to see contents of short files (<= 3 rows),
+		# forcing user to resize, which was silly.
+		self.SetClientSize((tableWidth, tableHeight + 50))
 
 	def OnClose(self, evt):
 		self.EndModal(wx.ID_OK)
