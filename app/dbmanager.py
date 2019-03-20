@@ -161,6 +161,11 @@ class DataFrame(wx.Panel):
 	def OnSecSummMenu(self, event):
 		opId = event.GetId()
 		if opId == 1:
+			if self.DisplayContainsData():
+				if not self.ConfirmClearDisplayData():
+					return
+				else:
+					self.parent.OnNewData(None)
 			self.ImportSectionSummary()
 
 	def DeleteSecSummFile(self, event=None):
@@ -4457,8 +4462,7 @@ class DataFrame(wx.Panel):
 			else:
 				fullname = self.parent.DBPath + 'db/' + self.title + '/' + filename
 
-		enableAddedTable = False if importflag else True
-		self.EnableSavedTablesItem(subroot, enable=enableAddedTable, programmatic=True)
+		self.EnableSavedTablesItem(subroot, enable=True, programmatic=True)
 
 		return fullname
 
@@ -5490,6 +5494,12 @@ class DataFrame(wx.Panel):
 			self.parent.OnShowMessage("Information", "Successfully imported", 1)
 	
 	def OnIMPORT_TABLE(self, tableType):
+		if self.DisplayContainsData():
+			if not self.ConfirmClearDisplayData():
+				return
+			else:
+				self.parent.OnNewData(None)
+
 		self.propertyIdx = self.tree.GetSelection()
 		parentItem = self.tree.GetItemParent(self.propertyIdx)
 		self.title = self.tree.GetItemText(parentItem, 0)
