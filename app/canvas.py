@@ -2506,7 +2506,6 @@ class DataCanvas(wxBufferedWindow):
 		if flag == 2:
 			x = self.Width - 220
 
-		self.minData = -1
 		self.statusStr = self.statusStr + "Hole: " + coreInfo.hole + " Core: " + coreInfo.holeCore
 		dc.DrawText("Hole: " + coreInfo.hole + " Core: " + coreInfo.holeCore, x, self.startDepth)
 		dc.DrawText("Min: " + str(coreInfo.minData) + " Max: " + str(coreInfo.maxData), x, self.startDepth + 20)
@@ -2516,7 +2515,6 @@ class DataCanvas(wxBufferedWindow):
 		qualityStr += "Good" if coreInfo.quality == '0' else "Bad"
 		dc.DrawText(qualityStr, x, self.startDepth + 60) 
 
-		self.minData = coreInfo.minData
 		return (coreInfo.type, coreInfo.hole)
 
 	# Draw dashed rectangle around given bounds
@@ -2776,6 +2774,7 @@ class DataCanvas(wxBufferedWindow):
 						if self.showCoreInfo:
 							self.DrawGraphInfo(dc, coreInfo, flag)
 						holeType, holeName = coreInfo.type, coreInfo.hole
+						self.minData = coreInfo.minData
 						self.selectedHoleType = holeType
 						self.DrawMouseInfo(dc, coreInfo, x, y, startx, flag, holeType)
 			if holeType != "":
