@@ -144,20 +144,27 @@ class TopMenuFrame(wx.Frame):
 			self.parent.OnShowMessage("Error", "There is no data loaded.", 1)
 			return
 
-		# todo?: don't show dialog if there isn't an affine or splice enabled - just Create New
-		updateExisting = False
-
 		# We want to encourage users to save affine and splices together in the hopes that for
 		# the most part, the file numbers of comapatible affines and splices will be the same.
 		# Save splice if it's changed, or if there's at least one interval to save, even if
 		# nothing has changed. spliceManager.dirty implies at least one interval - it's set to
 		# False if the only interval in the splice was deleted.
 		saveSplice = self.parent.spliceManager.dirty or self.parent.spliceManager.count() > 0
-
-		msg = "Save new affine{}, or update existing file{}?".format(" and splice" if saveSplice else "", "s" if saveSplice else "")
-		dlg = dialog.Message3Button(self.parent, msg, yesLabel="Create New", okLabel="Update Existing", cancelLabel="Cancel")
+		enableUpdateExisting = self.parent.affineManager.currentAffineFile is not None and self.parent.spliceManager.currentSpliceFile is not None
+		# enableUpdateExisting = self.parent.affineManager.currentAffineFile is not None or self.parent.spliceManager.currentSpliceFile is not None
+		if not enableUpdateExisting:
+			if saveSplice:
+				msg = "Create new affine and splice files?"
+			else:
+				msg = "Create new affine file?"
+		else:
+			msg = "Create new affine and splice, or update existing files?"
+			#msg = "Save new affine{}, or update existing file{}?".format(" and splice" if saveSplice else "", "s" if saveSplice else "")
+		dlg = dialog.SaveDialog(self.parent, msg, enableUpdateExisting)
 		ret = dlg.ShowModal()
 		dlg.Destroy()
+	
+		updateExisting = False
 		if ret in [wx.ID_OK, wx.ID_YES]:
 			updateExisting = (ret == wx.ID_OK)
 		else: # canceled

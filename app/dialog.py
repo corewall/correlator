@@ -450,7 +450,49 @@ class AgeListDialog(wx.Dialog):
 				self.selectedNo = i 
 				return
 
+# Save dialog used in 3.0. Largely a duplicate of unused Message3Button
+# with a few modifications. Shameful, but time is short.
+class SaveDialog(wx.Dialog):
+	def __init__(self, parent, msg, enableUpdateExisting):
+		wx.Dialog.__init__(self, parent, -1, "About", style=wx.DEFAULT_DIALOG_STYLE)
 
+		self.Center()
+		vbox_top = wx.BoxSizer(wx.VERTICAL)
+		panel1 = wx.Panel(self, -1)
+		sizer = wx.FlexGridSizer(1, 2)
+		bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/help-32x32.png'))
+		sizer.Add(bmp, 0, wx.LEFT | wx.TOP, 9)
+		sizer.Add(wx.StaticText(panel1, -1, msg), 0, wx.LEFT | wx.TOP | wx.BOTTOM, 15)
+		panel1.SetSizer(sizer)
+		vbox_top.Add(panel1)
+
+		grid = wx.BoxSizer(wx.HORIZONTAL)
+		okBtn = wx.Button(self, wx.ID_YES, "Create New")
+		self.Bind(wx.EVT_BUTTON, self.OnYES, okBtn)
+		grid.Add(okBtn, 1, wx.LEFT | wx.RIGHT, 5)
+		noBtn = wx.Button(self, wx.ID_OK, "Update Existing")
+		grid.Add(noBtn, 1, wx.LEFT | wx.RIGHT, 5)
+		noBtn.Enable(enableUpdateExisting)
+		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Cancel")
+		grid.Add(cancelBtn, 1, wx.LEFT | wx.RIGHT, 5)
+		vbox_top.Add(grid, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
+
+		self.SetSizer(vbox_top)
+		self.GetSizer().Fit(self)
+		wx.EVT_KEY_UP(self, self.OnCharUp)
+
+	def OnYES(self, event):
+		self.EndModal(wx.ID_YES)
+
+	def OnCharUp(self,event):
+		keyid = event.GetKeyCode() 
+		if keyid == wx.WXK_RETURN:
+			self.EndModal(wx.ID_OK) 
+		elif keyid == wx.WXK_ESCAPE:
+			self.EndModal(wx.ID_CANCEL) 
+
+
+# Unused.
 class SaveTableDialog(wx.Dialog):
 	def __init__(self, parent, id, affine, splice):
 		wx.Dialog.__init__(self, parent, id, "Save", size=(340, 180),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE|wx.STAY_ON_TOP)
