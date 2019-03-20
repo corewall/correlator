@@ -35,7 +35,9 @@ FormatDict = {"Text":0, "CSV":1, "XML":2}
 
 # list of a site node's immediate non-measurement children 
 # STD_SITE_NODES = ["Saved Tables", "Downhole Log Data", "Stratigraphy", "Age Models", "Image Data", "Section Summaries"]
-STD_SITE_NODES = ['Saved Tables', 'Section Summaries']
+ST_NODE = "Saved Tables"
+SS_NODE = "Section Summaries"
+STD_SITE_NODES = [ST_NODE, SS_NODE]
 
 class DataFrame(wx.Panel):
 	def __init__(self, parent):
@@ -162,11 +164,12 @@ class DataFrame(wx.Panel):
 			self.ImportSectionSummary()
 
 	def DeleteSecSummFile(self, event=None):
-		secsummname = self.tree.GetItemText(self.selectedIdx, 1)
-		ret = self.parent.OnShowMessage("Confirm Delete", "Are you sure you want to delete {}?".format(secsummname), 2)
+		holeStr = self.tree.GetItemText(self.selectedIdx, 0)
+		ret = self.parent.OnShowMessage("Confirm Delete", "Are you sure you want to delete the section summary for hole {}?".format(holeStr), 2)
 		if ret == wx.ID_OK:
 			siteName = self.GetSelectedSiteName()
 			siteNode = self.GetSiteForNode(self.selectedIdx)
+			secsummname = self.tree.GetItemText(self.selectedIdx, 1)
 			filepath = self.parent.DBPath + 'db/' + siteName + '/' + secsummname
 			os.remove(filepath)
 			self.tree.Delete(self.selectedIdx)
@@ -518,6 +521,14 @@ class DataFrame(wx.Panel):
 			siteNode = self.IsRootNode(parent)
 		return siteNode
 	
+	# Is self.tree node a Saved Tables node?
+	def IsSavedTablesNode(self, node):
+		savedTablesNode = False
+		parent = self.tree.GetItemParent(node)
+		if parent.IsOk() and self.IsSiteNode(parent) and self.tree.GetItemText(node, 0) == ST_NODE:
+			savedTablesNode = True
+		return savedTablesNode
+
 	# Is self.tree node a Root node?
 	# Appears that in modern versions of wx (4.0+), the root node
 	# is invisible and never accessible. In the older version used
@@ -2281,9 +2292,18 @@ class DataFrame(wx.Panel):
 				if self.IsSiteNode(selectItem):
 					msg += "all data for site " + label + "?"
 				elif self.IsDatatypeNode(selectItem):
-					msg += "all data of type " + label + "?"
-				else: # measurement data node
-					msg += self.tree.GetItemText(selectItem, 8) + "?"
+					parent = self.tree.GetItemParent(selectItem)
+					siteStr = self.tree.GetItemText(parent, 0)
+					msg += "all " + label +  " data for site " + siteStr + "?"
+				else: # saved table or measurement data node
+					parent = self.tree.GetItemParent(selectItem)
+					if self.IsSavedTablesNode(parent):
+						tableType = self.tree.GetItemText(selectItem, 1)
+						msg += "the {} table {}?".format(tableType.lower(), self.tree.GetItemText(selectItem, 8))
+					else: # measurement data node
+						datatypeStr = self.tree.GetItemText(parent, 0)
+						holeStr = self.tree.GetItemText(selectItem, 0)
+						msg += "{} data for hole {}?".format(datatypeStr, holeStr)
 				ret = self.parent.OnShowMessage("Confirm Delete", msg, 2)
 				if ret == wx.ID_OK:
 					idx = 1
