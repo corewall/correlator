@@ -4270,6 +4270,17 @@ class DataFrame(wx.Panel):
 		if tableLoaded != []:
 			if len(tableLoaded[1]) > 0:
 				filepath = tableLoaded[1]
+
+				if self.parent.GetPref('checkForSpliceCores'):
+					reqDataLoaded, missingData = self.parent.spliceManager.requiredDataIsLoaded(filepath)
+					if not reqDataLoaded:
+						msg = "The following cores are required by the enabled splice and cannot be found.\n\n"
+						for datatype, corelist in missingData.items():
+							msg += "{}: {}\n".format(datatype, ','.join(corelist))
+						msg += "\nData cannot be loaded with this splice enabled."
+						self.parent.OnShowMessage("Error", msg, 1)
+						return
+
 				if self.parent.spliceManager.canApplyAffine(filepath):
 					self.parent.spliceManager.loadSplice(filepath)
 				else:
@@ -6409,7 +6420,7 @@ class DataFrame(wx.Panel):
 		self.parent.LOCK = 0
 		py_correlator.openHoleFile(self.parent.DBPath + "db/" + dest, -1, ntype, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
 		#HYEJUNG CHANGING NOW
-		self.parent.OnInitDataUpdate()
+		self.parent.OnInitDataUpdate(redraw=False)
 		###
 		self.parent.LOCK = 1
 
@@ -7184,7 +7195,7 @@ class DataFrame(wx.Panel):
 			else:
 				self.parent.LOCK = 0	
 				py_correlator.openHoleFile(filename, -1, type, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
-				self.parent.OnInitDataUpdate()
+				self.parent.OnInitDataUpdate(redraw=False)
 				self.parent.LOCK = 1	
 
 				s = "Import Core Data: " + filename + "\n"

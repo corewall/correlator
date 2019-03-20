@@ -1798,9 +1798,11 @@ class ApplicationPreferencesDialog(wx.Dialog):
 
 		self.prefsMap = prefs
 
-		panel = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Data Loading Options"))
+		panel = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Data Loading Options"), orient=wx.VERTICAL)
 		self.inferSectionSummary = wx.CheckBox(self, -1, "Infer Section Summary if none is provided")
-		panel.Add(self.inferSectionSummary)
+		panel.Add(self.inferSectionSummary, 0, wx.BOTTOM, 5)
+		self.checkForSpliceCores = wx.CheckBox(self, -1, "Check for cores required by enabled splice")
+		panel.Add(self.checkForSpliceCores)
 		
 		buttonPanel = wx.Panel(self, -1)
 		buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1820,9 +1822,11 @@ class ApplicationPreferencesDialog(wx.Dialog):
 
 	def InitPrefs(self, prefs):
 		self.inferSectionSummary.SetValue(self.prefsMap['inferSectionSummary'])
+		self.checkForSpliceCores.SetValue(self.prefsMap['checkForSpliceCores'])
 
 	def UpdatePrefs(self):
 		self.prefsMap['inferSectionSummary'] = self.inferSectionSummary.IsChecked()
+		self.prefsMap['checkForSpliceCores'] = self.checkForSpliceCores.IsChecked()
 
 	def OnOK(self, evt):
 		self.UpdatePrefs()

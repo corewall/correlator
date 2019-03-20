@@ -3573,6 +3573,13 @@ class SpliceController:
 		if datatype is None:
 			datatype = row["Data Used"]
 			# older SIT tables may not have Data Used values...grab first available type
+			# 3/19/2019: I believe the block below will always fail while Loading because
+			# findCoreInfoByHoleCore() is checking DrawData["CoreInfo"], which will be empty
+			# because we haven't drawn anything yet! It and other related methods should be
+			# searching HoleData instead. Thankfully this is only an issue with old SIT tables
+			# without a 'Data Used' column, which we're unlikely to encounter at this point.
+			# But it also prevents us from substituting an available datatype if the 'Data Used'
+			# type is unavailable.
 			if datatype is None:
 				ci = self.parent.Window.findCoreInfoByHoleCore(hole, core)
 				datatype = ci.type
@@ -3612,6 +3619,7 @@ class SpliceController:
 		return matches
 
 	# do currently-applied affine shifts match corresponding Splice Interval file's shifts?
+	# filepath: path to splice interval table to check against affine shifts
 	def canApplyAffine(self, filepath):
 		canApply = True
 		df = tabularImport.readFile(filepath)
@@ -3621,6 +3629,29 @@ class SpliceController:
 				canApply = False
 				break
 		return canApply
+
+	# Check whether all the datatype-core combinations required by a splice are
+	# currently loaded. Returns a (boolean, dict) tuple. If the first element is
+	# True, all required datatype-cores are loaded and the dict will be empty.
+	# If False, required datatype-cores are missing, and are listed in the dict
+	# with key=datatype name : value=a list of strings indicating missing cores
+	# for that datatype.
+	# splicePath: path to splice file to check against loaded cores
+	def requiredDataIsLoaded(self, splicePath):
+		missingData = {}
+		df = tabularImport.readFile(splicePath)
+		for index, row in df.iterrows():
+			hole, core, datatype = row['Hole'], str(row['Core']), row['Data Used']
+			if datatype == "NaturalGamma":
+				datatype = "Natural Gamma"
+			coreinfo = self.parent.Window.findCoreInfoByHoleCoreType_v2(hole, core, datatype)
+			if coreinfo is None:
+				missingCoreStr = "{}{}".format(str(hole), str(core))
+				if datatype in missingData:
+					missingData[datatype].append(missingCoreStr)
+				else:
+					missingData[datatype] = [missingCoreStr]
+		return len(missingData) == 0, missingData
 
 	# Return list of splice intervals matching specified hole and core.
 	def findIntervals(self, hole, core):
@@ -3748,8 +3779,10 @@ if __name__ == "__main__":
 	# check for preferences file, if none create default
 	prefsPath = os.path.join(configDir, "prefs.pk")
 	Prefs = prefs.Prefs(prefsPath)
-	if not Prefs.get("inferSectionSummary", None):
+	if not Prefs.contains("inferSectionSummary"):
 		Prefs.set("inferSectionSummary", False)
+	if not Prefs.contains("checkForSpliceCores"):
+		Prefs.set("checkForSpliceCores", True)
 
 	if platform_name[0] == "Windows":
 		if os.access(User_Dir  + "\\Correlator\\", os.F_OK) == False:

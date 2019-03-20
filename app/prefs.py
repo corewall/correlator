@@ -34,6 +34,9 @@ class Prefs:
             
     def get(self, key, default=""):
         return self.prefmap[key] if key in self.prefmap else default
+
+    def contains(self, key):
+        return key in self.prefmap
     
     def set(self, key, value):
         self.prefmap[key] = value
