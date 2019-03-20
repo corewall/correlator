@@ -809,11 +809,16 @@ class DataFrame(wx.Panel):
 		if self.DisplayContainsData():
 			if not self.ConfirmClearDisplayData():
 				return
-		
+
+		# 3/19/2019: Don't actually show dialog since only remaining option is "Apply Cull",
+		# which doesn't work correctly. Can't comment it out completely because much of the process
+		# below depends on its variables, all of which should be set to False by default and
+		# thus unused.
 		dlg = dialog.ExportCoreDialog(self)
-		dlg.Centre()
-		ret = dlg.ShowModal()
-		if ret == wx.ID_OK:
+		# dlg.Centre()
+		# ret = dlg.ShowModal()
+		# if ret == wx.ID_OK:
+		if True: # 3/19/2019 avoid re-indenting colossal block...gross but minimizing changes due to imminent release
 			#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
 			opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
 			ret = opendlg.ShowModal()
