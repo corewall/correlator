@@ -139,7 +139,13 @@ class Message3Button(wx.Dialog):
 # Dialog with a wx.Grid widget for viewing tabular data
 class ViewDataFileDialog(wx.Dialog):
 	def __init__(self, parent, title, dataframe):
-		wx.Dialog.__init__(self, parent, -1, title, size=(600,400), style=wx.RESIZE_BORDER | wx.CLOSE_BOX)
+		if platform_name[0] == "Windows":
+			# Using wx.RESIZE_BORDER | wx.CLOSE_BOX resulted in odd titlebar-less window on Windows.
+			# This set of style options yields a typical window.
+			style = wx.DEFAULT_DIALOG_STYLE | wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.RESIZE_BORDER
+		else:
+			style = wx.RESIZE_BORDER | wx.CLOSE_BOX
+		wx.Dialog.__init__(self, parent, -1, title, style=style)
 
 		self.dataframe = dataframe
 
@@ -183,6 +189,7 @@ class ViewDataFileDialog(wx.Dialog):
 
 		self.table.AutoSize() # resize columns to fit header+data...bogs things down with large files
 		tableWidth, tableHeight = self.table.GetSize()
+		# 3/20/2019 todo: revisit this and find a less fudgy solution!
 		# 50 is a fudge factor to account for the window's titlebar and Close button panel.
 		# Without it, window was too short to see contents of short files (<= 3 rows),
 		# forcing user to resize, which was silly.
