@@ -1912,7 +1912,7 @@ class BackgroundPanel(wx.Panel):
 
 class SplashScreen(wx.Dialog):
 	def __init__(self, parent, id, user, version):
-		panel_size=(800, 380)
+		panel_size = (800, 380) if platform_name[0] != "Windows" else (800, 390) # extra space for JRSO logo on Win
 		wx.Dialog.__init__(self, parent, id, "Correlator " + version, size=panel_size, style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
 		panel = BackgroundPanel(self, 'images/corewall_suite.jpg', panel_size)
