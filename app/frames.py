@@ -226,7 +226,7 @@ class TopMenuFrame(wx.Frame):
 	# 	# self.parent.Window.sideNote.SetSelection(6)
 
 	def OnEXIT(self, event):
-		self.parent.OnExitButton(event)
+		self.parent.OnExitAction(event)
 
 class ProgressFrame(wx.Frame):
 	def __init__(self, parent, max):

@@ -251,7 +251,8 @@ class MainFrame(wx.Frame):
 		# menuFile.AppendSeparator()
 
 		miFileExit = menuFile.Append(wx.ID_EXIT, "&Exit\tCtrl-X", "Exit Correlator")
-		self.Bind(wx.EVT_MENU, self.OnExitButton, miFileExit)
+		self.Bind(wx.EVT_MENU, self.OnExitAction, miFileExit)
+		self.Bind(wx.EVT_CLOSE, self.OnClose)
 		menuBar.Append(menuFile, "&File")
 
 		# View 
@@ -750,7 +751,17 @@ class MainFrame(wx.Frame):
 		elif self.showELDPanel == 1:
 			self.eldPanel.OnAddData(l)
 
-	def OnExitButton(self, event):
+	# Called when Exit menu item or button is used. Pass None
+	# for OnClose() event since triggeirng event was a CommandEvent,
+	# not a CloseEvent and therefore doesn't have the Veto() method.
+	def OnExitAction(self, event):
+		self.OnClose(event=None)
+
+	# Bound directly only to wx.EVT_CLOSE, triggered by native window "X"
+	# button. In that case event is a CloseEvent, which should be vetoed
+	# if user opts to Cancel exit.
+	# event - a CloseEvent if triggered by wx.EVT_CLOSE, otherwise None
+	def OnClose(self, event):
 		if self.client != None:
 			if self.Window.HoleData != []: 
 				try:
@@ -769,15 +780,16 @@ class MainFrame(wx.Frame):
 			ret = self.OnShowMessage("About", "Do you want to save changes?", 2)
 			if ret == wx.ID_OK:
 				self.topMenu.OnSAVE(event)
-
-				self.AffineChange = False 
-				self.SpliceChange = False 
-				self.EldChange = False 
-				self.AgeChange = False 
-				self.TimeChange = False 
+				self.AffineChange = False
+				self.SpliceChange = False
+				self.EldChange = False
+				self.AgeChange = False
+				self.TimeChange = False
 
 		ret = self.OnShowMessage("About", "Do you want to Exit?", 2)
 		if ret == wx.ID_CANCEL:
+			if event is not None:
+				event.Veto()
 			return
 
 		self.SavePreferences()
@@ -791,7 +803,7 @@ class MainFrame(wx.Frame):
 		self.Window.Close(True)
 		self.dataFrame.Close(True)
 		self.topMenu.Close(True)
-		self.Close(True)
+		self.Destroy()
 		app.ExitMainLoop()
 
 	def UnsavedChanges(self):
