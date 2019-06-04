@@ -2317,6 +2317,10 @@ class DataFrame(wx.Panel):
 						datatypeStr = self.tree.GetItemText(parent, 0)
 						holeStr = self.tree.GetItemText(selectItem, 0)
 						msg += "{} data for hole {}?".format(datatypeStr, holeStr)
+				msg2 = "Data will be permanently removed from the Correlator workspace; this cannot be undone."
+				msg3 = "To reconstruct the workspace after deletion, you must re-import data files and/or saved affine and splice tables."
+				msg += "\n\n{}".format(msg2)
+				msg += "\n\n{}".format(msg3)
 				ret = self.parent.OnShowMessage("Confirm Delete", msg, 2)
 				if ret == wx.ID_OK:
 					idx = 1
