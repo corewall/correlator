@@ -222,6 +222,7 @@ class DataCanvas(wxBufferedWindow):
 		self.showAffineTieArrows = True
 		self.showSectionDepths = True
 		self.showCoreInfo = False # show hole, core, min/max, quality, stretch on mouseover - see DrawGraphInfo()
+		self.showOutOfRangeData = False # if True, clip data plots to the width of the hole's plot area
 		self.LogTieList = []
 		self.LogClue = True    # brgtodo ditto
 
@@ -1466,8 +1467,8 @@ class DataCanvas(wxBufferedWindow):
 		whiteBrush = wx.Brush(wx.WHITE)
 		dc.SetPen(whitePen)
 		dc.SetBrush(whiteBrush)
-		startx = self.splicerX + 50 # beginning of splice plot area
-		endx = self.splicerX + 100 + self.spliceHoleWidth * 2 # right end of splice guide area
+		startx = self.splicerX + self.plotLeftMargin # beginning of splice plot area
+		endx = startx + (self.plotLeftMargin + self.holeWidth) * 2 # right end of splice guide area
 		ycoord = self.getSpliceCoord(tie.depth())
 		circlex = startx + self.spliceHoleWidth
 		namestr = tie.getName()
@@ -1512,7 +1513,8 @@ class DataCanvas(wxBufferedWindow):
 		self._UpdateSpliceRange(rangemin, rangemax)
 		self._SetSpliceRangeCoef(smoothed)
 		
-		dc.SetClippingRegion(clip_rect.x, clip_rect.y, clip_rect.width, clip_rect.height)
+		if not self.showOutOfRangeData:
+			dc.SetClippingRegion(clip_rect.x, clip_rect.y, clip_rect.width, clip_rect.height)
 
 		# as loaded or created on the spot, intervals with affine shifts work well, but all hell breaks
 		# loose when a core with an interval in the splice is shifted...listener/update?
@@ -1527,9 +1529,6 @@ class DataCanvas(wxBufferedWindow):
 			usScreenPoints = self.GetScreenPoints(smoothdata, drawing_start, startX)
 
 		selected = (interval == self.parent.spliceManager.getSelected())
-		if selected:
-			for tie in self.parent.spliceManager.getTies():
-				self.DrawSpliceIntervalTie(dc, tie) 
 		if len(screenPoints) >= 1:
 			dc.SetPen(wx.Pen(wx.GREEN, 2)) if selected else	dc.SetPen(wx.Pen(self.colorDict['splice'], 1)) 
 			dc.DrawLines(screenPoints) if (len(screenPoints) > 1) else dc.DrawPoint(screenPoints[0][0], screenPoints[0][1])	
@@ -1543,7 +1542,12 @@ class DataCanvas(wxBufferedWindow):
 			else:
 				print "Can't draw unsmoothed {} data over smoothed, it contains 0 points".format(interval.coreinfo.getName())
 		
-		dc.DestroyClippingRegion()
+		if not self.showOutOfRangeData:
+			dc.DestroyClippingRegion()
+
+		if selected:
+			for tie in self.parent.spliceManager.getTies():
+				self.DrawSpliceIntervalTie(dc, tie) 
 		self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX)
 		
 	def GetScreenPoints(self, dataPoints, drawingStart, startX):
@@ -1581,20 +1585,20 @@ class DataCanvas(wxBufferedWindow):
 			startX = self.splicerX + self.plotLeftMargin
 			clip_y = self.startDepth - 20
 			clip_height = self.Height - clip_y
-			# dc.SetClippingRegion(x=startX, y=clip_y, width=self.holeWidth + self.plotLeftMargin, height=clip_height)
 			clip_rect = wx.Rect(x=startX, y=clip_y, width=self.holeWidth + self.plotLeftMargin, height=clip_height)
 			for si in self.parent.spliceManager.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
 				self.DrawSpliceInterval(dc, si, drawing_start, startX, smoothed, clip_rect)
-			# dc.DestroyClippingRegion()
 			if self.parent.spliceManager.hasSelection():
 				selected_x = startX + self.holeWidth + self.plotLeftMargin
 				# draw debug guides for selected core plot, immediately to right of splice
 				# dc.SetPen(wx.Pen(wx.RED, 1))
 				# dc.DrawLine(selected_x, clip_y, selected_x, clip_y + clip_height)
-				# dc.DrawLine(selected_x + self.holeWidth + self.plotLeftMargin, clip_y, selected_x + self.holeWidth + self.plotLeftMargin, clip_y + clip_height)				
-				dc.SetClippingRegion(x=selected_x, y=clip_y, width=self.holeWidth + self.plotLeftMargin, height=clip_height)
+				# dc.DrawLine(selected_x + self.holeWidth + self.plotLeftMargin, clip_y, selected_x + self.holeWidth + self.plotLeftMargin, clip_y + clip_height)
+				if not self.showOutOfRangeData:
+					dc.SetClippingRegion(x=selected_x, y=clip_y, width=self.holeWidth + self.plotLeftMargin, height=clip_height)
 				self.DrawSelectedSpliceGuide(dc, self.parent.spliceManager.getSelected(), drawing_start, startX + self.holeWidth)
-				dc.DestroyClippingRegion()
+				if not self.showOutOfRangeData:
+					dc.DestroyClippingRegion()
 
 		else:
 			ypos = self.getSpliceCoord(self.SPrulerStartDepth)
@@ -2282,7 +2286,8 @@ class DataCanvas(wxBufferedWindow):
 			return
 
 		# clip to plot area
-		dc.SetClippingRegion(x=startX, y=self.startDepth - 20, width=self.holeWidth + self.plotLeftMargin, height=self.Height-(self.startDepth-20))
+		if not self.showOutOfRangeData:
+			dc.SetClippingRegion(x=startX, y=self.startDepth - 20, width=self.holeWidth + self.plotLeftMargin, height=self.Height-(self.startDepth-20))
 
 		# draw lines
 		y = lines[-1][1] # deepest depth in core
@@ -2292,7 +2297,8 @@ class DataCanvas(wxBufferedWindow):
 			for pt in lines:
 				dc.DrawCircle(pt[0], pt[1], self.DiscretetSize)
 
-		dc.DestroyClippingRegion()
+		if not self.showOutOfRangeData:
+			dc.DestroyClippingRegion()
 
 		if smoothed == -1:
 			return
