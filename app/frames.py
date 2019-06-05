@@ -3264,10 +3264,10 @@ class FilterPanel():
 		self.parent.dataFrame.UpdateCULL(datatype, bcull, cullValue, cullNumber, value1, value2, sign1, sign2, join)
 		py_correlator.cull(datatype, bcull, cullValue, cullNumber, cullStrength, value1, value2, sign1, sign2, join)
 
-		self.parent.LOCK = 0 
+		self.parent.LOCK = 0
 		self.parent.UpdateCORE()
 		self.parent.UpdateSMOOTH_CORE()
-		self.parent.LOCK = 1 
+		self.parent.LOCK = 1
 
 		if datatype == "Natural Gamma":
 			datatype = "NaturalGamma"
@@ -3571,6 +3571,10 @@ class PreferencesPanel():
 	def OnShowCoreInfo(self, event):
 		self.parent.Window.showCoreInfo = self.showCoreInfo.IsChecked()
 		self.parent.Window.UpdateDrawing()
+
+	def OnShowOutOfRangeData(self, event):
+		self.parent.Window.showOutOfRangeData = self.showOutOfRangeData.IsChecked()
+		self.parent.Window.UpdateDrawing()
 		
 	# def OnShowLogShiftArrows(self, event):
 	# 	self.parent.Window.LogClue = self.showLogShiftArrows.IsChecked()
@@ -3599,6 +3603,8 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineTieArrows, self.showAffineTieArrows)
 		self.showCoreInfo = wx.CheckBox(viewPanel, -1, "Show core info on mouseover")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowCoreInfo, self.showCoreInfo)
+		self.showOutOfRangeData = wx.CheckBox(viewPanel, -1, "Show data ranging beyond hole's plot area")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowOutOfRangeData, self.showOutOfRangeData)
 		# self.showLogShiftArrows = wx.CheckBox(viewPanel, -1, "Show log shift arrows")
 		# self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)
 
@@ -3609,7 +3615,8 @@ class PreferencesPanel():
 		viewSizer.Add(self.showAffineTieArrows, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showCoreInfo, 0, wx.BOTTOM, 5)
 		# viewSizer.Add(self.showLogShiftArrows, 0, wx.BOTTOM, 5)
-		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)		
+		viewSizer.Add(self.showOutOfRangeData, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)
 		viewPanel.SetSizer(viewSizer)
 		vbox_top.Add(viewPanel, 0, wx.BOTTOM | wx.EXPAND, 10)
 
