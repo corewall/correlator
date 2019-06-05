@@ -820,14 +820,11 @@ class DataFrame(wx.Panel):
 		# below depends on its variables, all of which should be set to False by default and
 		# thus unused.
 		dlg = dialog.ExportCoreDialog(self)
-		# dlg.Centre()
-		# ret = dlg.ShowModal()
-		# if ret == wx.ID_OK:
-		if True: # 3/19/2019 avoid re-indenting colossal block...gross but minimizing changes due to imminent release
-			#opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
+		dlg.Centre()
+		ret = dlg.ShowModal()
+		if ret == wx.ID_OK:
 			opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
 			ret = opendlg.ShowModal()
-			#output_path = opendlg.GetPath()
 			if ret != wx.ID_OK:
 				return
 
@@ -923,18 +920,6 @@ class DataFrame(wx.Panel):
 
 			if isType == False:
 				parentItem = self.tree.GetItemParent(selectedIdx)
-				totalcount = self.tree.GetChildrenCount(parentItem, False)
-				if totalcount > 0:
-					child = self.tree.GetFirstChild(parentItem)
-					child_item = child[0]
-					if self.tree.GetItemText(child_item, 0) == "-Cull Table" and self.tree.GetItemText(child_item, 2) == "Enable":
-						cull_item = child_item
-					else:
-						for k in range(1, totalcount):
-							child_item = self.tree.GetNextSibling(child_item)
-							if self.tree.GetItemText(child_item, 0) == "-Cull Table" and self.tree.GetItemText(child_item, 2) == "Enable":
-								cull_item = child_item
-								break
 			else:
 				parentItem = selectedIdx
 
@@ -953,36 +938,45 @@ class DataFrame(wx.Panel):
 						filename = self.tree.GetItemText(child_item, 8) 
 						ret = py_correlator.openHoleFile(path + filename, -1, type, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
 						holes.append(self.tree.GetItemText(child_item, 0))
-					elif self.tree.GetItemText(child_item, 2) == "Enable" and cull_item == None:
-						cull_item = child_item
 					for k in range(1, totalcount):
 						child_item = self.tree.GetNextSibling(child_item)
 						if self.tree.GetItemText(child_item, 0)  != "-Cull Table":
 							filename = self.tree.GetItemText(child_item, 8) 
 							ret = py_correlator.openHoleFile(path + filename, -1, type, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
 							holes.append(self.tree.GetItemText(child_item, 0))
-						elif self.tree.GetItemText(child_item, 2) == "Enable" and cull_item == None:
-							cull_item = child_item
 
 			else:
 				filename = self.tree.GetItemText(selectedIdx, 8) 
 				ret = py_correlator.openHoleFile(path + filename, -1, type, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
 				holes.append(self.tree.GetItemText(selectedIdx, 0))
 				
-			if dlg.splice.GetValue():				
+			if dlg.splice.GetValue():
 				self.LoadAllHoles()
 
+			ssFileLoaded = self.LoadSectionSummary()
+			if not ssFileLoaded:
+				self.parent.OnNewData(None)
+				self.parent.Window.UpdateDrawing()
+				return
+
 			applied = ""
-			# APPLY TABLES 
-			if dlg.cull.GetValue() == True and cull_item != None:
-				py_correlator.openCullTable(path + self.tree.GetItemText(cull_item, 8), type, annot)
-				applied = "cull"
+			if dlg.cull.GetValue() == True:
+				cullFile = self.tree.GetItemText(parentItem, 14)
+				if cullFile != "":
+					print("applying cull table {}".format(cullFile))
+					datatype = self.tree.GetItemText(parentItem, 0)
+					self.OnLOAD_CULLTABLE(parentItem, datatype)
+					applied = "cull"
 
 			if dlg.affine.GetValue() == True and affine_item != None:
+				print("applying affine table {}".format(self.tree.GetItemText(affine_item, 8)))
+				affinePath = path + self.tree.GetItemText(affine_item, 8)
+				self.parent.affineManager.load(affinePath)
 				py_correlator.openAttributeFile(path + self.tree.GetItemText(affine_item, 8), 0)
 				applied = "affine"
 
 			if dlg.splice.GetValue() == True and splice_item is not None:
+				print("applying splice {}".format(self.tree.GetItemText(splice_item, 8)))
 				self.parent.UpdateCORE() # depend on correlator.HoleData to export splice
 				ssLoaded = self.LoadSectionSummary()
 				if not ssLoaded:
@@ -1008,7 +1002,7 @@ class DataFrame(wx.Panel):
 					dlg.Destroy()
 					return
 			elif dlg.splice.GetValue() == True and splice_item is None:
-				self.parent.OnShowMessage("Error", "Can not export -need splice table", 1)
+				self.parent.OnShowMessage("Error", "A splice table must be enabled to apply splice on export.", 1)
 				self.parent.OnNewData(None)
 				dlg.Destroy()
 				return

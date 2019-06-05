@@ -721,13 +721,13 @@ class ExportCoreDialog(wx.Dialog):
 		wx.Dialog.__init__(self, parent, -1, "Export Core Data", style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
 
 		vbox = wx.BoxSizer(wx.VERTICAL)
-		vbox.Add(wx.StaticText(self, -1, 'Check to Export Core data'), 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 12)
+		# vbox.Add(wx.StaticText(self, -1, 'Check to Export Core data'), 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 12)
 
 		panel = wx.Panel(self, -1)
 		vbox_opt = wx.BoxSizer(wx.HORIZONTAL)
 
 		opt_panel = wx.Panel(panel, -1)
-		sizer = wx.StaticBoxSizer(wx.StaticBox(opt_panel, -1, 'Apply Options'), orient=wx.VERTICAL)
+		sizer = wx.StaticBoxSizer(wx.StaticBox(opt_panel, -1, 'Export Options'), orient=wx.VERTICAL)
 
 		self.cull = wx.CheckBox(opt_panel, -1, 'Apply Cull')
 		sizer.Add(self.cull, 1, wx.EXPAND)
@@ -736,11 +736,11 @@ class ExportCoreDialog(wx.Dialog):
 		# 2/26/2019: Hide unused items rather than removing them entirely since
 		# the export process refers to them and I don't want to shake the jello further.
 		self.affine = wx.CheckBox(opt_panel, -1, 'Apply Affine')
-		self.affine.Show(False)
-		# sizer.Add(self.affine, 1)
+		self.affine.Show(True)
+		sizer.Add(self.affine, 1)
 		self.splice = wx.CheckBox(opt_panel, -1, 'Apply Splice')
-		self.splice.Show(False)
-		# sizer.Add(self.splice, 1)
+		self.splice.Show(True)
+		sizer.Add(self.splice, 1)
 		opt_panel.Bind(wx.EVT_CHECKBOX, self.OnSPLICE, self.splice)
 
 		self.eld = wx.CheckBox(opt_panel, -1, 'Apply ELD')
@@ -754,7 +754,7 @@ class ExportCoreDialog(wx.Dialog):
 		#opt_panel.Bind(wx.EVT_CHECKBOX, self.OnAGE, self.age)
 
 		opt_panel.SetSizer(sizer)
-		vbox_opt.Add(opt_panel)
+		vbox_opt.Add(opt_panel, 1, wx.EXPAND)
 		panel.SetSizer(vbox_opt)
 		vbox.Add(panel, 0, wx.EXPAND | wx.ALL, 10)
 
