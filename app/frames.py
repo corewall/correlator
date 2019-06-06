@@ -3603,7 +3603,7 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineTieArrows, self.showAffineTieArrows)
 		self.showCoreInfo = wx.CheckBox(viewPanel, -1, "Show core info on mouseover")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowCoreInfo, self.showCoreInfo)
-		self.showOutOfRangeData = wx.CheckBox(viewPanel, -1, "Show data ranging beyond hole's plot area")
+		self.showOutOfRangeData = wx.CheckBox(viewPanel, -1, "Show data ranging beyond hole width")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowOutOfRangeData, self.showOutOfRangeData)
 		# self.showLogShiftArrows = wx.CheckBox(viewPanel, -1, "Show log shift arrows")
 		# self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)
