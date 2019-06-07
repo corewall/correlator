@@ -3570,12 +3570,12 @@ class SpliceController:
 				#print "seeking section at depth {}: result = {}".format(mbsf, section)
 				if section is not None:
 					secTop = secsumm.getSectionTop(si.coreinfo.leg, si.coreinfo.hole, si.coreinfo.holeCore, section)
-					topOffset = round((mbsf - secTop) * 100, 1)
+					topOffset = round((mbsf - secTop) * 100, 2)
 					botOffset = topOffset
-					rawDepth = round(p[0] - affineOffset, 3)
+					rawDepth = round(p[0] - affineOffset, 4)
 					row = pandas.Series({'Exp':si.coreinfo.site, 'Site':si.coreinfo.leg, 'Hole':si.coreinfo.hole,
 									'Core':si.coreinfo.holeCore, 'CoreType':coreType, 'Section':section, 'TopOffset':topOffset,
-									'BottomOffset':botOffset, 'Depth':round(p[0], 3), 'Data':p[1], 'RunNo':'-', 'RawDepth':rawDepth, 'Offset':affineOffset})
+									'BottomOffset':botOffset, 'Depth':round(p[0], 4), 'Data':p[1], 'RunNo':'-', 'RawDepth':rawDepth, 'Offset':affineOffset})
 					exportRows.append(row)
 				else:
 					print "Couldn't find section in {}{} at depth {}, skipping".format(si.coreinfo.hole, si.coreinfo.holeCore, mbsf)
