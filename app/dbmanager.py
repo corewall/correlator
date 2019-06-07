@@ -971,8 +971,18 @@ class DataFrame(wx.Panel):
 			if dlg.affine.GetValue() == True and affine_item != None:
 				print("applying affine table {}".format(self.tree.GetItemText(affine_item, 8)))
 				affinePath = path + self.tree.GetItemText(affine_item, 8)
-				self.parent.affineManager.load(affinePath)
-				py_correlator.openAttributeFile(path + self.tree.GetItemText(affine_item, 8), 0)
+
+				# 6/6/2019 brg: When exporting with affine applied but no splice, we still use the C++
+				# side export logic, so we only need openAttributeFile() to apply affine shifts.
+				# When exporting with a splice (which requires an affine to be applied), exported data
+				# comes via correlator.HoleData (i.e. Python side), so we only use affineManager.load()
+				# to ensure the affine shifts are applied.
+				# Moral: don't use both openAttributeFile() and affineManager.load() or correlator.HoleData
+				# depths will have the affine shift applied *twice*.
+				if dlg.splice.GetValue() == True:
+					self.parent.affineManager.load(affinePath)
+				else:
+					py_correlator.openAttributeFile(path + self.tree.GetItemText(affine_item, 8), 0)
 				applied = "affine"
 
 			if dlg.splice.GetValue() == True and splice_item is not None:
