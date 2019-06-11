@@ -544,6 +544,9 @@ class AffineBuilder:
     def getShift(self, core):
         #print "core type = {}, hole type = {}".format(type(core.core), type(core.hole))
         return self.affine.getShift(core)
+
+    def getShiftDistance(self, core):
+        return self.affine.getShiftDistance(core)
     
     # return list of shifts, sorted first by hole, then core
     def getSortedShifts(self):

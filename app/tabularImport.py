@@ -336,13 +336,28 @@ def readFile(filepath):
     srcfile.close()
     return dataframe
 
-# pandas call to open Correlator's space-delimited file format
+# pandas call to open Correlator's tab+space-delimited file format
+def readSpliceIntervalTableFile(filename):
+    df = readFile(filename)
+    forceStringDatatype(["Site", "Hole", "Core", "Core Type", "Top Section", 'Bottom Section'], df)
+    return df
+
+
+# pandas call to open Correlator's tab+space-delimited file format
 def readCorrelatorDataFile(filename):
     datfile = open(filename, 'rU')
     headers = ["Exp", "Site", "Hole", "Core", "CoreType", "Section", "TopOffset", "BottomOffset", "Depth", "Data", "RunNo"]
     dataframe = pandas.read_csv(datfile, header=None, index_col=False, names=headers, sep=" ", skipinitialspace=True, comment="#", engine='python')
     datfile.close()
+    forceStringDatatype(["Exp", "Site", "Hole", "Core", "CoreType", "Section"], dataframe)
     return dataframe
+
+# read each datafile in filenames and return a single dataframe comprising
+# all files' dataframes
+def readCorrelatorDataFiles(filenames):
+    dfs = [readCorrelatorDataFile(fname) for fname in filenames]
+    combinedDataframe = pandas.concat(dfs, ignore_index=True)
+    return combinedDataframe
 
 def writeToFile(dataframe, filepath):
     dataframe.to_csv(filepath, index=False)

@@ -3,6 +3,7 @@
 ## For Mac-OSX
 #/usr/bin/env pythonw
 
+import os.path
 import platform
 platform_name = platform.uname()
 
@@ -22,7 +23,7 @@ import dialog
 import tabularImport
 import splice
 import xml_handler
-from affine import convert_pre_v3_AffineTable
+from affine import convert_pre_v3_AffineTable, AffineBuilder, aci, acistr
 from sectionSummary import SectionSummary, SectionSummaryRow
 from smooth import SmoothParameters
 
@@ -809,6 +810,8 @@ class DataFrame(wx.Panel):
 
 			self.tree.PopupMenu(popupMenu, pos)
 		return
+
+	# new ExportCoreData goes here!
 	
 	def EXPORT_CORE_DATA(self, selectedIdx, isType):
 		if self.DisplayContainsData():
@@ -995,6 +998,7 @@ class DataFrame(wx.Panel):
 				splicePath = path + self.tree.GetItemText(splice_item, 8)
 				if self.parent.spliceManager.canApplyAffine(splicePath):
 					self.parent.spliceManager.loadSplice(splicePath, datatype)
+					return
 					
 					# everything's in place now.
 					try:
@@ -7555,3 +7559,102 @@ class DataFrame(wx.Panel):
 			self.dataPanel.SetColLabelValue(self.selectedCol, "Depth")
 
 		self.selectedCol = -1
+
+# New, Python-side only data export. BRGBRG
+def ExportCoreData(applyAffine, applySplice):#self, selectedIdx, isType): add once logic is in place
+	# if self.DisplayContainsData():
+	# 	if not self.ConfirmClearDisplayData():
+	# 		return
+
+	# # gather export parameters, destination from user
+	# dlg = dialog.ExportCoreDialog(self)
+	# dlg.Centre()
+	# ret = dlg.ShowModal()
+	# if ret != wx.ID_OK:
+	# 	return
+
+	# opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+	# ret = opendlg.ShowModal()
+	# if ret != wx.ID_OK:
+	# 	return
+
+	# output_path = opendlg.GetDirectory()
+	# output_prefix = opendlg.GetFilename()
+	# self.parent.Directory = output_path
+	# opendlg.Destroy()
+
+	# if isType == False:
+	# 	parentItem = self.tree.GetItemParent(selectedIdx)
+	# else: 
+	# 	parentItem = selectedIdx
+	# print "isType = {}, item = {}, parentItem = {}".format(isType, self.tree.GetItemText(selectedIdx, 0), self.tree.GetItemText(parentItem, 0))
+
+	# datatype = self.tree.GetItemText(parentItem, 0)
+
+	sitePath = "/Users/bgrivna/Documents/Correlator/3.1/db/361-U1476/"
+	inputFiles = ["361-U1476-A.ngfix.dat", "361-U1476-B.ngfix.dat", "361-U1476-D.ngfix.dat"]
+	affineFile = "361-U1476.3.affine.table"
+	spliceFile = "361-U1476.3.splice.table"
+	ssFiles = ["361-U1476-A_Sections.csv", "361-U1476-B_Sections.csv", "361-U1476-D_Sections.csv"]
+
+	# if no affine or splice is applied, export raw data files
+	if not applyAffine and not applySplice:
+		for filename in inputFiles:
+			df = tabularImport.readCorrelatorDataFile(os.path.join(sitePath, filename))
+			splitname = os.path.splitext(filename)
+			outname = splitname[0] + "_RAW.csv"
+			tabularImport.writeToFile(df, os.path.join("/Users/bgrivna/Desktop", outname))
+		return
+
+	secsumm = SectionSummary.createWithFiles([os.path.join(sitePath, ssFile) for ssFile in ssFiles])
+	affineBuilder = AffineBuilder.createWithAffineFile(os.path.join(sitePath, affineFile), secsumm)
+	if applyAffine and not applySplice: # export affine-shifted version of each input file
+		for filename in inputFiles:
+			df = tabularImport.readCorrelatorDataFile(os.path.join(sitePath, filename))
+
+			# Add RawDepth and Offset columns
+			# df['RawDepth'] = 0.0
+			# df['Offset'] = 0.0
+			df = df.apply(applyShift, axis=1, builder=affineBuilder) # apply affine to Depth, RawDepth, and Offset
+
+			splitname = os.path.splitext(filename)
+			outname = splitname[0] + "_SHIFTED.csv"
+			tabularImport.writeToFile(df, os.path.join("/Users/bgrivna/Desktop", outname))
+	elif applyAffine and applySplice: # export single splice file
+		sitDF = tabularImport.readSpliceIntervalTableFile(os.path.join(sitePath, spliceFile))
+		dataDF = tabularImport.readCorrelatorDataFiles([os.path.join(sitePath, fname) for fname in inputFiles])
+		spliceRows = []
+		for _, row in sitDF.iterrows(): # gather data rows within range of each splice interval
+			hole = row['Hole']
+			core = row['Core']
+			top = row['Top Depth CSF-A']
+			bot = row['Bottom Depth CSF-A']
+			# print("Interval {}{} from {} to {}".format(row['Hole'], row['Core'], row['Top Depth CSF-A'], row['Bottom Depth CSF-A']))
+			spliceRows.append(dataDF[(dataDF['Depth'] >= top) & (dataDF['Depth'] <= bot) & (dataDF['Hole'] == hole) & (dataDF['Core'] == core)])
+
+		spliceDF = pandas.concat(spliceRows) # merge data into a single dataframe
+		spliceDF = spliceDF.apply(applyShift, axis=1, builder=affineBuilder) # apply affine to Depth, RawDepth, and Offset
+		splitname = os.path.splitext(spliceFile)
+		outname = splitname[0] + "_SPLICED.csv"
+		tabularImport.writeToFile(spliceDF, outname)
+	else:
+		print("Unexpected export parameters, apply affine = {}, apply splice = {}".format(applyAffine, applySplice))
+	
+	return
+
+# Apply affine shift to data row by adding the shift distance to
+# the Depth value making it MCD/CCSF-A, and adding the RawDepth and
+# Offset columns, with CSF-A depth and affine shift, respectively.
+def applyShift(row, builder):
+	coreid = acistr("{}{}".format(row['Hole'], row['Core']))
+	dist = builder.getShiftDistance(coreid)
+	row['RawDepth'] = row['Depth']
+	row['Offset'] = dist
+	row['Depth'] += dist
+	return row
+
+
+if __name__ == "__main__":
+	ExportCoreData(applyAffine=False, applySplice=False)
+	# ExportCoreData(applyAffine=True, applySplice=False)
+	# ExportCoreData(applyAffine=True, applySplice=True)
