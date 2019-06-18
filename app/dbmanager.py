@@ -356,12 +356,12 @@ class DataFrame(wx.Panel):
 				self.SAVE_CULL_TO_XML(path, filename)
 		elif opId == 23:
 			print "Export Core Data!"
-			self.EXPORT_CORE_DATA(self.selectedIdx, False)
+			self.OnExportCoreData(self.selectedIdx, False)
 		elif opId == 24:
 			self.IMPORT_AGE_MODEL()
 		elif opId == 25:
 			print "Export Core Data (typed)!"
-			self.EXPORT_CORE_DATA(self.selectedIdx, True)
+			self.OnExportCoreData(self.selectedIdx, True)
 		elif opId == 26:
 			self.tree.SetItemText(self.selectedIdx, "Discrete", 1) 
 			item = self.tree.GetItemParent(self.selectedIdx)
@@ -811,294 +811,154 @@ class DataFrame(wx.Panel):
 			self.tree.PopupMenu(popupMenu, pos)
 		return
 
-	# new ExportCoreData goes here!
-	
-	def EXPORT_CORE_DATA(self, selectedIdx, isType):
-		if self.DisplayContainsData():
-			if not self.ConfirmClearDisplayData():
-				return
+	# prepare parameters for ExportCoreData()
+	def OnExportCoreData(self, selectedIndex, isType):
+		siteNode = self.GetSiteForNode(selectedIndex)
 
-		# 3/19/2019: Don't actually show dialog since only remaining option is "Apply Cull",
-		# which doesn't work correctly. Can't comment it out completely because much of the process
-		# below depends on its variables, all of which should be set to False by default and
-		# thus unused.
-		dlg = dialog.ExportCoreDialog(self)
+		# gather section summaries
+		secSummFiles = []
+		ssNodeFound, ssNode = self.FindItem(siteNode, SS_NODE)
+		if ssNodeFound:
+			for ssChild in self.GetChildren(ssNode):
+				secSummFiles.append(self.tree.GetItemText(ssChild, 8))
+
+		# gather enabled affine and splice tables if any
+		affineFile = spliceFile = None
+		stNodeFound, savedTablesNode = self.FindItem(siteNode, ST_NODE)
+		if stNodeFound:
+			for stChild in self.GetChildren(savedTablesNode):
+				type = self.tree.GetItemText(stChild, 1)
+				flag = self.tree.GetItemText(stChild, 2)
+				if type == "AFFINE" and flag == "Enable":
+					affineFile = self.tree.GetItemText(stChild, 8)
+				elif type == "SPLICE" and flag == "Enable":
+					spliceFile = self.tree.GetItemText(stChild, 8)
+
+		# gather export parameters, output destination
+		enableAffine = affineFile is not None
+		enableSplice = enableAffine and spliceFile is not None # affine required to apply splice
+		dlg = dialog.ExportCoreDialog(self, enableAffine, enableSplice)
 		dlg.Centre()
 		ret = dlg.ShowModal()
-		if ret == wx.ID_OK:
-			opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
-			ret = opendlg.ShowModal()
-			if ret != wx.ID_OK:
-				return
-
-			output_path = opendlg.GetDirectory()
-			output_prefix = opendlg.GetFilename()
-			self.parent.Directory = output_path
-			opendlg.Destroy()
-
-			if isType == False:
-				parentItem = self.tree.GetItemParent(selectedIdx)
-			else: 
-				parentItem = selectedIdx
-			print "isType = {}, item = {}, parentItem = {}".format(isType, self.tree.GetItemText(selectedIdx, 0), self.tree.GetItemText(parentItem, 0))
-
-			datatype = self.tree.GetItemText(parentItem, 0) 
-			#print "[DEBUG] datatype = " + datatype
-
-			# LEG-SITE LEVEL
-			parentItem = self.tree.GetItemParent(parentItem)
-			title = self.tree.GetItemText(parentItem, 0) 
-
-			child = self.FindItem(parentItem, 'Saved Tables')
-			cull_item = None
-			affine_item = None
-			splice_item = None
-			eld_item = None
-			if child[0] == True:
-				selectItem = child[1]
-				totalcount = self.tree.GetChildrenCount(selectItem, False)
-				if totalcount > 0:
-					child = self.tree.GetFirstChild(selectItem)
-					child_item = child[0]
-					type = self.tree.GetItemText(child_item, 1)
-					flag = self.tree.GetItemText(child_item, 2)
-					if type == "AFFINE" and flag == "Enable":
-						affine_item = child_item 
-					elif type == "SPLICE" and flag == "Enable":
-						splice_item = child_item 
-					elif type == "ELD" and flag == "Enable":
-						eld_item = child_item 
-					for k in range(1, totalcount):
-						child_item = self.tree.GetNextSibling(child_item)
-						type = self.tree.GetItemText(child_item, 1)
-						flag = self.tree.GetItemText(child_item, 2)
-						if type == "AFFINE" and flag == "Enable":
-							affine_item = child_item 
-						elif type == "SPLICE" and flag == "Enable":
-							splice_item = child_item 
-						elif type == "ELD" and flag == "Enable":
-							eld_item = child_item 
-
-			child = self.FindItem(parentItem, 'Age Models')
-			age_item = None
-			if child[0] == True:
-				selectItem = child[1]
-				totalcount = self.tree.GetChildrenCount(selectItem, False)
-				if totalcount > 0:
-					child = self.tree.GetFirstChild(selectItem)
-					child_item = child[0]
-					type = self.tree.GetItemText(child_item, 1)
-					flag = self.tree.GetItemText(child_item, 2)
-					if type == "AGE" and flag == "Enable":
-						age_item = child_item 
-					for k in range(1, totalcount):
-						child_item = self.tree.GetNextSibling(child_item)
-						type = self.tree.GetItemText(child_item, 1)
-						flag = self.tree.GetItemText(child_item, 2)
-						if type == "AGE" and flag == "Enable":
-							age_item = child_item 
-
-
-			child = self.FindItem(parentItem, 'Downhole Log Data')
-			log_item = None
-			if child[0] == True:
-				selectItem = child[1]
-				totalcount = self.tree.GetChildrenCount(selectItem, False)
-				if totalcount > 0:
-					child = self.tree.GetFirstChild(selectItem)
-					child_item = child[0]
-					flag = self.tree.GetItemText(child_item, 2)
-					if flag == "Enable":
-						log_item = child_item
-					else:
-						for k in range(1, totalcount):
-							child_item = self.tree.GetNextSibling(child_item)
-							flag = self.tree.GetItemText(child_item, 2)
-							if flag == "Enable":
-								log_item = child_item
-								break
-
-			type, annot = self.parent.TypeStrToInt(datatype)
-			typeSuffix = self.parent.TypeStrToFileSuffix(datatype, True)
-
-			if isType == False:
-				parentItem = self.tree.GetItemParent(selectedIdx)
-			else:
-				parentItem = selectedIdx
-
-			# LOADING DATA
-			self.parent.OnNewData(None)
-			path = self.parent.DBPath + 'db/' + title + "/"
-
-			# brg 12/30/2015: retain for legacy export purposes
-			holes = []
-			if dlg.splice.GetValue() == True or isType == True:
-				totalcount = self.tree.GetChildrenCount(parentItem, False)
-				if totalcount > 0:
-					child = self.tree.GetFirstChild(parentItem)
-					child_item = child[0]
-					if self.tree.GetItemText(child_item, 0)  != "-Cull Table":
-						filename = self.tree.GetItemText(child_item, 8) 
-						ret = py_correlator.openHoleFile(path + filename, -1, type, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
-						holes.append(self.tree.GetItemText(child_item, 0))
-					for k in range(1, totalcount):
-						child_item = self.tree.GetNextSibling(child_item)
-						if self.tree.GetItemText(child_item, 0)  != "-Cull Table":
-							filename = self.tree.GetItemText(child_item, 8) 
-							ret = py_correlator.openHoleFile(path + filename, -1, type, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
-							holes.append(self.tree.GetItemText(child_item, 0))
-
-			else:
-				filename = self.tree.GetItemText(selectedIdx, 8) 
-				ret = py_correlator.openHoleFile(path + filename, -1, type, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
-				holes.append(self.tree.GetItemText(selectedIdx, 0))
-				
-			if dlg.splice.GetValue():
-				self.LoadAllHoles()
-
-			ssFileLoaded = self.LoadSectionSummary()
-			if not ssFileLoaded:
-				self.parent.OnNewData(None)
-				self.parent.Window.UpdateDrawing()
-				return
-
-			applied = ""
-			if dlg.cull.GetValue() == True:
-				cullFile = self.tree.GetItemText(parentItem, 14)
-				if cullFile != "":
-					print("applying cull table {}".format(cullFile))
-					datatype = self.tree.GetItemText(parentItem, 0)
-					self.OnLOAD_CULLTABLE(parentItem, datatype)
-					applied = "cull"
-
-			if dlg.affine.GetValue() == True and affine_item != None:
-				print("applying affine table {}".format(self.tree.GetItemText(affine_item, 8)))
-				affinePath = path + self.tree.GetItemText(affine_item, 8)
-
-				# 6/6/2019 brg: When exporting with affine applied but no splice, we still use the C++
-				# side export logic, so we only need openAttributeFile() to apply affine shifts.
-				# When exporting with a splice (which requires an affine to be applied), exported data
-				# comes via correlator.HoleData (i.e. Python side), so we only use affineManager.load()
-				# to ensure the affine shifts are applied.
-				# Moral: don't use both openAttributeFile() and affineManager.load() or correlator.HoleData
-				# depths will have the affine shift applied *twice*.
-				if dlg.splice.GetValue() == True:
-					self.parent.affineManager.load(affinePath)
-				else:
-					py_correlator.openAttributeFile(path + self.tree.GetItemText(affine_item, 8), 0)
-				applied = "affine"
-
-			if dlg.splice.GetValue() == True and splice_item is not None:
-				print("applying splice {}".format(self.tree.GetItemText(splice_item, 8)))
-				self.parent.UpdateCORE() # depend on correlator.HoleData to export splice
-				ssLoaded = self.LoadSectionSummary()
-				if not ssLoaded:
-					return
-				
-				splicePath = path + self.tree.GetItemText(splice_item, 8)
-				if self.parent.spliceManager.canApplyAffine(splicePath):
-					self.parent.spliceManager.loadSplice(splicePath, datatype)
-					return
-					
-					# everything's in place now.
-					try:
-						self.parent.spliceManager.exportData(output_path, output_prefix, datatype, title)
-					except:
-						self.parent.OnShowMessage("Error", "Export failed: {}".format(sys.exc_info()[0]), 1)
-						return
-					
-					self.parent.OnShowMessage("Information", "Export successful.", 1)
-					self.parent.spliceManager.clear()
-					return
-				else:
-					self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)
-					self.parent.OnNewData(None)
-					dlg.Destroy()
-					return
-			elif dlg.splice.GetValue() == True and splice_item is None:
-				self.parent.OnShowMessage("Error", "A splice table must be enabled to apply splice on export.", 1)
-				self.parent.OnNewData(None)
-				dlg.Destroy()
-				return
-
-			# HYEJUNG
-			if dlg.eld.GetValue() == True and eld_item != None:
-				if log_item != None:
-					py_correlator.openLogFile(path+ self.tree.GetItemText(log_item, 8), int(self.tree.GetItemText(log_item, 11)))
-					py_correlator.openAttributeFile(path + self.tree.GetItemText(eld_item, 8), 1)
-					applied = "eld"
-				else:
-					self.parent.OnShowMessage("Error", "Need Log to Export ELD", 1)
-					self.parent.OnNewData(None)
-					dlg.Destroy()
-					return
-
-			# brg 1/4/2016: always export in CSV
-			useCsv = True
-			if useCsv:
-				py_correlator.setDelimiter(1) # write comma-delimited file for export
-			
-			count = 0
-			if dlg.age.GetValue() == True and age_item != None:
-				applied += "-age"
-				agefilename = path+ self.tree.GetItemText(age_item, 8)
-				if dlg.eld.GetValue() == True:
-					if dlg.splice.GetValue() == True:
-						count = py_correlator.saveAgeCoreData(agefilename, path + ".export.tmp", 2)
-					else:
-						count = py_correlator.saveAgeCoreData(agefilename, path + ".export.tmp", 0)
-				else:
-					if dlg.splice.GetValue() == True:
-						count = py_correlator.saveAgeCoreData(agefilename, path + ".export.tmp", 1)
-					else:
-						count = py_correlator.saveAgeCoreData(agefilename, path + ".export.tmp", 0)
-			elif dlg.eld.GetValue() == True:
-				if dlg.splice.GetValue() == True:
-					count = py_correlator.saveCoreData(path + ".export.tmp", 2)
-				else:
-					count = py_correlator.saveCoreData(path + ".export.tmp", 0)
-			elif dlg.splice.GetValue() == True:
-				count = py_correlator.saveCoreData(path + ".export.tmp", 1)
-			else:
-				count = py_correlator.saveCoreData(path + ".export.tmp", 0)
-				print "affine count = {}".format(count)
-				
-			if useCsv:
-				py_correlator.setDelimiter(0) # reset delimiter to space + tab so internal files are written normally
-			outExtension = ".csv"
-
-			self.parent.OnNewData(None)
-
-			if dlg.splice.GetValue() == True and count == 1:
-				outfile = output_prefix + "-" + title + "-" + applied + "." + typeSuffix + outExtension
-				if sys.platform == 'win32':
-					workingdir = os.getcwd()
-					os.chdir(path)
-					cmd = 'copy ' +  ".export.tmp" + ' \"' + output_path + '/' + outfile + '\"'
-					os.system(cmd)
-					os.chdir(workingdir)
-				else:
-					cmd = 'cp \"' +  path + ".export.tmp" + '\" \"' + output_path + '/' + outfile + '\"'
-					os.system(cmd)
-			else:
-				for i in range(count):
-					outfile = output_prefix + "-" + title + "-" + applied + holes[i] + "." + typeSuffix + outExtension
-					if sys.platform == 'win32':
-						workingdir = os.getcwd()
-						os.chdir(path)
-						cmd = 'copy ' +  ".export.tmp" + str(i) + ' \"' + output_path + '/' + outfile + '\"'
-						os.system(cmd)
-						os.chdir(workingdir)
-					else:
-						cmd = 'cp \"' +  path + ".export.tmp" + str(i) + '\" \"' + output_path + '/' + outfile + '\"'
-						os.system(cmd)
-
-			if count > 0:
-				self.parent.OnShowMessage("Information", "Successfully exported", 1)
-			else:
-				self.parent.OnShowMessage("Error", "Can not export", 1)
-
 		dlg.Destroy()
+		if ret != wx.ID_OK:
+			return
+
+		if len(secSummFiles) == 0 and (dlg.affine.GetValue() or dlg.splice.GetValue()):
+			msg = "One or more section summary files are required to export data with affine and/or splice applied."
+			self.parent.OnShowMessage("Error", msg, 1)
+			return
+
+		if dlg.affine.GetValue() == False:
+			affineFile = None
+		if dlg.splice.GetValue() == False:
+			spliceFile = None
+
+		opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+		ret = opendlg.ShowModal()
+		opendlg.Destroy()
+		if ret != wx.ID_OK:
+			return
+
+		output_path = opendlg.GetDirectory()
+		output_prefix = opendlg.GetFilename()
+		self.parent.Directory = output_path
+
+		# gather data files
+		if isType == False:
+			typeNode = self.tree.GetItemParent(selectedIndex)
+			dataFiles = [self.tree.GetItemText(selectedIndex, 8)]
+		else: 
+			typeNode = selectedIndex
+			dataFiles = [self.tree.GetItemText(dataIdx, 8) for dataIdx in self.GetChildren(selectedIndex)]
+
+		datatype = self.tree.GetItemText(typeNode, 0)
+		siteName = self.GetSiteNameForNode(selectedIndex)
+		sitePath = self.parent.DBPath + 'db/' + siteName + "/"
+
+		result = self.ExportCoreData(sitePath, dataFiles, datatype, output_path, output_prefix, secSummFiles, affineFile, spliceFile)
+		if result:
+			self.parent.OnShowMessage("Info", "Successfully exported.", 1)
+
+	# sitePath: full path to directory containing files in dataFiles
+	# dataFiles: list of filenames in sitePath to be processed and exported
+	# datatype: name of datatype being exported
+	# outPath: full path to directory where export files will be written
+	# prefix: string with which to prefix generated export filename
+	# secSummFiles: list of SectionSummary files to be used in export
+	# affineFile: affine shifts to apply to export
+	# spliceFile: splice intervals to apply to export
+	def ExportCoreData(self, sitePath, dataFiles, datatype, outPath, prefix, secSummFiles=None, affineFile=None, spliceFile=None):
+		# if no affine or splice is applied, export raw data files
+		if not affineFile and not spliceFile:
+			for filename in dataFiles:
+				df = tabularImport.readCorrelatorDataFile(os.path.join(sitePath, filename))
+				outname = self._getExportFileName(filename, datatype, prefix, "RAW")
+				tabularImport.writeToFile(df, os.path.join(outPath, outname))
+			return True
+
+		secsumm = SectionSummary.createWithFiles([os.path.join(sitePath, ssFile) for ssFile in secSummFiles])
+		affineBuilder = AffineBuilder.createWithAffineFile(os.path.join(sitePath, affineFile), secsumm)
+		if affineFile and not spliceFile: # export affine-shifted version of each input file
+			for filename in dataFiles:
+				df = tabularImport.readCorrelatorDataFile(os.path.join(sitePath, filename))
+				df['RawDepth'] = df['Depth']
+				acis = sorted([acistr(coreid) for coreid in list(set(df['Hole'] + df['Core']))])
+				coreDataframes = []
+				for a in acis:
+					dist = affineBuilder.getShiftDistance(a)
+					coredf = df[(df['Hole'] == a.hole) & (df['Core'] == a.core)]
+					coredf['Depth'] += dist
+					coredf['Offset'] = dist
+					coreDataframes.append(coredf)
+				affineDF = pandas.concat(coreDataframes)
+				outname = self._getExportFileName(filename, datatype, prefix, "SHIFTED")
+				tabularImport.writeToFile(affineDF, os.path.join(outPath, outname))
+		elif affineFile and spliceFile: # export single splice file
+			sitDF = tabularImport.readSpliceIntervalTableFile(os.path.join(sitePath, spliceFile))
+			dataDF = tabularImport.readCorrelatorDataFiles([os.path.join(sitePath, fname) for fname in dataFiles])
+			spliceRows = []
+			for _, row in sitDF.iterrows(): # gather data rows within range of each splice interval
+				hole = row['Hole']
+				core = row['Core']
+				top = row['Top Depth CSF-A']
+				bot = row['Bottom Depth CSF-A']
+				# print("Interval {}{} from {} to {}".format(row['Hole'], row['Core'], row['Top Depth CSF-A'], row['Bottom Depth CSF-A']))
+				spliceRows.append(dataDF[(dataDF['Depth'] >= top) & (dataDF['Depth'] <= bot) & (dataDF['Hole'] == hole) & (dataDF['Core'] == core)])
+
+			spliceDF = pandas.concat(spliceRows) # merge data into a single dataframe
+			spliceDF = spliceDF.apply(self._applyShift, axis=1, builder=affineBuilder) # apply affine to Depth, RawDepth, and Offset
+			outname = self._getExportFileName("splice", datatype, prefix, "SPLICED")
+			tabularImport.writeToFile(spliceDF, os.path.join(outPath, outname))
+		else:
+			print("Unexpected export parameters, apply affine = {}, apply splice = {}".format(applyAffine, applySplice))
+			return False
+		
+		return True
+
+	# Apply affine shift to data row by adding the shift distance to
+	# the Depth value making it MCD/CCSF-A, and adding the RawDepth and
+	# Offset columns, with CSF-A depth and affine shift, respectively.
+	# NOTE: using _applyShift with pandas.apply() becomes very slow with
+	# dataframes > 10000 rows.
+	def _applyShift(self, row, builder):
+		coreid = aci(row['Hole'], row['Core'])
+		dist = builder.getShiftDistance(coreid)
+		row['RawDepth'] = row['Depth']
+		row['Offset'] = dist
+		row['Depth'] += dist
+		return row
+
+	# Return decorated name for export file
+	def _getExportFileName(self, filename, datatype, prefix, suffix):
+		splitname = os.path.splitext(filename)
+		name = splitname[0].split('.')[0] if len(splitname[0].split('.')) > 1 else splitname[0]
+		if prefix != "":
+			name = prefix + "_" + name
+		name += "_" + datatype
+		if suffix != "":
+			name += "_" + suffix
+		return name + ".csv"
 
 	def SAVE_AFFINE_TO_XML(self, affineFile, outFile):
 		fin = open(affineFile, 'r+')
@@ -7559,99 +7419,6 @@ class DataFrame(wx.Panel):
 			self.dataPanel.SetColLabelValue(self.selectedCol, "Depth")
 
 		self.selectedCol = -1
-
-# New, Python-side only data export. BRGBRG
-def ExportCoreData(applyAffine, applySplice):#self, selectedIdx, isType): add once logic is in place
-	# if self.DisplayContainsData():
-	# 	if not self.ConfirmClearDisplayData():
-	# 		return
-
-	# # gather export parameters, destination from user
-	# dlg = dialog.ExportCoreDialog(self)
-	# dlg.Centre()
-	# ret = dlg.ShowModal()
-	# if ret != wx.ID_OK:
-	# 	return
-
-	# opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
-	# ret = opendlg.ShowModal()
-	# if ret != wx.ID_OK:
-	# 	return
-
-	# output_path = opendlg.GetDirectory()
-	# output_prefix = opendlg.GetFilename()
-	# self.parent.Directory = output_path
-	# opendlg.Destroy()
-
-	# if isType == False:
-	# 	parentItem = self.tree.GetItemParent(selectedIdx)
-	# else: 
-	# 	parentItem = selectedIdx
-	# print "isType = {}, item = {}, parentItem = {}".format(isType, self.tree.GetItemText(selectedIdx, 0), self.tree.GetItemText(parentItem, 0))
-
-	# datatype = self.tree.GetItemText(parentItem, 0)
-
-	sitePath = "/Users/bgrivna/Documents/Correlator/3.1/db/361-U1476/"
-	inputFiles = ["361-U1476-A.ngfix.dat", "361-U1476-B.ngfix.dat", "361-U1476-D.ngfix.dat"]
-	affineFile = "361-U1476.3.affine.table"
-	spliceFile = "361-U1476.3.splice.table"
-	ssFiles = ["361-U1476-A_Sections.csv", "361-U1476-B_Sections.csv", "361-U1476-D_Sections.csv"]
-
-	# if no affine or splice is applied, export raw data files
-	if not applyAffine and not applySplice:
-		for filename in inputFiles:
-			df = tabularImport.readCorrelatorDataFile(os.path.join(sitePath, filename))
-			splitname = os.path.splitext(filename)
-			outname = splitname[0] + "_RAW.csv"
-			tabularImport.writeToFile(df, os.path.join("/Users/bgrivna/Desktop", outname))
-		return
-
-	secsumm = SectionSummary.createWithFiles([os.path.join(sitePath, ssFile) for ssFile in ssFiles])
-	affineBuilder = AffineBuilder.createWithAffineFile(os.path.join(sitePath, affineFile), secsumm)
-	if applyAffine and not applySplice: # export affine-shifted version of each input file
-		for filename in inputFiles:
-			df = tabularImport.readCorrelatorDataFile(os.path.join(sitePath, filename))
-
-			# Add RawDepth and Offset columns
-			# df['RawDepth'] = 0.0
-			# df['Offset'] = 0.0
-			df = df.apply(applyShift, axis=1, builder=affineBuilder) # apply affine to Depth, RawDepth, and Offset
-
-			splitname = os.path.splitext(filename)
-			outname = splitname[0] + "_SHIFTED.csv"
-			tabularImport.writeToFile(df, os.path.join("/Users/bgrivna/Desktop", outname))
-	elif applyAffine and applySplice: # export single splice file
-		sitDF = tabularImport.readSpliceIntervalTableFile(os.path.join(sitePath, spliceFile))
-		dataDF = tabularImport.readCorrelatorDataFiles([os.path.join(sitePath, fname) for fname in inputFiles])
-		spliceRows = []
-		for _, row in sitDF.iterrows(): # gather data rows within range of each splice interval
-			hole = row['Hole']
-			core = row['Core']
-			top = row['Top Depth CSF-A']
-			bot = row['Bottom Depth CSF-A']
-			# print("Interval {}{} from {} to {}".format(row['Hole'], row['Core'], row['Top Depth CSF-A'], row['Bottom Depth CSF-A']))
-			spliceRows.append(dataDF[(dataDF['Depth'] >= top) & (dataDF['Depth'] <= bot) & (dataDF['Hole'] == hole) & (dataDF['Core'] == core)])
-
-		spliceDF = pandas.concat(spliceRows) # merge data into a single dataframe
-		spliceDF = spliceDF.apply(applyShift, axis=1, builder=affineBuilder) # apply affine to Depth, RawDepth, and Offset
-		splitname = os.path.splitext(spliceFile)
-		outname = splitname[0] + "_SPLICED.csv"
-		tabularImport.writeToFile(spliceDF, outname)
-	else:
-		print("Unexpected export parameters, apply affine = {}, apply splice = {}".format(applyAffine, applySplice))
-	
-	return
-
-# Apply affine shift to data row by adding the shift distance to
-# the Depth value making it MCD/CCSF-A, and adding the RawDepth and
-# Offset columns, with CSF-A depth and affine shift, respectively.
-def applyShift(row, builder):
-	coreid = acistr("{}{}".format(row['Hole'], row['Core']))
-	dist = builder.getShiftDistance(coreid)
-	row['RawDepth'] = row['Depth']
-	row['Offset'] = dist
-	row['Depth'] += dist
-	return row
 
 
 if __name__ == "__main__":

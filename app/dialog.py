@@ -717,7 +717,7 @@ class ExportELDDialog(wx.Dialog):
 	
 
 class ExportCoreDialog(wx.Dialog):
-	def __init__(self, parent):
+	def __init__(self, parent, enableAffine, enableSplice):
 		wx.Dialog.__init__(self, parent, -1, "Export Core Data", style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
 
 		vbox = wx.BoxSizer(wx.VERTICAL)
@@ -730,18 +730,22 @@ class ExportCoreDialog(wx.Dialog):
 		sizer = wx.StaticBoxSizer(wx.StaticBox(opt_panel, -1, 'Export Options'), orient=wx.VERTICAL)
 
 		self.cull = wx.CheckBox(opt_panel, -1, 'Apply Cull')
-		sizer.Add(self.cull, 1, wx.EXPAND)
+		# sizer.Add(self.cull, 1, wx.EXPAND)
 		self.cull.SetValue(False)
+		self.cull.Hide()
 
 		# 2/26/2019: Hide unused items rather than removing them entirely since
 		# the export process refers to them and I don't want to shake the jello further.
 		self.affine = wx.CheckBox(opt_panel, -1, 'Apply Affine')
 		self.affine.Show(True)
 		sizer.Add(self.affine, 1)
+		self.affine.Enable(enableAffine)
 		self.splice = wx.CheckBox(opt_panel, -1, 'Apply Splice')
 		self.splice.Show(True)
 		sizer.Add(self.splice, 1)
+		self.splice.Enable(enableSplice)
 		opt_panel.Bind(wx.EVT_CHECKBOX, self.OnSPLICE, self.splice)
+		opt_panel.Bind(wx.EVT_CHECKBOX, self.OnAffine, self.affine)
 
 		self.eld = wx.CheckBox(opt_panel, -1, 'Apply ELD')
 		self.eld.Show(False)
@@ -777,6 +781,15 @@ class ExportCoreDialog(wx.Dialog):
 		if keyid == wx.WXK_ESCAPE:
 			self.EndModal(wx.ID_CANCEL) 
 
+	# Affine must be applied to apply splice. Uncheck splice box
+	# if affine box is unchecked to enforce this.
+	def OnAffine(self, event):
+		applyAffine = self.affine.GetValue()
+		if not applyAffine and self.splice.GetValue():
+			self.splice.SetValue(False)
+
+	# Affine must be applied to apply splice. Check affine box if needed
+	# when splice box is checked.
 	def OnSPLICE(self, event):
 		ret = self.splice.GetValue()
 		self.affine.SetValue(ret)
