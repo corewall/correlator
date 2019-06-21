@@ -6145,9 +6145,9 @@ class DataFrame(wx.Panel):
 			for j in range(11):
 				idx = datasort[j]
 				if idx >= 0:
-					s = s + modifiedLine[idx] + " \t"
+					s = s + modifiedLine[idx] + " "
 				else:
-					s = s + "-" + " \t"
+					s = s + "-" + " " # RunNo
 			s = s + "\n"
 			fout.write(s)
 
