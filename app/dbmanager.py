@@ -6173,69 +6173,47 @@ class DataFrame(wx.Panel):
 		self.tree.SetItemText(selectItem, stamp, 6)
 		self.tree.SetItemText(selectItem, self.parent.user, 7)
 
-
+	# Called from Update context menu item available on site, datatype, and data file nodes.
 	def OnUPDATE(self):
 		if self.DisplayContainsData() and not self.ConfirmClearDisplayData():
 			return
 
+		# Gather all files to be updated.
 		selectItem = self.selectedIdx
-		if len(self.tree.GetItemText(selectItem, 8)) > 0: # single file
-			parentItem = self.tree.GetItemParent(selectItem)
-			type = self.tree.GetItemText(parentItem, 0)
-			if type != "-Cull Table":
-				self.OnUPDATEDATA(selectItem, type)
-				parentItem = self.tree.GetItemParent(parentItem)
-				self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
-		else:
-			type = self.tree.GetItemText(selectItem, 0)
-			if self.IsDatatypeNode(selectItem):
-				totalcount = self.tree.GetChildrenCount(selectItem, False)
-				if totalcount > 0:
-					child = self.tree.GetFirstChild(selectItem)
-					child_item = child[0]
-					if self.tree.GetItemText(child_item, 0) != "-Cull Table":
-						self.OnUPDATEDATA(child_item, type)
-					for k in range(1, totalcount):
-						child_item = self.tree.GetNextSibling(child_item)
-						if self.tree.GetItemText(child_item, 0) != "-Cull Table":
-							self.OnUPDATEDATA(child_item, type)
-				parentItem = self.tree.GetItemParent(selectItem)
-				self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
-			else: # leg-site node
-				totalcount = self.tree.GetChildrenCount(selectItem, False)
-				if totalcount > 0:
-					child = self.tree.GetFirstChild(selectItem)
-					child_item = child[0]
-					type = self.tree.GetItemText(child_item, 0)
-					if type not in STD_SITE_NODES:
-						sub_totalcount = self.tree.GetChildrenCount(child_item, False)
-						if sub_totalcount > 0:
-							child = self.tree.GetFirstChild(child_item)
-							sub_child_item = child[0]
-							if self.tree.GetItemText(sub_child_item, 0) != "-Cull Table":
-								self.OnUPDATEDATA(sub_child_item, type)
-							for sub_k in range(1, sub_totalcount):
-								sub_child_item = self.tree.GetNextSibling(sub_child_item)
-								if self.tree.GetItemText(sub_child_item, 0) != "-Cull Table":
-									self.OnUPDATEDATA(sub_child_item, type)
-					self.OnUPDATE_DB_FILE(self.tree.GetItemText(selectItem, 0), selectItem)
-					for k in range(1, totalcount):
-						child_item = self.tree.GetNextSibling(child_item)
-						type = self.tree.GetItemText(child_item, 0)
-						if type not in STD_SITE_NODES:
-							sub_totalcount = self.tree.GetChildrenCount(child_item, False)
-							if sub_totalcount > 0:
-								child = self.tree.GetFirstChild(child_item)
-								sub_child_item = child[0]
-								if self.tree.GetItemText(sub_child_item, 0) != "-Cull Table":
-									self.OnUPDATEDATA(sub_child_item, type)
-								for sub_k in range(1, sub_totalcount):
-									sub_child_item = self.tree.GetNextSibling(sub_child_item)
-									if self.tree.GetItemText(sub_child_item, 0) != "-Cull Table":
-										self.OnUPDATEDATA(sub_child_item, type)
-						self.OnUPDATE_DB_FILE(self.tree.GetItemText(selectItem, 0), selectItem)
+		siteNode = None
+		filesToUpdate = []
+		if self.IsSiteNode(selectItem):
+			siteNode = selectItem
+			for dtNode in [node for node in self.GetChildren(selectItem) if self.tree.GetItemText(node, 0) not in STD_SITE_NODES]:
+				for fileNode in self.GetChildren(dtNode):
+					filesToUpdate.append(fileNode)
+		elif self.IsDatatypeNode(selectItem):
+			siteNode = self.GetSiteForNode(selectItem)
+			for fileNode in self.GetChildren(selectItem):
+				filesToUpdate.append(fileNode)
+		else: # single file node
+			siteNode = self.GetSiteForNode(selectItem)
+			filesToUpdate.append(selectItem)
 
-		self.parent.OnShowMessage("Information", "Successfully updated", 1)
+		# Confirm that all files' input source files exist in their import-time location.
+		missingInputFiles = []
+		for ftu in filesToUpdate:
+			inputFile = self.tree.GetItemText(ftu, 9)
+			if not os.path.exists(inputFile):
+				missingInputFiles.append(inputFile)
+
+		if len(missingInputFiles) > 0: # if not, message and abort update
+			msg = "The following input source files cannot be found:\n\n"
+			msg += "{}\n\n".format('\n\n'.join(missingInputFiles))
+			msg += "The corresponding data files cannot be Updated. They must deleted and reimported."
+			self.parent.OnShowMessage("Update Failed", msg, 1)
+		else: # all input files found, proceed with update
+			for ftu in filesToUpdate:
+				datatype = self.tree.GetItemText(self.tree.GetItemParent(ftu), 0)
+				self.OnUPDATEDATA(ftu, datatype)
+				self.OnUPDATE_DB_FILE(self.tree.GetItemText(siteNode, 0), siteNode)
+			self.parent.OnShowMessage("Information", "Successfully updated", 1)
+		return
 			
 
 	# return first child of item that is Enabled and matches hole
@@ -6267,303 +6245,304 @@ class DataFrame(wx.Panel):
 				return (True, sn)
 		return (False, None)
 
-	def ImportFORMAT(self, source, dest, type, ntype, annot, stamp, datasort, selectItem):
-		fout = open(self.parent.DBPath + "db/" + dest, 'w+')
-		s = "# " + "Exp Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo " + "\n"
+	# Used only in obsolete OnUPDATE_DATA()
+	# def ImportFORMAT(self, source, dest, type, ntype, annot, stamp, datasort, selectItem):
+	# 	fout = open(self.parent.DBPath + "db/" + dest, 'w+')
+	# 	s = "# " + "Exp Site Hole Core CoreType Section TopOffset BottomOffset Depth Data RunNo " + "\n"
 
-		fout.write(s)
-		s = "# " + "Data Type " + type + "\n"
-		fout.write(s)
-		s = "# " + "Updated Time " + str(datetime.today()) + "\n"
-		fout.write(s)
-		s = "# Generated By Correlator\n"
-		fout.write(s)
+	# 	fout.write(s)
+	# 	s = "# " + "Data Type " + type + "\n"
+	# 	fout.write(s)
+	# 	s = "# " + "Updated Time " + str(datetime.today()) + "\n"
+	# 	fout.write(s)
+	# 	s = "# Generated By Correlator\n"
+	# 	fout.write(s)
 
-		temp_path = self.parent.DBPath+"tmp/"
-		py_correlator.formatChange(source, temp_path)
-		f = open(temp_path+"tmp.core", 'r+')
-		for line in f:
-			modifiedLine = line[0:-1].split()
-			if modifiedLine[0] == 'null':
-				continue
-			max = len(modifiedLine)
-			s = ""
-			for j in range(11):
-				idx = datasort[j]
-				if idx >= 0:
-					s = s + modifiedLine[idx] + " \t"
-				else:
-					s = s + "-" + " \t"
-			s = s + "\n"
-			fout.write(s)
-		f.close()
-		fout.close()
+	# 	temp_path = self.parent.DBPath+"tmp/"
+	# 	py_correlator.formatChange(source, temp_path)
+	# 	f = open(temp_path+"tmp.core", 'r+')
+	# 	for line in f:
+	# 		modifiedLine = line[0:-1].split()
+	# 		if modifiedLine[0] == 'null':
+	# 			continue
+	# 		max = len(modifiedLine)
+	# 		s = ""
+	# 		for j in range(11):
+	# 			idx = datasort[j]
+	# 			if idx >= 0:
+	# 				s = s + modifiedLine[idx] + " \t"
+	# 			else:
+	# 				s = s + "-" + " \t"
+	# 		s = s + "\n"
+	# 		fout.write(s)
+	# 	f.close()
+	# 	fout.close()
 
-		self.parent.LOCK = 0
-		py_correlator.openHoleFile(self.parent.DBPath + "db/" + dest, -1, ntype, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
-		#HYEJUNG CHANGING NOW
-		self.parent.OnInitDataUpdate(redraw=False)
-		###
-		self.parent.LOCK = 1
+	# 	self.parent.LOCK = 0
+	# 	py_correlator.openHoleFile(self.parent.DBPath + "db/" + dest, -1, ntype, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, annot)
+	# 	#HYEJUNG CHANGING NOW
+	# 	self.parent.OnInitDataUpdate(redraw=False)
+	# 	###
+	# 	self.parent.LOCK = 1
 
-		self.tree.SetItemText(selectItem, str(self.parent.min), 4)
-		self.tree.SetItemText(selectItem, str(self.parent.max), 5)
-		self.tree.SetItemText(selectItem, stamp, 6)
-		self.tree.SetItemText(selectItem, str(datasort[6]) + " " + str(datasort[7]) + " " + str(datasort[8]) + " " + str(datasort[9]) + " ", 11)
+	# 	self.tree.SetItemText(selectItem, str(self.parent.min), 4)
+	# 	self.tree.SetItemText(selectItem, str(self.parent.max), 5)
+	# 	self.tree.SetItemText(selectItem, stamp, 6)
+	# 	self.tree.SetItemText(selectItem, str(datasort[6]) + " " + str(datasort[7]) + " " + str(datasort[8]) + " " + str(datasort[9]) + " ", 11)
 
-		self.parent.OnNewData(None)
+	# 	self.parent.OnNewData(None)
 
-	# update all data??? how does this differ from OnUPDATEDATA()?
-	# appears to be related to Editing of measurement data and log data
-	def OnUPDATE_DATA(self):
-		if self.currentIdx == []: 
-			return
+	# This method is only called from unused, obsolete logic related to Editing of
+	# measurement data and log data. Confusingly similar to OnUPDATEDATA() to boot.
+	# def OnUPDATE_DATA(self):
+	# 	if self.currentIdx == []: 
+	# 		return
 
-		datatype = self.dataPanel.GetCellValue(3, 0)
-		strdatatype = self.dataPanel.GetCellValue(3, 0)
-		type = 7
-		annot =""
-		if len(datatype) == 0:
-			self.parent.OnShowMessage("Error", "You need to select data type", 1)
-			return
-		if datatype == "NaturalGamma":
-			datatype = "ngfix"
-			type = 4
-		elif datatype == "Susceptibility":
-			datatype = "susfix"
-			type = 3
-		elif datatype == "Reflectance":
-			datatype = "reflfix"
-			type = 5
-		elif datatype == "Bulk Density(GRA)":
-			datatype = "grfix"
-			type = 1
-		elif datatype == "Pwave":
-			datatype = "pwfix"
-			type = 2
-		elif datatype == "Other":
-			datatype = "otherfix"
-		else:
-			annot = datatype
+	# 	datatype = self.dataPanel.GetCellValue(3, 0)
+	# 	strdatatype = self.dataPanel.GetCellValue(3, 0)
+	# 	type = 7
+	# 	annot =""
+	# 	if len(datatype) == 0:
+	# 		self.parent.OnShowMessage("Error", "You need to select data type", 1)
+	# 		return
+	# 	if datatype == "NaturalGamma":
+	# 		datatype = "ngfix"
+	# 		type = 4
+	# 	elif datatype == "Susceptibility":
+	# 		datatype = "susfix"
+	# 		type = 3
+	# 	elif datatype == "Reflectance":
+	# 		datatype = "reflfix"
+	# 		type = 5
+	# 	elif datatype == "Bulk Density(GRA)":
+	# 		datatype = "grfix"
+	# 		type = 1
+	# 	elif datatype == "Pwave":
+	# 		datatype = "pwfix"
+	# 		type = 2
+	# 	elif datatype == "Other":
+	# 		datatype = "otherfix"
+	# 	else:
+	# 		annot = datatype
 
-		datasort = [ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
-		cols = self.dataPanel.GetNumberCols()
-		for i in range(cols):
-			if self.dataPanel.GetColLabelValue(i) == "Leg":
-				datasort[0] = i -1 
-			elif self.dataPanel.GetColLabelValue(i) == "Site":
-				datasort[1] = i -1
-			elif self.dataPanel.GetColLabelValue(i) == "Hole":
-				datasort[2] = i -1
-			elif self.dataPanel.GetColLabelValue(i) == "Core":
-				datasort[3] = i -1
-			elif self.dataPanel.GetColLabelValue(i) == "CoreType":
-				datasort[4] = i -1
-			elif self.dataPanel.GetColLabelValue(i) == "Section":
-				datasort[5] = i -1
-			elif self.dataPanel.GetColLabelValue(i) == "TopOffset":
-				datasort[6] = i -1
-				datasort[7] = i -1
-			elif self.dataPanel.GetColLabelValue(i) == "BottomOffset":
-				datasort[7] = i -1
-			elif self.dataPanel.GetColLabelValue(i) == "Depth":
-				datasort[8] = i -1
-			elif self.dataPanel.GetColLabelValue(i) == "Data":
-				datasort[9] = i -1
-			elif self.dataPanel.GetColLabelValue(i) == "RunNo":
-				datasort[10] = i -1
+	# 	datasort = [ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
+	# 	cols = self.dataPanel.GetNumberCols()
+	# 	for i in range(cols):
+	# 		if self.dataPanel.GetColLabelValue(i) == "Leg":
+	# 			datasort[0] = i -1 
+	# 		elif self.dataPanel.GetColLabelValue(i) == "Site":
+	# 			datasort[1] = i -1
+	# 		elif self.dataPanel.GetColLabelValue(i) == "Hole":
+	# 			datasort[2] = i -1
+	# 		elif self.dataPanel.GetColLabelValue(i) == "Core":
+	# 			datasort[3] = i -1
+	# 		elif self.dataPanel.GetColLabelValue(i) == "CoreType":
+	# 			datasort[4] = i -1
+	# 		elif self.dataPanel.GetColLabelValue(i) == "Section":
+	# 			datasort[5] = i -1
+	# 		elif self.dataPanel.GetColLabelValue(i) == "TopOffset":
+	# 			datasort[6] = i -1
+	# 			datasort[7] = i -1
+	# 		elif self.dataPanel.GetColLabelValue(i) == "BottomOffset":
+	# 			datasort[7] = i -1
+	# 		elif self.dataPanel.GetColLabelValue(i) == "Depth":
+	# 			datasort[8] = i -1
+	# 		elif self.dataPanel.GetColLabelValue(i) == "Data":
+	# 			datasort[9] = i -1
+	# 		elif self.dataPanel.GetColLabelValue(i) == "RunNo":
+	# 			datasort[10] = i -1
 
-		if datasort[6] == -1:
-			datasort[6] = datasort[8] 
-		if datasort[7] == -1:
-			datasort[7] = datasort[8] 
+	# 	if datasort[6] == -1:
+	# 		datasort[6] = datasort[8] 
+	# 	if datasort[7] == -1:
+	# 		datasort[7] = datasort[8] 
 
-		# CHECKING VALIDATION
-		for ith in range(10):
-			if ith == 4:
-				continue
-			if datasort[ith] == -1:
-				self.parent.OnShowMessage("Error", "Please define data column", 1)
-				return
+	# 	# CHECKING VALIDATION
+	# 	for ith in range(10):
+	# 		if ith == 4:
+	# 			continue
+	# 		if datasort[ith] == -1:
+	# 			self.parent.OnShowMessage("Error", "Please define data column", 1)
+	# 			return
 
-		tempstamp = str(datetime.today())
-		last = tempstamp.find(":", 0)
-		last = tempstamp.find(":", last+1)
-		#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
-		stamp = tempstamp[0:last]
+	# 	tempstamp = str(datetime.today())
+	# 	last = tempstamp.find(":", 0)
+	# 	last = tempstamp.find(":", last+1)
+	# 	#stamp = tempstamp[0:10] + "," + tempstamp[12:16]
+	# 	stamp = tempstamp[0:last]
 
-		self.parent.OnNewData(None)
+	# 	self.parent.OnNewData(None)
 
-		parentItem = None
-		for selectItem in self.currentIdx:
-			if len(self.tree.GetItemText(selectItem, 8)) > 0:
-				parentItem = self.tree.GetItemParent(selectItem)
+	# 	parentItem = None
+	# 	for selectItem in self.currentIdx:
+	# 		if len(self.tree.GetItemText(selectItem, 8)) > 0:
+	# 			parentItem = self.tree.GetItemParent(selectItem)
 
-				source = self.tree.GetItemText(selectItem, 9)
-				xml_flag = source.find(".xml", 0)
-				if xml_flag > 0:
-					self.handler.init()
-					self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
-					self.parser.parse(source)
-					self.handler.closeFile()
-					source = self.parent.DBPath+"tmp/.tmp"
+	# 			source = self.tree.GetItemText(selectItem, 9)
+	# 			xml_flag = source.find(".xml", 0)
+	# 			if xml_flag > 0:
+	# 				self.handler.init()
+	# 				self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+	# 				self.parser.parse(source)
+	# 				self.handler.closeFile()
+	# 				source = self.parent.DBPath+"tmp/.tmp"
 
-				filename = self.tree.GetItemText(selectItem, 8)
-				s = "Update Core Data: " + filename + "\n"
-				self.parent.logFileptr.write(s)
+	# 			filename = self.tree.GetItemText(selectItem, 8)
+	# 			s = "Update Core Data: " + filename + "\n"
+	# 			self.parent.logFileptr.write(s)
 
-				start = filename.find('.', 0)
-				filename = filename[0:start] + '.' + datatype + '.dat'
-				self.tree.SetItemText(selectItem, filename, 8)
-				dest = self.tree.GetItemText(selectItem, 10) + filename
-				self.ImportFORMAT(source, dest, datatype, type, annot, stamp, datasort, selectItem)
-				self.tree.SetItemText(selectItem, self.selectedDataType, 1)
-				if self.selectedDataType == "?":
-					self.tree.SetItemText(selectItem, "Undefined", 1)
+	# 			start = filename.find('.', 0)
+	# 			filename = filename[0:start] + '.' + datatype + '.dat'
+	# 			self.tree.SetItemText(selectItem, filename, 8)
+	# 			dest = self.tree.GetItemText(selectItem, 10) + filename
+	# 			self.ImportFORMAT(source, dest, datatype, type, annot, stamp, datasort, selectItem)
+	# 			self.tree.SetItemText(selectItem, self.selectedDataType, 1)
+	# 			if self.selectedDataType == "?":
+	# 				self.tree.SetItemText(selectItem, "Undefined", 1)
 					
-			else:
-				titleItem = self.tree.GetItemParent(selectItem)
-				title = self.tree.GetItemText(titleItem, 0)
-				totalcount = self.tree.GetChildrenCount(selectItem, False)
-				parentItem = selectItem 
-				if totalcount > 0:
-					child = self.tree.GetFirstChild(selectItem)
-					child_item = child[0]
+	# 		else:
+	# 			titleItem = self.tree.GetItemParent(selectItem)
+	# 			title = self.tree.GetItemText(titleItem, 0)
+	# 			totalcount = self.tree.GetChildrenCount(selectItem, False)
+	# 			parentItem = selectItem 
+	# 			if totalcount > 0:
+	# 				child = self.tree.GetFirstChild(selectItem)
+	# 				child_item = child[0]
 
-					if self.tree.GetItemText(child_item, 0) != "-Cull Table":
-						source = self.tree.GetItemText(child_item, 9)
-						xml_flag = source.find(".xml", 0)
-						if xml_flag > 0:
-							self.handler.init()
-							self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
-							self.parser.parse(source)
-							self.handler.closeFile()
-							source = self.parent.DBPath+"tmp/.tmp"
+	# 				if self.tree.GetItemText(child_item, 0) != "-Cull Table":
+	# 					source = self.tree.GetItemText(child_item, 9)
+	# 					xml_flag = source.find(".xml", 0)
+	# 					if xml_flag > 0:
+	# 						self.handler.init()
+	# 						self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+	# 						self.parser.parse(source)
+	# 						self.handler.closeFile()
+	# 						source = self.parent.DBPath+"tmp/.tmp"
 
-						filename = self.tree.GetItemText(child_item, 8)
-						s = "Update Core Data: " + filename + "\n"
-						self.parent.logFileptr.write(s)
+	# 					filename = self.tree.GetItemText(child_item, 8)
+	# 					s = "Update Core Data: " + filename + "\n"
+	# 					self.parent.logFileptr.write(s)
 
-						start = filename.find('.', 0)
-						filename = filename[0:start] + '.' + datatype + '.dat'
-						self.tree.SetItemText(child_item, filename, 8)
-						dest = self.tree.GetItemText(child_item, 10) + filename
-						self.ImportFORMAT(source, dest, datatype, type, annot, stamp, datasort, child_item)
-						self.tree.SetItemText(child_item, self.selectedDataType, 1)
-						if self.selectedDataType == "?":
-							self.tree.SetItemText(child_item, "Undefined", 1)
-					else:
-						filename = self.tree.GetItemText(child_item, 8)
-						path = self.tree.GetItemText(child_item, 10)
-						fin = open(self.parent.DBPath+ 'db/' + path + filename, 'r+')
-						new_filename = str(title) + "." + str(datatype) + ".cull.table"
-						if filename != new_filename:
-							fout = open(self.parent.DBPath+ 'db/' + path + new_filename, 'w+')
-							self.tree.SetItemText(child_item, new_filename, 8)
-							for line in fin:
-								max  = len(line) -1
-								if max > 0: 
-									if line[0] == '#':
-										if line[0:6] == '# Type':
-											fout.write('# Type ' + str(strdatatype) + '\n')
-										else:
-											fout.write(line)
-									else:
-										fout.write(line)
-							fout.close()
-						fin.close()
+	# 					start = filename.find('.', 0)
+	# 					filename = filename[0:start] + '.' + datatype + '.dat'
+	# 					self.tree.SetItemText(child_item, filename, 8)
+	# 					dest = self.tree.GetItemText(child_item, 10) + filename
+	# 					self.ImportFORMAT(source, dest, datatype, type, annot, stamp, datasort, child_item)
+	# 					self.tree.SetItemText(child_item, self.selectedDataType, 1)
+	# 					if self.selectedDataType == "?":
+	# 						self.tree.SetItemText(child_item, "Undefined", 1)
+	# 				else:
+	# 					filename = self.tree.GetItemText(child_item, 8)
+	# 					path = self.tree.GetItemText(child_item, 10)
+	# 					fin = open(self.parent.DBPath+ 'db/' + path + filename, 'r+')
+	# 					new_filename = str(title) + "." + str(datatype) + ".cull.table"
+	# 					if filename != new_filename:
+	# 						fout = open(self.parent.DBPath+ 'db/' + path + new_filename, 'w+')
+	# 						self.tree.SetItemText(child_item, new_filename, 8)
+	# 						for line in fin:
+	# 							max  = len(line) -1
+	# 							if max > 0: 
+	# 								if line[0] == '#':
+	# 									if line[0:6] == '# Type':
+	# 										fout.write('# Type ' + str(strdatatype) + '\n')
+	# 									else:
+	# 										fout.write(line)
+	# 								else:
+	# 									fout.write(line)
+	# 						fout.close()
+	# 					fin.close()
 					
-					for k in range(1, totalcount):
-						child_item = self.tree.GetNextSibling(child_item)
+	# 				for k in range(1, totalcount):
+	# 					child_item = self.tree.GetNextSibling(child_item)
 
-						if self.tree.GetItemText(child_item, 0) != "-Cull Table":
-							source = self.tree.GetItemText(child_item, 9)
-							xml_flag = source.find(".xml", 0)
-							if xml_flag > 0:
-								self.handler.init()
-								self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
-								self.parser.parse(source)
-								self.handler.closeFile()
-								source = self.parent.DBPath+"tmp/.tmp"
+	# 					if self.tree.GetItemText(child_item, 0) != "-Cull Table":
+	# 						source = self.tree.GetItemText(child_item, 9)
+	# 						xml_flag = source.find(".xml", 0)
+	# 						if xml_flag > 0:
+	# 							self.handler.init()
+	# 							self.handler.openFile(self.parent.DBPath+"tmp/.tmp")
+	# 							self.parser.parse(source)
+	# 							self.handler.closeFile()
+	# 							source = self.parent.DBPath+"tmp/.tmp"
 
-							filename = self.tree.GetItemText(child_item, 8)
-							s = "Update Core Data: " + filename + "\n"
-							self.parent.logFileptr.write(s)
+	# 						filename = self.tree.GetItemText(child_item, 8)
+	# 						s = "Update Core Data: " + filename + "\n"
+	# 						self.parent.logFileptr.write(s)
 
-							start = filename.find('.', 0)
-							filename = filename[0:start] + '.' + datatype + '.dat'
-							self.tree.SetItemText(child_item, filename, 8)
-							dest = self.tree.GetItemText(child_item, 10) + filename
-							self.ImportFORMAT(source, dest, datatype, type, annot, stamp, datasort, child_item)
-							self.tree.SetItemText(child_item, self.selectedDataType, 1)
-							if self.selectedDataType == "?":
-								self.tree.SetItemText(child_item, "Undefined", 1)
-						else:
-							filename = self.tree.GetItemText(child_item, 8)
-							path = self.tree.GetItemText(child_item, 10)
-							fin = open(self.parent.DBPath+ 'db/' + path + filename, 'r+')
-							new_filename = str(title) + "." + str(datatype) + ".cull.table"
-							if filename != new_filename:
-								fout = open(self.parent.DBPath+ 'db/' + path + new_filename, 'w+')
-								self.tree.SetItemText(child_item, new_filename, 8)
-								for line in fin:
-									max  = len(line) -1
-									if max > 0: 
-										if line[0] == '#':
-											if line[0:6] == '# Type':
-												fout.write('# Type ' + str(strdatatype) + '\n')
-											else:
-												fout.write(line)
-										else:
-											fout.write(line)
-								fout.close()
-							fin.close()
+	# 						start = filename.find('.', 0)
+	# 						filename = filename[0:start] + '.' + datatype + '.dat'
+	# 						self.tree.SetItemText(child_item, filename, 8)
+	# 						dest = self.tree.GetItemText(child_item, 10) + filename
+	# 						self.ImportFORMAT(source, dest, datatype, type, annot, stamp, datasort, child_item)
+	# 						self.tree.SetItemText(child_item, self.selectedDataType, 1)
+	# 						if self.selectedDataType == "?":
+	# 							self.tree.SetItemText(child_item, "Undefined", 1)
+	# 					else:
+	# 						filename = self.tree.GetItemText(child_item, 8)
+	# 						path = self.tree.GetItemText(child_item, 10)
+	# 						fin = open(self.parent.DBPath+ 'db/' + path + filename, 'r+')
+	# 						new_filename = str(title) + "." + str(datatype) + ".cull.table"
+	# 						if filename != new_filename:
+	# 							fout = open(self.parent.DBPath+ 'db/' + path + new_filename, 'w+')
+	# 							self.tree.SetItemText(child_item, new_filename, 8)
+	# 							for line in fin:
+	# 								max  = len(line) -1
+	# 								if max > 0: 
+	# 									if line[0] == '#':
+	# 										if line[0:6] == '# Type':
+	# 											fout.write('# Type ' + str(strdatatype) + '\n')
+	# 										else:
+	# 											fout.write(line)
+	# 									else:
+	# 										fout.write(line)
+	# 							fout.close()
+	# 						fin.close()
 
-		if parentItem != None:
-			prevDataType = self.tree.GetItemText(parentItem, 0)
-			if prevDataType != strdatatype:
-				# different
-				self.tree.SetItemText(parentItem, strdatatype, 0)
+	# 	if parentItem != None:
+	# 		prevDataType = self.tree.GetItemText(parentItem, 0)
+	# 		if prevDataType != strdatatype:
+	# 			# different
+	# 			self.tree.SetItemText(parentItem, strdatatype, 0)
 
-			totalcount = self.tree.GetChildrenCount(parentItem, False)
-			item = parentItem
-			if totalcount > 0:
-				sub_child = self.tree.GetFirstChild(item)
-				item = sub_child[0]
-				min = 0
-				max = 0
-				if self.tree.GetItemText(item, 0) == '-Cull Table':
-					cull_item = item
-					for k in range(1, totalcount):
-						cull_item = self.tree.GetNextSibling(cull_item)
-						if self.tree.GetItemText(cull_item, 0) != '-Cull Table':
-							min = float(self.tree.GetItemText(cull_item, 4))
-							max = float(self.tree.GetItemText(cull_item, 5))
-							break
-				else:
-					min = float(self.tree.GetItemText(item, 4))
-					max = float(self.tree.GetItemText(item, 5))
-				for k in range(1, totalcount):
-					item = self.tree.GetNextSibling(item)
-					if self.tree.GetItemText(item, 0) != '-Cull Table':
-						float_min = float(self.tree.GetItemText(item, 4))
-						float_max = float(self.tree.GetItemText(item, 5))
-						if float_min < min:
-							min = float_min
-						if float_max > max:
-							max = float_max
+	# 		totalcount = self.tree.GetChildrenCount(parentItem, False)
+	# 		item = parentItem
+	# 		if totalcount > 0:
+	# 			sub_child = self.tree.GetFirstChild(item)
+	# 			item = sub_child[0]
+	# 			min = 0
+	# 			max = 0
+	# 			if self.tree.GetItemText(item, 0) == '-Cull Table':
+	# 				cull_item = item
+	# 				for k in range(1, totalcount):
+	# 					cull_item = self.tree.GetNextSibling(cull_item)
+	# 					if self.tree.GetItemText(cull_item, 0) != '-Cull Table':
+	# 						min = float(self.tree.GetItemText(cull_item, 4))
+	# 						max = float(self.tree.GetItemText(cull_item, 5))
+	# 						break
+	# 			else:
+	# 				min = float(self.tree.GetItemText(item, 4))
+	# 				max = float(self.tree.GetItemText(item, 5))
+	# 			for k in range(1, totalcount):
+	# 				item = self.tree.GetNextSibling(item)
+	# 				if self.tree.GetItemText(item, 0) != '-Cull Table':
+	# 					float_min = float(self.tree.GetItemText(item, 4))
+	# 					float_max = float(self.tree.GetItemText(item, 5))
+	# 					if float_min < min:
+	# 						min = float_min
+	# 					if float_max > max:
+	# 						max = float_max
 
-				self.tree.SetItemText(parentItem, '1', 2)
-				self.tree.SetItemText(parentItem, str(min), 4)
-				self.tree.SetItemText(parentItem, str(max), 5)
+	# 			self.tree.SetItemText(parentItem, '1', 2)
+	# 			self.tree.SetItemText(parentItem, str(min), 4)
+	# 			self.tree.SetItemText(parentItem, str(max), 5)
 
-				parentItem = self.tree.GetItemParent(parentItem)
-				self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
+	# 			parentItem = self.tree.GetItemParent(parentItem)
+	# 			self.OnUPDATE_DB_FILE(self.tree.GetItemText(parentItem, 0), parentItem)
 
-		self.sideNote.SetSelection(0)
-		self.EditRow = -1
-		self.importbtn.SetLabel("Import")
-		self.importbtn.Enable(False)
+	# 	self.sideNote.SetSelection(0)
+	# 	self.EditRow = -1
+	# 	self.importbtn.SetLabel("Import")
+	# 	self.importbtn.Enable(False)
 
 
 	def OnUPDATE_LOG(self):
@@ -6857,16 +6836,17 @@ class DataFrame(wx.Panel):
 
 	# import measurement data file(s) in self.paths
 	def OnIMPORT(self, event):
-		if self.importbtn.GetLabel() == "Change":
-			if self.importType == "LOG": 
-				self.OnUPDATE_LOG()
-			else:
-				self.OnUPDATE_DATA()
-			return
+		# brg 6/20/2019 obsolete log-related logic
+		# if self.importbtn.GetLabel() == "Change":
+		# 	if self.importType == "LOG": 
+		# 		self.OnUPDATE_LOG()
+		# 	else:
+		# 		self.OnUPDATE_DATA()
+		# 	return
 
-		if self.importType == "LOG": 
-			self.OnIMPORT_LOG()
-			return
+		# if self.importType == "LOG": 
+		# 	self.OnIMPORT_LOG()
+		# 	return
 
 		if len(self.paths) == 0: 
 			return
