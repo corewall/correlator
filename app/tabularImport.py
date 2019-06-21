@@ -330,32 +330,42 @@ def doSITImport(parent, goalFormat, path=None):
                 sit = SpliceIntervalTable(name, dataframe)
     return sit
 
+# Read tabular data and return pandas DataFrame, relying on pandas defaults.
 def readFile(filepath):
     srcfile = open(filepath, 'rU')
     dataframe = pandas.read_csv(srcfile, sep=None, skipinitialspace=True, engine='python')
     srcfile.close()
     return dataframe
 
-# pandas call to open Correlator's tab+space-delimited file format
+# Read Splice Interval Table (SIT) format and return pandas DataFrame
 def readSpliceIntervalTableFile(filename):
     df = readFile(filename)
     forceStringDatatype(["Site", "Hole", "Core", "Core Type", "Top Section", 'Bottom Section'], df)
     return df
 
-
-# pandas call to open Correlator's tab+space-delimited file format
-def readCorrelatorDataFile(filename):
+# Read Correlator space-delimited data file and return pandas DataFrame.
+# filename: Correlator data file path to be read
+# strip: if True, strip leading and trailing whitespace in string columns. This
+# option is to ensure whitespace doesn't corrupt constructed hole+core IDs e.g.
+# invalid " A 1" instead of valid "A1".
+def readCorrelatorDataFile(filename, strip=False):
     datfile = open(filename, 'rU')
     headers = ["Exp", "Site", "Hole", "Core", "CoreType", "Section", "TopOffset", "BottomOffset", "Depth", "Data", "RunNo"]
     dataframe = pandas.read_csv(datfile, header=None, index_col=False, names=headers, sep=" ", skipinitialspace=True, comment="#", engine='python')
     datfile.close()
-    forceStringDatatype(["Exp", "Site", "Hole", "Core", "CoreType", "Section"], dataframe)
+    str_cols = ["Exp", "Site", "Hole", "Core", "CoreType", "Section"]
+    forceStringDatatype(str_cols, dataframe)
+    if strip:
+        for col in str_cols:
+            dataframe[col] = dataframe[col].map(str.strip)
     return dataframe
 
-# read each datafile in filenames and return a single dataframe comprising
-# all files' dataframes
-def readCorrelatorDataFiles(filenames):
-    dfs = [readCorrelatorDataFile(fname) for fname in filenames]
+# Read each datafile in filenames and return a single pandas DataFrame comprising
+# all files' DataFrames.
+# filenames: list of Correlator data file paths to be read
+# strip: if True, strip leading and trailing whitespace in string columns
+def readCorrelatorDataFiles(filenames, strip=False):
+    dfs = [readCorrelatorDataFile(fname, strip) for fname in filenames]
     combinedDataframe = pandas.concat(dfs, ignore_index=True)
     return combinedDataframe
 

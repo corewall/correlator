@@ -901,7 +901,7 @@ class DataFrame(wx.Panel):
 		affineBuilder = AffineBuilder.createWithAffineFile(os.path.join(sitePath, affineFile), secsumm)
 		if affineFile and not spliceFile: # export affine-shifted version of each input file
 			for filename in dataFiles:
-				df = tabularImport.readCorrelatorDataFile(os.path.join(sitePath, filename))
+				df = tabularImport.readCorrelatorDataFile(os.path.join(sitePath, filename), strip=True)
 				df['RawDepth'] = df['Depth']
 				acis = sorted([acistr(coreid) for coreid in list(set(df['Hole'] + df['Core']))])
 				coreDataframes = []
@@ -916,7 +916,7 @@ class DataFrame(wx.Panel):
 				tabularImport.writeToFile(affineDF, os.path.join(outPath, outname))
 		elif affineFile and spliceFile: # export single splice file
 			sitDF = tabularImport.readSpliceIntervalTableFile(os.path.join(sitePath, spliceFile))
-			dataDF = tabularImport.readCorrelatorDataFiles([os.path.join(sitePath, fname) for fname in dataFiles])
+			dataDF = tabularImport.readCorrelatorDataFiles([os.path.join(sitePath, fname) for fname in dataFiles], strip=True)
 			spliceRows = []
 			for _, row in sitDF.iterrows(): # gather data rows within range of each splice interval
 				hole = row['Hole']
