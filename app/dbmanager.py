@@ -812,6 +812,9 @@ class DataFrame(wx.Panel):
 		return
 
 	# prepare parameters for ExportCoreData()
+	# selectedIndex: selected node in self.tree
+	# isType: if True, selectedNode is a datatype node e.g. Susceptibility,
+	# otherwise it's a single data file node
 	def OnExportCoreData(self, selectedIndex, isType):
 		siteNode = self.GetSiteForNode(selectedIndex)
 
@@ -834,73 +837,77 @@ class DataFrame(wx.Panel):
 				elif type == "SPLICE" and flag == "Enable":
 					spliceFile = self.tree.GetItemText(stChild, 8)
 
-		# gather export parameters, output destination
-		enableAffine = affineFile is not None
-		enableSplice = enableAffine and spliceFile is not None # affine required to apply splice
-		dlg = dialog.ExportCoreDialog(self, enableAffine, enableSplice)
-		dlg.Centre()
-		ret = dlg.ShowModal()
-		dlg.Destroy()
-		if ret != wx.ID_OK:
-			return
-
-		if len(secSummFiles) == 0 and (dlg.affine.GetValue() or dlg.splice.GetValue()):
-			msg = "One or more section summary files are required to export data with affine and/or splice applied."
-			self.parent.OnShowMessage("Error", msg, 1)
-			return
-
-		if dlg.affine.GetValue() == False:
-			affineFile = None
-		if dlg.splice.GetValue() == False:
-			spliceFile = None
-
-		opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
-		ret = opendlg.ShowModal()
-		opendlg.Destroy()
-		if ret != wx.ID_OK:
-			return
-
-		output_path = opendlg.GetDirectory()
-		output_prefix = opendlg.GetFilename()
-		self.parent.Directory = output_path
-
-		# gather data files
+		# gather related measurement data files and hole names
 		if isType == False:
 			typeNode = self.tree.GetItemParent(selectedIndex)
+			holes = [self.tree.GetItemText(selectedIndex, 0)]
 			dataFiles = [self.tree.GetItemText(selectedIndex, 8)]
-		else: 
+		else:
 			typeNode = selectedIndex
+			holes = [self.tree.GetItemText(dataIdx, 0) for dataIdx in self.GetChildren(selectedIndex)]
 			dataFiles = [self.tree.GetItemText(dataIdx, 8) for dataIdx in self.GetChildren(selectedIndex)]
 
 		datatype = self.tree.GetItemText(typeNode, 0)
 		siteName = self.GetSiteNameForNode(selectedIndex)
 		sitePath = self.parent.DBPath + 'db/' + siteName + "/"
+		spliceHoles = self._makeSpliceHolesStr(sitePath, spliceFile, holes)
 
-		result = self.ExportCoreData(sitePath, dataFiles, datatype, output_path, output_prefix, secSummFiles, affineFile, spliceFile)
+		# gather export parameters, output destination
+		enableAffine = affineFile is not None
+		enableSplice = enableAffine and spliceFile is not None # affine required to apply splice
+		exdlg = dialog.ExportCoreDialog(self, enableAffine, enableSplice, holes, siteName, datatype, spliceHoles)
+		exdlg.Centre()
+		ret = exdlg.ShowModal()
+		if ret != wx.ID_OK:
+			return
+
+		if len(secSummFiles) == 0 and (exdlg.affine.GetValue() or exdlg.splice.GetValue()):
+			msg = "One or more section summary files are required to export data with affine and/or splice applied."
+			self.parent.OnShowMessage("Error", msg, 1)
+			return
+
+		if exdlg.affine.GetValue() == False:
+			affineFile = None
+		if exdlg.splice.GetValue() == False:
+			spliceFile = None
+
+		outputFiles = [exdlg.fileTextControls[i].GetLabel() for i in range(len(holes))]
+		exdlg.Destroy()
+
+		dirdlg = wx.DirDialog(self, "Select Destination Directory for Export", defaultPath=self.parent.Directory)
+		ret = dirdlg.ShowModal()
+		if ret != wx.ID_OK:
+			return
+		outputPath = dirdlg.GetPath()
+		self.parent.Directory = outputPath
+
+		result = self.ExportCoreData(sitePath, dataFiles, datatype, outputFiles, outputPath, secSummFiles, affineFile, spliceFile)
 		if result:
 			self.parent.OnShowMessage("Info", "Successfully exported.", 1)
 
 	# sitePath: full path to directory containing files in dataFiles
 	# dataFiles: list of filenames in sitePath to be processed and exported
 	# datatype: name of datatype being exported
-	# outPath: full path to directory where export files will be written
+	# outputFiles: list of output filenames, parallel to dataFiles
+	# outputPath: full path to directory where export files will be written
 	# prefix: string with which to prefix generated export filename
 	# secSummFiles: list of SectionSummary files to be used in export
 	# affineFile: affine shifts to apply to export
 	# spliceFile: splice intervals to apply to export
-	def ExportCoreData(self, sitePath, dataFiles, datatype, outPath, prefix, secSummFiles=None, affineFile=None, spliceFile=None):
+	def ExportCoreData(self, sitePath, dataFiles, datatype, outputFiles, outPath, secSummFiles=None, affineFile=None, spliceFile=None):
 		# if no affine or splice is applied, export raw data files
 		if not affineFile and not spliceFile:
-			for filename in dataFiles:
+			for index, filename in enumerate(dataFiles):
 				df = tabularImport.readCorrelatorDataFile(os.path.join(sitePath, filename))
-				outname = self._getExportFileName(filename, datatype, prefix, "RAW")
+				df.rename(columns={'Depth':'Depth CSF-A (m)'}, inplace=True)
+				outname = outputFiles[index]
 				tabularImport.writeToFile(df, os.path.join(outPath, outname))
 			return True
 
 		secsumm = SectionSummary.createWithFiles([os.path.join(sitePath, ssFile) for ssFile in secSummFiles])
 		affineBuilder = AffineBuilder.createWithAffineFile(os.path.join(sitePath, affineFile), secsumm)
 		if affineFile and not spliceFile: # export affine-shifted version of each input file
-			for filename in dataFiles:
+			for index, filename in enumerate(dataFiles):
 				df = tabularImport.readCorrelatorDataFile(os.path.join(sitePath, filename), strip=True)
 				df['RawDepth'] = df['Depth']
 				acis = sorted([acistr(coreid) for coreid in list(set(df['Hole'] + df['Core']))])
@@ -912,7 +919,8 @@ class DataFrame(wx.Panel):
 					coredf['Offset'] = dist
 					coreDataframes.append(coredf)
 				affineDF = pandas.concat(coreDataframes)
-				outname = self._getExportFileName(filename, datatype, prefix, "SHIFTED")
+				affineDF.rename(columns={'RawDepth':'Depth CSF-A (m)', 'Depth':'Depth CCSF (m)'}, inplace=True)
+				outname = outputFiles[index]
 				tabularImport.writeToFile(affineDF, os.path.join(outPath, outname))
 		elif affineFile and spliceFile: # export single splice file
 			sitDF = tabularImport.readSpliceIntervalTableFile(os.path.join(sitePath, spliceFile))
@@ -928,7 +936,10 @@ class DataFrame(wx.Panel):
 
 			spliceDF = pandas.concat(spliceRows) # merge data into a single dataframe
 			spliceDF = spliceDF.apply(self._applyShift, axis=1, builder=affineBuilder) # apply affine to Depth, RawDepth, and Offset
-			outname = self._getExportFileName("splice", datatype, prefix, "SPLICED")
+			spliceDF.rename(columns={'RawDepth':'Depth CSF-A (m)', 'Depth':'Depth CCSF (m)'}, inplace=True)
+			# splice is an oddball case since it always outputs a single file from one or more dataFiles:
+			# the first item in the outputFiles list is the splice output filename
+			outname = outputFiles[0]
 			tabularImport.writeToFile(spliceDF, os.path.join(outPath, outname))
 		else:
 			print("Unexpected export parameters, apply affine = {}, apply splice = {}".format(applyAffine, applySplice))
@@ -949,16 +960,19 @@ class DataFrame(wx.Panel):
 		row['Depth'] += dist
 		return row
 
-	# Return decorated name for export file
-	def _getExportFileName(self, filename, datatype, prefix, suffix):
-		splitname = os.path.splitext(filename)
-		name = splitname[0].split('.')[0] if len(splitname[0].split('.')) > 1 else splitname[0]
-		if prefix != "":
-			name = prefix + "_" + name
-		name += "_" + datatype
-		if suffix != "":
-			name += "_" + suffix
-		return name + ".csv"
+	# If there's a splice, make a string of participating holes, excluding holes that aren't part of
+	# the export, e.g. if exporting Hole A data and applying a splice that includes holes A,
+	# B, and C, return only "A". If exporting Holes A, B, C and D and applying the same splice,
+	# return "ABC".
+	# sitePath: path to site's data directory
+	# spliceFile: splice file in site's data dir to be opened
+	# holes: list of strings indicating holes that are part of export e.g. ['A', 'B', 'C', 'D']
+	def _makeSpliceHolesStr(self, sitePath, spliceFile, holes):
+		spliceHoles = ""
+		if spliceFile is not None:
+			sitDF = tabularImport.readSpliceIntervalTableFile(os.path.join(sitePath, spliceFile))
+			spliceHoles = ''.join([h for h in list(set(sitDF['Hole'])) if h in holes])
+		return spliceHoles
 
 	def SAVE_AFFINE_TO_XML(self, affineFile, outFile):
 		fin = open(affineFile, 'r+')

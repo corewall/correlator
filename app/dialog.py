@@ -717,8 +717,13 @@ class ExportELDDialog(wx.Dialog):
 	
 
 class ExportCoreDialog(wx.Dialog):
-	def __init__(self, parent, enableAffine, enableSplice):
-		wx.Dialog.__init__(self, parent, -1, "Export Core Data", style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
+	def __init__(self, parent, enableAffine, enableSplice, holes, siteName, datatype, spliceHoles):
+		wx.Dialog.__init__(self, parent, -1, "Export Core Data", style= wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER)
+
+		self.holes = holes
+		self.siteName = siteName
+		self.datatype = datatype
+		self.spliceHoles = spliceHoles
 
 		vbox = wx.BoxSizer(wx.VERTICAL)
 		# vbox.Add(wx.StaticText(self, -1, 'Check to Export Core data'), 0, wx.TOP | wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 12)
@@ -742,9 +747,9 @@ class ExportCoreDialog(wx.Dialog):
 		self.affine.Enable(enableAffine)
 		self.splice = wx.CheckBox(opt_panel, -1, 'Apply Splice')
 		self.splice.Show(True)
-		sizer.Add(self.splice, 1)
+		sizer.Add(self.splice, 1, wx.BOTTOM, 5)
 		self.splice.Enable(enableSplice)
-		opt_panel.Bind(wx.EVT_CHECKBOX, self.OnSPLICE, self.splice)
+		opt_panel.Bind(wx.EVT_CHECKBOX, self.OnSplice, self.splice)
 		opt_panel.Bind(wx.EVT_CHECKBOX, self.OnAffine, self.affine)
 
 		self.eld = wx.CheckBox(opt_panel, -1, 'Apply ELD')
@@ -757,10 +762,34 @@ class ExportCoreDialog(wx.Dialog):
 		# sizer.Add(self.age, 1)
 		#opt_panel.Bind(wx.EVT_CHECKBOX, self.OnAGE, self.age)
 
+		self.prefix = wx.TextCtrl(opt_panel, -1)
+		self.suffix = wx.TextCtrl(opt_panel, -1)
+		prefixSizer = wx.BoxSizer(wx.HORIZONTAL)
+		prefixSizer.Add(wx.StaticText(opt_panel, -1, "Output File Prefix:"), 0, wx.ALIGN_CENTER_VERTICAL)
+		prefixSizer.Add(self.prefix, 1, wx.EXPAND | wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+		self.Bind(wx.EVT_TEXT, self.UpdateOutputFiles, self.prefix)
+		sizer.Add(prefixSizer, 0, wx.EXPAND)
+		suffixSizer = wx.BoxSizer(wx.HORIZONTAL)
+		suffixSizer.Add(wx.StaticText(opt_panel, -1, "Output File Suffix:"), 0, wx.ALIGN_CENTER_VERTICAL)
+		suffixSizer.Add(self.suffix, 1, wx.EXPAND | wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+		self.Bind(wx.EVT_TEXT, self.UpdateOutputFiles, self.suffix)
+		sizer.Add(suffixSizer, 0, wx.EXPAND)
+
 		opt_panel.SetSizer(sizer)
 		vbox_opt.Add(opt_panel, 1, wx.EXPAND)
 		panel.SetSizer(vbox_opt)
 		vbox.Add(panel, 0, wx.EXPAND | wx.ALL, 10)
+
+		# Output Files options
+		outputPanel = wx.Panel(self, -1)
+		outputSizer = wx.StaticBoxSizer(wx.StaticBox(outputPanel, -1, 'Output File Names'), orient=wx.VERTICAL)
+
+		self.fileTextControls = [wx.StaticText(outputPanel, -1, self._outputFileName(h)) for h in self.holes]
+		for ftc in self.fileTextControls:
+			outputSizer.Add(ftc)
+
+		outputPanel.SetSizer(outputSizer)
+		vbox.Add(outputPanel, 0, wx.EXPAND | wx.ALL, 10)
 
 		btnPanel = wx.Panel(self, -1)
 		okBtn = wx.Button(btnPanel, wx.ID_OK, "Export")
@@ -774,12 +803,40 @@ class ExportCoreDialog(wx.Dialog):
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 		
 		self.SetSizer(vbox)
-		self.Fit()
+		self.Fit() # fit dialog to controls, otherwise lower half will be obscured
+		self.SetSize((500, -1)) # expand width only, to allow space for prefixes/suffixes
+
+	# Update list of output filenames to reflect current options
+	def UpdateOutputFiles(self, event):
+		if self.splice.GetValue():
+			spliceFile = self._outputFileName(self.spliceHoles)
+			self.fileTextControls[0].SetLabel(spliceFile)
+			for ftc in self.fileTextControls[1:]:
+				ftc.SetLabel("")
+		else:
+			for index, ftc in enumerate(self.fileTextControls):
+				ftc.SetLabel(self._outputFileName(self.holes[index]))
+
+	# output filename format:
+	# [optional prefix]-site-hole(s)_datatype_[RAW/SHIFTED/SPLICED]-[optional suffix].csv
+	def _outputFileName(self, hole):
+		prefix = self.prefix.GetValue() + "-" if len(self.prefix.GetValue()) > 0 else ""
+		suffix = "-" + self.suffix.GetValue() if len(self.suffix.GetValue()) > 0 else ""
+		return "{}{}-{}_{}_{}{}.csv".format(prefix, self.siteName, hole, self.datatype, self._getExportType(), suffix)
+
+	def _getExportType(self):
+		if not self.affine.GetValue() and not self.splice.GetValue():
+			exportType = "RAW"
+		elif self.affine.GetValue() and not self.splice.GetValue():
+			exportType = "SHIFTED"
+		else:
+			exportType = "SPLICED"
+		return exportType
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
 		if keyid == wx.WXK_ESCAPE:
-			self.EndModal(wx.ID_CANCEL) 
+			self.EndModal(wx.ID_CANCEL)
 
 	# Affine must be applied to apply splice. Uncheck splice box
 	# if affine box is unchecked to enforce this.
@@ -787,12 +844,14 @@ class ExportCoreDialog(wx.Dialog):
 		applyAffine = self.affine.GetValue()
 		if not applyAffine and self.splice.GetValue():
 			self.splice.SetValue(False)
+		self.UpdateOutputFiles(None)
 
 	# Affine must be applied to apply splice. Check affine box if needed
 	# when splice box is checked.
-	def OnSPLICE(self, event):
-		ret = self.splice.GetValue()
-		self.affine.SetValue(ret)
+	def OnSplice(self, event):
+		if self.splice.GetValue():
+			self.affine.SetValue(True)
+		self.UpdateOutputFiles(None)
 
 	def OnELD(self, event):
 		ret = self.eld.GetValue()
