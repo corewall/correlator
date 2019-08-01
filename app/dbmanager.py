@@ -847,12 +847,13 @@ class DataFrame(wx.Panel):
 			holes = [self.tree.GetItemText(dataIdx, 0) for dataIdx in self.GetChildren(selectedIndex)]
 			dataFiles = [self.tree.GetItemText(dataIdx, 8) for dataIdx in self.GetChildren(selectedIndex)]
 
+		# gather strings used for output file naming
 		datatype = self.tree.GetItemText(typeNode, 0)
 		siteName = self.GetSiteNameForNode(selectedIndex)
 		sitePath = self.parent.DBPath + 'db/' + siteName + "/"
 		spliceHoles = self._makeSpliceHolesStr(sitePath, spliceFile, holes)
 
-		# gather export parameters, output destination
+		# gather export parameters
 		enableAffine = affineFile is not None
 		enableSplice = enableAffine and spliceFile is not None # affine required to apply splice
 		exdlg = dialog.ExportCoreDialog(self, enableAffine, enableSplice, holes, siteName, datatype, spliceHoles)
@@ -874,6 +875,7 @@ class DataFrame(wx.Panel):
 		outputFiles = exdlg.GetOutputFiles()
 		exdlg.Destroy()
 
+		# get output destination dir
 		dirdlg = wx.DirDialog(self, "Select Destination Directory for Export", defaultPath=self.parent.Directory)
 		ret = dirdlg.ShowModal()
 		if ret != wx.ID_OK:
@@ -888,7 +890,8 @@ class DataFrame(wx.Panel):
 	# sitePath: full path to directory containing files in dataFiles
 	# dataFiles: list of filenames in sitePath to be processed and exported
 	# datatype: name of datatype being exported
-	# outputFiles: list of output filenames, parallel to dataFiles
+	# outputFiles: list of output filenames, parallel to dataFiles except for splice export,
+	# in which case the first element of outputFiles is the splice output filename.
 	# outputPath: full path to directory where export files will be written
 	# prefix: string with which to prefix generated export filename
 	# secSummFiles: list of SectionSummary files to be used in export
