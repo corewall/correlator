@@ -871,7 +871,7 @@ class DataFrame(wx.Panel):
 		if exdlg.splice.GetValue() == False:
 			spliceFile = None
 
-		outputFiles = [exdlg.fileTextControls[i].GetLabel() for i in range(len(holes))]
+		outputFiles = exdlg.GetOutputFiles()
 		exdlg.Destroy()
 
 		dirdlg = wx.DirDialog(self, "Select Destination Directory for Export", defaultPath=self.parent.Directory)

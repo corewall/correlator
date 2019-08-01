@@ -713,13 +713,18 @@ class ExportELDDialog(wx.Dialog):
 			self.EndModal(wx.ID_OK)
 		else:
 			self.EndModal(wx.ID_CANCEL)
-	
-	
+
 
 class ExportCoreDialog(wx.Dialog):
+	# parent: parent window of dialog
+	# enableAffine: boolean indicating whether or not to enable "Apply Affine" checkbox
+	# enableSplice: boolean indicating whether or not to enable "Apply Splice" checkbox
+	# holes: list of strings indicating hole(s) to be exported e.g. ['A', 'B', 'C']
+	# siteName: string indicating export exp-site
+	# datatype: string inidcating export datatype
+	# spliceHoles: string combining all holes participating in enabled splice (if any) e.g. "ABD"
 	def __init__(self, parent, enableAffine, enableSplice, holes, siteName, datatype, spliceHoles):
 		wx.Dialog.__init__(self, parent, -1, "Export Core Data", style= wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER)
-
 		self.holes = holes
 		self.siteName = siteName
 		self.datatype = datatype
@@ -817,13 +822,19 @@ class ExportCoreDialog(wx.Dialog):
 			for index, ftc in enumerate(self.fileTextControls):
 				ftc.SetLabel(self._outputFileName(self.holes[index]))
 
-	# output filename format:
+	# Return list of output filenames based on current options
+	def GetOutputFiles(self):
+		return [ftc.GetLabel() for ftc in self.fileTextControls]
+
+	# Return filename of format
 	# [optional prefix]-site-hole(s)_datatype_[RAW/SHIFTED/SPLICED]-[optional suffix].csv
+	# hole: string indicating hole (or holes in the case of splice e.g. "ABD")
 	def _outputFileName(self, hole):
 		prefix = self.prefix.GetValue() + "-" if len(self.prefix.GetValue()) > 0 else ""
 		suffix = "-" + self.suffix.GetValue() if len(self.suffix.GetValue()) > 0 else ""
 		return "{}{}-{}_{}_{}{}.csv".format(prefix, self.siteName, hole, self.datatype, self._getExportType(), suffix)
 
+	# Return string corresponding to currently-applied affine and splice, if any
 	def _getExportType(self):
 		if not self.affine.GetValue() and not self.splice.GetValue():
 			exportType = "RAW"
