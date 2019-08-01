@@ -923,6 +923,7 @@ class DataFrame(wx.Panel):
 					coreDataframes.append(coredf)
 				affineDF = pandas.concat(coreDataframes)
 				affineDF.rename(columns={'RawDepth':'Depth CSF-A (m)', 'Depth':'Depth CCSF (m)'}, inplace=True)
+				affineDF = self._reorderColumns(affineDF)
 				outname = outputFiles[index]
 				tabularImport.writeToFile(affineDF, os.path.join(outPath, outname))
 		elif affineFile and spliceFile: # export single splice file
@@ -940,6 +941,7 @@ class DataFrame(wx.Panel):
 			spliceDF = pandas.concat(spliceRows) # merge data into a single dataframe
 			spliceDF = spliceDF.apply(self._applyShift, axis=1, builder=affineBuilder) # apply affine to Depth, RawDepth, and Offset
 			spliceDF.rename(columns={'RawDepth':'Depth CSF-A (m)', 'Depth':'Depth CCSF (m)'}, inplace=True)
+			spliceDF = self._reorderColumns(spliceDF)
 			# splice is an oddball case since it always outputs a single file from one or more dataFiles:
 			# the first item in the outputFiles list is the splice output filename
 			outname = outputFiles[0]
@@ -949,6 +951,12 @@ class DataFrame(wx.Panel):
 			return False
 		
 		return True
+
+	# Return dataframe with reordered columns such that Depth CCSF comes immediately after Depth CSF-A.
+	# df: a pandas DataFrame of affine, or affine+splice applied export data to be reordered
+	def _reorderColumns(self, df):
+		cols = ["Exp", "Site", "Hole", "Core", "CoreType", "Section", "TopOffset", "BottomOffset", "Depth CSF-A (m)", "Depth CCSF (m)", "Data", "RunNo", "Offset"]
+		return df[cols]
 
 	# Apply affine shift to data row by adding the shift distance to
 	# the Depth value making it MCD/CCSF-A, and adding the RawDepth and
