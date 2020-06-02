@@ -186,7 +186,7 @@ class SectionSummaryRow:
         
     @classmethod
     def createWithPandasSeries(cls, row):
-        return cls(['Exp'], row['Site'], row['Hole'], row['Core'], row['CoreType'], row['Section'], row['TopDepth'], row['BottomDepth'])
+        return cls(row['Exp'], row['Site'], row['Hole'], row['Core'], row['CoreType'], row['Section'], row['TopDepth'], row['BottomDepth'])
         
     def asPandasSeries(self):
         return pandas.Series({'Exp':self.exp, 'Site':self.site, 'Hole':self.hole, 'Core':self.core, 'CoreType':self.coreType,
@@ -194,6 +194,9 @@ class SectionSummaryRow:
 
     def identity(self):
         return "{}-{}-{}".format(self.hole, self.core, self.section)
+
+    def fullIdentity(self):
+        return "{}-{}{}-{}{}-{}".format(self.exp, self.site, self.hole, self.core, self.coreType, self.section)
     
 
 class TestSectionSummary(unittest.TestCase):

@@ -3505,7 +3505,7 @@ class PreferencesPanel():
 
 	def OnChangeWidth(self, event):
 		idx = self.plotWidthSlider.GetValue() - 10
-		holeWidth = 200 + (idx * 10)
+		holeWidth = 200 + (idx * 10) - 50 # leave 50 for image
 
 		self.parent.Window.holeWidth = holeWidth
 		self.parent.Window.spliceHoleWidth = holeWidth
