@@ -33,6 +33,7 @@ bin/static/tmp/
 
 lib/
 releases/
+wxPythonDocs/
 
 win32/Debug/
 win32/Release/
