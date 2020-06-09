@@ -472,6 +472,7 @@ class DataCanvas(wxBufferedWindow):
 		self.grabScrollB = 0 
 		self.grabScrollC = 0 
 		self.Lock = False
+		self.draw_count = 0
 
 		self.spliceWindowOn = 1
 		wxBufferedWindow.__init__(self, parent, id)
@@ -3112,6 +3113,8 @@ class DataCanvas(wxBufferedWindow):
 		self.parent.filterPanel.DisableAllControls()
 
 	def DrawMainView(self, dc):
+		# print("{} DrawMainView()".format(self.draw_count))
+		# self.draw_count += 1
 		self.DrawData["CoreArea"] = [] 
 		self.DrawData["SpliceArea"] = [] 
 		self.DrawData["LogArea"] = [] 
