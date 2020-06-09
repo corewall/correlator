@@ -14,7 +14,8 @@ py_correlator.so
 app/.vscode/
 app/.eggs/
 app/build/
-app/dist/
+app/core_images*/
+app/dist*/
 app/experimental/
 app/intel/
 app/unused/
