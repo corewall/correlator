@@ -3526,7 +3526,7 @@ class PreferencesPanel():
 		maxDepth = minDepth + self.depthmax 
 		if event == None : 
 			maxDepth = minDepth + self.depthmax
-		x = (self.parent.Window.Height - self.parent.Window.startDepth) * self.parent.Window.gap
+		x = (self.parent.Window.Height - self.parent.Window.startDepth)
 		self.parent.Window.length = idx * x / (maxDepth - minDepth) * 1.0
 		if event == None :
 			return

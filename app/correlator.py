@@ -618,11 +618,8 @@ class MainFrame(wx.Frame):
 	def OnUpdateDepthRange(self, minDepth, maxDepth, updateScroll=True):
 		self.Window.rulerStartDepth = minDepth
 		self.Window.SPrulerStartDepth = minDepth
-		# I do not understand WTF DataCanvas.gap is supposed to be.  It's always 2.
-		# Multiplying by gap makes DataCanvas.length equal to double the vertical pixels...why?
-		x = (self.Window.Height - self.Window.startDepth) * self.Window.gap
+		x = (self.Window.Height - self.Window.startDepth)
 		self.Window.length = x / (maxDepth - minDepth) * 1.0
-		# print("UpdateDepthRange: startDepth {}, Height {}, gap {}: x = {}, length = {}".format(self.Window.startDepth, self.Window.Height, self.Window.gap, x, self.Window.length))
 
 		if updateScroll:
 			self.Window.UpdateScroll(1)
