@@ -20,6 +20,7 @@ from importManager import py_correlator
 
 import frames
 import splice
+import layout
 
 
 # brg 4/9/2014: Why are we defining our own wxBufferedWindow when
@@ -371,6 +372,7 @@ class DataCanvas(wxBufferedWindow):
 		self.SPrulerEndDepth = 0.0 
 		self.SPrulerStartAgeDepth = 0.0 
 
+		# RULER MEMBERS BE CRAZY
 		# number of pixels between labeled depth scale ticks, currently 2.0m, 
 		# thus ( self.length / self.gap ) / 2 gives pixels/meter
 		self.length = 60 
@@ -1120,7 +1122,7 @@ class DataCanvas(wxBufferedWindow):
 		# Draw depth scale ticks
 		self.rulerHeight = self.Height - self.startDepth
 		rulerRange = (self.rulerHeight / self.length) * 2
-		self.rulerTickRate = self.CalcTickRate(rulerRange)
+		self.rulerTickRate = self.CalcTickRate(rulerRange) # shouldn't need to do this every draw!
 
 		unitAdjFactor = self.GetRulerUnitsFactor()
 		while True:
@@ -1139,7 +1141,7 @@ class DataCanvas(wxBufferedWindow):
 				break
 
 		self.rulerEndDepth = pos + 2.0
-		self.parent.compositePanel.UpdateGrowthPlot()
+		self.parent.compositePanel.UpdateGrowthPlot() # shouldn't need to do this every draw!
 
 		# Draw ruler on splicer space
 		if self.spliceWindowOn == 1:
@@ -1179,6 +1181,7 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawLines(((self.compositeX, depth), (self.Width, depth)))
 
 
+	# prevHoleType used only to draw overlapping cores when D is pressed
 	def DrawHoleGraph(self, dc, hole, smoothed, prevHoleType):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
@@ -1192,6 +1195,10 @@ class DataCanvas(wxBufferedWindow):
 		
 		startX = self.GetHoleStartX(holeName, holeType)
 		rangeMax = startX + self.holeWidth
+
+		# rulerStartDepth - 5.0 is totally arbitrary as top of the depth interval.
+		# Should really be determined by on scaling and pixel height of headers
+		# print("Drawing Hole {}. Visible depth range {} - {}".format(holeName, self.rulerStartDepth - 5.0, self.rulerEndDepth))
 
 		# draw colored lines at boundaries, useful for debugging
 		# dc.SetPen(wx.Pen(wx.RED, 1))
@@ -2103,7 +2110,8 @@ class DataCanvas(wxBufferedWindow):
 		annotation = holedata[7] 
 		squish = holedata[6]
 		quality = holedata[8] 
-		sections = holedata[9]
+		sections = holedata[9] # unused
+		# print("Draw core {}".format(str(coreno)))
 
 		# draw vertical dotted line separating splice from next splice hole (or core to be spliced)
 		if spliceflag == 1:
@@ -3080,6 +3088,65 @@ class DataCanvas(wxBufferedWindow):
 		self.parent.compositePanel.EnableSETButton(False)
 		self.parent.filterPanel.DisableAllControls()
 
+	def _getPlotRange(self, datatype):
+		for r in self.range:
+			if r[0] == holeType: 
+				self.minRange = r[1]
+				self.maxRange = r[2]
+				if r[3] != 0.0:
+					self.coefRange = self.holeWidth / r[3]
+				else:
+					self.coefRange = 0 
+				smooth_id = r[4]
+				self.continue_flag = r[5] 
+				return (r[1], r[2], self.coefRange)
+
+	def DrawMainView2(self, dc):
+		self.DrawData["CoreArea"] = [] 
+		self.DrawData["SpliceArea"] = [] 
+		self.DrawData["LogArea"] = [] 
+		self.DrawData["CoreInfo"] = []
+		self.AffineTieArrows = [] # (hole+core, bounding rect) for each TIE arrow
+		self.highlightedCore = False # has a core been highlighted (rect drawn around bounds)?
+
+		if self.ScrollUpdate == 1: 
+			self.UpdateScroll(1)
+			self.ScrollUpdate = 0 
+
+		# TODO build SiteLayout hierarchy at Load time, update when data changes
+		# (affine shifts, etc), *not* in DrawMainView()!
+		# sl = layout.SiteLayout(holes=[], height=self.Height, width=self.Width - self.compositeX, hole_width=self.holeWidth)
+		# holeLayouts = []
+		# for hd in self.HoleData:
+		# 	holeInfo = hd[0] # tuple of hole metadata
+		# 	# create Header
+		# 	hhName = holeInfo[1] + "-" + holeInfo[0] + holeInfo[7] # [exp]-[site][hole]
+		# 	hhDatatype = holeInfo[2]
+		# 	hhRange = "Range: {} : {}".format(str(holeInfo[5]), str(holeInfo[6]))
+		# 	header = layout.HoleHeader(hhName, hhDatatype, hhRange)
+
+		# 	drawRange = self._getPlotRange(hhDatatype) # (min, max, coef)
+		# 	# parse into CoreLayouts
+		# 	coreLayouts = []
+		# 	coreCount = holeInfo[8]
+		# 	for core_idx in range(1, len(hd)): # cores are elements 1...N of hd
+		# 		coreInfo = hd[core_idx]
+		# 		depthDataPairs = coreInfo[10]
+		# 		ds = layout.Dataset(coreInfo[0], depthDataPairs, drawRange)
+		# 		plotCol = layout.PlotColumn([ds])
+		# 		coreLayouts.append(layout.CoreLayout([plotCol]))
+
+		# 	# create HoleLayout and add
+		# 	holeLayouts.append(layout.HoleLayout(coreLayouts, header))
+		
+		# for hl in holeLayouts:
+		# 	sl.addHoleLayout(hl)
+
+		# sl.draw(dc, (self.compositeX, 0), self.Height, self.Width)
+
+		self.DrawRuler(dc)
+
+		
 	def DrawMainView(self, dc):
 		self.DrawData["CoreArea"] = [] 
 		self.DrawData["SpliceArea"] = [] 
@@ -3261,7 +3328,7 @@ class DataCanvas(wxBufferedWindow):
 # 		dc.DrawLine(self.compositeX, 0, self.compositeX, 900)
 # 		dc.DrawLine(self.splicerX, 0, self.splicerX, 900)
 
-		### draw ties
+		### draw active affine and splice ties
 		tempx = 0
 		if self.hideTie == 0: 
 			x = 0
