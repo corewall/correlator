@@ -3522,12 +3522,12 @@ class PreferencesPanel():
 		idx = self.depthZoomSlider.GetValue()
 
 		#self.parent.Window.length = 60 + (idx * 2)
-		min = self.parent.Window.rulerStartDepth
-		max = min + self.depthmax 
+		minDepth = self.parent.Window.rulerStartDepth
+		maxDepth = minDepth + self.depthmax 
 		if event == None : 
-			max = min + self.depthmax
+			maxDepth = minDepth + self.depthmax
 		x = (self.parent.Window.Height - self.parent.Window.startDepth) * self.parent.Window.gap
-		self.parent.Window.length = idx * x / (max - min) * 1.0
+		self.parent.Window.length = idx * x / (maxDepth - minDepth) * 1.0
 		if event == None :
 			return
 		self.parent.Window.UpdateDrawing()
