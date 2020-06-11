@@ -618,8 +618,11 @@ class MainFrame(wx.Frame):
 	def OnUpdateDepthRange(self, minDepth, maxDepth, updateScroll=True):
 		self.Window.rulerStartDepth = minDepth
 		self.Window.SPrulerStartDepth = minDepth
+		# I do not understand WTF DataCanvas.gap is supposed to be.  It's always 2.
+		# Multiplying by gap makes DataCanvas.length equal to double the vertical pixels...why?
 		x = (self.Window.Height - self.Window.startDepth) * self.Window.gap
 		self.Window.length = x / (maxDepth - minDepth) * 1.0
+		# print("UpdateDepthRange: startDepth {}, Height {}, gap {}: x = {}, length = {}".format(self.Window.startDepth, self.Window.Height, self.Window.gap, x, self.Window.length))
 
 		if updateScroll:
 			self.Window.UpdateScroll(1)
@@ -811,10 +814,11 @@ class MainFrame(wx.Frame):
 		spliceChange = self.spliceManager.isDirty()
 		return affineChange or spliceChange
 
+	# show/hide splice window
 	def OnActivateWindow(self, event):
 		if self.Window.spliceWindowOn == 1:
 			self.Window.spliceWindowOn = 0
-			self.Window.splicerBackX = self.Window.splicerX
+			self.Window.splicerBackX = self.Window.splicerX # save old splicerX
 			self.Window.splicerX = self.Window.Width + 45 
 			self.optPanel.showSpliceWindow.SetValue(False)
 			# self.optPanel.indSpliceScroll.Enable(False)

@@ -375,13 +375,17 @@ class DataCanvas(wxBufferedWindow):
 		# RULER MEMBERS BE CRAZY
 		# number of pixels between labeled depth scale ticks, currently 2.0m, 
 		# thus ( self.length / self.gap ) / 2 gives pixels/meter
+		# WHY THE HELL DO WE NEEEEED THIS?????
 		self.length = 60 
 		
 		self.ageYLength = 60
 		self.spliceYLength = 60
 
 		# meters between labeled depth scale ticks - appears to be constant
-		self.gap = 2
+		# but also apparently plays a major role in scaling???  Everywhere we either divide or
+		# multiply by self.gap
+		# So length / gap basically gives us pixels per meter!
+		self.gap = 1
 		
 		self.ageGap = 10 
 
@@ -1085,7 +1089,7 @@ class DataCanvas(wxBufferedWindow):
 			if rulerRange <= pow(10, exp) and rulerRange > pow(10, exp - 1):
 				# found the proper range, now determine which of 10^exp, (10^exp)/2, 10^(exp-1)
 				# it's nearest. That number/10 will be our tick rate.
-				diffList = [ bigTens - rulerRange, rulerRange - smallTens, abs(bigTens / 2.0 - rulerRange) ]
+				diffList = [bigTens - rulerRange, rulerRange - smallTens, abs(bigTens / 2.0 - rulerRange)]
 				result = min(diffList)
 				resultIndex = diffList.index(result)
 				if resultIndex == 0:
@@ -1104,7 +1108,9 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
 		dc.SetTextForeground(self.colorDict['foreground'])
-		dc.SetFont(self.stdFont)
+		dc.SetFont(self.holeInfoFont)
+
+		# print("DrawRuler: length {}, gap {}".format(self.length, self.gap))
 
 		rulerUnitsStr = " (" + self.GetRulerUnitsStr() + ")"
 		if self.timeseries_flag == False:
@@ -1117,26 +1123,44 @@ class DataCanvas(wxBufferedWindow):
 		# Draw ruler on composite space
 		depth = self.startDepth # depth in pixels
 		pos = self.rulerStartDepth # depth in meters for tick labels
-		dc.DrawLines(((self.compositeX, 0), (self.compositeX, self.Height))) # depth axis
+
+		# Draw some debugging lines indicating bounds of Composite Area
+		dc.SetPen(wx.Pen(wx.RED))
+		dc.DrawLines(((self.compositeX, 0), (self.compositeX, self.Height))) # depth axis - left edge of composite area
+		dc.SetPen(wx.Pen(wx.YELLOW, 3))
+		# dc.DrawLines(((self.splicerX - 63, 0), (self.splicerX - 63, self.Height))) # right edge of composite area...splicerX - 60
+		dc.SetPen(wx.Pen(wx.RED))
+		dc.DrawLines(((self.compositeX, self.Height-self.ScrollSize), (self.Width, self.Height-self.ScrollSize))) # bottom of composite area (directly above horz scrollbar)
+		dc.DrawLines(((self.splicerX, 0), (self.splicerX, self.Height))) # bottom of composite area (directly above horz scrollbar)
+		dc.DrawLines(((self.Width - self.ScrollSize - 1, 0),(self.Width - self.ScrollSize - 1, self.Height))) # right edge of draw area, whether or not splice is enabled
+
+		if self.spliceWindowOn == 1:
+			dc.SetPen(wx.Pen(wx.YELLOW, 2))
+			dc.DrawLines(((self.splicerX - 58 + self.ScrollSize, 0),(self.splicerX - 58 + self.ScrollSize, self.Height)))
+			
+		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1)) # restore pen
 
 		# Draw depth scale ticks
 		self.rulerHeight = self.Height - self.startDepth
-		rulerRange = (self.rulerHeight / self.length) * 2
+		rulerRange = (self.rulerHeight / self.length)
 		self.rulerTickRate = self.CalcTickRate(rulerRange) # shouldn't need to do this every draw!
+		# print("rulerRange = {}, tickRate = {}".format(rulerRange, self.rulerTickRate))
+
+		dc.SetFont(self.stdFont) # draw numbers in standard font
 
 		unitAdjFactor = self.GetRulerUnitsFactor()
 		while True:
-			adjPos = pos * unitAdjFactor
+			adjPos = pos * unitAdjFactor # pos in meters, adjust *100 if displaying cm, *1000 if mm
 
 			dc.DrawLines(((self.compositeX - 10, depth), (self.compositeX, depth))) # depth-labeled ticks
 			wid, hit = dc.GetTextExtent(str(adjPos))
 			dc.DrawRotatedText(str(adjPos), self.compositeX - 5 - hit * 2, depth + wid/2, 90.0)
-			depth = depth + (self.rulerTickRate * self.length) / 2
+			depth = depth + (self.rulerTickRate * self.length)
 
 			dc.DrawLines(((self.compositeX - 5, depth), (self.compositeX, depth))) # unlabeled ticks
-			depth = depth + (self.rulerTickRate * self.length) / 2 
+			depth = depth + (self.rulerTickRate * self.length)
 
-			pos = pos + self.rulerTickRate * 2
+			pos = pos + self.rulerTickRate * 2 # jump to next labeled tick position
 			if depth > self.Height:
 				break
 
@@ -1163,9 +1187,9 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawLines(((self.splicerX - 10, depth), (self.splicerX, depth)))
 				wid, hit = dc.GetTextExtent(str(adjPos))
 				dc.DrawRotatedText(str(adjPos), self.splicerX - 5 - hit * 2, depth + wid/2, 90.0)
-				depth = depth + (self.rulerTickRate * self.length) / 2
+				depth = depth + (self.rulerTickRate * self.length)
 				dc.DrawLines(((self.splicerX - 5, depth), (self.splicerX, depth)))
-				depth = depth + (self.rulerTickRate * self.length) / 2 
+				depth = depth + (self.rulerTickRate * self.length)
 				pos = pos + self.rulerTickRate * 2
 				if depth > self.Height:
 					break
@@ -1201,16 +1225,16 @@ class DataCanvas(wxBufferedWindow):
 		# print("Drawing Hole {}. Visible depth range {} - {}".format(holeName, self.rulerStartDepth - 5.0, self.rulerEndDepth))
 
 		# draw colored lines at boundaries, useful for debugging
-		# dc.SetPen(wx.Pen(wx.RED, 1))
-		# dc.DrawLine(startX, self.startDepth - 20, startX, self.Height) # left edge of hole plot
-		# dc.SetPen(wx.Pen(wx.GREEN, 1))
-		# dc.DrawLine(rangeMax, self.startDepth - 20, rangeMax, self.Height) # right edge of hole plot
-		# # right edge of next hole plot's info area (core number, affine shift type and distance)
-		# dc.SetPen(wx.Pen(wx.YELLOW, 1))
-		# dc.DrawLine(rangeMax + self.plotLeftMargin - 1, self.startDepth - 20, rangeMax + self.plotLeftMargin - 1, self.Height)
-		# dc.SetPen(wx.Pen(wx.BLUE, 1))
-		# dc.DrawLine(startX, self.startDepth - 20, rangeMax + self.plotLeftMargin, self.startDepth - 20) # top of hole plot
-		# dc.DrawLine(startX, self.Height, rangeMax + self.plotLeftMargin, self.Height) # bottom of hole plot...obscured by horz scrollbar
+		dc.SetPen(wx.Pen(wx.RED, 1))
+		dc.DrawLine(startX, self.startDepth - 20, startX, self.Height) # left edge of hole plot
+		dc.SetPen(wx.Pen(wx.GREEN, 1))
+		dc.DrawLine(rangeMax, self.startDepth - 20, rangeMax, self.Height) # right edge of hole plot
+		# right edge of next hole plot's info area (core number, affine shift type and distance)
+		dc.SetPen(wx.Pen(wx.YELLOW, 1))
+		dc.DrawLine(rangeMax + self.plotLeftMargin - 1, self.startDepth - 20, rangeMax + self.plotLeftMargin - 1, self.Height)
+		dc.SetPen(wx.Pen(wx.BLUE, 1))
+		dc.DrawLine(startX, self.startDepth - 20, rangeMax + self.plotLeftMargin, self.startDepth - 20) # top of hole plot
+		dc.DrawLine(startX, self.Height, rangeMax + self.plotLeftMargin, self.Height) # bottom of hole plot...obscured by horz scrollbar
 
 		if self.showHoleGrid == True:
 			if startX < self.splicerX:
@@ -2660,10 +2684,11 @@ class DataCanvas(wxBufferedWindow):
 		else:
 			self.DrawAgeDepthView(dc)
 
-		# horizontal scroll bar
+		### Draw Scrollbars
 		dc.SetBrush(wx.Brush(wx.Colour(205, 201, 201)))
 		dc.SetPen(wx.Pen(wx.Colour(205, 201, 201), 1))
 
+		# Scrollbar background rectangles
 		if self.spliceWindowOn == 1:
 			dc.DrawRectangle(self.compositeX, self.Height - self.ScrollSize, self.splicerX - 60 - self.compositeX, self.ScrollSize)
 			dc.DrawRectangle(self.Width - self.ScrollSize - 1, 0, self.ScrollSize, self.Height)
@@ -2673,23 +2698,22 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawRectangle(self.compositeX, self.Height - self.ScrollSize, self.Width - 10 - self.compositeX, self.ScrollSize)
 			dc.DrawRectangle(self.Width - self.ScrollSize - 1, 0, self.ScrollSize, self.Height)
 
-		dc.SetTextForeground(wx.BLACK)
-		self.DrawColorLegend(dc)
-
-		# Here's the actual drawing code.
+		# Scrollbar thumbs
 		for key, data in self.DrawData.items():
-			if key == "Skin":
+			if key == "Skin": # draw composite area scrollbar thumb
 				bmp, x, y = data
 				dc.DrawBitmap(bmp, self.Width + x - 1, y, 1)
-			elif key == "HScroll":
+			elif key == "HScroll": # draw horizontal scrollbar thumb
 				bmp, x, y = data
 				dc.DrawBitmap(bmp, x, self.Height + y, 1)
 
-		# Here's the actual drawing code.
-		if self.spliceWindowOn == 1 and "MovableSkin" in self.DrawData:
+		if self.spliceWindowOn == 1 and "MovableSkin" in self.DrawData: # splice scrollbar thumb
 			bmp, x, y = self.DrawData["MovableSkin"]
 			x = x + self.splicerX - 40
 			dc.DrawBitmap(bmp, x, y, 1)
+
+		dc.SetTextForeground(wx.BLACK)
+		self.DrawColorLegend(dc)
 
 		if self.mode == 1: 
 			self.statusStr = "Composite mode	 "
@@ -2730,7 +2754,9 @@ class DataCanvas(wxBufferedWindow):
 			ycoord = self.getDepth(ycoord) if self.MousePos[0] < self.splicerX else self.getSpliceDepth(ycoord)
 			ycoord = ycoord * self.GetRulerUnitsFactor()
 			ycoord = round(ycoord, 3)
+			# print("ycoord = {}".format(ycoord))
 			if self.MousePos[0] < self.splicerX:
+				# Draw current depth in left margin of mouseover hole plot
 				if holeName != "" and self.selectedTie < 0: # tie displays its depth, don't show mouse depth on drag
 					dc.DrawText(str(ycoord), self.GetHoleStartX(holeName, holeType), self.MousePos[1] - 5)
 				else:
@@ -2739,6 +2765,7 @@ class DataCanvas(wxBufferedWindow):
 					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 					dc.DrawLines(((self.compositeX, self.MousePos[1] - 5), (self.splicerX - 50, self.MousePos[1] - 5)))
 			elif self.MousePos[0] <= self.Width: # 1/29/2014 brg: Don't draw depth info if we're over options tab
+				pass
 				dc.DrawText(str(ycoord), self.splicerX + 3, self.MousePos[1] - 5)
 				if self.showGrid == True:
 					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
