@@ -615,11 +615,11 @@ class MainFrame(wx.Frame):
 		self.compositePanel.OnUpdateDepth(depth)
 		
 	# Preferences "Depth Ruler Scale" min/max changed
-	def OnUpdateDepthRange(self, min, max, updateScroll=True):
-		self.Window.rulerStartDepth = min
-		self.Window.SPrulerStartDepth = min
+	def OnUpdateDepthRange(self, minDepth, maxDepth, updateScroll=True):
+		self.Window.rulerStartDepth = minDepth
+		self.Window.SPrulerStartDepth = minDepth
 		x = (self.Window.Height - self.Window.startDepth) * self.Window.gap
-		self.Window.length = x / (max - min) * 1.0
+		self.Window.length = x / (maxDepth - minDepth) * 1.0
 
 		if updateScroll:
 			self.Window.UpdateScroll(1)
