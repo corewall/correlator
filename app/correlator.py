@@ -619,7 +619,7 @@ class MainFrame(wx.Frame):
 		self.Window.rulerStartDepth = minDepth
 		self.Window.SPrulerStartDepth = minDepth
 		x = (self.Window.Height - self.Window.startDepth)
-		self.Window.length = x / (maxDepth - minDepth) * 1.0
+		self.Window.pixPerMeter = x / (maxDepth - minDepth) * 1.0
 
 		if updateScroll:
 			self.Window.UpdateScroll(1)
@@ -631,7 +631,7 @@ class MainFrame(wx.Frame):
 	def OnUpdateStartDepth(self, startDepth, updateScroll=True):
 		self.Window.rulerStartDepth = startDepth
 		self.Window.SPrulerStartDepth = startDepth
-		# no need to mess with self.Window.length, keep it as is
+		# no need to mess with self.Window.pixPerMeter, keep it as is
 		if updateScroll:
 			self.Window.UpdateScroll(1)
 			self.Window.UpdateScroll(2)

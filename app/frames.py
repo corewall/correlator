@@ -3521,13 +3521,13 @@ class PreferencesPanel():
 	def OnRulerOneScale(self, event):
 		idx = self.depthZoomSlider.GetValue()
 
-		#self.parent.Window.length = 60 + (idx * 2)
+		#self.parent.Window.pixPerMeter = 60 + (idx * 2)
 		minDepth = self.parent.Window.rulerStartDepth
 		maxDepth = minDepth + self.depthmax 
 		if event == None : 
 			maxDepth = minDepth + self.depthmax
 		x = (self.parent.Window.Height - self.parent.Window.startDepth)
-		self.parent.Window.length = idx * x / (maxDepth - minDepth) * 1.0
+		self.parent.Window.pixPerMeter = idx * x / (maxDepth - minDepth) * 1.0
 		if event == None :
 			return
 		self.parent.Window.UpdateDrawing()
