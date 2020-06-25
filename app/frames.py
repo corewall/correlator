@@ -3526,7 +3526,7 @@ class PreferencesPanel():
 		maxDepth = minDepth + self.depthmax 
 		if event == None : 
 			maxDepth = minDepth + self.depthmax
-		x = (self.parent.Window.Height - self.parent.Window.startDepth)
+		x = (self.parent.Window.Height - self.parent.Window.startDepthPix)
 		self.parent.Window.pixPerMeter = idx * x / (maxDepth - minDepth) * 1.0
 		if event == None :
 			return
@@ -3550,7 +3550,7 @@ class PreferencesPanel():
 		max = float(self.depthRangeMax.GetValue())
 		if min >= max :
 			return
-		self.depthmax = max
+		self.depthmax = max # Can't assume min = 0! Should be max - min.
 		self.depthZoomSlider.SetValue(1)
 		
 		updateScroll = event is not None

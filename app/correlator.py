@@ -549,7 +549,7 @@ class MainFrame(wx.Frame):
 		size = self.Window.stdFont.GetPointSize() + 1
 		self.Window.stdFont.SetPointSize(size)
 		
-		self.Window.startDepth = self.Window.startDepth + 5
+		self.Window.startDepthPix = self.Window.startDepthPix + 5
 		self.Window.startAgeDepth = self.Window.startAgeDepth + 5
 		self.Window.UpdateDrawing()
 		
@@ -557,7 +557,7 @@ class MainFrame(wx.Frame):
 		size = self.Window.stdFont.GetPointSize() - 1
 		self.Window.stdFont.SetPointSize(size)
 		
-		self.Window.startDepth = self.Window.startDepth - 5
+		self.Window.startDepthPix = self.Window.startDepthPix - 5
 		self.Window.startAgeDepth = self.Window.startAgeDepth -5		
 		self.Window.UpdateDrawing()
 		
@@ -618,8 +618,8 @@ class MainFrame(wx.Frame):
 	def OnUpdateDepthRange(self, minDepth, maxDepth, updateScroll=True):
 		self.Window.rulerStartDepth = minDepth
 		self.Window.SPrulerStartDepth = minDepth
-		x = (self.Window.Height - self.Window.startDepth)
-		self.Window.pixPerMeter = x / (maxDepth - minDepth) * 1.0
+		x = (self.Window.Height - self.Window.startDepthPix)
+		self.Window.pixPerMeter = x / float(maxDepth - minDepth)
 
 		if updateScroll:
 			self.Window.UpdateScroll(1)
@@ -1494,7 +1494,7 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("tiewidth", self.Window.tieline_width, f)
 		self.WritePreferenceItem("splicewindow", self.Window.spliceWindowOn, f)
 		#self.WritePreferenceItem("fontsize", self.Window.stdFont.GetPointSize(), f) # see 11/2/2013 brg
-		self.WritePreferenceItem("fontstartdepth", self.Window.startDepth, f)
+		self.WritePreferenceItem("fontstartdepth", self.Window.startDepthPix, f)
 		self.WritePreferenceItem("scrollsize", self.Window.ScrollSize, f)
 
 		showSectionDepths = 1 if self.Window.showSectionDepths == True else 0
@@ -2535,7 +2535,7 @@ class MainFrame(wx.Frame):
 		self.config = ConfigParser.ConfigParser()
 		self.config.read(cfgfile)
 		
-		scroll_start = self.Window.startDepth * 0.7
+		scroll_start = self.Window.startDepthPix * 0.7
 		#l = []
 
 		#self.Width, self.Height = self.GetClientSizeTuple()
@@ -2736,7 +2736,7 @@ class MainFrame(wx.Frame):
 			str_temp = self.config.get("applications", "fontstartdepth")
 			if len(str_temp) > 0:
 				conf_value = float ( str_temp )			
-				self.Window.startDepth = conf_value
+				self.Window.startDepthPix = conf_value
 				self.Window.startAgeDepth = conf_value
 		
 		if self.config.has_option("applications", "showline"):
