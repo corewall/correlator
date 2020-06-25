@@ -690,7 +690,7 @@ class CompositePanel():
 		pos = self.grText.GetScreenPositionTuple()
 		dlg.SetPosition(pos)
 		if dlg.ShowModal() == wx.ID_OK:
-			self.parent.optPanel.depthmax = dlg.outMax	# update mirrored prefs GUI (brgtodo 9/6/2014 gross)
+			self.parent.optPanel.visibleDeptHInterval = dlg.outMax	# update mirrored prefs GUI (brgtodo 9/6/2014 gross)
 			self.parent.optPanel.depthRangeMin.SetValue(str(dlg.outMin))
 			self.parent.optPanel.depthRangeMax.SetValue(str(dlg.outMax))
 			self.parent.optPanel.depthZoomSlider.SetValue(1)
@@ -3454,7 +3454,7 @@ class PreferencesPanel():
 		self.parent = parent
 		self.addItemsInFrame()
 		self.prevSelected = 0
-		self.depthmax = 20.0
+		self.visibleDepthInterval = 20.0
 
 	def OnActivateWindow(self, event):
 		if self.showSpliceWindow.IsChecked() == True : 
@@ -3523,12 +3523,12 @@ class PreferencesPanel():
 
 		#self.parent.Window.pixPerMeter = 60 + (idx * 2)
 		minDepth = self.parent.Window.rulerStartDepth
-		maxDepth = minDepth + self.depthmax 
-		if event == None : 
-			maxDepth = minDepth + self.depthmax
+		maxDepth = minDepth + self.visibleDepthInterval 
+		if event == None: 
+			maxDepth = minDepth + self.visibleDepthInterval
 		x = (self.parent.Window.Height - self.parent.Window.startDepthPix)
 		self.parent.Window.pixPerMeter = idx * x / (maxDepth - minDepth) * 1.0
-		if event == None :
+		if event == None:
 			return
 		self.parent.Window.UpdateDrawing()
 
@@ -3546,15 +3546,15 @@ class PreferencesPanel():
 		self.parent.Window.UpdateDrawing()
 
 	def OnDepthViewAdjust(self, event):
-		min = float(self.depthRangeMin.GetValue())
-		max = float(self.depthRangeMax.GetValue())
-		if min >= max :
+		minDepth = float(self.depthRangeMin.GetValue())
+		maxDepth = float(self.depthRangeMax.GetValue())
+		if minDepth >= maxDepth:
 			return
-		self.depthmax = max # Can't assume min = 0! Should be max - min.
+		self.visibleDepthInterval = maxDepth - minDepth
 		self.depthZoomSlider.SetValue(1)
 		
 		updateScroll = event is not None
-		self.parent.OnUpdateDepthRange(min, max, updateScroll)
+		self.parent.OnUpdateDepthRange(minDepth, maxDepth, updateScroll)
 		
 	def OnShowSectionDepths(self, event):
 		self.parent.Window.showSectionDepths = self.showSectionDepths.IsChecked()
