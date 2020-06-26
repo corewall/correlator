@@ -14,7 +14,8 @@ py_correlator.so
 app/.vscode/
 app/.eggs/
 app/build/
-app/dist/
+app/dist*/
+app/core_images*/
 app/experimental/
 app/intel/
 app/unused/
@@ -37,3 +38,6 @@ releases/
 win32/Debug/
 win32/Release/
 win32/x64/
+
+wxPythonDocs/
+backups/
