@@ -624,6 +624,7 @@ class MainFrame(wx.Frame):
 		if updateScroll:
 			self.Window.UpdateScroll(1)
 			self.Window.UpdateScroll(2)
+		self.Window.InvalidateImages()
 		self.Window.UpdateDrawing()
 		self.Window.UpdateDrawing() # brgtodo 9/6/2014 core area doesn't update completely without, why?
 		

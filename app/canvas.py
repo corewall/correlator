@@ -425,6 +425,7 @@ class DataCanvas(wxBufferedWindow):
 		self.UserdefStratData = []
 		self.GuideCore = []
 		self.SpliceSmoothData = []
+		self.Images = {}
 
 		self.LogData = [] 
 		self.LogSMData = [] 
@@ -479,6 +480,7 @@ class DataCanvas(wxBufferedWindow):
 		self.grabScrollB = 0 
 		self.grabScrollC = 0 
 		self.Lock = False
+		self.draw_count = 0
 
 		self.spliceWindowOn = 1
 		wxBufferedWindow.__init__(self, parent, id)
@@ -608,6 +610,7 @@ class DataCanvas(wxBufferedWindow):
 		self.LogTieData = [] 
 		self.SpliceData = []
 		self.SpliceSmoothData = []
+		self.Images = {}
 		self.LogSpliceData = []
 		self.LogSpliceSmoothData = []
 		self.firstPntAge = 0.0
@@ -691,6 +694,19 @@ class DataCanvas(wxBufferedWindow):
 				self.range.remove(r)
 				self.range.append(newrange)
 				break
+
+	def InvalidateImages(self):
+		invalidatedImages = {}
+		for k, v in self.Images.items():
+			invalidatedImages[k] = (v[0], None)
+		self.Images = invalidatedImages
+
+	def LoadImages(self, img_files):
+		for f in img_files:
+			img = wx.Image(f)
+			img_key = os.path.basename(f).replace('-A.jpg', '')
+			self.Images[img_key] = (img, None) # wx.Image, wx.Bitmap
+		print("Loaded images: {}".format(self.Images))
 
 	# CoreInfo finding routines
 	def findCoreInfoByIndex(self, coreIndex):
@@ -1222,7 +1238,7 @@ class DataCanvas(wxBufferedWindow):
 		holeType = holeInfo[2]
 		holeName = holeInfo[7]
 		
-		startX = self.GetHoleStartX(holeName, holeType)
+		startX = self.GetHoleStartX(holeName, holeType) + 50 # leave 50px on left for image
 		rangeMax = startX + self.holeWidth
 
 		# rulerStartDepth - 5.0 is totally arbitrary as top of the depth interval.
@@ -2170,8 +2186,21 @@ class DataCanvas(wxBufferedWindow):
 					dc.DrawText(coreSectionStr, startX + 2, y)
 					
 					if secIndex == len(secrows) - 1: # draw bottom of last section
-						ybot = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
-						dc.DrawLines(((startX, ybot), (startX + self.holeWidth, ybot)))					
+						ybot = self.startDepth + (bot - self.rulerStartDepth) * (self.length / self.gap)
+						dc.DrawLines(((startX, ybot), (startX + self.holeWidth, ybot)))
+
+					# now attempt to draw section images if available
+					secName = row.fullIdentity()
+					if secName in self.Images:
+						# scale image to height and fixed width
+						img, bmp = self.Images[secName]
+						if bmp is None:
+							ytop = y
+							ybot = self.startDepth + (bot - self.rulerStartDepth) * (self.length / self.gap)
+							bmp = img.Scale(50, ybot-ytop).ConvertToBitmap()
+							# bmp = img.ConvertToBitmap()
+						dc.DrawBitmap(bmp, startX - 50, y)
+						self.Images[secName] = (img, bmp)
 
 		# draw affine shift arrow and distance centered on core
 		y_depth, x = coreData[0]
@@ -2700,6 +2729,9 @@ class DataCanvas(wxBufferedWindow):
 			elif key == "HScroll": # draw horizontal scrollbar thumb
 				bmp, x, y = data
 				dc.DrawBitmap(bmp, x, self.Height + y, 1)
+			elif key == "CoreImage":
+				bmp, x, y = data
+				dc.DrawBitmap(bmp, x, y, 1)
 
 		if self.spliceWindowOn == 1 and "MovableSkin" in self.DrawData: # splice scrollbar thumb
 			bmp, x, y = self.DrawData["MovableSkin"]
@@ -3102,7 +3134,7 @@ class DataCanvas(wxBufferedWindow):
 		for holeIndex, holeList in enumerate(self.HoleData):
 			hole = holeList[0] # hole data is nested in an extra list
 			holeKey = hole[0][7] + hole[0][2] # hole name + hole datatype
-			holeX = baseX + holeIndex * (self.holeWidth + self.plotLeftMargin)
+			holeX = baseX + holeIndex * (self.holeWidth + self.plotLeftMargin + 50) # 50 for image
 			# store as a tuple - DrawStratCore() logic still uses index to access value
 			self.WidthsControl.append((holeX, holeKey))
 
@@ -3173,6 +3205,8 @@ class DataCanvas(wxBufferedWindow):
 
 		
 	def DrawMainView(self, dc):
+		# print("{} DrawMainView()".format(self.draw_count))
+		# self.draw_count += 1
 		self.DrawData["CoreArea"] = [] 
 		self.DrawData["SpliceArea"] = [] 
 		self.DrawData["LogArea"] = [] 

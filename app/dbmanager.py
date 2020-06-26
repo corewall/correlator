@@ -4194,6 +4194,10 @@ class DataFrame(wx.Panel):
 			if tableLoaded[2] == True:
 				self.parent.UpdateELD(True)
 
+		# load imagery into canvas
+		img_files = [os.path.abspath('core_images/{}'.format(f)) for f in os.listdir('core_images') if f.endswith('.jpg')]
+		self.parent.Window.LoadImages(img_files)
+
 		self.parent.Window.ShowLog = False 
 
 		# self.parent.OnDisableMenu(1, True)

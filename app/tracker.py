@@ -31,6 +31,7 @@ class Tracker():
                 user_uuid = pickle.load(uuidFileStream)
         else:
             user_uuid = self.create_uuid()
+            print("new UUID = {}".format(user_uuid))
             self.write_uuid(user_uuid)
         return user_uuid
 
@@ -40,7 +41,7 @@ class Tracker():
 
     # write UUID to file
     def write_uuid(self, out_uuid):
-        with open(self.uuid_path, 'w+') as uuidFileStream:
+        with open(self.uuid_path, 'wb') as uuidFileStream:
             pickle.dump(out_uuid, uuidFileStream)
 
     # change UUID without pinging - intended for use by devs to create an ID
