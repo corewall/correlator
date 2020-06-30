@@ -70,7 +70,7 @@ class MainFrame(wx.Frame):
 		self.scroll = 1 
 		self.half = (self.Width / 2) - 32 
 		# make the menu
-		self.SetMenuBar( self.CreateMenu() )
+		self.SetMenuBar(self.CreateMenu())
 		
 		self.sectionSummary = None
 		self.affineManager = AffineController(self)
@@ -317,6 +317,14 @@ class MainFrame(wx.Frame):
 		self.miAbout = menuHelp.Append(wx.ID_ABOUT, "About Correlator\tF1", "")
 		self.Bind(wx.EVT_MENU, self.OnAbout, self.miAbout)
 		menuBar.Append(menuHelp, "&Help")
+
+		# Debug
+		menuDebug = wx.Menu()
+		self.miDebugShowBounds = menuDebug.AppendCheckItem(-1, "Show Plot Bounds", "Show colored lines indicating bounds of hole plot rectangles, etc")
+		self.Bind(wx.EVT_MENU, self._debugShowBounds, self.miDebugShowBounds)
+		self.miDebugShowFPS = menuDebug.AppendCheckItem(-1, "Show Frames Per Second (FPS)", "Show frames drawn per second...move mouse continuously for meaningful values")
+		self.Bind(wx.EVT_MENU, self._debugShowFPS, self.miDebugShowFPS)
+		menuBar.Append(menuDebug, "&Debug")
 
 		# self.OnDisableMenu(0, False)
 
@@ -569,6 +577,14 @@ class MainFrame(wx.Frame):
 	def UseNarrowScrollbars(self, evt):
 		self.Window.ScrollSize = 15
 		self.UPDATESCROLL()	
+		self.Window.UpdateDrawing()
+
+	def _debugShowBounds(self, evt):
+		self.Window.showBounds = self.miDebugShowBounds.IsChecked()
+		self.Window.UpdateDrawing()
+
+	def _debugShowFPS(self, evt):
+		self.Window.showFPS = self.miDebugShowFPS.IsChecked()
 		self.Window.UpdateDrawing()
 	
 	# scrollTuple: (bitmap, x, y)
@@ -1500,6 +1516,9 @@ class MainFrame(wx.Frame):
 
 		showSectionDepths = 1 if self.Window.showSectionDepths == True else 0
 		self.WritePreferenceItem("showSectionDepths", showSectionDepths, f)
+
+		showCoreImages = 1 if self.Window.showCoreImages == True else 0
+		self.WritePreferenceItem("showCoreImages", showCoreImages, f)
 
 		showCoreInfo = 1 if self.Window.showCoreInfo == True else 0
 		self.WritePreferenceItem("showCoreInfo", showCoreInfo, f)
@@ -2755,6 +2774,12 @@ class MainFrame(wx.Frame):
 			if len(str_temp) > 0:
 				self.Window.showSectionDepths = True if str_temp == '1' else False 
 				self.optPanel.showSectionDepths.SetValue(self.Window.showSectionDepths)
+
+		if self.config.has_option("applications", "showCoreImages"):
+			str_temp = self.config.get("applications", "showCoreImages")
+			if len(str_temp) > 0:
+				self.Window.showCoreImages = True if str_temp == '1' else False 
+				self.optPanel.showCoreImages.SetValue(self.Window.showCoreImages)
 
 		if self.config.has_option("applications", "showAffineShiftInfo"):
 			str_temp = self.config.get("applications", "showAffineShiftInfo")

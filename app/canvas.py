@@ -25,6 +25,7 @@ import layout
 
 # brg 4/9/2014: Why are we defining our own wxBufferedWindow when
 # wx.BufferedWindow already exists (same interface 'n all) in wx?
+# brg 6/30/2020: Don't see a wx.BufferedWindow, was I crazy?
 class wxBufferedWindow(wx.Window):
 
 	"""
@@ -222,8 +223,14 @@ class DataCanvas(wxBufferedWindow):
 		self.showAffineShiftInfo = True  # brgtodo 6/25/2014 grab state from checkbox in frames and dump this var
 		self.showAffineTieArrows = True
 		self.showSectionDepths = True
+		self.showCoreImages = False
 		self.showCoreInfo = False # show hole, core, min/max, quality, stretch on mouseover - see DrawGraphInfo()
 		self.showOutOfRangeData = False # if True, clip data plots to the width of the hole's plot area
+		
+		# debug options
+		self.showBounds = False
+		self.showFPS = False
+		
 		self.LogTieList = []
 		self.LogClue = True    # brgtodo ditto
 
@@ -321,6 +328,12 @@ class DataCanvas(wxBufferedWindow):
 		self.tieline_width = 1
 
 		self.holeWidth = 300
+		
+		# some kind of HoleLayoutManager who knows these things
+		# in addition to display options?
+		self.plotWidth = 250
+		self.coreImageWidth = 50
+		
 		self.spliceHoleWidth = 300
 		self.logHoleWidth = 210
 
@@ -331,7 +344,8 @@ class DataCanvas(wxBufferedWindow):
 		# The hard-coded 50s littered throughout canvas.py should be replaced with this!
 		self.plotLeftMargin = 50
 
-		# y-coordinate where the first depth ruler tick is drawn
+		# y-coordinate where the first depth ruler tick is drawn.
+		# this value - 20 is the top of the plot area i.e. the bottom of hole headers
 		self.startDepthPix = 60
 
 		self.rulerHeight = 0 
@@ -1144,22 +1158,7 @@ class DataCanvas(wxBufferedWindow):
 		# Draw ruler on composite space
 		depth = self.startDepthPix # depth in pixels
 		pos = self.rulerStartDepth # depth in meters for tick labels
-
-		# Draw some debugging lines indicating bounds of Composite Area
-		dc.SetPen(wx.Pen(wx.RED))
-		dc.DrawLines(((self.compositeX, 0), (self.compositeX, self.Height))) # depth axis - left edge of composite area
-		dc.SetPen(wx.Pen(wx.YELLOW, 3))
-		# dc.DrawLines(((self.splicerX - 63, 0), (self.splicerX - 63, self.Height))) # right edge of composite area...splicerX - 60
-		dc.SetPen(wx.Pen(wx.RED))
-		dc.DrawLines(((self.compositeX, self.Height-self.ScrollSize), (self.Width, self.Height-self.ScrollSize))) # bottom of composite area (directly above horz scrollbar)
-		dc.DrawLines(((self.splicerX, 0), (self.splicerX, self.Height))) # bottom of composite area (directly above horz scrollbar)
-		dc.DrawLines(((self.Width - self.ScrollSize - 1, 0),(self.Width - self.ScrollSize - 1, self.Height))) # right edge of draw area, whether or not splice is enabled
-
-		if self.spliceWindowOn == 1:
-			dc.SetPen(wx.Pen(wx.YELLOW, 2))
-			dc.DrawLines(((self.splicerX - 58 + self.ScrollSize, 0),(self.splicerX - 58 + self.ScrollSize, self.Height)))
-			
-		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1)) # restore pen
+		dc.DrawLines(((self.compositeX, 0), (self.compositeX, self.Height))) # depth axis
 
 		# Draw depth scale ticks
 		self.rulerHeight = self.Height - self.startDepthPix
@@ -1226,6 +1225,34 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawLines(((self.compositeX, depth), (self.Width, depth)))
 
 
+	def DrawDebugBounds(self, dc, startX, rangeMax):
+		# bounds of each hole's plot rectangle
+		dc.SetPen(wx.Pen(wx.RED, 1))
+		dc.DrawLine(startX, self.startDepthPix - 20, startX, self.Height) # left edge of hole plot
+		dc.SetPen(wx.Pen(wx.GREEN, 1))
+		dc.DrawLine(rangeMax, self.startDepthPix - 20, rangeMax, self.Height) # right edge of hole plot
+		# right edge of next hole plot's info area (core number, affine shift type and distance)
+		dc.SetPen(wx.Pen(wx.YELLOW, 1))
+		dc.DrawLine(rangeMax + self.plotLeftMargin - 1, self.startDepthPix - 20, rangeMax + self.plotLeftMargin - 1, self.Height)
+		dc.SetPen(wx.Pen(wx.BLUE, 1))
+		dc.DrawLine(startX, self.startDepthPix - 20, rangeMax + self.plotLeftMargin, self.startDepthPix - 20) # top of hole plot
+		dc.DrawLine(startX, self.Height, rangeMax + self.plotLeftMargin, self.Height) # bottom of hole plot...obscured by horz scrollbar
+
+		# Draw some debugging lines indicating bounds of Composite Area
+		dc.SetPen(wx.Pen(wx.RED))
+		dc.DrawLines(((self.compositeX, 0), (self.compositeX, self.Height))) # depth axis - left edge of composite area
+		# dc.SetPen(wx.Pen(wx.YELLOW, 3))
+		# dc.DrawLines(((self.splicerX - 63, 0), (self.splicerX - 63, self.Height))) # right edge of composite area...splicerX - 60
+		dc.SetPen(wx.Pen(wx.RED))
+		dc.DrawLines(((self.compositeX, self.Height-self.ScrollSize), (self.Width, self.Height-self.ScrollSize))) # bottom of composite area (directly above horz scrollbar)
+		dc.DrawLines(((self.splicerX, 0), (self.splicerX, self.Height))) # bottom of composite area (directly above horz scrollbar)
+		dc.DrawLines(((self.Width - self.ScrollSize - 1, 0),(self.Width - self.ScrollSize - 1, self.Height))) # right edge of draw area, whether or not splice is enabled
+		if self.spliceWindowOn == 1: # left edge of splice area (directly to right of scrollbar)
+			dc.SetPen(wx.Pen(wx.RED, 1))
+			dc.DrawLines(((self.splicerX - 59 + self.ScrollSize, 0),(self.splicerX - 59 + self.ScrollSize, self.Height)))
+
+		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1)) # restore pen
+
 	# prevHoleType used only to draw overlapping cores when D is pressed
 	def DrawHoleGraph(self, dc, hole, smoothed, prevHoleType):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
@@ -1237,25 +1264,22 @@ class DataCanvas(wxBufferedWindow):
 		holeInfo = hole[0]
 		holeType = holeInfo[2]
 		holeName = holeInfo[7]
-		
-		startX = self.GetHoleStartX(holeName, holeType) + 50 # leave 50px on left for image
-		rangeMax = startX + self.holeWidth
+
+		# draw image if any - ask imageDB
+		#startX = self.GetHoleStartX(holeName, holeType)
+
+		# draw plot
+		startX = self.GetHoleStartX(holeName, holeType) + self.coreImageWidth # leave 50px on left for image if drawn
+		rangeMax = startX + self.holeWidth # self.plotWidth
 
 		# rulerStartDepth - 5.0 is totally arbitrary as top of the depth interval.
-		# Should really be determined by on scaling and pixel height of headers
-		# print("Drawing Hole {}. Visible depth range {} - {}".format(holeName, self.rulerStartDepth - 5.0, self.rulerEndDepth))
+		# Should really be determined by scaling and pixel height of headers
+		# startDepthPix - 20 is where the headers end and the plot area actually begins,
+		# so the start of the depth interval is really rulerStartDepth - (20 / self.pixPerMeter).
+		# print("Drawing Hole {}. Visible depth range {} - {}".format(holeName, self.rulerStartDepth - (20 / self.pixPerMeter), self.rulerEndDepth))
 
-		# draw colored lines at boundaries, useful for debugging
-		dc.SetPen(wx.Pen(wx.RED, 1))
-		dc.DrawLine(startX, self.startDepthPix - 20, startX, self.Height) # left edge of hole plot
-		dc.SetPen(wx.Pen(wx.GREEN, 1))
-		dc.DrawLine(rangeMax, self.startDepthPix - 20, rangeMax, self.Height) # right edge of hole plot
-		# right edge of next hole plot's info area (core number, affine shift type and distance)
-		dc.SetPen(wx.Pen(wx.YELLOW, 1))
-		dc.DrawLine(rangeMax + self.plotLeftMargin - 1, self.startDepthPix - 20, rangeMax + self.plotLeftMargin - 1, self.Height)
-		dc.SetPen(wx.Pen(wx.BLUE, 1))
-		dc.DrawLine(startX, self.startDepthPix - 20, rangeMax + self.plotLeftMargin, self.startDepthPix - 20) # top of hole plot
-		dc.DrawLine(startX, self.Height, rangeMax + self.plotLeftMargin, self.Height) # bottom of hole plot...obscured by horz scrollbar
+		if self.showBounds:
+			self.DrawDebugBounds(dc, startX, rangeMax)
 
 		if self.showHoleGrid == True:
 			if startX < self.splicerX:
@@ -2157,6 +2181,7 @@ class DataCanvas(wxBufferedWindow):
 		sections = coreInfo[9] # unused
 		# print("Draw core {}".format(str(coreno)))
 
+
 		# draw vertical dotted line separating splice from next splice hole (or core to be spliced)
 		if spliceflag == 1:
 			spliceholewidth = self.splicerX + self.holeWidth + 100
@@ -2169,6 +2194,7 @@ class DataCanvas(wxBufferedWindow):
 		elif drawComposite and smoothed == 2: 
 			drawing_start = self.SPrulerStartDepth - 5.0
 			
+		# brg 6/30/2020 clip section boundaries and images?
 		coreTopY, coreBotY = coreData[0][0], coreData[-1][0]
 		# Draw section tops. Assume bottom abuts next section top so no need to draw it.
 		if self.parent.sectionSummary and (self.pressedkeyS == 1 or self.showSectionDepths):
@@ -2186,21 +2212,53 @@ class DataCanvas(wxBufferedWindow):
 					dc.DrawText(coreSectionStr, startX + 2, y)
 					
 					if secIndex == len(secrows) - 1: # draw bottom of last section
-						ybot = self.startDepth + (bot - self.rulerStartDepth) * (self.length / self.gap)
+						ybot = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
 						dc.DrawLines(((startX, ybot), (startX + self.holeWidth, ybot)))
 
-					# now attempt to draw section images if available
-					secName = row.fullIdentity()
-					if secName in self.Images:
-						# scale image to height and fixed width
-						img, bmp = self.Images[secName]
-						if bmp is None:
-							ytop = y
-							ybot = self.startDepth + (bot - self.rulerStartDepth) * (self.length / self.gap)
-							bmp = img.Scale(50, ybot-ytop).ConvertToBitmap()
-							# bmp = img.ConvertToBitmap()
-						dc.DrawBitmap(bmp, startX - 50, y)
-						self.Images[secName] = (img, bmp)
+					# draw section images
+					# if self.showCoreImages:
+					# 	secName = row.fullIdentity()
+					# 	if y < self.startDepthPix or y > self.Height:
+					# 		# print("Skipping {}".format(secName))
+					# 		continue
+					# 	if secName in self.Images:
+					# 		# scale image to height and fixed width
+					# 		img, bmp = self.Images[secName]
+					# 		if bmp is None:
+					# 			ytop = y
+					# 			ybot = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
+					# 			bmp = img.Scale(50, ybot-ytop).ConvertToBitmap()
+					# 			# bmp = img.ConvertToBitmap()
+					# 		dc.DrawBitmap(bmp, startX - 50, y)
+					# 		# print("Draw image for {}".format(secName))
+					# 		self.Images[secName] = (img, bmp)
+
+		# Draw section images
+		# brg 6/30/2020 Confirm parent core is in range before proceeding, as we do with section boundaries...otherwise there's a
+		# major performance hit from spinning through the section summary for every core
+		if self.parent.sectionSummary and self.showCoreImages and (self.depthVisible(coreTopY, drawing_start, self.rulerEndDepth) or self.depthVisible(coreBotY, drawing_start, self.rulerEndDepth)):
+			shiftDistance = self.parent.affineManager.getShiftDistance(hole, coreno) if self.parent.affineManager.hasShift(hole, coreno) else 0
+			secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
+			# print("startDepth = {}, rulerStartDepth = {}, rulerEndDepth = {}".format(self.startDepthPix, self.rulerStartDepth, self.rulerEndDepth))
+			for secIndex, row in enumerate(secrows):
+				top = row.topDepth + shiftDistance
+				bot = row.bottomDepth + shiftDistance
+				y = self.startDepthPix + (top - self.rulerStartDepth) * self.pixPerMeter
+				secName = row.fullIdentity()
+				# if y < self.startDepthPix or y > self.Height:
+					# print("Skipping {}".format(secName))
+					# continue
+				if secName in self.Images:
+					# scale image to height and fixed width
+					img, bmp = self.Images[secName]
+					if bmp is None:
+						ytop = y
+						ybot = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
+						bmp = img.Scale(50, ybot-ytop).ConvertToBitmap() # self.coreImageWidth
+						# bmp = img.ConvertToBitmap()
+					dc.DrawBitmap(bmp, startX - 50, y) # self.coreImageWidth
+					# print("Draw image for {}".format(secName))
+					self.Images[secName] = (img, bmp)
 
 		# draw affine shift arrow and distance centered on core
 		y_depth, x = coreData[0]
@@ -2655,7 +2713,7 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawText("sedimentation rate", start, y)
 
 	def Draw(self, dc):
-		# beginDrawTime = time.clock()
+		beginDrawTime = time.clock()
 
 		dc.BeginDrawing()
 		dc.SetBackground(wx.Brush(self.colorDict['background']))
@@ -2798,14 +2856,18 @@ class DataCanvas(wxBufferedWindow):
 					dc.DrawLines(((self.splicerX, depthStrY), (self.Width, depthStrY)))
 
 			# draw horizontal line indicating mouse depth
-			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-			dc.DrawLines(((self.compositeX, self.MousePos[1]), (self.Width, self.MousePos[1])))
+			# dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+			# dc.DrawLines(((self.compositeX, self.MousePos[1]), (self.Width, self.MousePos[1])))
 
 			#self.MousePos = None
 
+		endDrawTime = time.clock()
+		if self.showFPS:
+			crudeFPS = round(1.0 / (endDrawTime - beginDrawTime), 1)
+			dc.DrawText(str(crudeFPS) + "fps", 0, 0)
+			# print("Draw time = {}s".format(endDrawTime - beginDrawTime))
+
 		dc.EndDrawing()
-		# endDrawTime = time.clock()
-		# print("Draw time = {}s".format(endDrawTime - beginDrawTime))
 			
 		
 	def DrawAgeDepthView(self, dc):
@@ -3124,6 +3186,13 @@ class DataCanvas(wxBufferedWindow):
 			prevsedrate = sedrate
 			prevagey = agey
 
+	# class HoleLayout
+	# - knows order of holes+types
+	# - knows visibility of holes+types
+	# - knows order of columns (image, plot)
+	# - knows width of image and plot columns
+	# - v2? ability to plot multiple holes' data in same area, possibly on image as well
+
 	# determine leftmost X for each hole's plot column
 	def InitHoleWidths(self):
 		self.WidthsControl = []
@@ -3134,7 +3203,10 @@ class DataCanvas(wxBufferedWindow):
 		for holeIndex, holeList in enumerate(self.HoleData):
 			hole = holeList[0] # hole data is nested in an extra list
 			holeKey = hole[0][7] + hole[0][2] # hole name + hole datatype
-			holeX = baseX + holeIndex * (self.holeWidth + self.plotLeftMargin + 50) # 50 for image
+			# if hole has imagery and images are being displayed, add self.coreImageWidth
+			img_wid = self.coreImageWidth if True else 0 # TODO
+			holeX = baseX + holeIndex * (self.plotWidth + self.plotLeftMargin + img_wid)
+			# holeX = baseX + holeIndex * (self.holeWidth + self.plotLeftMargin + 50) # 50 for image
 			# store as a tuple - DrawStratCore() logic still uses index to access value
 			self.WidthsControl.append((holeX, holeKey))
 
@@ -3225,7 +3297,7 @@ class DataCanvas(wxBufferedWindow):
 		self.newHoleX = 30.0
 		holeType = ""
 
-		self.InitHoleWidths()
+		self.InitHoleWidths() # figure out layout
 
 		for data in self.HoleData:
 			for r in data:
@@ -3247,10 +3319,13 @@ class DataCanvas(wxBufferedWindow):
 				self.HoleCount = self.HoleCount + 1 
 			
 		self.HoleCount = -2 
-		# Drawing Black Box for Erasing the Parts
-		dc.SetBrush(wx.Brush(self.colorDict['background']))
-		dc.SetPen(wx.Pen(self.colorDict['background'], 1))
-		dc.DrawRectangle(0, 0, self.compositeX, self.Height) # is this necessary?
+		# "Drawing Black Box for Erasing the Parts"
+		# brg 6/29/2020: draw black rectangle over ruler area...necessary???
+		# Ruler drawing seems to be correct, no artifacts when this code is commented out.
+
+		# dc.SetBrush(wx.Brush(self.colorDict['background']))
+		# dc.SetPen(wx.Pen(self.colorDict['background'], 1))
+		# dc.DrawRectangle(0, 0, self.compositeX, self.Height) # is this necessary?
 
 		self.DrawRuler(dc)
 

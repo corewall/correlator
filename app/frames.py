@@ -3560,6 +3560,10 @@ class PreferencesPanel():
 		self.parent.Window.showSectionDepths = self.showSectionDepths.IsChecked()
 		self.parent.Window.UpdateDrawing()
 
+	def OnShowCoreImages(self, event):
+		self.parent.Window.showCoreImages = self.showCoreImages.IsChecked()
+		self.parent.Window.UpdateDrawing()
+
 	def OnShowAffineShiftInfo(self, event):
 		self.parent.Window.showAffineShiftInfo = self.showAffineShiftInfo.IsChecked()
 		self.parent.Window.UpdateDrawing()
@@ -3597,6 +3601,8 @@ class PreferencesPanel():
 		self.showPlotLines.SetValue(True)
 		self.showSectionDepths = wx.CheckBox(viewPanel, -1, "Show section boundaries and numbers")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowSectionDepths, self.showSectionDepths)
+		self.showCoreImages = wx.CheckBox(viewPanel, -1, "Show core images")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowCoreImages, self.showCoreImages)
 		self.showAffineShiftInfo = wx.CheckBox(viewPanel, -1, "Show core shift direction and distance")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftInfo, self.showAffineShiftInfo)
 		self.showAffineTieArrows = wx.CheckBox(viewPanel, -1, "Show core tie arrows")
@@ -3611,6 +3617,7 @@ class PreferencesPanel():
 		viewSizer.Add(self.showSpliceWindow, 0, wx.BOTTOM, 5)
 		# viewSizer.Add(self.indSpliceScroll, 0, wx.LEFT, 20)
 		viewSizer.Add(self.showSectionDepths, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.showCoreImages, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showAffineShiftInfo, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showAffineTieArrows, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showCoreInfo, 0, wx.BOTTOM, 5)
