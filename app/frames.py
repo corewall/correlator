@@ -36,7 +36,7 @@ class TopMenuFrame(wx.Frame):
 	def __init__(self, parent):
 		wx.Frame.__init__(self, parent, -1, "Tool Bar",
 						 wx.Point(20,100),
-						 style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.FRAME_FLOAT_ON_PARENT | wx.FRAME_TOOL_WINDOW)
+						 style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP | wx.FRAME_TOOL_WINDOW)
 
 		self.parent = parent
 		frameSizer = wx.BoxSizer(wx.VERTICAL)
@@ -86,6 +86,17 @@ class TopMenuFrame(wx.Frame):
 
 		self.SetBackgroundColour(wx.Colour(255, 255, 255))
 		wx.EVT_CLOSE(self, self.OnHide)
+
+		# self.Bind(wx.EVT_ACTIVATE, self.OnActivate, self)
+
+	# trying to get main window to pop when alt-tabbing back to Correlator...only
+	# the TopMenuFrame actually pops in front of other apps' windows...
+	# def OnActivate(self, event):
+	# 	# print("OnActivate! {}".format(event.GetActive()))
+	# 	if event.GetActive() and not self.parent.HasFocus():
+	# 		self.parent.Show()
+	# 		self.parent.Raise()
+	# 		self.parent.SetFocus()
 
 	def OnHide(self, event):
 		self.Show(False)
