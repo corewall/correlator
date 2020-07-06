@@ -5,6 +5,7 @@
 import platform
 platform_name = platform.uname()
 
+import re
 import timeit
 
 import wx 
@@ -440,6 +441,7 @@ class DataCanvas(wxBufferedWindow):
 		self.GuideCore = []
 		self.SpliceSmoothData = []
 		self.Images = {}
+		self.HoleWithImages = []
 
 		self.LogData = [] 
 		self.LogSMData = [] 
@@ -624,7 +626,8 @@ class DataCanvas(wxBufferedWindow):
 		self.LogTieData = [] 
 		self.SpliceData = []
 		self.SpliceSmoothData = []
-		self.Images = {}
+		self.Images = {} # todo? imageDB?
+		self.HolesWithImages = []
 		self.LogSpliceData = []
 		self.LogSpliceSmoothData = []
 		self.firstPntAge = 0.0
@@ -716,11 +719,28 @@ class DataCanvas(wxBufferedWindow):
 		self.Images = invalidatedImages
 
 	def LoadImages(self, img_files):
+		self.HolesWithImages = []
 		for f in img_files:
 			img = wx.Image(f)
 			img_key = os.path.basename(f).replace('-A.jpg', '')
 			self.Images[img_key] = (img, None) # wx.Image, wx.Bitmap
+			hole_name = self._getHoleName(img_key)
+			assert hole_name is not None
+			if hole_name not in self.HolesWithImages:
+				self.HolesWithImages.append(hole_name)
 		print("Loaded images: {}".format(self.Images))
+		print("Holes with images: {}".format(self.HolesWithImages))
+
+	def _getHoleName(self, txt):
+		holePattern = "U[0-9]+([A-Z]+)" # TODO: make flexible for non-IODP section IDs
+		hole = re.search(holePattern, txt)
+		if hole and len(hole.groups()) == 1:
+			return hole.groups()[0]
+		return None
+
+	# hole: hole name string
+	def HoleHasImages(self, hole):
+		return hole in self.HolesWithImages
 
 	# CoreInfo finding routines
 	def findCoreInfoByIndex(self, coreIndex):
@@ -1268,8 +1288,9 @@ class DataCanvas(wxBufferedWindow):
 		# draw image if any - ask imageDB
 		#startX = self.GetHoleStartX(holeName, holeType)
 
-		# draw plot
-		startX = self.GetHoleStartX(holeName, holeType) + self.coreImageWidth # leave 50px on left for image if drawn
+		startX = self.GetHoleStartX(holeName, holeType)
+		if self.showCoreImages:
+			startX += self.coreImageWidth # leave 50px on left for image if drawn
 		rangeMax = startX + self.holeWidth # self.plotWidth
 
 		# rulerStartDepth - 5.0 is totally arbitrary as top of the depth interval.
@@ -1281,6 +1302,7 @@ class DataCanvas(wxBufferedWindow):
 		if self.showBounds:
 			self.DrawDebugBounds(dc, startX, rangeMax)
 
+		# draw vertical dotted line at left edge of hole plot area
 		if self.showHoleGrid == True:
 			if startX < self.splicerX:
 				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
@@ -1297,7 +1319,8 @@ class DataCanvas(wxBufferedWindow):
 
 		if smoothed == 5 or smoothed == 6 or smoothed == 7:
 			holeType = 'log'
-			
+		
+		# prepare to overlay data from other holes of this datatype
 		overlapped_flag = False
 		if self.pressedkeyD == 1:
 			if self.selectedHoleType == holeInfo[2]:
@@ -3202,11 +3225,12 @@ class DataCanvas(wxBufferedWindow):
 		# corresponding to SmoothData, so it's safe to rely on self.HoleData here.  		
 		for holeIndex, holeList in enumerate(self.HoleData):
 			hole = holeList[0] # hole data is nested in an extra list
-			holeKey = hole[0][7] + hole[0][2] # hole name + hole datatype
+			holeName, holeType = hole[0][7], hole[0][2]
+			holeKey = holeName + holeType
 			# if hole has imagery and images are being displayed, add self.coreImageWidth
-			img_wid = self.coreImageWidth if True else 0 # TODO
-			holeX = baseX + holeIndex * (self.plotWidth + self.plotLeftMargin + img_wid)
-			# holeX = baseX + holeIndex * (self.holeWidth + self.plotLeftMargin + 50) # 50 for image
+			img_wid = self.coreImageWidth if self.showCoreImages and self.HoleHasImages(holeName) else 0
+			holeX = baseX + holeIndex * (self.holeWidth + self.plotLeftMargin + img_wid)
+
 			# store as a tuple - DrawStratCore() logic still uses index to access value
 			self.WidthsControl.append((holeX, holeKey))
 
