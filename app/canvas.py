@@ -4732,15 +4732,16 @@ class DataCanvas(wxBufferedWindow):
 		pos = event.GetPositionTuple()
 		self.selectedTie = -1 
 
-		dotsize_x = self.tieDotSize + self.holeWidth + 10 
+		img_wid = self.coreImageWidth if self.showCoreImages else 0
+
+		dotsize_x = self.tieDotSize + img_wid + self.plotWidth + 10
 		dotsize_y = self.tieDotSize + 10 
 		half = dotsize_y / 2
 
 		count = 0
 		for data in self.TieData: # handle context-click on in-progress tie points
 			y = self.startDepthPix + (data.depth - self.rulerStartDepth) * self.pixPerMeter
-			x = (data.hole * self.holeWidth) + (data.hole * 50) + 50 - self.minScrollRange
-			reg = None
+			x = (data.hole * (img_wid + self.plotWidth)) + (data.hole * 50) + 50 - self.minScrollRange + 40
 			reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
 
 			if reg.Inside(wx.Point(pos[0], pos[1])):
@@ -4909,7 +4910,6 @@ class DataCanvas(wxBufferedWindow):
 			x = (tie.hole * (img_wid + self.plotWidth)) + (tie.hole * 50) + 50 - self.minScrollRange + 40
 			reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
 			if reg.Inside(wx.Point(pos[0], pos[1])):
-				print("inside tie!")
 				if tie.fixed == 0:
 					self.selectedTie = count
 					if (count % 2) == 1:
@@ -6263,9 +6263,7 @@ class DataCanvas(wxBufferedWindow):
 						# width (px), height (px), x coord of left edge of hole area, px width of hole area, hole index
 						n, x, y, w, h, min, max, hole_idx = r
 						reg = wx.Rect(min, y, max, h)
-						print("OnMainMotion: inside {}?".format(reg))
 						if reg.Inside(wx.Point(pos[0], pos[1])):
-							print("yes!")
 							got = 1
 							l = []
 							self.selectedCore = n
