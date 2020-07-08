@@ -3541,6 +3541,18 @@ class PreferencesPanel():
 		self.parent.Window.InvalidateImages() # wx.Images must be recreated at appropriate width
 		self.parent.Window.UpdateDrawing()
 
+	def OnChangeImageStyle(self, event):
+		style_idx = self.imageStyleChoice.GetSelection()
+		self.parent.Window.UpdateImageStyle(style_idx)
+		# disable width slider if aspect ratio style is selected
+		enableWidthControls = False if style_idx == 2 else True
+		self.imageWidthSlider.Enable(enableWidthControls)
+		self.iwsLabel.Enable(enableWidthControls)
+		if event is None:
+			return
+		self.parent.Window.InvalidateImages() # wx.Images must be recreated with new style
+		self.parent.Window.UpdateDrawing()
+
 	def OnChangeRulerUnits(self, evt):
 		self.parent.Window.rulerUnits = self.unitsPopup.GetStringSelection()
 		self.parent.Window.UpdateDrawing()
@@ -3756,13 +3768,23 @@ class PreferencesPanel():
 		plotWidthSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
 		plotWidthSliderSizer.Add(wx.StaticText(self.mainPanel, -1, "Plot Width"))
 		plotWidthSliderSizer.Add(self.plotWidthSlider, 1, wx.EXPAND)
-		vbox_top.Add(plotWidthSliderSizer, 0, wx.EXPAND | wx.BOTTOM, 10)
+		vbox_top.Add(plotWidthSliderSizer, 0, wx.EXPAND | wx.BOTTOM, 20)
+
+		# TODO: staticboxsizer for image options?
+		# Image Display Style - all (stretch/squeeze), middle third, preserve aspect ratio
+		imageStyleSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.imageStyleChoice = wx.Choice(self.mainPanel, -1, choices=["Full Width", "Middle Third", "Preserve Aspect Ratio"])
+		self.mainPanel.Bind(wx.EVT_CHOICE, self.OnChangeImageStyle, self.imageStyleChoice)
+		imageStyleSizer.Add(wx.StaticText(self.mainPanel, -1, "Image Style"))
+		imageStyleSizer.Add(self.imageStyleChoice)
+		vbox_top.Add(imageStyleSizer, 0, wx.BOTTOM, 10)
 
 		# Image Width Slider
 		self.imageWidthSlider = wx.Slider(self.mainPanel, -1, value=0, minValue=0, maxValue=100)
 		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangeImageWidth, self.imageWidthSlider)
 		imageWidthSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
-		imageWidthSliderSizer.Add(wx.StaticText(self.mainPanel, -1, "Image Width"))
+		self.iwsLabel = wx.StaticText(self.mainPanel, -1, "Image Width")
+		imageWidthSliderSizer.Add(self.iwsLabel)
 		imageWidthSliderSizer.Add(self.imageWidthSlider, 1, wx.EXPAND)
 		vbox_top.Add(imageWidthSliderSizer, 0, wx.EXPAND | wx.BOTTOM, 10)
 

@@ -334,6 +334,11 @@ class DataCanvas(wxBufferedWindow):
 		# in addition to display options?
 		self.plotWidth = 250
 		self.coreImageWidth = 50
+		# 0: display full width, stretched/squeezed to fit self.coreImageWidth
+		# 1: display middle third, stretched/squeezed to fit self.coreImageWidth
+		# 2: display at correct aspect ratio - overrides self.coreImageWidth
+		self.coreImageStyle = 0
+		self.coreImageResolution = 3003 # pixels per meter TODO: Hard-coded for test image set
 		
 		self.spliceHoleWidth = 300
 		self.logHoleWidth = 210
@@ -712,11 +717,35 @@ class DataCanvas(wxBufferedWindow):
 				self.range.append(newrange)
 				break
 
+	def UpdateImageStyle(self, new_style):
+		if new_style == self.coreImageStyle:
+			return
+		else:
+			self.coreImageStyle = new_style
+
+	def _updateCoreImageWidth(self):
+		if self.coreImageStyle == 0 or self.coreImageStyle == 1:
+			# restore old image width
+			self.parent.optPanel.OnChangeImageWidth(None)
+		elif self.coreImageStyle == 2:
+			if len(self.Images) == 0:
+				return
+			img, _ = self.Images[self.Images.keys()[0]]
+			h_px = img.GetHeight()
+			h_phys = h_px / float(self.coreImageResolution)
+			draw_height_px = h_phys * self.pixPerMeter
+			scale = float(draw_height_px) / h_px
+			self.coreImageWidth = int(round(img.GetWidth() * scale))
+			print("Image is {}px high = {}m at {}px/m; width {} scales to {}".format(h_px, h_phys, self.coreImageResolution, img.GetWidth(), self.coreImageWidth))
+		# self.InvalidateImages()
+		# self.UpdateDrawing()
+
 	def InvalidateImages(self):
 		invalidatedImages = {}
 		for k, v in self.Images.items():
 			invalidatedImages[k] = (v[0], None)
 		self.Images = invalidatedImages
+		self._updateCoreImageWidth()
 
 	def LoadImages(self, img_files):
 		self.HolesWithImages = []
@@ -728,8 +757,8 @@ class DataCanvas(wxBufferedWindow):
 			assert hole_name is not None
 			if hole_name not in self.HolesWithImages:
 				self.HolesWithImages.append(hole_name)
-		print("Loaded images: {}".format(self.Images))
-		print("Holes with images: {}".format(self.HolesWithImages))
+		# print("Loaded images: {}".format(self.Images))
+		# print("Holes with images: {}".format(self.HolesWithImages))
 
 	def _getHoleName(self, txt):
 		holePattern = "U[0-9]+([A-Z]+)" # TODO: make flexible for non-IODP section IDs
@@ -1306,13 +1335,7 @@ class DataCanvas(wxBufferedWindow):
 		holeType = holeInfo[2]
 		holeName = holeInfo[7]
 
-		# draw image if any - ask imageDB
-		#startX = self.GetHoleStartX(holeName, holeType)
-
 		startX = self.GetHoleStartX(holeName, holeType)
-		# if self.showCoreImages:
-			# startX += self.coreImageWidth # leave 50px on left for image if drawn
-		# rangeMax = startX + self.holeWidth # self.plotWidth
 		rangeMax = startX + (self.coreImageWidth if self.showCoreImages else 0) + self.plotWidth
 
 		# rulerStartDepth - 5.0 is totally arbitrary as top of the depth interval.
@@ -2260,18 +2283,23 @@ class DataCanvas(wxBufferedWindow):
 				bot = row.bottomDepth + shiftDistance
 				y = self.startDepthPix + (top - self.rulerStartDepth) * self.pixPerMeter
 				secName = row.fullIdentity()
-				# if y < self.startDepthPix or y > self.Height:
-					# print("Skipping {}".format(secName))
-					# continue
 				if secName in self.Images:
 					# scale image to height and fixed width
 					img, bmp = self.Images[secName]
 					if bmp is None:
 						ytop = y
 						ybot = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
-						bmp = img.Scale(self.coreImageWidth, ybot-ytop).ConvertToBitmap() # self.coreImageWidth
-						# bmp = img.ConvertToBitmap()
-					dc.DrawBitmap(bmp, startX, y) # self.coreImageWidth
+						if self.coreImageStyle == 0: # full width
+							bmp = img.Scale(self.coreImageWidth, ybot-ytop).ConvertToBitmap()
+						elif self.coreImageStyle == 1: # middle third
+							wid = img.GetWidth()
+							x = int(round(wid / 3.0))
+							img_rect = wx.Rect(x, 0, x, img.GetHeight())
+							bmp = img.GetSubImage(img_rect).Scale(self.coreImageWidth, ybot-ytop).ConvertToBitmap()
+						elif self.coreImageStyle == 2: # aspect ratio
+							# self.coreImageWidth is set to correct pixel width to maintain aspect ratio
+							bmp = img.Scale(self.coreImageWidth, ybot-ytop).ConvertToBitmap()
+					dc.DrawBitmap(bmp, startX, y)
 					# print("Draw image for {}".format(secName))
 					self.Images[secName] = (img, bmp)
 
