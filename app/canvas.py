@@ -2218,9 +2218,13 @@ class DataCanvas(wxBufferedWindow):
 		interpDatum = numpy.interp(searchDepth, [above[0], below[0]], [above[1], below[1]])
 		return (searchDepth, interpDatum)
 	
-	# is given depth in visible range?
+	# Is given depth (point) in visible range? All args in meters.
 	def depthVisible(self, depth, rangetop, rangebot):
 		return depth >= rangetop and depth <= rangebot
+
+	# Is given depth interval in visible range? All args in meters.
+	def depthIntervalVisible(self, top, bot, rangetop, rangebot):
+		return self.depthVisible(top, rangetop, rangebot) or self.depthVisible(bot, rangetop, rangebot) or (top <= rangetop and bot >= rangebot)
 
 	# todo: prev_affine arg totally unused
 	def DrawCoreGraph(self, dc, index, startX, holeInfo, coreInfo, smoothed, spliceflag, drawComposite, prev_affine):
@@ -2254,7 +2258,7 @@ class DataCanvas(wxBufferedWindow):
 		coreTopY, coreBotY = coreData[0][0], coreData[-1][0]
 		# Draw section tops. Assume bottom abuts next section top so no need to draw it.
 		if self.parent.sectionSummary and (self.pressedkeyS == 1 or self.showSectionDepths):
-			if drawComposite and smoothed != 2 and (self.depthVisible(coreTopY, drawing_start, self.rulerEndDepth) or self.depthVisible(coreBotY, drawing_start, self.rulerEndDepth)):
+			if drawComposite and smoothed != 2 and self.depthIntervalVisible(coreTopY, coreBotY, drawing_start, self.rulerEndDepth):
 				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 				shiftDistance = self.parent.affineManager.getShiftDistance(hole, coreno) if self.parent.affineManager.hasShift(hole, coreno) else 0
 				secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
@@ -2274,7 +2278,7 @@ class DataCanvas(wxBufferedWindow):
 		# Draw section images
 		# brg 6/30/2020 Confirm parent core is in range before proceeding, as we do with section boundaries...otherwise there's a
 		# major performance hit from spinning through the section summary for every core
-		if self.parent.sectionSummary and self.showCoreImages and (self.depthVisible(coreTopY, drawing_start, self.rulerEndDepth) or self.depthVisible(coreBotY, drawing_start, self.rulerEndDepth)):
+		if self.parent.sectionSummary and self.showCoreImages and self.depthIntervalVisible(coreTopY, coreBotY, drawing_start, self.rulerEndDepth):
 			shiftDistance = self.parent.affineManager.getShiftDistance(hole, coreno) if self.parent.affineManager.hasShift(hole, coreno) else 0
 			secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
 			# print("startDepth = {}, rulerStartDepth = {}, rulerEndDepth = {}".format(self.startDepthPix, self.rulerStartDepth, self.rulerEndDepth))
