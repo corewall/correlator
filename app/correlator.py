@@ -1500,7 +1500,9 @@ class MainFrame(wx.Frame):
 
 		self.WritePreferenceItem("startdepth", self.Window.rulerStartDepth, f)
 		self.WritePreferenceItem("secondstartdepth", self.Window.SPrulerStartDepth, f)
-		self.WritePreferenceItem("datawidth", self.optPanel.plotWidthSlider.GetValue(), f)
+		self.WritePreferenceItem("datawidth", self.optPanel.holeWidthSlider.GetValue(), f)
+		self.WritePreferenceItem("plotwidth", self.optPanel.plotWidthSlider.GetValue(), f)
+		self.WritePreferenceItem("imagewidth", self.optPanel.imageWidthSlider.GetValue(), f)
 		self.WritePreferenceItem("rulerunits", self.Window.GetRulerUnitsStr(), f)
 		self.WritePreferenceItem("rulerscale", self.optPanel.depthZoomSlider.GetValue(), f)
 
@@ -2952,12 +2954,28 @@ class MainFrame(wx.Frame):
 			if len(str_temp) > 0:
 				self.Directory = str_temp
 
+		# total hole width - still used for splice and log, supplanted
+		# by coreImageWidth and plotWidth for composite area
 		if self.config.has_option("applications", "datawidth"):
 			str_temp = self.config.get("applications", "datawidth")
 			if len(str_temp) > 0:
-				conf_value = int ( str_temp )
+				conf_value = int(str_temp)
+				self.optPanel.holeWidthSlider.SetValue(conf_value)
+				self.optPanel.OnChangeHoleWidth(None)
+
+		if self.config.has_option("applications", "plotwidth"):
+			str_temp = self.config.get("applications", "plotwidth")
+			if len(str_temp) > 0:
+				conf_value = int(str_temp)
 				self.optPanel.plotWidthSlider.SetValue(conf_value)
-				self.optPanel.OnChangeWidth(None)
+				self.optPanel.OnChangePlotWidth(None)
+
+		if self.config.has_option("applications", "imagewidth"):
+			str_temp = self.config.get("applications", "imagewidth")
+			if len(str_temp) > 0:
+				conf_value = int(str_temp)
+				self.optPanel.imageWidthSlider.SetValue(conf_value)
+				self.optPanel.OnChangeImageWidth(None)
 
 		img = wx.Image(opj("images/scrollbutton1.jpg"))
 		img.Rescale(self.Window.ScrollSize, img.GetHeight())

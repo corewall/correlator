@@ -3514,15 +3514,31 @@ class PreferencesPanel():
 		self.parent.dataFrame.UpdateMINMAX(applyType, minRange, maxRange)
 		self.parent.Window.UpdateDrawing()
 
-	def OnChangeWidth(self, event):
-		idx = self.plotWidthSlider.GetValue() - 10
+	def OnChangeHoleWidth(self, event):
+		idx = self.holeWidthSlider.GetValue() - 10
 		holeWidth = 200 + (idx * 10) - 50 # leave 50 for image
-
 		self.parent.Window.holeWidth = holeWidth
 		self.parent.Window.spliceHoleWidth = holeWidth
 		self.parent.Window.logHoleWidth = holeWidth
 		if event == None :
 			return
+		self.parent.Window.UpdateDrawing()
+
+	def OnChangePlotWidth(self, event):
+		idx = self.plotWidthSlider.GetValue()
+		plotWidth = 100 + (idx * 2) # 100-300px
+		self.parent.Window.plotWidth = plotWidth
+		if event is None:
+			return
+		self.parent.Window.UpdateDrawing()
+		
+	def OnChangeImageWidth(self, event):
+		idx = self.imageWidthSlider.GetValue()
+		imageWidth = 30 + (idx * 2) # 30-230px
+		self.parent.Window.coreImageWidth = imageWidth
+		if event is None:
+			return
+		self.parent.Window.InvalidateImages() # wx.Images must be recreated at appropriate width
 		self.parent.Window.UpdateDrawing()
 
 	def OnChangeRulerUnits(self, evt):
@@ -3723,18 +3739,32 @@ class PreferencesPanel():
 		varApply = wx.Button(varScalePanel, -1, "Apply Range")
 		varScaleSizer.Add(varApply, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnChangeMinMax, varApply)
-
-		self.plotWidthSlider = wx.Slider(varScalePanel, -1, value=10, minValue=1, maxValue=20)
-		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangeWidth, self.plotWidthSlider)
-		varSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
-		varSliderSizer.Add(wx.StaticText(varScalePanel, -1, "Zoom"))
-		varSliderSizer.Add(self.plotWidthSlider, 1, wx.EXPAND)
-		varSliderSizer.Add(wx.StaticText(varScalePanel, -1, "Width*2"))
-
-		varScaleSizer.Add(varSliderSizer, 0, wx.EXPAND)
-
 		varScalePanel.SetSizer(varScaleSizer)
 		vbox_top.Add(varScalePanel, 0, wx.BOTTOM | wx.EXPAND, 10)
+
+		# Hole Width Slider
+		self.holeWidthSlider = wx.Slider(self.mainPanel, -1, value=10, minValue=1, maxValue=20)
+		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangeHoleWidth, self.holeWidthSlider)
+		holeWidthSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
+		holeWidthSliderSizer.Add(wx.StaticText(self.mainPanel, -1, "Hole Width"))
+		holeWidthSliderSizer.Add(self.holeWidthSlider, 1, wx.EXPAND)
+		vbox_top.Add(holeWidthSliderSizer, 0, wx.EXPAND | wx.BOTTOM, 10)
+
+		# Plot Width Slider
+		self.plotWidthSlider = wx.Slider(self.mainPanel, -1, value=0, minValue=0, maxValue=100)
+		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangePlotWidth, self.plotWidthSlider)
+		plotWidthSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
+		plotWidthSliderSizer.Add(wx.StaticText(self.mainPanel, -1, "Plot Width"))
+		plotWidthSliderSizer.Add(self.plotWidthSlider, 1, wx.EXPAND)
+		vbox_top.Add(plotWidthSliderSizer, 0, wx.EXPAND | wx.BOTTOM, 10)
+
+		# Image Width Slider
+		self.imageWidthSlider = wx.Slider(self.mainPanel, -1, value=0, minValue=0, maxValue=100)
+		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangeImageWidth, self.imageWidthSlider)
+		imageWidthSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
+		imageWidthSliderSizer.Add(wx.StaticText(self.mainPanel, -1, "Image Width"))
+		imageWidthSliderSizer.Add(self.imageWidthSlider, 1, wx.EXPAND)
+		vbox_top.Add(imageWidthSliderSizer, 0, wx.EXPAND | wx.BOTTOM, 10)
 
 		# Color Set
 		colorButton = wx.Button(self.mainPanel, -1, "Change Color Set", size=(290,25))
