@@ -1324,7 +1324,8 @@ class DataCanvas(wxBufferedWindow):
 		if self.showBounds:
 			self.DrawDebugBounds(dc, startX, rangeMax)
 
-		# draw vertical dotted line at left edge of hole plot area
+		# draw vertical dotted line at left edge of hole rectangle...image
+		# or plot, depending on self.showCoreImages
 		if self.showHoleGrid == True:
 			if startX < self.splicerX:
 				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
@@ -2239,13 +2240,13 @@ class DataCanvas(wxBufferedWindow):
 					top = row.topDepth + shiftDistance
 					bot = row.bottomDepth + shiftDistance
 					y = self.startDepthPix + (top - self.rulerStartDepth) * self.pixPerMeter
-					dc.DrawLines(((plotStartX, y), (plotStartX + self.holeWidth, y)))
+					dc.DrawLines(((plotStartX, y), (plotStartX + self.plotWidth, y)))
 					coreSectionStr = "{}-{}".format(coreno, row.section)
 					dc.DrawText(coreSectionStr, plotStartX + 2, y)
 					
 					if secIndex == len(secrows) - 1: # draw bottom of last section
 						ybot = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
-						dc.DrawLines(((plotStartX, ybot), (plotStartX + self.holeWidth, ybot)))
+						dc.DrawLines(((plotStartX, ybot), (plotStartX + self.plotWidth, ybot)))
 
 		# Draw section images
 		# brg 6/30/2020 Confirm parent core is in range before proceeding, as we do with section boundaries...otherwise there's a
@@ -2413,7 +2414,7 @@ class DataCanvas(wxBufferedWindow):
 
 		# clip to plot area
 		if not self.showOutOfRangeData:
-			dc.SetClippingRegion(x=plotStartX, y=self.startDepthPix - 20, width=self.holeWidth + self.plotLeftMargin, height=self.Height-(self.startDepthPix-20))
+			dc.SetClippingRegion(x=plotStartX, y=self.startDepthPix - 20, width=self.plotWidth, height=self.Height-(self.startDepthPix-20))
 
 		# draw lines
 		y = lines[-1][1] # deepest depth in core
@@ -2535,7 +2536,7 @@ class DataCanvas(wxBufferedWindow):
 						i = i + 1
 
 			#data_max = startX + self.holeWidth + 50 
-			data_max = plotStartX + self.holeWidth / 2.0
+			data_max = plotStartX + self.plotWidth / 2.0
 			# draw lines 
 			if data_max < self.splicerX:
 				for r in lines:
@@ -2600,7 +2601,7 @@ class DataCanvas(wxBufferedWindow):
 		for r in self.range:
 			if r[0] == type: 
 				if r[3] != 0.0:
-					self.coefRange = self.holeWidth / r[3]
+					self.coefRange = self.plotWidth / r[3]
 				else:
 					self.coefRange = 0
 				tempx = (x - startx) / self.coefRange + self.minData
@@ -3240,7 +3241,7 @@ class DataCanvas(wxBufferedWindow):
 				self.minRange = r[1]
 				self.maxRange = r[2]
 				if r[3] != 0.0:
-					self.coefRange = self.holeWidth / r[3]
+					self.coefRange = self.plotWidth / r[3]
 				else:
 					self.coefRange = 0 
 				smooth_id = r[4]
@@ -3505,15 +3506,19 @@ class DataCanvas(wxBufferedWindow):
 				img_wid = self.coreImageWidth if self.showCoreImages else 0 # todo: factor in whether holes have images or not
 				x = (compTie.hole * (img_wid + self.plotWidth)) + (compTie.hole * 50) + 50 - self.minScrollRange + 40 
 				if compTie.depth >= self.rulerStartDepth and compTie.depth <= self.rulerEndDepth:
-					if x < (self.splicerX - self.holeWidth / 2):
+					if x < self.splicerX - 65: # splicerX - 65 is roughly left of splice area scrollbar...todo FUDGE
+						# don't draw tie line or end rectangle in Splice Area
+						x_end = min(x + img_wid + self.plotWidth, self.splicerX - 65)
 						dc.DrawCircle(x, y, radius)
 						if compTie.fixed == 1: 
 							dc.SetPen(wx.Pen(self.colorDict['fixedTie'], self.tieline_width, style=wx.DOT))
 						else:
-							dc.DrawRectangle(x + (img_wid + self.plotWidth) - radius, y - radius, self.tieDotSize, self.tieDotSize)
+							rect_x = x + (img_wid + self.plotWidth) - radius
+							if rect_x < self.splicerX - 65:
+								dc.DrawRectangle(x + (img_wid + self.plotWidth) - radius, y - radius, self.tieDotSize, self.tieDotSize)
 							dc.SetPen(wx.Pen(self.colorDict['shiftTie'], self.tieline_width, style=wx.DOT))
 
-						dc.DrawLine(x, y, x + img_wid + self.plotWidth, y)
+						dc.DrawLine(x, y, x_end, y)
 						
 						posStr = str(tempx)
 						if compTie.fixed == 1: # store fixed depth for shift calc on next go-around
@@ -5049,6 +5054,7 @@ class DataCanvas(wxBufferedWindow):
 						count = 1
 
 
+	# shiftx unused
 	def OnUpdateGuideData(self, core, shiftx, shifty):
 		self.GuideCore = []
 		coreInfo = self.findCoreInfoByIndex(core)
@@ -5148,7 +5154,7 @@ class DataCanvas(wxBufferedWindow):
 					typeMin = r[1]
 					typeMax = r[2]
 					if r[3] != 0.0:
-						typeCoefRange = self.holeWidth / r[3]
+						typeCoefRange = self.plotWidth / r[3]
 					else:
 						self.coefRange = 0
 					drawSmooth = (r[4] > 0) # type 0 = Unsmoothed, 1 = SmoothedOnly 2 = Smoothed&Unsmoothed
@@ -5161,7 +5167,7 @@ class DataCanvas(wxBufferedWindow):
 					for v in valuelist:
 						depth, datum = v
 						screenx = (datum - typeMin) * typeCoefRange
-						x = screenx + xoffset - (self.holeWidth / 2)
+						x = screenx + xoffset - (self.plotWidth / 2)
 						screeny = self.getCoord(depth)
 						y = screeny + yoffset
 						dragCoreLines.append((x, y))
@@ -5892,7 +5898,7 @@ class DataCanvas(wxBufferedWindow):
 
 								movableTie = self.TieData[length - 1]
 								shift = fixedTie.depth - movableTie.depth
-								shiftx = (fixedTie.hole - movableTie.hole) * (self.holeWidth + 50)
+								shiftx = (fixedTie.hole - movableTie.hole) * (self.holeWidth + 50) # shiftx is unused in OnUpdateGuideData...don't care about this self.holeWidth
 								self.compositeDepth = fixedTie.depth
 								y2 = fixedTie.depth
 								y1 = movableTie.depth
