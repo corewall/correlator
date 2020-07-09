@@ -1445,7 +1445,6 @@ class DataCanvas(wxBufferedWindow):
 		# 				dc.DrawLines(((rangeMax, y2), (rangeMax + 15, y2)))
 		
 		# for each core in hole, draw if visible - determined in self.DrawCoreGraph()
-		affine = 0.0
 		for i in range(len_hole): 
 			coreInfo = hole[i + 1]
 			# coreInfo indices:
@@ -1464,10 +1463,10 @@ class DataCanvas(wxBufferedWindow):
 					spliceflag = 2	
 
 			# todo: I believe affine is totally unused here, definitely unused in DrawCoreGraph()
-			affine = self.DrawCoreGraph(dc, self.coreCount, startX, holeInfo, coreInfo, smoothed, spliceflag, drawComposite, affine) 
+			self.DrawCoreGraph(dc, self.coreCount, startX, holeInfo, coreInfo, smoothed, spliceflag, drawComposite) 
 
 			if overlapped_flag == True:
-				self.DrawCoreGraph(dc, self.coreCount, self.selectedStartX, holeInfo, coreInfo, -1, 0, 1, 0.0) 
+				self.DrawCoreGraph(dc, self.coreCount, self.selectedStartX, holeInfo, coreInfo, -1, 0, 1)
 
 			spliceflag = 0 
 			coreData = coreInfo[10] # coreData: list of depth/data tuples
@@ -2226,14 +2225,13 @@ class DataCanvas(wxBufferedWindow):
 	def depthIntervalVisible(self, top, bot, rangetop, rangebot):
 		return self.depthVisible(top, rangetop, rangebot) or self.depthVisible(bot, rangetop, rangebot) or (top <= rangetop and bot >= rangebot)
 
-	# todo: prev_affine arg totally unused
-	def DrawCoreGraph(self, dc, index, startX, holeInfo, coreInfo, smoothed, spliceflag, drawComposite, prev_affine):
+	def DrawCoreGraph(self, dc, index, startX, holeInfo, coreInfo, smoothed, spliceflag, drawComposite):
 		site = holeInfo[0]
 		hole = holeInfo[7]
 		coreno = coreInfo[0]
 		data_min = coreInfo[3]
 		data_max = coreInfo[4]
-		affine = coreInfo[5]
+		affine_shift = coreInfo[5]
 		coreData = coreInfo[10] 
 		annotation = coreInfo[7] 
 		squish = coreInfo[6]
@@ -2260,12 +2258,11 @@ class DataCanvas(wxBufferedWindow):
 		if self.parent.sectionSummary and (self.pressedkeyS == 1 or self.showSectionDepths):
 			if drawComposite and smoothed != 2 and self.depthIntervalVisible(coreTopY, coreBotY, drawing_start, self.rulerEndDepth):
 				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-				shiftDistance = self.parent.affineManager.getShiftDistance(hole, coreno) if self.parent.affineManager.hasShift(hole, coreno) else 0
 				secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
 				# print("startDepth = {}, rulerStartDepth = {}, rulerEndDepth = {}".format(self.startDepthPix, self.rulerStartDepth, self.rulerEndDepth))
 				for secIndex, row in enumerate(secrows):
-					top = row.topDepth + shiftDistance
-					bot = row.bottomDepth + shiftDistance
+					top = row.topDepth + affine_shift
+					bot = row.bottomDepth + affine_shift
 					y = self.startDepthPix + (top - self.rulerStartDepth) * self.pixPerMeter
 					dc.DrawLines(((plotStartX, y), (plotStartX + self.plotWidth, y)))
 					coreSectionStr = "{}-{}".format(coreno, row.section)
@@ -2279,12 +2276,10 @@ class DataCanvas(wxBufferedWindow):
 		# brg 6/30/2020 Confirm parent core is in range before proceeding, as we do with section boundaries...otherwise there's a
 		# major performance hit from spinning through the section summary for every core
 		if self.parent.sectionSummary and self.showCoreImages and self.depthIntervalVisible(coreTopY, coreBotY, drawing_start, self.rulerEndDepth):
-			shiftDistance = self.parent.affineManager.getShiftDistance(hole, coreno) if self.parent.affineManager.hasShift(hole, coreno) else 0
 			secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
-			# print("startDepth = {}, rulerStartDepth = {}, rulerEndDepth = {}".format(self.startDepthPix, self.rulerStartDepth, self.rulerEndDepth))
 			for secIndex, row in enumerate(secrows):
-				top = row.topDepth + shiftDistance
-				bot = row.bottomDepth + shiftDistance
+				top = row.topDepth + affine_shift
+				bot = row.bottomDepth + affine_shift
 				y = self.startDepthPix + (top - self.rulerStartDepth) * self.pixPerMeter
 				secName = row.fullIdentity()
 				if secName in self.Images:
@@ -2308,10 +2303,8 @@ class DataCanvas(wxBufferedWindow):
 					self.Images[secName] = (img, bmp)
 
 		# draw affine shift arrow and distance centered on core
-		y_depth, x = coreData[0]
-		shiftInfoY = coreTopY + (coreBotY - coreTopY) / 2
-		if affine != 0 and y_depth >= drawing_start and y_depth <= self.rulerEndDepth:
-			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
+		if affine_shift != 0 and self.depthIntervalVisible(coreTopY, coreBotY, drawing_start, self.rulerEndDepth):
+			shiftInfoY = coreTopY + (coreBotY - coreTopY) / 2
 			y = self.startDepthPix + (shiftInfoY - self.rulerStartDepth) * self.pixPerMeter
 
 			shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole, coreno)
@@ -2319,18 +2312,19 @@ class DataCanvas(wxBufferedWindow):
 			# show affine shift direction, distance, and type to left of core, centered on core depth interval
 			if self.showAffineShiftInfo:
 				# arrowhead
-				arrowheadAdjust = 8 if affine > 0 else -8
+				arrowheadAdjust = 8 if affine_shift > 0 else -8
 				arrowY = y + 4
 				tribase1 = wx.Point(startX - 4, arrowY)
 				tribase2 = wx.Point(startX + 4, arrowY)
 				tribase3 = wx.Point(startX, arrowY + arrowheadAdjust)
+				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 				dc.SetBrush(wx.Brush(self.colorDict['foreground']))
-				if affine > 0:
+				if affine_shift > 0:
 					dc.DrawPolygon((tribase3, tribase2, tribase1))
 				else:
 					dc.DrawPolygon((tribase3, tribase1, tribase2))
 				# shift distance text, type			
-				dc.DrawText(str(affine), startX - 40, y)
+				dc.DrawText(str(affine_shift), startX - 40, y)
 				dc.DrawText(shiftTypeStr, startX - 32, y - 12)
 			
 			# arrow indicating TIE between cores
@@ -2359,7 +2353,8 @@ class DataCanvas(wxBufferedWindow):
 					if self.MousePos and arrowRect.Inside(self.MousePos):
 						dc.SetPen(wx.Pen(wx.Colour(0, 255, 0))) # green
 
-					# dot on parent core, arrow to shifted core 				
+					# dot on parent core, arrow to shifted core
+					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 					dc.DrawCircle(parentTieX, parentY, 3)
 					arrowDir = 5 if parentTieX > tieX else -5
 					dc.DrawLines(((parentTieX, parentY), (tieX, tieY), (tieX, tieY), (tieX+arrowDir, tieY+5), (tieX, tieY), (tieX+arrowDir, tieY-5)))
@@ -2579,9 +2574,6 @@ class DataCanvas(wxBufferedWindow):
 						#dc.SetPen(wx.Pen(wx.Colour(0, 139, 0), 1))
 						dc.SetPen(wx.Pen(self.colorDict['guide'], 1))
 					dc.DrawLines(((px, py), (x, y))) 
-
-		return affine
-
 
 	def DrawGraphInfo(self, dc, coreInfo, flag):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
