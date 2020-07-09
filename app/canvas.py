@@ -771,6 +771,18 @@ class DataCanvas(wxBufferedWindow):
 	def HoleHasImages(self, hole):
 		return hole in self.HolesWithImages
 
+	# given index of hole in HoleData, return hole name string
+	def GetHoleNameByHoleDataIndex(self, index):
+		assert len(self.HoleData) > index
+		hole = self.HoleData[index]
+		return hole[0][0][7]
+
+	# given index of hole in HoleData, return hole datatype string
+	def GetHoleTypeByHoleDataIndex(self, index):
+		assert len(self.HoleData) > index
+		hole = self.HoleData[index]
+		return hole[0][0][2]
+		
 	# CoreInfo finding routines
 	def findCoreInfoByIndex(self, coreIndex):
 		result = None
@@ -2342,7 +2354,7 @@ class DataCanvas(wxBufferedWindow):
 					tieX = (tieX * self.coefRange) + plotStartX
 					parentY = self.getCoord(parentNearDepth)
 					parentTieX = parentNearDatum - self.minRange
-					parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType) + (self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(hole)) else 0)
+					parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType) + (self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(parentCore.hole)) else 0)
 
 					# save (hole + core, bounding rect) tuple for click/hover detection
 					rx = parentTieX if parentTieX < tieX else tieX
@@ -2530,7 +2542,7 @@ class DataCanvas(wxBufferedWindow):
 		else:
 			if len(lines) > 0:
 				firstLine = lines[0]
-				img_wid = self.coreImageWidth if self.showCoreImages else 0
+				img_wid = self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(hole)) else 0
 				coreDrawData = [(index, data_min, firstLine[1], data_max-data_min + img_wid, y-firstLine[1], startX, self.plotWidth + img_wid + 40, self.HoleCount)]
 				self.DrawData["CoreArea"].append(coreDrawData)
 
@@ -3237,7 +3249,7 @@ class DataCanvas(wxBufferedWindow):
 	# determine leftmost X for each hole's plot column
 	def InitHoleWidths(self):
 		self.WidthsControl = []
-		baseX = self.compositeX - self.minScrollRange + self.plotLeftMargin
+		currentX = self.compositeX - self.minScrollRange + self.plotLeftMargin
 		
 		# even if we aren't drawing HoleData (unsmoothed), there will always be HoleData
 		# corresponding to SmoothData, so it's safe to rely on self.HoleData here.  		
@@ -3246,11 +3258,12 @@ class DataCanvas(wxBufferedWindow):
 			holeName, holeType = hole[0][7], hole[0][2]
 			holeKey = holeName + holeType
 			# if hole has imagery and images are being displayed, add self.coreImageWidth
-			img_wid = self.coreImageWidth if self.showCoreImages and self.HoleHasImages(holeName) else 0
-			holeX = baseX + holeIndex * (self.plotLeftMargin + self.plotWidth + img_wid)
+			img_wid = self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(holeName)) else 0
+			hole_wid = self.plotLeftMargin + self.plotWidth + img_wid
 
 			# store as a tuple - DrawStratCore() logic still uses index to access value
-			self.WidthsControl.append((holeX, holeKey))
+			self.WidthsControl.append((currentX, holeKey))
+			currentX += hole_wid
 
 	# Disable controls in CompositePanel and FilterPanel that require loaded data to
 	# function and aren't otherwise en/disabled by their respective panel's logic (e.g.
@@ -3271,52 +3284,6 @@ class DataCanvas(wxBufferedWindow):
 				smooth_id = r[4]
 				self.continue_flag = r[5] 
 				return (r[1], r[2], self.coefRange)
-
-	def DrawMainView2(self, dc):
-		self.DrawData["CoreArea"] = [] 
-		self.DrawData["SpliceArea"] = [] 
-		self.DrawData["LogArea"] = [] 
-		self.DrawData["CoreInfo"] = []
-		self.AffineTieArrows = [] # (hole+core, bounding rect) for each TIE arrow
-		self.highlightedCore = False # has a core been highlighted (rect drawn around bounds)?
-
-		if self.ScrollUpdate == 1: 
-			self.UpdateScroll(1)
-			self.ScrollUpdate = 0 
-
-		# TODO build SiteLayout hierarchy at Load time, update when data changes
-		# (affine shifts, etc), *not* in DrawMainView()!
-		# sl = layout.SiteLayout(holes=[], height=self.Height, width=self.Width - self.compositeX, hole_width=self.holeWidth)
-		# holeLayouts = []
-		# for hd in self.HoleData:
-		# 	holeInfo = hd[0] # tuple of hole metadata
-		# 	# create Header
-		# 	hhName = holeInfo[1] + "-" + holeInfo[0] + holeInfo[7] # [exp]-[site][hole]
-		# 	hhDatatype = holeInfo[2]
-		# 	hhRange = "Range: {} : {}".format(str(holeInfo[5]), str(holeInfo[6]))
-		# 	header = layout.HoleHeader(hhName, hhDatatype, hhRange)
-
-		# 	drawRange = self._getPlotRange(hhDatatype) # (min, max, coef)
-		# 	# parse into CoreLayouts
-		# 	coreLayouts = []
-		# 	coreCount = holeInfo[8]
-		# 	for core_idx in range(1, len(hd)): # cores are elements 1...N of hd
-		# 		coreInfo = hd[core_idx]
-		# 		depthDataPairs = coreInfo[10]
-		# 		ds = layout.Dataset(coreInfo[0], depthDataPairs, drawRange)
-		# 		plotCol = layout.PlotColumn([ds])
-		# 		coreLayouts.append(layout.CoreLayout([plotCol]))
-
-		# 	# create HoleLayout and add
-		# 	holeLayouts.append(layout.HoleLayout(coreLayouts, header))
-		
-		# for hl in holeLayouts:
-		# 	sl.addHoleLayout(hl)
-
-		# sl.draw(dc, (self.compositeX, 0), self.Height, self.Width)
-
-		self.DrawRuler(dc)
-
 		
 	def DrawMainView(self, dc):
 		# print("{} DrawMainView()".format(self.draw_count))
@@ -3525,10 +3492,10 @@ class DataCanvas(wxBufferedWindow):
 				y = self.startDepthPix + (compTie.depth - self.rulerStartDepth) * self.pixPerMeter
 				tempx = round(compTie.depth, 3)
 
-				# brgbrg
-				# x = (compTie.hole * self.holeWidth) + (compTie.hole * 50) + 50 - self.minScrollRange + 40 
-				img_wid = self.coreImageWidth if self.showCoreImages else 0 # todo: factor in whether holes have images or not
-				x = (compTie.hole * (img_wid + self.plotWidth)) + (compTie.hole * 50) + 50 - self.minScrollRange + 40 
+				tieHoleName = self.GetHoleNameByHoleDataIndex(compTie.hole)
+				tieHoleType = self.GetHoleTypeByHoleDataIndex(compTie.hole)
+				img_wid = self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(self.GetHoleNameByHoleDataIndex(compTie.hole))) else 0
+				x = self.GetHoleStartX(tieHoleName, tieHoleType)
 				if compTie.depth >= self.rulerStartDepth and compTie.depth <= self.rulerEndDepth:
 					if x < self.splicerX - 65: # splicerX - 65 is roughly left of splice area scrollbar...todo FUDGE
 						# don't draw tie line or end rectangle in Splice Area
@@ -4761,24 +4728,24 @@ class DataCanvas(wxBufferedWindow):
 		pos = event.GetPositionTuple()
 		self.selectedTie = -1 
 
-		img_wid = self.coreImageWidth if self.showCoreImages else 0
-
-		dotsize_x = self.tieDotSize + img_wid + self.plotWidth + 10
-		dotsize_y = self.tieDotSize + 10 
+		dotsize_y = self.tieDotSize + 10
 		half = dotsize_y / 2
 
 		count = 0
-		for data in self.TieData: # handle context-click on in-progress tie points
-			y = self.startDepthPix + (data.depth - self.rulerStartDepth) * self.pixPerMeter
-			x = (data.hole * (img_wid + self.plotWidth)) + (data.hole * 50) + 50 - self.minScrollRange + 40
+		for tie in self.TieData: # handle context-click on in-progress tie points
+			tieHoleName = self.GetHoleNameByHoleDataIndex(tie.hole)
+			tieHoleType = self.GetHoleTypeByHoleDataIndex(tie.hole)
+			x = self.GetHoleStartX(tieHoleName, tieHoleType)
+			y = self.startDepthPix + (tie.depth - self.rulerStartDepth) * self.pixPerMeter
+			img_wid = self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(self.GetHoleNameByHoleDataIndex(tie.hole))) else 0 
+			dotsize_x = self.tieDotSize + img_wid + self.plotWidth + 10
 			reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
-
 			if reg.Inside(wx.Point(pos[0], pos[1])):
 				self.selectedTie = count
 				self.showMenu = True
 				popupMenu = wx.Menu()
 				# create Menu
-				if data.fixed == 0: # movable tie	
+				if tie.fixed == 0: # movable tie	
 					popupMenu.Append(2, "&Shift this core and all related cores below")
 					wx.EVT_MENU(popupMenu, 2, self.OnTieSelectionCb)
 					popupMenu.Append(3, "&Shift this core only")
@@ -4929,14 +4896,15 @@ class DataCanvas(wxBufferedWindow):
 
 		# move tie
 		count = 0
-		img_wid = self.coreImageWidth if self.showCoreImages else 0
-		dotsize_x = self.tieDotSize + (img_wid + self.plotWidth) + 10 # should extend all the way to right square handle
 		dotsize_y = self.tieDotSize + 10
 		half = dotsize_y / 2
 		for tie in self.TieData:
+			tieHoleName = self.GetHoleNameByHoleDataIndex(tie.hole)
+			tieHoleType = self.GetHoleTypeByHoleDataIndex(tie.hole)
+			x = self.GetHoleStartX(tieHoleName, tieHoleType)
 			y = self.startDepthPix + (tie.depth - self.rulerStartDepth) * self.pixPerMeter
-			# brgbrg 
-			x = (tie.hole * (img_wid + self.plotWidth)) + (tie.hole * 50) + 50 - self.minScrollRange + 40
+			img_wid = self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(self.GetHoleNameByHoleDataIndex(tie.hole))) else 0
+			dotsize_x = self.tieDotSize + (img_wid + self.plotWidth) + 10 # should extend all the way to right square handle
 			reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
 			if reg.Inside(wx.Point(pos[0], pos[1])):
 				if tie.fixed == 0:
