@@ -301,6 +301,7 @@ class DataCanvas(wxBufferedWindow):
 		self.ShowAutoPanel = False
 		self.ELDapplied = False 
 		self.MousePos = None 
+		self.LastMousePos = None
 
 		# Use dictionary so we can name colors - also need a list of names since dictionary is unordered
 		self.colorDictKeys = [ 'mbsf', 'ccsfTie', 'ccsfSet', 'ccsfRel', 'eld', 'smooth', 'splice', 'log', 'mudlineAdjust', \
@@ -6242,8 +6243,18 @@ class DataCanvas(wxBufferedWindow):
 		if self.showMenu == True:
 			return
 
+		if self.MousePos is not None:
+			self.LastMousePos = self.MousePos
+
 		pos = event.GetPositionTuple()
 		self.MousePos = pos 
+		# if cursor position hasn't actually changed, avoid a needless redraw
+		if self.LastMousePos is not None:
+			x, y = self.MousePos
+			lx, ly = self.LastMousePos
+			if lx - x == 0 and ly - y == 0:
+				return
+
 		got = 0
 
 		# brg 1/29/2014: if mouse is over options panel, don't bother proceeding - the draw
