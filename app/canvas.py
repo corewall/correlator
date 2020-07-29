@@ -1643,7 +1643,7 @@ class DataCanvas(wxBufferedWindow):
 		self._UpdateSpliceRange(rangemin, rangemax)
 		self._SetSpliceRangeCoef(smoothed)
 		
-		if not self.showOutOfRangeData:
+		if not self.showOutOfRangeData and clip_rect is not None:
 			dc.SetClippingRegion(clip_rect.x, clip_rect.y, clip_rect.width, clip_rect.height)
 
 		# as loaded or created on the spot, intervals with affine shifts work well, but all hell breaks
@@ -1761,7 +1761,7 @@ class DataCanvas(wxBufferedWindow):
 			self._SetSpliceRangeCoef(smoothed)
 			drawing_start = self.SPrulerStartDepth - 5.0
 			for si in self.parent.spliceManager.altSplice.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
-				self.DrawSpliceInterval(dc, si, drawing_start, altSpliceX, smoothed)
+				self.DrawSpliceInterval(dc, si, drawing_start, altSpliceX, smoothed, clip_rect=None)
 
 		self.DrawAlternateSpliceInfo(dc)
 			
