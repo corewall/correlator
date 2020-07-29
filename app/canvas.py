@@ -329,7 +329,11 @@ class DataCanvas(wxBufferedWindow):
 		self.splicerBackX = 695
 		self.tieline_width = 1
 
+		# obsolete vars, but with refs in obsolete code, leaving to be
+		# removed in a dedicated obsolete code cleanup
 		self.holeWidth = 300
+		self.spliceHoleWidth = 300
+		self.logHoleWidth = 210
 		
 		# some kind of HoleLayoutManager who knows these things
 		# in addition to display options?
@@ -340,9 +344,6 @@ class DataCanvas(wxBufferedWindow):
 		# 2: display at correct aspect ratio - overrides self.coreImageWidth
 		self.coreImageStyle = 0
 		self.coreImageResolution = 3003 # pixels per meter TODO: Hard-coded for test image set
-		
-		self.spliceHoleWidth = 300
-		self.logHoleWidth = 210
 
 		self.Height = 0 # pixel height of client area
 		self.Width = 0 # pixel width of client area
@@ -1554,14 +1555,15 @@ class DataCanvas(wxBufferedWindow):
 				self.minRange = r[1]
 				self.maxRange = r[2]
 				if r[3] != 0.0:
-					self.coefRangeSplice = self.spliceHoleWidth / r[3]
+					self.coefRangeSplice = self.plotWidth / r[3]
 				else:
 					self.coefRangeSplice = 0
 				self.smooth_id = r[4]
 				break
 			
 	def _GetSpliceRangeCoef(self, datamin, datamax):
-		return self.spliceHoleWidth / (datamax - datamin)
+		# return self.spliceHoleWidth / (datamax - datamin)
+		return self.plotWidth / (datamax - datamin)
 			
 	def _UpdateSpliceRange(self, datamin, datamax):
 		for r in self.range:
@@ -1598,9 +1600,9 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetPen(whitePen)
 		dc.SetBrush(whiteBrush)
 		startx = self.splicerX + self.plotLeftMargin # beginning of splice plot area
-		endx = startx + (self.plotLeftMargin + self.holeWidth) * 2 # right end of splice guide area
+		endx = startx + self.plotLeftMargin + (self.plotWidth * 2) # right end of splice guide area
 		ycoord = self.getSpliceCoord(tie.depth())
-		circlex = startx + self.spliceHoleWidth
+		circlex = startx + (self.plotWidth / 2)
 		namestr = tie.getName()
 		namex = circlex - (dc.GetTextExtent(namestr)[0] / 2)
 		
@@ -1688,20 +1690,19 @@ class DataCanvas(wxBufferedWindow):
 				x = (pt[1] - self.minRange) * self.coefRangeSplice + startX
 				screenpoints.append((x,y))
 		return screenpoints
-			
-	def DrawSpliceInfo(self, dc):
+	
+	# draw info header above splice hole column
+	def DrawSpliceHeader(self, dc):
 		firstint = self.parent.spliceManager.getIntervalAtIndex(0)
-		rangeMax = self.splicerX + 50
+		rangeMax = self.splicerX + self.plotLeftMargin
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 		dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height)))
 		dc.DrawText("Leg: " + firstint.coreinfo.site + " Site: " + firstint.coreinfo.leg + " Hole: Splice", rangeMax, 5)
 		dc.DrawText("Datatypes: " + ','.join(self.parent.spliceManager.getDataTypes()), rangeMax, 25)
-		
-		dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height))) # dotted line indicating minimum datarange
 
 	def DrawSplice(self, dc, hole, smoothed):
 		# vertical dotted line separating splice from next splice hole (or core to be spliced)
-		spliceholewidth = self.splicerX + self.holeWidth + 100
+		spliceholewidth = self.splicerX + self.plotWidth + (self.plotLeftMargin * 2) # splice plot margin, guide margin (may not be need)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 		dc.DrawLines(((spliceholewidth, self.startDepthPix - 20), (spliceholewidth, self.Height)))
 		
@@ -1709,27 +1710,28 @@ class DataCanvas(wxBufferedWindow):
 			rangemin, rangemax = self._GetSpliceRange()
 			self._UpdateSpliceRange(rangemin, rangemax)
 			self._SetSpliceRangeCoef(smoothed)
-			self.DrawSpliceInfo(dc)
+			self.DrawSpliceHeader(dc)
 			
 			drawing_start = self.SPrulerStartDepth - 5.0
 			startX = self.splicerX + self.plotLeftMargin
 			clip_y = self.startDepthPix - 20
 			clip_height = self.Height - clip_y
-			clip_rect = wx.Rect(x=startX, y=clip_y, width=self.holeWidth + self.plotLeftMargin, height=clip_height)
+			clip_rect = wx.Rect(x=startX, y=clip_y, width=self.plotWidth + self.plotLeftMargin, height=clip_height)
+			dc.DrawLines(((startX, self.startDepthPix - 20), (startX, self.Height))) # dotted line indicating left of splice plot
 			for si in self.parent.spliceManager.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
 				self.DrawSpliceInterval(dc, si, drawing_start, startX, smoothed, clip_rect)
 			if self.parent.spliceManager.hasSelection():
-				selected_x = startX + self.holeWidth + self.plotLeftMargin
+				selected_x = startX + self.plotWidth + self.plotLeftMargin
 				# draw debug guides for selected core plot, immediately to right of splice
 				# dc.SetPen(wx.Pen(wx.RED, 1))
 				# dc.DrawLine(selected_x, clip_y, selected_x, clip_y + clip_height)
 				# dc.DrawLine(selected_x + self.holeWidth + self.plotLeftMargin, clip_y, selected_x + self.holeWidth + self.plotLeftMargin, clip_y + clip_height)
 				if not self.showOutOfRangeData:
-					dc.SetClippingRegion(x=selected_x, y=clip_y, width=self.holeWidth + self.plotLeftMargin, height=clip_height)
-				self.DrawSelectedSpliceGuide(dc, self.parent.spliceManager.getSelected(), drawing_start, startX + self.holeWidth)
+					dc.SetClippingRegion(x=selected_x, y=clip_y, width=self.plotWidth + self.plotLeftMargin, height=clip_height)
+				self.DrawSelectedSpliceGuide(dc, self.parent.spliceManager.getSelected(), drawing_start, startX + self.plotWidth)
 				if not self.showOutOfRangeData:
 					dc.DestroyClippingRegion()
-		else:
+		else: # draw help text
 			ypos = self.getSpliceCoord(self.SPrulerStartDepth)
 			dc.DrawText("Drag a core from the left to start a splice.", self.splicerX + 20, ypos + 20)
 					
@@ -1737,7 +1739,8 @@ class DataCanvas(wxBufferedWindow):
 		
 	def DrawAlternateSpliceInfo(self, dc):
 		coreinfo = self.parent.spliceManager.getAltInfo()
-		rangeMax = self.splicerX + self.holeWidth * 2 + 150
+		# rangeMax = self.splicerX + self.holeWidth * 2 + 150
+		rangeMax = self.splicerX + ((self.plotWidth + self.plotLeftMargin) * 2)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 		dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height)))
 		if coreinfo is not None:
@@ -1749,7 +1752,7 @@ class DataCanvas(wxBufferedWindow):
 
 					
 	def DrawAlternateSplice(self, dc, hole, smoothed):
-		altSpliceX = self.splicerX + self.holeWidth * 2 + 150 # left edge of alternate splice area
+		altSpliceX = self.splicerX + ((self.plotWidth + self.plotLeftMargin) * 2) # + 150 # left edge of alternate splice area
 		
 		# vertical dotted line separating splice from next splice hole (or core to be spliced)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
@@ -1771,8 +1774,8 @@ class DataCanvas(wxBufferedWindow):
 		for pt in interval.coreinfo.coredata:
 			if pt[0] >= drawing_start and pt[0] <= self.SPrulerEndDepth:
 				y = self.startDepthPix + (pt[0] - self.SPrulerStartDepth) * self.pixPerMeter
-				spliceholewidth = self.splicerX + self.holeWidth + 100
-				x = (pt[1] - self.minRange) * self.coefRangeSplice + spliceholewidth
+				spliceholewidth = self.splicerX + self.plotLeftMargin + self.plotWidth
+				x = (pt[1] - self.minRange) * self.coefRangeSplice + spliceholewidth + self.plotLeftMargin
 				screenpoints.append((x,y))
 		if len(screenpoints) >= 1:
 			dc.SetPen(wx.Pen(wx.RED, 1))
@@ -2399,41 +2402,22 @@ class DataCanvas(wxBufferedWindow):
 			dc.SetPen(wx.Pen(self.overlapcolorList[self.selectedCount], 1))
 
 		lines = []
-		# splicelines = []
 
 		# draw nodes
 		pointCount = 0
-		splicePointCount = 0
-		bottom = -1
-		log_min = 999.0
-		log_max = -999.0
-		spliceholewidth = self.splicerX + (self.holeWidth + self.plotLeftMargin) * log_number + self.plotLeftMargin
 		y = 0
 		
 		for y,x in [cd for cd in coreData if cd[0] >= drawing_start]:
 			if drawComposite:
-				if smoothed == 2:
-					if y <= self.SPrulerEndDepth:
-						y = self.startDepthPix + (y - self.SPrulerStartDepth) * self.pixPerMeter
-						x = (x - self.minRange) * self.coefRange + spliceholewidth
-						lines.append((x,y))
-						if log_min > x:
-							log_min = x
-						if log_max < x:
-							log_max = x
-						pointCount += 1
-					elif y > self.SPrulerEndDepth:
-						break
-				else:
-					if y <= self.rulerEndDepth:
-						y = self.startDepthPix + (y - self.rulerStartDepth) * self.pixPerMeter
-						x = (x - self.minRange) * self.coefRange + plotStartX
-						lines.append((x,y))
-						pointCount += 1
-					elif y > self.rulerEndDepth:
-						break
+				if y <= self.rulerEndDepth:
+					y = self.startDepthPix + (y - self.rulerStartDepth) * self.pixPerMeter
+					x = (x - self.minRange) * self.coefRange + plotStartX
+					lines.append((x,y))
+					pointCount += 1
+				elif y > self.rulerEndDepth:
+					break
 
-		if pointCount == 0 and splicePointCount == 0:
+		if pointCount == 0:# and splicePointCount == 0:
 			return
 
 		# clip to plot area
@@ -2467,30 +2451,10 @@ class DataCanvas(wxBufferedWindow):
 			if len(annotation) > 0:
 				dc.DrawText(annotation, startX - 35, y - 20)
 
-		# Obsolete, splice is drawn in DrawSplice()
-		# if smoothed == 1 and self.DiscretePlotMode == 0 and splicePointCount > 1:
-		# 	dc.DrawLines(splicelines)
-		# 	return
-		# else:
-		# 	for pt in splicelines:
-		# 		dc.DrawCircle(pt[0], pt[1], self.DiscretetSize)
-		# 	return
-
-		#data_min = data_min - startX
-		#data_max = data_max - startX
-		min_splice = data_min - self.minRangeSplice
-
-
-		if smoothed == 2:
-			data_min = data_min - self.minRangeSplice
-			data_min = (data_min * self.coefRangeSplice) + startX 
-			data_max = data_max - self.minRangeSplice
-			data_max = (data_max * self.coefRangeSplice) + startX 
-		else:
-			data_min = data_min - self.minRange
-			data_min = (data_min * self.coefRange) + plotStartX
-			data_max = data_max - self.minRange
-			data_max = (data_max * self.coefRange) + plotStartX
+		data_min = (data_min - self.minRange) * self.coefRange + plotStartX
+		# data_min = (data_min * self.coefRange) + plotStartX
+		data_max = (data_max - self.minRange) * self.coefRange + plotStartX
+		# data_max = (data_max * self.coefRange) + plotStartX
 
 		# Highlight core on mouseover. If mouse pos happens to be within multiple
 		# cores' bounds, only draw for the first such core encountered.
@@ -2510,26 +2474,11 @@ class DataCanvas(wxBufferedWindow):
 				self.highlightedCore = True # only highlight a single core
 
 
-		if smoothed == 2:
-			if log_number != 2:
-				for r in lines:
-					l = []
-					#l.append( (index, spliceholewidth, r[1], self.holeWidth+40, y-r[1]) )
-					l.append((index, data_min, r[1], data_max - data_min, y - r[1], startX, self.holeWidth + 40))
-					self.DrawData["SpliceArea"].append(l)
-					return
-			else:
-				for r in lines:
-					l = []
-					l.append((index, data_min, r[1], data_max - data_min, y - r[1], spliceholewidth, self.holeWidth + 40))
-					self.DrawData["LogArea"].append(l)
-					return
-		else:
-			if len(lines) > 0:
-				firstLine = lines[0]
-				img_wid = self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(hole)) else 0
-				coreDrawData = [(index, data_min, firstLine[1], data_max-data_min + img_wid, y-firstLine[1], startX, self.plotWidth + img_wid + 40, self.HoleCount)]
-				self.DrawData["CoreArea"].append(coreDrawData)
+		if len(lines) > 0:
+			firstLine = lines[0]
+			img_wid = self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(hole)) else 0
+			coreDrawData = [(index, data_min, firstLine[1], data_max-data_min + img_wid, y-firstLine[1], startX, self.plotWidth + img_wid + 40, self.HoleCount)]
+			self.DrawData["CoreArea"].append(coreDrawData)
 
 		lines = []
 
@@ -4905,7 +4854,7 @@ class DataCanvas(wxBufferedWindow):
 
 		# check for click on SpliceIntervalTie - is user starting to drag?
 		for siTie in self.parent.spliceManager.getTies():
-			basex = self.splicerX + 50 + self.spliceHoleWidth
+			basex = self.splicerX + self.plotLeftMargin + (self.plotWidth / 2)
 			basey = self.getSpliceCoord(siTie.depth())
 			rect = wx.Rect(basex - 8, basey - 8, 16, 16)
 			if rect.Inside(wx.Point(pos[0], pos[1])):
@@ -4914,7 +4863,7 @@ class DataCanvas(wxBufferedWindow):
 				return
 		
 		# select SpliceInterval at click depth
-		if pos[0] >= self.splicerX and pos[0] < self.splicerX + 50 + self.spliceHoleWidth:
+		if pos[0] >= self.splicerX and pos[0] < self.splicerX + (self.plotLeftMargin * 2) + self.plotWidth:
 			depth = self.getSpliceDepth(pos[1])
 			if not self.parent.spliceManager.select(depth):
 				self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)
