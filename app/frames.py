@@ -3526,7 +3526,7 @@ class PreferencesPanel():
 
 	def OnChangePlotWidth(self, event):
 		idx = self.plotWidthSlider.GetValue()
-		plotWidth = 100 + (idx * 2) # 100-300px
+		plotWidth = 100 + (idx * 2) # width range: 100-300px
 		self.parent.Window.plotWidth = plotWidth
 		if event is None:
 			return
@@ -3534,7 +3534,7 @@ class PreferencesPanel():
 		
 	def OnChangeImageWidth(self, event):
 		idx = self.imageWidthSlider.GetValue()
-		imageWidth = 30 + (idx * 2) # 30-230px
+		imageWidth = 30 + (idx * 2) # width range: 30-230px
 		self.parent.Window.coreImageWidth = imageWidth
 		if event is None:
 			return
