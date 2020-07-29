@@ -2362,12 +2362,12 @@ class DataCanvas(wxBufferedWindow):
 					arrowRect = wx.Rect(rx, tieY - 5, abs(tieX - parentTieX), 10)
 					self.AffineTieArrows.append((hole+coreno, arrowRect))
 
- 					# highlight tie arrow on mouseover
 					if self.MousePos and arrowRect.Inside(self.MousePos):
-						dc.SetPen(wx.Pen(wx.Colour(0, 255, 0))) # green
+						dc.SetPen(wx.Pen(wx.GREEN)) # highlight TIE arrow in green on mouseover
+					else:
+						dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 
-					# dot on parent core, arrow to shifted core
-					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
+					# circle on parent core, arrow to shifted core
 					dc.DrawCircle(parentTieX, parentY, 3)
 					arrowDir = 5 if parentTieX > tieX else -5
 					dc.DrawLines(((parentTieX, parentY), (tieX, tieY), (tieX, tieY), (tieX+arrowDir, tieY+5), (tieX, tieY), (tieX+arrowDir, tieY-5)))
