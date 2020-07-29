@@ -1440,7 +1440,6 @@ class DataCanvas(wxBufferedWindow):
 		clip = wx.DCClipper(dc, wx.Region(0, self.startDepthPix - 20, spliceScrollbarLeft, dc.GetSize().height))
 
 		# rangeMax = startX
-		spliceflag = 0 
 
 		len_hole = len(hole) - 1
 		if len_hole == 0:
@@ -1465,23 +1464,11 @@ class DataCanvas(wxBufferedWindow):
 			# 6:squish (ELD compression), 7:? (annotation?), 8:'0'?, 9:section depth list, 10:list of depth/data tuples
 			#print "   coredata = {}".format(coreInfo[:10])
 
-			if self.CurrentSpliceCore == self.coreCount:
-				spliceflag = 1	
-
-			for autoHole in self.autocoreNo: 
-				if autoHole == self.HoleCount:
-					spliceflag = 2	
-					break
-				elif self.parent.autoPanel.ApplyFlag == 1:
-					spliceflag = 2	
-
-			# todo: I believe affine is totally unused here, definitely unused in DrawCoreGraph()
-			self.DrawCoreGraph(dc, self.coreCount, startX, holeInfo, coreInfo, smoothed, spliceflag, drawComposite) 
+			self.DrawCoreGraph(dc, self.coreCount, startX, holeInfo, coreInfo, smoothed, drawComposite) 
 
 			if overlapped_flag == True:
-				self.DrawCoreGraph(dc, self.coreCount, self.selectedStartX, holeInfo, coreInfo, -1, 0, 1)
+				self.DrawCoreGraph(dc, self.coreCount, self.selectedStartX, holeInfo, coreInfo, -1, 1)
 
-			spliceflag = 0 
 			coreData = coreInfo[10] # coreData: list of depth/data tuples
 			depthmin = coreData[0][0]
 			depthmax = coreData[-1][0]
@@ -2238,7 +2225,7 @@ class DataCanvas(wxBufferedWindow):
 	def depthIntervalVisible(self, top, bot, rangetop, rangebot):
 		return self.depthVisible(top, rangetop, rangebot) or self.depthVisible(bot, rangetop, rangebot) or (top <= rangetop and bot >= rangebot)
 
-	def DrawCoreGraph(self, dc, index, startX, holeInfo, coreInfo, smoothed, spliceflag, drawComposite):
+	def DrawCoreGraph(self, dc, index, startX, holeInfo, coreInfo, smoothed, drawComposite):
 		site = holeInfo[0]
 		hole = holeInfo[7]
 		coreno = coreInfo[0]
@@ -2253,16 +2240,14 @@ class DataCanvas(wxBufferedWindow):
 		# print("Draw core {}".format(str(coreno)))
 
 		# draw vertical dotted line separating splice from next splice hole (or core to be spliced)
-		if spliceflag == 1:
-			spliceholewidth = self.splicerX + self.holeWidth + 100
-			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-			dc.DrawLines(((spliceholewidth, self.startDepthPix - 20), (spliceholewidth, self.Height)))
+		# if spliceflag == 1:
+		# 	spliceholewidth = self.splicerX + self.holeWidth + 100
+		# 	dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+		# 	dc.DrawLines(((spliceholewidth, self.startDepthPix - 20), (spliceholewidth, self.Height)))
 
 		# todo: why calculate this for every core? pass from hole/mainview level?
 		# drawing_start = self.rulerStartDepth - 5.0
 		drawing_start = self.rulerStartDepth - (20 / self.pixPerMeter) # todo: save this value as a member instead of computing everywhere
-		if spliceflag == 1 or (drawComposite and smoothed == 2):
-			drawing_start = self.SPrulerStartDepth - (20 / self.pixPerMeter)
 
 		plotStartX = startX + (self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(hole)) else 0)
 			
