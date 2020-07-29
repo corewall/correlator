@@ -2235,8 +2235,7 @@ class DataCanvas(wxBufferedWindow):
 		coreData = coreInfo[10] 
 		annotation = coreInfo[7] 
 		squish = coreInfo[6]
-		quality = coreInfo[8] 
-		sections = coreInfo[9] # unused
+		quality = coreInfo[8]
 		# print("Draw core {}".format(str(coreno)))
 
 		# draw vertical dotted line separating splice from next splice hole (or core to be spliced)
