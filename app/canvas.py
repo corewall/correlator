@@ -2773,6 +2773,10 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetBackground(wx.Brush(self.colorDict['background']))
 		dc.Clear() # make sure you clear the bitmap!
 
+		# 7/11/2020: Double-draw is because OnMainMotion() is called even
+		# when the mouse has moved so little that the cursor position doesn't
+		# change. Skipping draw when position is unchanged solves this
+		# so things always draw fast.
 		# 3/18/2019: Attempt to debug double-drawing issue after initial Load
 		# of data, which seems to be fixed by clicking anywhere on the right-hand
 		# panels, resulting in noticeably faster response. Looks like OnMainMotion()

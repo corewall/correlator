@@ -37,7 +37,7 @@ class AffineShift:
 # An affine shift resulting from the shift of another core that "pushes" or "pulls"
 # all cores below and/or related cores to maintain spacing of cores. Because the user
 # didn't explicitly shift this core, it isn't a TIE or a SET, but a "convenience" shift
-# that maintains relative positions between cores in a hole. Ultimately, such
+# dubbed REL that maintains relative positions between cores in a hole. Ultimately, such
 # shifts will usually be replaced with a TIE or SET as they're integrated into
 # the CCSF-A/MCD depth scale.
 class ImplicitShift(AffineShift):
