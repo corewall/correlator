@@ -3514,15 +3514,15 @@ class PreferencesPanel():
 		self.parent.dataFrame.UpdateMINMAX(applyType, minRange, maxRange)
 		self.parent.Window.UpdateDrawing()
 
-	def OnChangeHoleWidth(self, event):
-		idx = self.holeWidthSlider.GetValue() - 10
-		holeWidth = 200 + (idx * 10) - 50 # leave 50 for image
-		self.parent.Window.holeWidth = holeWidth
-		self.parent.Window.spliceHoleWidth = holeWidth
-		self.parent.Window.logHoleWidth = holeWidth
-		if event == None :
-			return
-		self.parent.Window.UpdateDrawing()
+	# def OnChangeHoleWidth(self, event):
+	# 	idx = self.holeWidthSlider.GetValue() - 10
+	# 	holeWidth = 200 + (idx * 10) - 50 # leave 50 for image
+	# 	self.parent.Window.holeWidth = holeWidth
+	# 	self.parent.Window.spliceHoleWidth = holeWidth
+	# 	self.parent.Window.logHoleWidth = holeWidth
+	# 	if event == None :
+	# 		return
+	# 	self.parent.Window.UpdateDrawing()
 
 	def OnChangePlotWidth(self, event):
 		idx = self.plotWidthSlider.GetValue()
@@ -3755,12 +3755,12 @@ class PreferencesPanel():
 		vbox_top.Add(varScalePanel, 0, wx.BOTTOM | wx.EXPAND, 10)
 
 		# Hole Width Slider
-		self.holeWidthSlider = wx.Slider(self.mainPanel, -1, value=10, minValue=1, maxValue=20)
-		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangeHoleWidth, self.holeWidthSlider)
-		holeWidthSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
-		holeWidthSliderSizer.Add(wx.StaticText(self.mainPanel, -1, "Hole Width"))
-		holeWidthSliderSizer.Add(self.holeWidthSlider, 1, wx.EXPAND)
-		vbox_top.Add(holeWidthSliderSizer, 0, wx.EXPAND | wx.BOTTOM, 10)
+		# self.holeWidthSlider = wx.Slider(self.mainPanel, -1, value=10, minValue=1, maxValue=20)
+		# self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangeHoleWidth, self.holeWidthSlider)
+		# holeWidthSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
+		# holeWidthSliderSizer.Add(wx.StaticText(self.mainPanel, -1, "Hole Width"))
+		# holeWidthSliderSizer.Add(self.holeWidthSlider, 1, wx.EXPAND)
+		# vbox_top.Add(holeWidthSliderSizer, 0, wx.EXPAND | wx.BOTTOM, 10) # no longer used, I believe 7/30/2020
 
 		# Plot Width Slider
 		self.plotWidthSlider = wx.Slider(self.mainPanel, -1, value=0, minValue=0, maxValue=100)
