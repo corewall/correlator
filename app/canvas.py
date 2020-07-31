@@ -1607,8 +1607,11 @@ class DataCanvas(wxBufferedWindow):
 		return rangemin, rangemax
 		
 	def DrawIntervalEdgeAndName(self, dc, interval, drawing_start, startX):
-		dc.SetPen(wx.Pen(wx.WHITE, 2))
 		liney = self.startDepthPix + (interval.getBot() - self.SPrulerStartDepth) * self.pixPerMeter
+		if liney < self.startDepthPix - 20:
+			return # don't bother drawing if line is above top of plot area
+
+		dc.SetPen(wx.Pen(wx.WHITE, 2))
 		dc.DrawLine(startX - 20, liney, startX, liney)
 		
 		dc.SetTextForeground(wx.WHITE)
@@ -1651,7 +1654,7 @@ class DataCanvas(wxBufferedWindow):
 		
 		dc.DrawText(namestr, namex, ycoord - (tie.TIE_CIRCLE_RADIUS + 12))
 		
-	def DrawSpliceInterval(self, dc, interval, drawing_start, startX, smoothed, clip_rect):
+	def DrawSpliceInterval(self, dc, interval, drawing_start, startX, smoothed):
 		interval.coreinfo.coredata = self.getCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type)
 		if len(interval.coreinfo.coredata) == 0: # data isn't enabled+loaded
 			ypos = self.getSpliceCoord(interval.getTop() + (interval.getBot() - interval.getTop())/2.0) # draw at middle of interval
@@ -1666,13 +1669,10 @@ class DataCanvas(wxBufferedWindow):
 		rangemin, rangemax = self.GetMINMAX(datatype)
 		self._UpdateSpliceRange(rangemin, rangemax)
 		self._SetSpliceRangeCoef(smoothed)
-		
-		if not self.showOutOfRangeData and clip_rect is not None:
-			dc.SetClippingRegion(clip_rect.x, clip_rect.y, clip_rect.width, clip_rect.height)
 
+		# gather datapoints within interval range for plotting
 		intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
 		screenPoints = self.GetScreenPoints(intdata, drawing_start, startX)
-		
 		usScreenPoints = [] # unsmoothed screenpoints 
 		drawUnsmoothed = self.GetSmoothType(datatype) == 2 # 2 == draw both Smooth & Unsmooth data
 		if drawUnsmoothed:
@@ -1680,9 +1680,25 @@ class DataCanvas(wxBufferedWindow):
 			smoothdata = [pt for pt in smoothdata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()] # trim to interval
 			usScreenPoints = self.GetScreenPoints(smoothdata, drawing_start, startX)
 
-		selected = (interval == self.parent.spliceManager.getSelected())
+		intervalSelected = (interval == self.parent.spliceManager.getSelected())
+		self.DrawSpliceIntervalPlot(dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed)
+
+		if self.parent.sectionSummary and self.showCoreImages:
+			self.DrawSpliceIntervalImages(dc, interval, startX)
+
+		if intervalSelected:
+			for tie in self.parent.spliceManager.getTies():
+				self.DrawSpliceIntervalTie(dc, tie) 
+
+		img_wid = self.GetCoreImageDisplayWidth()
+		self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX - img_wid)
+
+	def DrawSpliceIntervalPlot(self, dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed):
+		clip_width = self.Width - startX if self.showOutOfRangeData else self.plotWidth + self.plotLeftMargin
+		clip = wx.DCClipper(dc, wx.Rect(startX, self.startDepthPix - 20, clip_width, self.Height - (self.startDepthPix - 20)))
+
 		if len(screenPoints) >= 1:
-			dc.SetPen(wx.Pen(wx.GREEN, 2)) if selected else	dc.SetPen(wx.Pen(self.colorDict['splice'], 1)) 
+			dc.SetPen(wx.Pen(wx.GREEN, 2)) if intervalSelected else dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
 			dc.DrawLines(screenPoints) if (len(screenPoints) > 1) else dc.DrawPoint(screenPoints[0][0], screenPoints[0][1])	
 		else:
 			print "Can't draw {}, it contains 0 points".format(interval.coreinfo.getName())
@@ -1693,41 +1709,33 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawLines(usScreenPoints) if (len(usScreenPoints) > 1) else dc.DrawPoint(usScreenPoints[0][0], usScreenPoints[0][1])	
 			else:
 				print "Can't draw unsmoothed {} data over smoothed, it contains 0 points".format(interval.coreinfo.getName())
-		
-		if not self.showOutOfRangeData:
-			dc.DestroyClippingRegion()
 
-		if self.parent.sectionSummary and self.showCoreImages:
-			# clip to interval's depth range
-			interval_top_y = self.startDepthPix + (interval.getTop() - self.rulerStartDepth) * self.pixPerMeter
-			interval_bot_y = self.startDepthPix + (interval.getBot() - self.rulerStartDepth) * self.pixPerMeter
-			drawing_start_y = self.startDepthPix - 20 #+ (drawing_start - self.rulerStartDepth) * self.pixPerMeter
-			img_clip_top_y = max(drawing_start_y, interval_top_y)
-			# print("drawing_start = {}px, drawing_start_y = {}, interval top = {}".format(drawing_start, drawing_start_y, interval_top_y))
-			dc.SetClippingRegion(startX - self.coreImageWidth, img_clip_top_y, self.coreImageWidth, interval_bot_y - img_clip_top_y)
+	def DrawSpliceIntervalImages(self, dc, interval, startX):
+		interval_top_y = self.startDepthPix + (interval.getTop() - self.rulerStartDepth) * self.pixPerMeter
+		interval_bot_y = self.startDepthPix + (interval.getBot() - self.rulerStartDepth) * self.pixPerMeter
+		drawing_start_y = self.startDepthPix - 20
+		if interval_bot_y < drawing_start_y:
+			return # don't bother drawing if interval bottom is above top of plot area
 
-			secrows = self.parent.sectionSummary.getSectionRows(interval.coreinfo.hole, interval.coreinfo.holeCore)
-			affine_shift = self.findCoreAffineOffset(interval.coreinfo.hole, interval.coreinfo.holeCore)
-			for secIndex, row in enumerate(secrows):
-				top = row.topDepth + affine_shift
-				bot = row.bottomDepth + affine_shift
-				topPx = self.startDepthPix + (top - self.rulerStartDepth) * self.pixPerMeter
-				botPx = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
-				secName = row.fullIdentity()
-				bmp = self.GetImageBitmap(secName, botPx - topPx)
-				if bmp is not None:
-					dc.DrawBitmap(bmp, startX - self.coreImageWidth, topPx)
+		img_clip_top_y = max(drawing_start_y, interval_top_y)
 
-			dc.DestroyClippingRegion()
+		# wx.DCClipper-based clipping region is destroyed when it goes out of scope (i.e. at function end)
+		rect = wx.Rect(startX - self.coreImageWidth, img_clip_top_y, self.coreImageWidth, interval_bot_y - img_clip_top_y)
+		clip = wx.DCClipper(dc, rect)
+
+		secrows = self.parent.sectionSummary.getSectionRows(interval.coreinfo.hole, interval.coreinfo.holeCore)
+		affine_shift = self.findCoreAffineOffset(interval.coreinfo.hole, interval.coreinfo.holeCore)
+		for secIndex, row in enumerate(secrows):
+			top = row.topDepth + affine_shift
+			bot = row.bottomDepth + affine_shift
+			topPx = self.startDepthPix + (top - self.rulerStartDepth) * self.pixPerMeter
+			botPx = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
+			secName = row.fullIdentity()
+			bmp = self.GetImageBitmap(secName, botPx - topPx)
+			if bmp is not None:
+				dc.DrawBitmap(bmp, startX - self.coreImageWidth, topPx)
 
 
-		if selected:
-			for tie in self.parent.spliceManager.getTies():
-				self.DrawSpliceIntervalTie(dc, tie) 
-
-		img_wid = self.GetCoreImageDisplayWidth()
-		self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX - img_wid)
-		
 	def GetScreenPoints(self, dataPoints, drawingStart, startX):
 		screenpoints = []
 		for pt in dataPoints:
@@ -1763,20 +1771,17 @@ class DataCanvas(wxBufferedWindow):
 			startX = self.splicerX + self.plotLeftMargin + img_wid
 			clip_y = self.startDepthPix - 20
 			clip_height = self.Height - clip_y
-			clip_rect = wx.Rect(x=startX, y=clip_y, width=img_wid + self.plotWidth + self.plotLeftMargin, height=clip_height)
+			clip_rect = wx.Rect(x=startX, y=clip_y, width=self.plotWidth + self.plotLeftMargin, height=clip_height)
 			for si in self.parent.spliceManager.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
-				self.DrawSpliceInterval(dc, si, drawing_start, startX, smoothed, clip_rect)
+				self.DrawSpliceInterval(dc, si, drawing_start, startX, smoothed)
 			if self.parent.spliceManager.hasSelection():
 				selected_x = startX + self.plotWidth + self.plotLeftMargin
 				# draw debug guides for left and right bounds of selected core plot, immediately to right of splice
 				# dc.SetPen(wx.Pen(wx.RED, 1))
 				# dc.DrawLine(selected_x, clip_y, selected_x, clip_y + clip_height)
 				# dc.DrawLine(selected_x + self.plotWidth, clip_y, selected_x + self.plotWidth, clip_y + clip_height)
-				if not self.showOutOfRangeData:
-					dc.SetClippingRegion(x=selected_x, y=clip_y, width=self.plotWidth + self.plotLeftMargin, height=clip_height)
-				self.DrawSelectedSpliceGuide(dc, self.parent.spliceManager.getSelected(), drawing_start, startX + self.plotWidth)
-				if not self.showOutOfRangeData:
-					dc.DestroyClippingRegion()
+				guide_clip_rect = wx.Rect(x=selected_x, y=clip_y, width=self.plotWidth, height=clip_height)
+				self.DrawSelectedSpliceGuide(dc, self.parent.spliceManager.getSelected(), drawing_start, startX + self.plotWidth, guide_clip_rect)
 		else: # draw help text
 			ypos = self.getSpliceCoord(self.SPrulerStartDepth)
 			dc.DrawText("Drag a core from the left to start a splice.", self.splicerX + 20, ypos + 20)
@@ -1811,12 +1816,12 @@ class DataCanvas(wxBufferedWindow):
 			self._SetSpliceRangeCoef(smoothed)
 			drawing_start = self.SPrulerStartDepth - 5.0
 			for si in self.parent.spliceManager.altSplice.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
-				self.DrawSpliceInterval(dc, si, drawing_start, altSpliceX, smoothed, clip_rect=None)
+				self.DrawSpliceInterval(dc, si, drawing_start, altSpliceX, smoothed)
 
 		self.DrawAlternateSpliceInfo(dc)
 			
 	# draw current interval's core in its entirety to the right of the splice
-	def DrawSelectedSpliceGuide(self, dc, interval, drawing_start, startX):
+	def DrawSelectedSpliceGuide(self, dc, interval, drawing_start, startX, guide_clip_rect):
 		img_wid = self.GetCoreImageDisplayWidth()
 		screenpoints = []
 		for pt in interval.coreinfo.coredata:
@@ -1826,6 +1831,7 @@ class DataCanvas(wxBufferedWindow):
 				x = (pt[1] - self.minRange) * self.coefRangeSplice + spliceholewidth + self.plotLeftMargin
 				screenpoints.append((x,y))
 		if len(screenpoints) >= 1:
+			clip = wx.DCClipper(dc, guide_clip_rect)
 			dc.SetPen(wx.Pen(wx.RED, 1))
 			dc.DrawLines(screenpoints) if (len(screenpoints) > 1) else dc.DrawPoint(screenpoints[0][0], screenpoints[0][1])
 
@@ -2276,6 +2282,54 @@ class DataCanvas(wxBufferedWindow):
 	def depthIntervalVisible(self, top, bot, rangetop, rangebot):
 		return self.depthVisible(top, rangetop, rangebot) or self.depthVisible(bot, rangetop, rangebot) or (top <= rangetop and bot >= rangebot)
 
+	def DrawCorePlot(self, dc, plotStartX, lines, pointCount):
+		# clip to plot area
+		if self.showOutOfRangeData: # still must clip to prevent draw into splice area
+			# clip_width = self.splicerX - plotStartX if (plotStartX + self.plotWidth) < self.splicerX else self.splicerX - plotStartX
+			clip_width = (self.splicerX - 60) - plotStartX
+			clip = wx.DCClipper(dc, wx.Region(x=plotStartX, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
+		else:
+			# wx.DCClipper-based clipping region is destroyed when it goes out of scope (i.e. at function end)
+			clip_width = min(self.plotWidth, (self.splicerX - 60) - plotStartX)
+			clip = wx.DCClipper(dc, wx.Region(x=plotStartX, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
+
+		# draw lines
+		if self.DiscretePlotMode == 0 and pointCount > 1:
+			dc.DrawLines(lines)
+		else:
+			for pt in lines:
+				dc.DrawCircle(pt[0], pt[1], self.DiscretetSize)
+
+	def DrawSectionBoundaries(self, dc, plotStartX, hole, coreno, affine_shift):
+		clip = wx.DCClipper(dc, wx.Region(plotStartX, self.startDepthPix - 20, (self.splicerX - 60) - plotStartX, self.Height - (self.startDepthPix - 20)))
+		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+		secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
+		# print("startDepth = {}, rulerStartDepth = {}, rulerEndDepth = {}".format(self.startDepthPix, self.rulerStartDepth, self.rulerEndDepth))
+		for secIndex, row in enumerate(secrows):
+			top = row.topDepth + affine_shift
+			bot = row.bottomDepth + affine_shift
+			y = self.startDepthPix + (top - self.rulerStartDepth) * self.pixPerMeter
+			dc.DrawLines(((plotStartX, y), (plotStartX + self.plotWidth, y)))
+			coreSectionStr = "{}-{}".format(coreno, row.section)
+			dc.DrawText(coreSectionStr, plotStartX + 2, y)
+			
+			if secIndex == len(secrows) - 1: # draw bottom of last section
+				ybot = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
+				dc.DrawLines(((plotStartX, ybot), (plotStartX + self.plotWidth, ybot)))
+
+	def DrawSectionImages(self, dc, startX, hole, coreno, affine_shift):
+		clip = wx.DCClipper(dc, wx.Region(startX, self.startDepthPix - 20, (self.splicerX - 60) - startX, self.Height - (self.startDepthPix - 20)))
+		secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
+		for secIndex, row in enumerate(secrows):
+			top = row.topDepth + affine_shift
+			bot = row.bottomDepth + affine_shift
+			topPx = self.startDepthPix + (top - self.rulerStartDepth) * self.pixPerMeter
+			botPx = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
+			secName = row.fullIdentity()
+			bmp = self.GetImageBitmap(secName, botPx - topPx)
+			if bmp is not None:
+				dc.DrawBitmap(bmp, startX, topPx)
+
 	def DrawCoreGraph(self, dc, index, startX, holeInfo, coreInfo, smoothed, drawComposite):
 		site = holeInfo[0]
 		hole = holeInfo[7]
@@ -2298,44 +2352,23 @@ class DataCanvas(wxBufferedWindow):
 		# todo: why calculate this for every core? pass from hole/mainview level?
 		# drawing_start = self.rulerStartDepth - 5.0
 		drawing_start = self.rulerStartDepth - (20 / self.pixPerMeter) # todo: save this value as a member instead of computing everywhere
-
 		plotStartX = startX + (self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(hole)) else 0)
-			
 		coreTopY, coreBotY = coreData[0][0], coreData[-1][0]
+
 		# Draw section tops. Assume bottom abuts next section top so no need to draw it.
 		if self.parent.sectionSummary and (self.pressedkeyS == 1 or self.showSectionDepths):
 			if drawComposite and smoothed != 2 and self.depthIntervalVisible(coreTopY, coreBotY, drawing_start, self.rulerEndDepth):
-				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-				secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
-				# print("startDepth = {}, rulerStartDepth = {}, rulerEndDepth = {}".format(self.startDepthPix, self.rulerStartDepth, self.rulerEndDepth))
-				for secIndex, row in enumerate(secrows):
-					top = row.topDepth + affine_shift
-					bot = row.bottomDepth + affine_shift
-					y = self.startDepthPix + (top - self.rulerStartDepth) * self.pixPerMeter
-					dc.DrawLines(((plotStartX, y), (plotStartX + self.plotWidth, y)))
-					coreSectionStr = "{}-{}".format(coreno, row.section)
-					dc.DrawText(coreSectionStr, plotStartX + 2, y)
-					
-					if secIndex == len(secrows) - 1: # draw bottom of last section
-						ybot = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
-						dc.DrawLines(((plotStartX, ybot), (plotStartX + self.plotWidth, ybot)))
+				self.DrawSectionBoundaries(dc, plotStartX, hole, coreno, affine_shift)
 
 		# Draw section images
 		# brg 6/30/2020 Confirm parent core is in range before proceeding, as we do with section boundaries...otherwise there's a
 		# major performance hit from spinning through the section summary for every core
 		if self.parent.sectionSummary and self.showCoreImages and self.depthIntervalVisible(coreTopY, coreBotY, drawing_start, self.rulerEndDepth):
-			secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
-			for secIndex, row in enumerate(secrows):
-				top = row.topDepth + affine_shift
-				bot = row.bottomDepth + affine_shift
-				topPx = self.startDepthPix + (top - self.rulerStartDepth) * self.pixPerMeter
-				botPx = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
-				secName = row.fullIdentity()
-				bmp = self.GetImageBitmap(secName, botPx - topPx)
-				if bmp is not None:
-					dc.DrawBitmap(bmp, startX, topPx)
+			self.DrawSectionImages(dc, startX, hole, coreno, affine_shift)
 
 		# draw affine shift arrow and distance centered on core
+		# clip to prevent draw into Splice area
+		clip = wx.DCClipper(dc, wx.Region(0, self.startDepthPix - 20, (self.splicerX - 60), self.Height - (self.startDepthPix - 20)))
 		if affine_shift != 0 and self.depthIntervalVisible(coreTopY, coreBotY, drawing_start, self.rulerEndDepth):
 			shiftInfoY = coreTopY + (coreBotY - coreTopY) / 2
 			y = self.startDepthPix + (shiftInfoY - self.rulerStartDepth) * self.pixPerMeter
@@ -2450,27 +2483,14 @@ class DataCanvas(wxBufferedWindow):
 				elif y > self.rulerEndDepth:
 					break
 
-		if pointCount == 0:# and splicePointCount == 0:
+		if pointCount == 0:
 			return
 
-		# clip to plot area
-		if not self.showOutOfRangeData:
-			dc.SetClippingRegion(x=plotStartX, y=self.startDepthPix - 20, width=self.plotWidth, height=self.Height-(self.startDepthPix-20))
-
-		# draw lines
-		y = lines[-1][1] # deepest depth in core
-		if self.DiscretePlotMode == 0 and pointCount > 1:
-			dc.DrawLines(lines)
-		else:
-			for pt in lines:
-				dc.DrawCircle(pt[0], pt[1], self.DiscretetSize)
-
-		if not self.showOutOfRangeData:
-			dc.DestroyClippingRegion()
-
+		self.DrawCorePlot(dc, plotStartX, lines, pointCount)
 		if smoothed == -1:
 			return
 
+		y = lines[-1][1] # deepest depth in core
 		if y > 0 and quality == "1":
 			dc.DrawText("BAD CORE", startX - 50, y - 20)
 		#elif y > 0 and self.continue_flag == False:
