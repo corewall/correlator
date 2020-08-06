@@ -21,7 +21,6 @@ from importManager import py_correlator
 
 import frames
 import splice
-import layout
 
 
 # brg 4/9/2014: Why are we defining our own wxBufferedWindow when
