@@ -3569,6 +3569,7 @@ class PreferencesPanel():
 		self.parent.Window.pixPerMeter = idx * x / (maxDepth - minDepth) * 1.0
 		if event == None:
 			return
+		self.parent.Window.InvalidateImages()
 		self.parent.Window.UpdateDrawing()
 
 	def OnTieShiftScale(self, event):
