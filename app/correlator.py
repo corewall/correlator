@@ -1528,6 +1528,9 @@ class MainFrame(wx.Frame):
 		showOutOfRangeData = 1 if self.Window.showOutOfRangeData == True else 0
 		self.WritePreferenceItem("showOutOfRangeData", showOutOfRangeData, f)
 
+		showColorLegend = 1 if self.Window.showColorLegend == True else 0
+		self.WritePreferenceItem("showColorLegend", showColorLegend, f)
+
 		showlineInt = 1 if self.Window.showHoleGrid == True else 0
 		self.WritePreferenceItem("showline", showlineInt, f)
 
@@ -2806,6 +2809,12 @@ class MainFrame(wx.Frame):
 			if len(str_temp) > 0:
 				self.Window.showOutOfRangeData = True if str_temp == '1' else False 
 				self.optPanel.showOutOfRangeData.SetValue(self.Window.showOutOfRangeData)
+
+		if self.config.has_option("applications", "showColorLegend"):
+			str_temp = self.config.get("applications", 'showColorLegend')
+			if len(str_temp) > 0:
+				self.Window.showColorLegend = True if str_temp == '1' else False
+				self.optPanel.showColorLegend.SetValue(self.Window.showColorLegend)
 
 		if self.config.has_option("applications", "scrollsize"):
 			str_temp = self.config.get("applications", "scrollsize")

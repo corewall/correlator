@@ -3619,6 +3619,10 @@ class PreferencesPanel():
 	def OnShowOutOfRangeData(self, event):
 		self.parent.Window.showOutOfRangeData = self.showOutOfRangeData.IsChecked()
 		self.parent.Window.UpdateDrawing()
+
+	def OnShowColorLegend(self, event):
+		self.parent.Window.showColorLegend = self.showColorLegend.IsChecked()
+		self.parent.Window.UpdateDrawing()
 		
 	# def OnShowLogShiftArrows(self, event):
 	# 	self.parent.Window.LogClue = self.showLogShiftArrows.IsChecked()
@@ -3651,6 +3655,9 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowCoreInfo, self.showCoreInfo)
 		self.showOutOfRangeData = wx.CheckBox(viewPanel, -1, "Show data ranging beyond hole width")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowOutOfRangeData, self.showOutOfRangeData)
+		self.showColorLegend = wx.CheckBox(viewPanel, -1, "Show plot color legend")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowColorLegend, self.showColorLegend)
+
 		# self.showLogShiftArrows = wx.CheckBox(viewPanel, -1, "Show log shift arrows")
 		# self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)
 
@@ -3664,6 +3671,7 @@ class PreferencesPanel():
 		# viewSizer.Add(self.showLogShiftArrows, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showOutOfRangeData, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.showColorLegend, 0, wx.BOTTOM, 5)
 		viewPanel.SetSizer(viewSizer)
 		vbox_top.Add(viewPanel, 0, wx.BOTTOM | wx.EXPAND, 10)
 
