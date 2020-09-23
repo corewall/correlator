@@ -165,6 +165,7 @@ class CoreInfo:
 		return "{}{}".format(self.hole, self.holeCore)
 
 
+# Contains metadata about the core currently being dragged
 class DragCoreData:
 	def __init__(self, mouseX, origMouseY, deltaY=0):
 		self.x = mouseX # x-offset of dragged core
@@ -195,6 +196,54 @@ class AffineTiePointEventBroadcaster:
 	def updateAffineTiePointCount(self, count):
 		for l in self.listeners:
 			l(count)
+
+# Correlator frequently uses tuples to aggregate data, particularly for drawing.
+# While tuples are convenient, lack of element names can make them hard to
+# understand. Descriptions of the most commonly used DrawData tuples follow.
+#
+# CoreArea
+# Contains metadata about core plots that were drawn in the
+# most recent DrawMainView() loop. CoreArea tuples have 8 elements:
+# - core index
+# - leftmost plotted x-coord (i.e. the smallest data value in this core)
+# - topmost plotted y-coord (i.e. first coordinate in core's depth/data pairs),
+# - pixel distance between smallest and largest data point x-coords,
+# - pixel distance between top and bottom depth y-coords,
+# - x-coord of left edge of plot area,
+# - pixel width of plot area,
+# - hole index
+#
+# MouseInfo
+# Contains metadata about mouse position and core if the mouse cursor is
+# over a core. MouseInfo tuples have 5 elements:
+# - core index
+# - x-coord of mouse
+# - y-coord of mouse
+# - x-coord of smallest data value in core
+# - flag indicating type of core plot mouse is over: 0 = splice, 1 = composite, 2 = log?
+# Appears flag was used to draw mouse info in appropriate area. Currently this element
+# is unused.
+#
+# MovableSkin
+# Splice scrollbar thumb - bmp, x, y
+#
+# MovableInterface
+# Splice vertical scrollbar? - bmp, x, y, mystery flag
+# 
+# Skin
+# Composite vertical scrollbar thumb - bmp, x, y, mystery flag
+# 
+# Interface
+# 
+# HScroll
+# Horizontal scrollbar thumb - bmp, x, y, mystery flag
+# 
+# CoreImage?
+#
+# DragCore - converted to class DragCoreData, see above
+# CoreInfo - converted to class CoreInfo, see above
+#
+# SpliceArea, LogArea - obsolete
 
 
 class DataCanvas(wxBufferedWindow):
@@ -2574,6 +2623,7 @@ class DataCanvas(wxBufferedWindow):
 						dc.SetPen(wx.Pen(self.colorDict['guide'], 1))
 					dc.DrawLines(((px, py), (x, y))) 
 
+	# flag unused
 	def DrawGraphInfo(self, dc, coreInfo, flag):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
@@ -2583,8 +2633,8 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetPen(wx.Pen(wx.Colour(0, 255, 0), 1))
 
 		x = self.splicerX - 270
-		if flag == 2:
-			x = self.Width - 220
+		# if flag == 2:
+		# 	x = self.Width - 220
 
 		self.statusStr = self.statusStr + "Hole: " + coreInfo.hole + " Core: " + coreInfo.holeCore
 		dc.DrawText("Hole: " + coreInfo.hole + " Core: " + coreInfo.holeCore, x, self.startDepthPix)
@@ -2602,7 +2652,8 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetPen(wx.Pen(wx.Colour(192, 192, 192), 1, wx.DOT))
 		dc.DrawLines(((x - 2, y - 2), (x + wid + 2, y - 2), (x + wid + 2, y + hit + 2), (x - 2, y + hit + 2), (x - 2, y - 2)))
 	
-	def DrawMouseInfo(self, dc, coreInfo, x, y, startx, flag, type):
+	# flag unused
+	def DrawMouseInfo(self, dc, coreInfo, x, y, startx, flag, datatype):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
@@ -2619,10 +2670,10 @@ class DataCanvas(wxBufferedWindow):
 
 		# draw value of current mouse x position based on current core's datatype
 		tempx = 0.0
-		if type == "Natural Gamma":
-			type = "NaturalGamma"
+		if datatype == "Natural Gamma":
+			datatype = "NaturalGamma"
 		for r in self.range:
-			if r[0] == type: 
+			if r[0] == datatype: 
 				if r[3] != 0.0:
 					self.coefRange = self.plotWidth / r[3]
 				else:
@@ -2633,7 +2684,7 @@ class DataCanvas(wxBufferedWindow):
 					dc.DrawText(str(tempx), x, self.startDepthPix - 15)
 				break
 
-		section, offset = self.parent.GetSectionAtDepth(coreInfo.leg, coreInfo.hole, coreInfo.holeCore, type, ycoord)
+		section, offset = self.parent.GetSectionAtDepth(coreInfo.leg, coreInfo.hole, coreInfo.holeCore, datatype, ycoord)
 		self.statusStr += " Section: " + str(section) + " Section offset: " + str(offset) + "cm"
 
 		# display depth in ruler units
@@ -4755,7 +4806,7 @@ class DataCanvas(wxBufferedWindow):
 	def OnLMouse(self, event):
 		pos = event.GetPositionTuple()
 		for key, data in self.DrawData.items():
-			if key == "Interface":
+			if key == "Interface": # dragging composite area vertical scroll thumb? Or moving comp/splice separating scrollbar?
 				bmp, x, y = data
 				x = self.Width + x
 				w, h = bmp.GetWidth(), bmp.GetHeight()
@@ -4766,7 +4817,7 @@ class DataCanvas(wxBufferedWindow):
 					elif not self.independentScroll:# or self.spliceWindowOn == 0:
 						self.grabScrollA = 1	
 					self.UpdateDrawing()
-			elif key == "MovableInterface":
+			elif key == "MovableInterface": # dragging splice area vertical scroll thumb?
 				bmp, x, y = data
 				x = x + self.splicerX - 40
 				w, h = bmp.GetWidth(), bmp.GetHeight()
@@ -6190,14 +6241,13 @@ class DataCanvas(wxBufferedWindow):
 		#if self.drag == 0: 
 		for key, data in self.DrawData.items():
 			if key == "CoreArea":
-				for s in data:
-					area = s 
+				for area in data:
 					for r in area:
-						# core index, leftmost(?) plotted x coord, topmost(???) plotted y coord, 
-						# width (px), height (px), x coord of left edge of hole area, px width of hole area, hole index
-						n, x, y, w, h, min, max, hole_idx = r
-						reg = wx.Rect(min, y, max, h)
-						if reg.Inside(wx.Point(pos[0], pos[1])):
+						# core index, leftmost plotted x coord, topmost plotted y coord, 
+						# width (px), height (px), x coord of left edge of plot area, px width of plot area, hole index
+						n, x, y, w, h, plotMinX, plotWidth, hole_idx = r
+						rect = wx.Rect(plotMinX, y, plotWidth, h)
+						if rect.Inside(wx.Point(pos[0], pos[1])):
 							got = 1
 							l = []
 							self.selectedCore = n
