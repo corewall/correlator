@@ -2553,33 +2553,30 @@ class DataCanvas(wxBufferedWindow):
 			if len(annotation) > 0:
 				dc.DrawText(annotation, startX - 35, y - 20)
 
-		data_min = (data_min - self.minRange) * self.coefRange + plotStartX
-		# data_min = (data_min * self.coefRange) + plotStartX
-		data_max = (data_max - self.minRange) * self.coefRange + plotStartX
-		# data_max = (data_max * self.coefRange) + plotStartX
+		dataMinX = (data_min - self.minRange) * self.coefRange + plotStartX
+		dataMaxX = (data_max - self.minRange) * self.coefRange + plotStartX
 
 		# Highlight core on mouseover. If mouse pos happens to be within multiple
 		# cores' bounds, only draw for the first such core encountered.
 		# if len(lines) > 0:
 		# 	print("{}{} len lines = {}".format(hole, coreno, len(lines)))
 		if not self.highlightedCore and pointCount > 1:
-			hx = data_min
+			hx = plotStartX
 			hy = lines[0][1]
-			wid = data_max - data_min
-			hit = y - lines[0][1]
+			wid = self.plotWidth + 1
+			hit = y - hy
 			# print("test rect = {}".format(wx.Rect(hx, hy, wid, hit)))
-			if wx.Rect(hx, hy, wid, hit).Inside(self.MousePos):
+			if wx.Rect(hx, hy, wid, hit).Contains(self.MousePos):
 				# print("   inside!")
 				curPen = dc.GetPen()
 				self.DrawHighlight(dc, hx, hy, wid, hit)
 				dc.SetPen(curPen)
 				self.highlightedCore = True # only highlight a single core
 
-
 		if len(lines) > 0:
-			firstLine = lines[0]
+			depthMinY = lines[0][1]
 			img_wid = self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(hole)) else 0
-			coreDrawData = [(index, data_min, firstLine[1], data_max-data_min + img_wid, y-firstLine[1], startX, self.plotWidth + img_wid + 40, self.HoleCount)]
+			coreDrawData = [(index, dataMinX, depthMinY, dataMaxX-dataMinX, y-depthMinY, plotStartX, self.plotWidth + 1, self.HoleCount)]
 			self.DrawData["CoreArea"].append(coreDrawData)
 
 		lines = []
