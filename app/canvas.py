@@ -315,10 +315,10 @@ class HoleColumn:
 	def width(self):
 		return self._width
 
-	def name(self):
+	def holeName(self): # name of associated hole
 		return self.holeData[0][7]
 
-	def datatype(self):
+	def datatype(self): # datatype of associated hole
 		return self.holeData[0][2]
 
 	def holeInfo(self):
@@ -329,18 +329,6 @@ class HoleColumn:
 
 	def columns(self):
 		return self._columns
-
-# Don't need these! HoleColumn has all HoleData, we just need a string or const int
-# indicating type of column.
-class PlotColumn:
-	def __init__(self, name, datatype, holeData):
-		self.name = name # hole name, probably redundant
-		self.datatype = datatype # as above
-		self.holeData = holeData # corresponding element of DataCanvas.HoleData list
-
-class ImageColumn:
-	def __init__(self, name):
-		self.name = name # again, probabaly redundant hole name
 
 
 class DataCanvas(wxBufferedWindow):
@@ -1512,11 +1500,8 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetTextForeground(self.colorDict['foreground'])
 		dc.SetFont(self.stdFont)
 
-		# holeInfo = hole[0]
-		# holeType = holeInfo[2]
-		# holeName = holeInfo[7]
 		holeType = holeColumn.datatype()
-		holeName = holeColumn.name()
+		holeName = holeColumn.holeName()
 
 		startX = self.GetHoleStartX(holeName, holeType)
 		# rangeMax = startX + (self.coreImageWidth if self.showCoreImages else 0) + self.plotWidth
@@ -1604,15 +1589,15 @@ class DataCanvas(wxBufferedWindow):
 			for column in holeColumn.columns():
 				if column == ColumnType.Image:
 					if self.parent.sectionSummary:
-						self.DrawSectionImages(dc, colStartX, holeColumn.name(), core.coreName(), core.affineOffset())
+						self.DrawSectionImages(dc, colStartX, holeColumn.holeName(), core.coreName(), core.affineOffset())
 						colStartX += self.coreImageWidth
 				elif column == ColumnType.Plot:
-					self.DrawCorePlot_v2(dc, colStartX, holeColumn.name(), core.coreName(), core.depthDataPairs(), drawComposite)
+					self.DrawCorePlot_v2(dc, colStartX, holeColumn.holeName(), core.coreName(), core.depthDataPairs(), drawComposite)
 					colStartX += self.plotWidth
 				else:
 					assert false, "Unexpected column type {}".format(column)
 
-		print("For hole {}, plotted cores {}".format(holeColumn.name(), coresDrawn))
+		print("For hole {}, plotted cores {}".format(holeColumn.holeName(), coresDrawn))
 		
 			# print("Core Top = {}, bot = {}".format(coreTop, coreBot))
 		# if range is visible in depth scale:
