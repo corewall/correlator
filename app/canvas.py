@@ -7,6 +7,7 @@ platform_name = platform.uname()
 
 import re
 import timeit
+from enum import Enum
 
 import wx 
 import wx.lib.sheet as sheet
@@ -197,6 +198,58 @@ class AffineTiePointEventBroadcaster:
 		for l in self.listeners:
 			l(count)
 
+# convenience class wrapping the core metadata tuples that comprise
+# elements 1...N of each HoleData element, listed below.
+# 0: core name (number as string)
+# 1: top depth
+# 2: bottom depth
+# 3: minimum data value
+# 4: maximum data value
+# 5: affine offset (meters)
+# 6: stretch (related to log/ELD, unused)
+# 7: datatype name
+# 8: quality
+# 9: list of section top depths (unreliable)
+# 10: list of depth/data pairs for this core
+class CoreMetadata:
+	def __init__(self, core_metadata_tuple):
+		self.cmt = core_metadata_tuple
+
+	def pointCount(self):
+		return len(self.cmt[10])
+
+	def topDepth(self):
+		return self.cmt[10][0][0]
+
+	def botDepth(self):
+		return self.cmt[10][-1][0]
+
+	def depthDataPairs(self):
+		return self.cmt[10]
+
+	def coreName(self):
+		return self.cmt[0]
+
+	def affineOffset(self):
+		return self.cmt[5]
+
+
+# HoleData definition:
+# Each element of HoleData is a list containing a list (yes, redundant) containing elements
+# describing all hole and core data for a single hole+type.
+#
+# The first element is a tuple of hole metadata:
+#    (site, leg, data type, hole's min depth, hole's max depth,
+#     hole's mindata, hole's maxdata, hole name, number of cores in hole)
+# 
+# Subsequent elements are tuples of each core's metadata + all depth/data pairs:
+#    (core name (number as string), top, bottom, mindata, maxdata, affine offset, stretch, annotated type,
+#     core quality, list of sections' top depths, list of core's depth/data tuples)
+#
+# Note: top and bottom don't seem to reflect the actual core top and bottom at all. In some cases the core's
+# depths fall outside of this interval, so take it with a large grain of salt. May be (almost) unused.
+
+
 # Correlator frequently uses tuples to aggregate data, particularly for drawing.
 # While tuples are convenient, lack of element names can make them hard to
 # understand. Descriptions of the most commonly used DrawData tuples follow.
@@ -244,6 +297,50 @@ class AffineTiePointEventBroadcaster:
 # CoreInfo - converted to class CoreInfo, see above
 #
 # SpliceArea, LogArea - obsolete
+
+class ColumnType(Enum):
+	Plot = 1
+	Image = 2
+
+
+class HoleColumn:
+	def __init__(self, width, holeData):
+		self._width = width # hole column width in pixels
+		self.holeData = holeData
+		self._columns = [] # one or more ColumnTypes
+
+	def addColumn(self, col):
+		self._columns.append(col)
+
+	def width(self):
+		return self._width
+
+	def name(self):
+		return self.holeData[0][7]
+
+	def datatype(self):
+		return self.holeData[0][2]
+
+	def holeInfo(self):
+		return self.holeData[0]
+
+	def cores(self):
+		return self.holeData[1:]
+
+	def columns(self):
+		return self._columns
+
+# Don't need these! HoleColumn has all HoleData, we just need a string or const int
+# indicating type of column.
+class PlotColumn:
+	def __init__(self, name, datatype, holeData):
+		self.name = name # hole name, probably redundant
+		self.datatype = datatype # as above
+		self.holeData = holeData # corresponding element of DataCanvas.HoleData list
+
+class ImageColumn:
+	def __init__(self, name):
+		self.name = name # again, probabaly redundant hole name
 
 
 class DataCanvas(wxBufferedWindow):
@@ -299,6 +396,7 @@ class DataCanvas(wxBufferedWindow):
 		self.ShowStrat = True
 		self.ShowLog = False 
 		self.WidthsControl = []
+		self.HoleColumns = [] # list of HoleColumn objects to potentially draw
 		self.minScrollRange = 0
 		self.smooth_id = 0
 		self.selectedType = ""
@@ -1391,7 +1489,7 @@ class DataCanvas(wxBufferedWindow):
 	# in available space.
 	def DrawHoleHeader(self, dc, startX, holeInfo, smoothed):
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
-		if smoothed == 0 or smoothed == 1:
+		if smoothed == 0 or smoothed == 1: # to avoid avoid double-draw on "smoothed & unsmoothed" style (smoothed == 2)
 			dc.SetFont(self.holeInfoFont)
 			holeInfo_x = startX
 			holeInfo_y = 3
@@ -1406,6 +1504,125 @@ class DataCanvas(wxBufferedWindow):
 			# rangeMax
 			dc.DrawText(holeInfo[1] + "-" + holeInfo[0] + holeInfo[7], title_pos, 5)
 			dc.DrawText("Log, Range: " + str(holeInfo[5]) + ":" + str(holeInfo[6]), title_pos, 25)
+
+	def DrawHoleColumn(self, dc, holeColumn, smoothed):
+		dc.SetBrush(wx.TRANSPARENT_BRUSH)
+		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
+		dc.SetTextBackground(self.colorDict['background'])
+		dc.SetTextForeground(self.colorDict['foreground'])
+		dc.SetFont(self.stdFont)
+
+		# holeInfo = hole[0]
+		# holeType = holeInfo[2]
+		# holeName = holeInfo[7]
+		holeType = holeColumn.datatype()
+		holeName = holeColumn.name()
+
+		startX = self.GetHoleStartX(holeName, holeType)
+		# rangeMax = startX + (self.coreImageWidth if self.showCoreImages else 0) + self.plotWidth
+		rangeMax = startX + holeColumn.width()
+
+		if self.showBounds:
+			self.DrawDebugBounds(dc, startX, rangeMax)
+
+		# draw vertical dotted line at left edge of hole column
+		if self.showHoleGrid:
+			if startX < self.splicerX:
+				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+				dc.DrawLines(((startX, self.startDepthPix - 20), (startX, self.Height)))
+			# log only, removing...
+			# if smoothed >= 5:
+			# 	dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+			# 	rangeMax = self.splicerX + (self.holeWidth * 2) + 150
+			# 	dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height)))
+
+		# TODO: plot overlays
+
+		# setup range for current datatype...should really be done when drawing PlotColumn
+		smooth_id = -1
+		for r in self.range:
+			if r[0] == holeType: 
+				self.minRange = r[1]
+				self.maxRange = r[2]
+				if r[3] != 0.0:
+					# self.coefRange = self.holeWidth / r[3]
+					self.coefRange = self.plotWidth / r[3]
+				else:
+					self.coefRange = 0 
+				smooth_id = r[4]
+				self.continue_flag = r[5] 
+				break
+
+		if smoothed == 0: # unsmoothed data
+			# if range only indicates we're drawing smoothed data, this is
+			# where we abort drawing of unsmoothed data and bail out after
+			# making self.coreCount look as though it's drawn every core
+			if smooth_id == 1:
+				self.coreCount = self.coreCount + holeCoreCount 
+				return holeType 
+		elif smoothed == 3: # shouldn't be hit
+			assert False, "smoothed == 3, how did we get here???"
+			# if smooth_id == 1:
+			# 	smoothed = 0
+			# elif smooth_id <= 0:
+			# 	self.coreCount = self.coreCount + holeCoreCount
+			# 	return holeType 
+			
+		# Draw hole column in Composite Area only if no portion is obscured by splice area.
+		# This is to prevent any drawing of composite cores in splice area because they're
+		# all being drawn on the same canvas
+		drawComposite = True
+		spliceScrollbarLeft = self.splicerX - 50
+		if smoothed != 2 and smoothed < 5 and spliceScrollbarLeft < startX:
+			drawComposite = False
+
+		if drawComposite:
+			self.DrawHoleHeader(dc, startX, holeColumn.holeInfo(), smoothed)
+		
+		# Clip to prevent drawing over splice area or headers
+		# Clipping region is in effect as long as 'clip' is in scope. Must assign result of
+		# DCClipper() to a variable or it won't work.
+		clip = wx.DCClipper(dc, wx.Region(0, self.startDepthPix - 20, spliceScrollbarLeft, dc.GetSize().height))
+
+		# bail if hole doesn't have any data to draw, i.e. hole[0] is the only element.
+		# Elements 1 through len(hole) - 1 contain data for each core in the hole
+		# len_hole = len(hole) - 1
+		# if len_hole == 0:
+		# 	return holeType
+
+		visibleTopDepth = self.rulerStartDepth - (20 / self.pixPerMeter) # todo: save this value as a member instead of computing everywhere
+
+		# for each core in hole
+		coresDrawn = []
+		for core in [CoreMetadata(c) for c in holeColumn.cores()]:
+			coreTop, coreBot = core.topDepth(), core.botDepth()
+			if not self.depthIntervalVisible(coreTop, coreBot, visibleTopDepth, self.rulerEndDepth):
+				continue # only draw columns for cores within visible depth range
+			coresDrawn.append(core.coreName())
+
+			colStartX = startX
+			for column in holeColumn.columns():
+				if column == ColumnType.Image:
+					if self.parent.sectionSummary:
+						self.DrawSectionImages(dc, colStartX, holeColumn.name(), core.coreName(), core.affineOffset())
+						colStartX += self.coreImageWidth
+				elif column == ColumnType.Plot:
+					self.DrawCorePlot_v2(dc, colStartX, holeColumn.name(), core.coreName(), core.depthDataPairs(), drawComposite)
+					colStartX += self.plotWidth
+				else:
+					assert false, "Unexpected column type {}".format(column)
+
+		print("For hole {}, plotted cores {}".format(holeColumn.name(), coresDrawn))
+		
+			# print("Core Top = {}, bot = {}".format(coreTop, coreBot))
+		# if range is visible in depth scale:
+		# 	draw its image and/or plot columns
+		#	draw section boundaries if enabled, core boundary if not
+		#	if core is shifted, make note of data necessary to draw after all HoleColumns are drawn???
+		#	but if a ref or shifted core isn't drawn due to its horizontal position being outside view,
+		# 	we won't have that data...
+
+
 
 	# prevHoleType used only to draw overlapping cores when D is pressed
 	def DrawHoleGraph(self, dc, hole, smoothed, prevHoleType):
@@ -2349,6 +2566,42 @@ class DataCanvas(wxBufferedWindow):
 			for pt in lines:
 				dc.DrawCircle(pt[0], pt[1], self.DiscretetSize)
 
+	def DrawCorePlot_v2(self, dc, plotStartX, holeName, coreName, depthDataPairs, drawComposite):
+		coreColor = self.parent.affineManager.getShiftColor(holeName, coreName)
+		dc.SetPen(wx.Pen(coreColor, 1))
+		lines = []
+		pointCount = 0
+		# y = 0
+		# for y,x in [cd for cd in core.depthDataPairs() if cd[0] >= visibleTopDepth]:
+		for y, x in depthDataPairs:
+			if drawComposite:
+				if y <= self.rulerEndDepth:
+					y = self.startDepthPix + (y - self.rulerStartDepth) * self.pixPerMeter
+					x = (x - self.minRange) * self.coefRange + plotStartX
+					lines.append((x,y))
+					pointCount += 1
+				elif y > self.rulerEndDepth:
+					break
+		
+		# clip to plot area
+		if self.showOutOfRangeData: # still must clip to prevent draw into splice area
+			# clip_width = self.splicerX - plotStartX if (plotStartX + self.plotWidth) < self.splicerX else self.splicerX - plotStartX
+			clip_width = (self.splicerX - 60) - plotStartX
+			clip = wx.DCClipper(dc, wx.Region(x=plotStartX, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
+		else:
+			# wx.DCClipper-based clipping region is destroyed when it goes out of scope (i.e. at function end)
+			clip_width = min(self.plotWidth, (self.splicerX - 60) - plotStartX)
+			clip = wx.DCClipper(dc, wx.Region(x=plotStartX, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
+
+		# draw lines
+		if self.DiscretePlotMode == 0 and pointCount > 1:
+			dc.DrawLines(lines)
+		else:
+			for pt in lines:
+				dc.DrawCircle(pt[0], pt[1], self.DiscretetSize)
+
+
+
 	def DrawSectionBoundaries(self, dc, plotStartX, hole, coreno, affine_shift):
 		clip = wx.DCClipper(dc, wx.Region(plotStartX, self.startDepthPix - 20, (self.splicerX - 60) - plotStartX, self.Height - (self.startDepthPix - 20)))
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
@@ -2405,6 +2658,9 @@ class DataCanvas(wxBufferedWindow):
 		coreTopY, coreBotY = coreData[0][0], coreData[-1][0]
 
 		# Draw section tops. Assume bottom abuts next section top so no need to draw it.
+		# I believe we're checking smoothed != 2 here to avoid double-drawing section boundaries
+		# in the case of "draw smooth and unsmoothed" which results in two separate calls of this f'n.
+		# So we should be doing this for images, shift arrows, etc as well.
 		if self.parent.sectionSummary and (self.pressedkeyS == 1 or self.showSectionDepths):
 			if drawComposite and smoothed != 2 and self.depthIntervalVisible(coreTopY, coreBotY, drawing_start, self.rulerEndDepth):
 				self.DrawSectionBoundaries(dc, plotStartX, hole, coreno, affine_shift)
@@ -3212,27 +3468,40 @@ class DataCanvas(wxBufferedWindow):
 			prevsedrate = sedrate
 			prevagey = agey
 
-	# class HoleLayout
-	# - knows order of holes+types
-	# - knows visibility of holes+types
-	# - knows order of columns (image, plot)
-	# - knows width of image and plot columns
-	# - v2? ability to plot multiple holes' data in same area, possibly on image as well
-
 	# determine leftmost X for each hole's plot column
 	def InitHoleWidths(self):
 		self.WidthsControl = []
+		self.HoleColumns = []
 		currentX = self.compositeX - self.minScrollRange + self.plotLeftMargin
+		
+		# TODO: consider user-defined order of datatypes
+
+		# if images are displayed as their own datatype, assume they're leftmost
+		# for each hole in HoleData
+		# if that hole has imagery, create a column, aggregating by hole name
+		# then, for each hole in HoleData, create a column with plot.
+
+		# class HoleColumn: hole name, datatype, list of columns to display in order, total width (or compute?)
+		# class ImageColumn: hole name to pull correct images...anything else??? or could just build image list at create time?
+		# class PlotColumn: corresponding HoleData
+		# do these columns need to know who their parent HoleColumn is?
 		
 		# even if we aren't drawing HoleData (unsmoothed), there will always be HoleData
 		# corresponding to SmoothData, so it's safe to rely on self.HoleData here.  		
 		for holeIndex, holeList in enumerate(self.HoleData):
 			hole = holeList[0] # hole data is nested in an extra list
+			holeInfo = hole[0]
 			holeName, holeType = hole[0][7], hole[0][2]
 			holeKey = holeName + holeType
 			# if hole has imagery and images are being displayed, add self.coreImageWidth
 			img_wid = self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(holeName)) else 0
 			hole_wid = self.plotLeftMargin + self.plotWidth + img_wid
+
+			hole_col = HoleColumn(hole_wid, hole)
+			if self.showCoreImages and self.HoleHasImages(holeName):
+				hole_col.addColumn(ColumnType.Image)
+			hole_col.addColumn(ColumnType.Plot)
+			self.HoleColumns.append(hole_col)
 
 			# store as a tuple - DrawStratCore() logic still uses index to access value
 			self.WidthsControl.append((currentX, holeKey))
@@ -3281,20 +3550,24 @@ class DataCanvas(wxBufferedWindow):
 
 		self.InitHoleWidths() # figure out layout
 
-		for data in self.HoleData:
-			for r in data:
-				hole = r 
-				holeType = self.DrawHoleGraph(dc, hole, 0, holeType) 
-				self.HoleCount = self.HoleCount + 1 
+		# for data in self.HoleData:
+		# 	for r in data:
+		# 		hole = r 
+		# 		holeType = self.DrawHoleGraph(dc, hole, 0, holeType) 
+		# 		self.HoleCount = self.HoleCount + 1 
+
+		for col in self.HoleColumns:
+			self.DrawHoleColumn(dc, col, 0) # 0 for ordinary drawing I think?
+			self.HoleCount += 1 # needed?
 
 		self.HoleCount = 0
 		self.coreCount = 0 
 		self.newHoleX = 30.0
 		smooth_flag = 3 
 		holeType = ""
-		if len(self.HoleData) == 0: 
+		if len(self.HoleData) == 0:
 			smooth_flag = 1 
-		for data in self.SmoothData:
+		for data in self.SmoothData: # TODO: ensure smoothed drawing works!
 			for r in data:
 				hole = r 
 				holeType = self.DrawHoleGraph(dc, hole, smooth_flag, holeType) 
