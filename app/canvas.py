@@ -400,7 +400,7 @@ class DataCanvas(wxBufferedWindow):
 		self.PreviewFirstNo = 0
 		self.prevNoteId = -1
 		self.DiscretePlotMode = 0 
-		self.DiscretetSize = 1 
+		self.DiscreteSize = 1 
 		self.altType = ""
 		self.altMultipleType = False
 
@@ -2331,7 +2331,7 @@ class DataCanvas(wxBufferedWindow):
 	# 		else:
 	# 			for r in splicelines:
 	# 				px, py, x, y, f = r
-	# 				dc.DrawCircle(px, py, self.DiscretetSize)
+	# 				dc.DrawCircle(px, py, self.DiscreteSize)
 	# 	else: 
 	# 		lead = self.saganDepth - self.parent.winLength
 	# 		lag = self.saganDepth + self.parent.winLength
@@ -2395,7 +2395,7 @@ class DataCanvas(wxBufferedWindow):
 	# 				else:
 	# 					#dc.SetPen(wx.Pen(self.colorDict['mudlineAdjust'], 1))
 	# 					dc.SetPen(wx.Pen(wx.Colour(255, 184, 149), 1))
-	# 				dc.DrawCircle(px, py, self.DiscretetSize)			
+	# 				dc.DrawCircle(px, py, self.DiscreteSize)			
 
 	# 	if y > 0 and smoothed < 3: 
 	# 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
@@ -2549,7 +2549,7 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawLines(lines)
 		else:
 			for pt in lines:
-				dc.DrawCircle(pt[0], pt[1], self.DiscretetSize)
+				dc.DrawCircle(pt[0], pt[1], self.DiscreteSize)
 
 	def DrawCorePlot_v2(self, dc, plotStartX, holeName, coreName, depthDataPairs, drawComposite):
 		coreColor = self.parent.affineManager.getShiftColor(holeName, coreName)
@@ -2583,7 +2583,7 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawLines(lines)
 		else:
 			for pt in lines:
-				dc.DrawCircle(pt[0], pt[1], self.DiscretetSize)
+				dc.DrawCircle(pt[0], pt[1], self.DiscreteSize)
 
 
 

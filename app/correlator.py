@@ -522,13 +522,13 @@ class MainFrame(wx.Frame):
 		self.logFileptr = global_logFile
 
 	def SetPT_SIZEUP(self, evt):
-		self.Window.DiscretetSize = self.Window.DiscretetSize + 1
+		self.Window.DiscreteSize = self.Window.DiscreteSize + 1
 		self.Window.UpdateDrawing()
 
 	def SetPT_SIZEDOWN(self, evt):
-		self.Window.DiscretetSize = self.Window.DiscretetSize - 1
-		if self.Window.DiscretetSize < 1:
-			self.Window.DiscretetSize = 1
+		self.Window.DiscreteSize = self.Window.DiscreteSize - 1
+		if self.Window.DiscreteSize < 1:
+			self.Window.DiscreteSize = 1
 		self.Window.UpdateDrawing()
 
 	def SetTIE_SIZEUP(self, evt):
