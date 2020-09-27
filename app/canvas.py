@@ -215,8 +215,8 @@ class CoreMetadata:
 	def __init__(self, core_metadata_tuple):
 		self.cmt = core_metadata_tuple
 
-	def pointCount(self):
-		return len(self.cmt[10])
+	def coreName(self):
+		return self.cmt[0]
 
 	def topDepth(self):
 		return self.cmt[10][0][0]
@@ -224,14 +224,20 @@ class CoreMetadata:
 	def botDepth(self):
 		return self.cmt[10][-1][0]
 
-	def depthDataPairs(self):
-		return self.cmt[10]
+	def minData(self):
+		return self.cmt[3]
 
-	def coreName(self):
-		return self.cmt[0]
+	def maxData(self):
+		return self.cmt[4]
 
 	def affineOffset(self):
 		return self.cmt[5]
+
+	def depthDataPairs(self):
+		return self.cmt[10]
+
+	def pointCount(self):
+		return len(self.cmt[10])
 
 
 # HoleData definition:
@@ -1523,6 +1529,9 @@ class DataCanvas(wxBufferedWindow):
 
 		# TODO: plot overlays
 
+		if holeType == "Natural Gamma":
+			holeType = "NaturalGamma"
+
 		# setup range for current datatype...should really be done when drawing PlotColumn
 		smooth_id = -1
 		for r in self.range:
@@ -1592,12 +1601,32 @@ class DataCanvas(wxBufferedWindow):
 						self.DrawSectionImages(dc, colStartX, holeColumn.holeName(), core.coreName(), core.affineOffset())
 						colStartX += self.coreImageWidth
 				elif column == ColumnType.Plot:
-					self.DrawCorePlot_v2(dc, colStartX, holeColumn.holeName(), core.coreName(), core.depthDataPairs(), drawComposite)
+					plotStartX = colStartX # temporary!
+					self.DrawCorePlot_v2(dc, colStartX, holeColumn.holeName(), core, drawComposite)
+
+					# for now we'll continue to draw section boundaries only on the plot area
+					if self.parent.sectionSummary and (self.pressedkeyS == 1 or self.showSectionDepths):
+						if drawComposite and smoothed != 2 and self.depthIntervalVisible(coreTop, coreBot, visibleTopDepth, self.rulerEndDepth):
+							self.DrawSectionBoundaries(dc, colStartX, holeColumn.holeName(), core.coreName(), core.affineOffset())
+
 					colStartX += self.plotWidth
+
+					# Have to maintain this godawful CoreInfo and self.coreCount tracking
+					# for numerous functions to work properly.
+					if smoothed == 0: # avoid creating duplicate CoreInfos
+						holeInfo = holeColumn.holeData[0]
+						coreInfo = core.cmt
+						coreInfoObj = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], coreInfo[0], coreInfo[3], coreInfo[4], coreTop, coreBot, coreInfo[6], holeInfo[2], coreInfo[8], self.HoleCount, coreInfo[10])
+						self.DrawData["CoreInfo"].append(coreInfoObj)
+					self.coreCount += 1
 				else:
 					assert false, "Unexpected column type {}".format(column)
 
-		print("For hole {}, plotted cores {}".format(holeColumn.holeName(), coresDrawn))
+			if core.affineOffset() != 0:
+				self.DrawAffineShiftInfo(dc, startX, coreTop, coreBot, holeColumn, core)
+				# for now, assume there's always a plot column and thus a plotStartX var
+				self.DrawAffineShiftArrow(dc, plotStartX, coreTop, coreBot, holeColumn, core)
+		# print("For hole {}, plotted cores {}".format(holeColumn.holeName(), coresDrawn))
 		
 			# print("Core Top = {}, bot = {}".format(coreTop, coreBot))
 		# if range is visible in depth scale:
@@ -1606,6 +1635,70 @@ class DataCanvas(wxBufferedWindow):
 		#	if core is shifted, make note of data necessary to draw after all HoleColumns are drawn???
 		#	but if a ref or shifted core isn't drawn due to its horizontal position being outside view,
 		# 	we won't have that data...
+
+
+	def DrawAffineShiftInfo(self, dc, startX, coreTopY, coreBotY, hole, core):
+		shiftInfoY = coreTopY + (coreBotY - coreTopY) / 2
+		y = self.startDepthPix + (shiftInfoY - self.rulerStartDepth) * self.pixPerMeter
+
+		shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole.holeName(), core.coreName())
+
+		# show affine shift direction, distance, and type to left of core, centered on core depth interval
+		if self.showAffineShiftInfo:
+			# arrowhead
+			arrowheadAdjust = 8 if core.affineOffset() > 0 else -8
+			arrowY = y + 4
+			tribase1 = wx.Point(startX - 4, arrowY)
+			tribase2 = wx.Point(startX + 4, arrowY)
+			tribase3 = wx.Point(startX, arrowY + arrowheadAdjust)
+			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
+			dc.SetBrush(wx.Brush(self.colorDict['foreground']))
+			if core.affineOffset() > 0:
+				dc.DrawPolygon((tribase3, tribase2, tribase1))
+			else:
+				dc.DrawPolygon((tribase3, tribase1, tribase2))
+			# shift distance text, type			
+			dc.DrawText(str(core.affineOffset()), startX - 40, y)
+			dc.DrawText(shiftTypeStr, startX - 32, y - 12)
+
+	def DrawAffineShiftArrow(self, dc, startX, coreTopY, coreBotY, hole, core):
+		shiftInfoY = coreTopY + (coreBotY - coreTopY) / 2
+		y = self.startDepthPix + (shiftInfoY - self.rulerStartDepth) * self.pixPerMeter
+
+		shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole.holeName(), core.coreName())
+		
+		# arrow indicating TIE between cores
+		if shiftTypeStr == "TIE" and self.showAffineTieArrows:
+			tieDepth, parentCore = self.parent.affineManager.getTieDepthAndParent(hole.holeName(), core.coreName())
+			# holeType = holeInfo[2]
+			holeType = hole.datatype()
+			parentCoreData = self.GetCoreData(parentCore.hole, holeType, parentCore.core)
+			if parentCoreData is not None:
+				nearDepth, nearDatum = self.interpolateDataPoint(core.depthDataPairs(), tieDepth)
+				parentCoreData = self.GetCoreData(parentCore.hole, holeType, parentCore.core)
+				if parentCoreData is not None:
+					parentNearDepth, parentNearDatum = self.interpolateDataPoint(parentCoreData, tieDepth)
+				tieY = self.getCoord(nearDepth)
+				tieX = nearDatum - self.minRange
+				tieX = (tieX * self.coefRange) + startX
+				parentY = self.getCoord(parentNearDepth)
+				parentTieX = parentNearDatum - self.minRange
+				parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType) + (self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(parentCore.hole)) else 0)
+
+				# save (hole + core, bounding rect) tuple for click/hover detection
+				rx = parentTieX if parentTieX < tieX else tieX
+				arrowRect = wx.Rect(rx, tieY - 5, abs(tieX - parentTieX), 10)
+				self.AffineTieArrows.append((hole.holeName() + core.coreName(), arrowRect))
+
+				if self.MousePos and arrowRect.Inside(self.MousePos):
+					dc.SetPen(wx.Pen(wx.GREEN)) # highlight TIE arrow in green on mouseover
+				else:
+					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
+
+				# circle on parent core, arrow to shifted core
+				dc.DrawCircle(parentTieX, parentY, 3)
+				arrowDir = 5 if parentTieX > tieX else -5
+				dc.DrawLines(((parentTieX, parentY), (tieX, tieY), (tieX, tieY), (tieX+arrowDir, tieY+5), (tieX, tieY), (tieX+arrowDir, tieY-5)))
 
 
 
@@ -2551,41 +2644,64 @@ class DataCanvas(wxBufferedWindow):
 			for pt in lines:
 				dc.DrawCircle(pt[0], pt[1], self.DiscreteSize)
 
-	def DrawCorePlot_v2(self, dc, plotStartX, holeName, coreName, depthDataPairs, drawComposite):
-		coreColor = self.parent.affineManager.getShiftColor(holeName, coreName)
-		dc.SetPen(wx.Pen(coreColor, 1))
-		lines = []
-		pointCount = 0
-		# y = 0
-		# for y,x in [cd for cd in core.depthDataPairs() if cd[0] >= visibleTopDepth]:
-		for y, x in depthDataPairs:
+	def DrawCorePlot_v2(self, dc, plotStartX, holeName, core, drawComposite):
+		points = []
+		for y, x in core.depthDataPairs():
 			if drawComposite:
 				if y <= self.rulerEndDepth:
 					y = self.startDepthPix + (y - self.rulerStartDepth) * self.pixPerMeter
 					x = (x - self.minRange) * self.coefRange + plotStartX
-					lines.append((x,y))
-					pointCount += 1
-				elif y > self.rulerEndDepth:
+					points.append((x,y))
+				else: # y > self.rulerEndDepth:
 					break
 		
-		# clip to plot area
-		if self.showOutOfRangeData: # still must clip to prevent draw into splice area
-			# clip_width = self.splicerX - plotStartX if (plotStartX + self.plotWidth) < self.splicerX else self.splicerX - plotStartX
-			clip_width = (self.splicerX - 60) - plotStartX
-			clip = wx.DCClipper(dc, wx.Region(x=plotStartX, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
+		# plot points
+		coreColor = self.parent.affineManager.getShiftColor(holeName, core.coreName())
+		dc.SetPen(wx.Pen(coreColor, 1))
+		clip = self.ClipPlot(dc, plotStartX)
+		if self.DiscretePlotMode == 0 and len(points) > 1:
+			dc.DrawLines(points)
 		else:
-			# wx.DCClipper-based clipping region is destroyed when it goes out of scope (i.e. at function end)
-			clip_width = min(self.plotWidth, (self.splicerX - 60) - plotStartX)
-			clip = wx.DCClipper(dc, wx.Region(x=plotStartX, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
-
-		# draw lines
-		if self.DiscretePlotMode == 0 and pointCount > 1:
-			dc.DrawLines(lines)
-		else:
-			for pt in lines:
+			for pt in points:
 				dc.DrawCircle(pt[0], pt[1], self.DiscreteSize)
 
+		if len(points) > 0:
+			self.CreateCoreArea(core, plotStartX, points[0][1], points[-1][1])
 
+		self.DrawHighlight(dc, plotStartX, points[0][1], points[-1][1], len(points))
+
+	def ClipPlot(self, dc, x):
+		if not self.showOutOfRangeData: # clip to plot area
+			clip_width = (self.splicerX - 60) - x
+		else: # clip to prevent draw into splice area
+			clip_width = min(self.plotWidth + 2, (self.splicerX - 60) - x)
+		# wx.DCClipper-based clipping region is destroyed when it goes out of scope
+		return wx.DCClipper(dc, wx.Region(x=x, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
+
+	# Add core's CoreArea metadata to DrawData
+	def CreateCoreArea(self, core, x, top_y, bot_y):
+		dataMinX = (core.minData() - self.minRange) * self.coefRange + x
+		dataMaxX = (core.maxData() - self.minRange) * self.coefRange + x
+		coreDrawData = [(self.coreCount, dataMinX, top_y, dataMaxX - dataMinX, bot_y - top_y, x, self.plotWidth + 1, self.HoleCount)]
+		self.DrawData["CoreArea"].append(coreDrawData)
+
+	# Highlight core on mouseover
+	def DrawHighlight(self, dc, x, top_y, bot_y, pointCount):
+		if not self.highlightedCore and pointCount > 1:
+			wid = self.plotWidth + 1
+			# print("core {}{}, test rect={}".format(holeName, core.coreName(), wx.Rect(hx, hy, wid, hit)))
+			if wx.Rect(x, top_y, wid, bot_y - top_y).Contains(self.MousePos):
+				# print("   inside!")
+				curPen = dc.GetPen()
+				self.DrawHighlightRect(dc, x, top_y, wid, bot_y - top_y)
+				dc.SetPen(curPen)
+				self.highlightedCore = True # only highlight a single core
+
+	# Draw dashed rectangle around given bounds
+	def DrawHighlightRect(self, dc, x, y, wid, hit):
+		dc.SetPen(wx.Pen(wx.Colour(192, 192, 192), 1, wx.DOT))
+		dc.DrawLines(((x, y), (x + wid, y), (x + wid, y + hit), (x, y + hit), (x, y)))
+		# dc.DrawLines(((x - 2, y - 2), (x + wid + 2, y - 2), (x + wid + 2, y + hit + 2), (x - 2, y + hit + 2), (x - 2, y - 2)))
 
 	def DrawSectionBoundaries(self, dc, plotStartX, hole, coreno, affine_shift):
 		clip = wx.DCClipper(dc, wx.Region(plotStartX, self.startDepthPix - 20, (self.splicerX - 60) - plotStartX, self.Height - (self.startDepthPix - 20)))
@@ -2884,11 +3000,6 @@ class DataCanvas(wxBufferedWindow):
 		dc.DrawText(qualityStr, x, self.startDepthPix + 60) 
 
 		return (coreInfo.type, coreInfo.hole)
-
-	# Draw dashed rectangle around given bounds
-	def DrawHighlight(self, dc, x, y, wid, hit):
-		dc.SetPen(wx.Pen(wx.Colour(192, 192, 192), 1, wx.DOT))
-		dc.DrawLines(((x - 2, y - 2), (x + wid + 2, y - 2), (x + wid + 2, y + hit + 2), (x - 2, y + hit + 2), (x - 2, y - 2)))
 	
 	# flag unused
 	def DrawMouseInfo(self, dc, coreInfo, x, y, startx, flag, datatype):
@@ -3499,6 +3610,7 @@ class DataCanvas(wxBufferedWindow):
 		self.parent.compositePanel.EnableSETButton(False)
 		self.parent.filterPanel.DisableAllControls()
 
+	# unused, sad!
 	def _getPlotRange(self, datatype):
 		for r in self.range:
 			if r[0] == holeType: 
