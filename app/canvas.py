@@ -587,6 +587,7 @@ class DataCanvas(wxBufferedWindow):
 		self.StratData = []
 		self.UserdefStratData = []
 		self.GuideCore = []
+		self.GuideCoreDatatype = None
 		self.SpliceSmoothData = []
 		self.Images = {}
 		self.HoleWithImages = []
@@ -794,7 +795,7 @@ class DataCanvas(wxBufferedWindow):
 		self.LogselectedCore = -1
 		self.selectedTie = -1
 		self.selectedLastTie = -1
-		self.guideCore = -1
+		self.guideCore = -1 # index of core on which to draw affine guide core...not the guide core itself!
 		self.guideSPCore = -1
 		self.selectedType = "" 
 		self.multipleType = False 
@@ -2698,11 +2699,15 @@ class DataCanvas(wxBufferedWindow):
 
 		# drawing_start = self.rulerStartDepth - 5.0
 
+		# save current datatype range
+		save_range = (self.minRange, self.maxRange, self.coefRange, self.continue_flag)
+		self._getPlotRange(self.GuideCoreDatatype)
+
 		lines = []
 		for data in self.GuideCore:
 			for r in data:
 				y, x = r
-				# if y >= drawing_start and y <= self.rulerEndDepth: # let clipping worry about this
+				# if y >= drawing_start and y <= self.rulerEndDepth: # let clipping handle this
 				f = 0
 				if y >= lead and y <= lag: 
 					f = 1
@@ -2714,14 +2719,17 @@ class DataCanvas(wxBufferedWindow):
 				py = y
 				i = i + 1
 
-		data_max = plotStartX + self.plotWidth / 2.0
+		# data_max = plotStartX + self.plotWidth / 2.0
 		# draw lines 
-		if data_max < self.splicerX:
-			for r in lines:
-				px, py, x, y, f = r
-				color_key = 'corrWindow' if f == 1 else 'guide'
-				dc.SetPen(wx.Pen(self.colorDict[color_key], 1))
-				dc.DrawLines(((px, py), (x, y)))
+		# if data_max < self.splicerX: # brg let clipping handle this
+		for r in lines:
+			px, py, x, y, f = r
+			color_key = 'corrWindow' if f == 1 else 'guide'
+			dc.SetPen(wx.Pen(self.colorDict[color_key], 1))
+			dc.DrawLines(((px, py), (x, y)))
+
+		# restore saved datatype range
+		self.minRange, self.maxRange, self.coefRange, self.continue_flag = save_range
 
 	# Highlight core on mouseover
 	def DrawHighlight(self, dc, x, top_y, bot_y, pointCount):
@@ -3650,8 +3658,10 @@ class DataCanvas(wxBufferedWindow):
 
 	# unused, sad!
 	def _getPlotRange(self, datatype):
+		if datatype == "Natural Gamma":
+			datatype = "NaturalGamma"
 		for r in self.range:
-			if r[0] == holeType: 
+			if r[0] == datatype: 
 				self.minRange = r[1]
 				self.maxRange = r[2]
 				if r[3] != 0.0:
@@ -5450,6 +5460,7 @@ class DataCanvas(wxBufferedWindow):
 				holeInfo = record[0]
 				if holeInfo[7] == coreInfo.hole and holeInfo[2] == coreInfo.type:
 					count = 0
+					self.GuideCoreDatatype = coreInfo.type
 					for coredata in record: 
 						if coredata[0] == coreInfo.holeCore and count != 0:
 							valuelist = coredata[10]
@@ -5461,7 +5472,7 @@ class DataCanvas(wxBufferedWindow):
 								# (why does each tuple need its own list???)
 								l = []
 								l.append((x, y))
-								self.GuideCore.append(l) 
+								self.GuideCore.append(l)
 							return
 						count = 1
 
