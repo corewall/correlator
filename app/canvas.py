@@ -2669,6 +2669,8 @@ class DataCanvas(wxBufferedWindow):
 			self.CreateCoreArea(core, plotStartX, points[0][1], points[-1][1])
 
 		self.DrawHighlight(dc, plotStartX, points[0][1], points[-1][1], len(points))
+		if self.guideCore == self.coreCount:
+			self.DrawGuideCore(dc, plotStartX)
 
 	def ClipPlot(self, dc, x):
 		if not self.showOutOfRangeData: # clip to plot area
@@ -2684,6 +2686,42 @@ class DataCanvas(wxBufferedWindow):
 		dataMaxX = (core.maxData() - self.minRange) * self.coefRange + x
 		coreDrawData = [(self.coreCount, dataMinX, top_y, dataMaxX - dataMinX, bot_y - top_y, x, self.plotWidth + 1, self.HoleCount)]
 		self.DrawData["CoreArea"].append(coreDrawData)
+
+    # Draw guide core (movable core data superimposed on fixed core for comparison)
+	def DrawGuideCore(self, dc, plotStartX):
+		i = 0
+		px = 0
+		py = 0
+		data_max = -999
+		lead = self.compositeDepth - self.parent.winLength
+		lag = self.compositeDepth + self.parent.winLength
+
+		# drawing_start = self.rulerStartDepth - 5.0
+
+		lines = []
+		for data in self.GuideCore:
+			for r in data:
+				y, x = r
+				# if y >= drawing_start and y <= self.rulerEndDepth: # let clipping worry about this
+				f = 0
+				if y >= lead and y <= lag: 
+					f = 1
+				y = self.startDepthPix + (y - self.rulerStartDepth) * self.pixPerMeter
+				x = ((x - self.minRange) * self.coefRange) + plotStartX
+				if i > 0:
+					lines.append((px, py, x, y, f))
+				px = x
+				py = y
+				i = i + 1
+
+		data_max = plotStartX + self.plotWidth / 2.0
+		# draw lines 
+		if data_max < self.splicerX:
+			for r in lines:
+				px, py, x, y, f = r
+				color_key = 'corrWindow' if f == 1 else 'guide'
+				dc.SetPen(wx.Pen(self.colorDict[color_key], 1))
+				dc.DrawLines(((px, py), (x, y)))
 
 	# Highlight core on mouseover
 	def DrawHighlight(self, dc, x, top_y, bot_y, pointCount):
