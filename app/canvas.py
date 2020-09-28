@@ -556,7 +556,7 @@ class DataCanvas(wxBufferedWindow):
 
 		self.HoleCount = 0
 		self.selectScroll = 0
-		self.grabCore = -1
+		self.dragCore = -1
 		self.SPgrabCore = -1
 		self.spliceTie = -1
 		self.lastSiTie = None # track last-selected SpliceInterval tie
@@ -2667,8 +2667,8 @@ class DataCanvas(wxBufferedWindow):
 
 		if len(points) > 0:
 			self.CreateCoreArea(core, plotStartX, points[0][1], points[-1][1])
+			self.DrawHighlight(dc, plotStartX, points[0][1], points[-1][1], len(points))
 
-		self.DrawHighlight(dc, plotStartX, points[0][1], points[-1][1], len(points))
 		if self.guideCore == self.coreCount:
 			self.DrawGuideCore(dc, plotStartX)
 
@@ -2725,7 +2725,7 @@ class DataCanvas(wxBufferedWindow):
 
 	# Highlight core on mouseover
 	def DrawHighlight(self, dc, x, top_y, bot_y, pointCount):
-		if not self.highlightedCore and pointCount > 1:
+		if not self.HasDragCore() and not self.highlightedCore and pointCount > 1:
 			wid = self.plotWidth + 1
 			# print("core {}{}, test rect={}".format(holeName, core.coreName(), wx.Rect(hx, hy, wid, hit)))
 			if wx.Rect(x, top_y, wid, bot_y - top_y).Contains(self.MousePos):
@@ -2955,7 +2955,7 @@ class DataCanvas(wxBufferedWindow):
 		# cores' bounds, only draw for the first such core encountered.
 		# if len(lines) > 0:
 		# 	print("{}{} len lines = {}".format(hole, coreno, len(lines)))
-		if not self.highlightedCore and pointCount > 1:
+		if not self.HasDragCore() and not self.highlightedCore and pointCount > 1:
 			hx = plotStartX
 			hy = lines[0][1]
 			wid = self.plotWidth + 1
@@ -3842,7 +3842,7 @@ class DataCanvas(wxBufferedWindow):
 			if len(self.SpliceData) > 0:
 				self.DrawStratCore(dc, True)
 
-		if self.grabCore != -1:
+		if self.HasDragCore():
 			self.DrawDragCore(dc)
 
 		# UI debugging helpers
@@ -5340,7 +5340,7 @@ class DataCanvas(wxBufferedWindow):
 								n, x, y, w, h, min, max, hole_idx = r
 								reg = wx.Rect(min, y, max, h)
 								if reg.Inside(wx.Point(pos[0], pos[1])):
-									self.grabCore = n
+									self.dragCore = n
 
 			if pos[0] > self.splicerX:
 				for key, data in self.DrawData.items():
@@ -5504,7 +5504,7 @@ class DataCanvas(wxBufferedWindow):
 
 			# build list of core graph lines
 			dragCoreLines = []
-			coreInfo = self.findCoreInfoByIndex(self.grabCore)
+			coreInfo = self.findCoreInfoByIndex(self.dragCore)
 			
 			holeData = None
 			holeInfo = None
@@ -5591,6 +5591,9 @@ class DataCanvas(wxBufferedWindow):
 		if ciA != None and ciB != None and ciA.hole != ciB.hole:
 			result = True
 		return result
+
+	def HasDragCore(self):
+		return self.dragCore != -1
 
 	def UpdateAgeModel(self):
 		space_bar = ""
@@ -5890,15 +5893,15 @@ class DataCanvas(wxBufferedWindow):
 			return 
 
 		if pos[0] >= self.splicerX:
-			if self.grabCore >= 0:
+			if self.HasDragCore():
 				if self.parent.splicePanel.appendall == 1:
 					self.parent.OnShowMessage("Error", "Appending all blocks more splicing", 1)
-					self.grabCore = -1
+					self.dragCore = -1
 					return
 
 				# grab by default
 				if self.isLogMode == 1 and self.parent.splicedOpened == 0: 
-					ret = self.GetDataInfo(self.grabCore)
+					ret = self.GetDataInfo(self.dragCore)
 					type = self.GetTypeID(ret[2])
 					sagan_hole = ret[4]
 					self.hole_sagan = sagan_hole 
@@ -5973,22 +5976,22 @@ class DataCanvas(wxBufferedWindow):
 						self.range.remove(splice_range)
 					self.range.append(newrange)
 
-					self.grabCore = -1
+					self.dragCore = -1
 					self.UpdateDrawing()
 					return
 
 				# otherwise, something was added to splice, deal with that.
 				if self.parent.sectionSummary is not None:
-					coreinfo = self.findCoreInfoByIndex(self.grabCore)
+					coreinfo = self.findCoreInfoByIndex(self.dragCore)
 					self.parent.AddSpliceCore(coreinfo)
 				else:
 					self.parent.OnShowMessage("Error", "Section Summary is required to create a splice", 1)
 
-				self.grabCore = -1
+				self.dragCore = -1
 				self.UpdateDrawing()
 				return
 		else:
-			self.grabCore = -1
+			self.dragCore = -1
 
 		# handle core dragged from splice area to composite area
 		if pos[0] < self.splicerX:
@@ -6911,7 +6914,7 @@ class DataCanvas(wxBufferedWindow):
 
 		# store data needed to draw "ghost" of core being dragged:
 		# x is the current mouse x, y is the offset between current and original mouse y
-		if self.grabCore != -1:
+		if self.HasDragCore():
 			if self.DrawData["DragCore"] == []:
 				self.DrawData["DragCore"] = DragCoreData(pos[0], pos[1])
 			else:
