@@ -2673,13 +2673,15 @@ class DataCanvas(wxBufferedWindow):
 		if self.guideCore == self.coreCount:
 			self.DrawGuideCore(dc, plotStartX)
 
-	def ClipPlot(self, dc, x):
-		if not self.showOutOfRangeData: # clip to plot area
-			clip_width = (self.splicerX - 60) - x
-		else: # clip to prevent draw into splice area
-			clip_width = min(self.plotWidth + 2, (self.splicerX - 60) - x)
+	def ClipPlot(self, dc, plotStartX):
+		if self.showOutOfRangeData: # clip only to prevent draw into splice area
+			clip_x = 0
+			clip_width = (self.splicerX - 60)
+		else: # clip to plot area
+			clip_x = plotStartX
+			clip_width = min(self.plotWidth + 2, (self.splicerX - 60) - plotStartX)
 		# wx.DCClipper-based clipping region is destroyed when it goes out of scope
-		return wx.DCClipper(dc, wx.Region(x=x, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
+		return wx.DCClipper(dc, wx.Region(x=clip_x, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
 
 	# Add core's CoreArea metadata to DrawData
 	def CreateCoreArea(self, core, x, top_y, bot_y):
