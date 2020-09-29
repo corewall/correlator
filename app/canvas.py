@@ -1482,23 +1482,18 @@ class DataCanvas(wxBufferedWindow):
 	# Draw hole info above image/plot area. Three lines: hole ID, hole datatype, and hole data range.
 	# Uses self.holeInfoFont, which is slightly smaller than self.stdFont to accommodate three lines
 	# in available space.
-	def DrawHoleHeader(self, dc, startX, holeInfo, smoothed):
+	def DrawHoleHeader(self, dc, startX, holeInfo, clipRegion):
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
-		if smoothed == 0 or smoothed == 1: # to avoid avoid double-draw on "smoothed & unsmoothed" style (smoothed == 2)
-			dc.SetFont(self.holeInfoFont)
-			holeInfo_x = startX
-			holeInfo_y = 3
-			hiLineSpacing = 13 # fudge factor, looks good on Win and Mac
-			dc.DrawText(holeInfo[1] + "-" + holeInfo[0] + holeInfo[7], holeInfo_x, holeInfo_y) # hole ID
-			dc.DrawText(holeInfo[2], holeInfo_x, holeInfo_y + hiLineSpacing) # hole datatype
-			rangeStr = "Range: {} : {}".format(str(holeInfo[5]), str(holeInfo[6]))
-			dc.DrawText(rangeStr, holeInfo_x, holeInfo_y + hiLineSpacing * 2) # range
-			dc.SetFont(self.stdFont) # reset to standard font
-		if smoothed >= 5: # Log column, currently unused.
-			title_pos = self.splicerX + (self.holeWidth * 2) + (50 * 2) + 50
-			# rangeMax
-			dc.DrawText(holeInfo[1] + "-" + holeInfo[0] + holeInfo[7], title_pos, 5)
-			dc.DrawText("Log, Range: " + str(holeInfo[5]) + ":" + str(holeInfo[6]), title_pos, 25)
+		dc.SetFont(self.holeInfoFont)
+		holeInfo_x = startX
+		holeInfo_y = 3
+		hiLineSpacing = 13 # fudge factor, looks good on Win and Mac
+		clip = wx.DCClipper(dc, clipRegion)
+		dc.DrawText(holeInfo[1] + "-" + holeInfo[0] + holeInfo[7], holeInfo_x, holeInfo_y) # hole ID
+		dc.DrawText(holeInfo[2], holeInfo_x, holeInfo_y + hiLineSpacing) # hole datatype
+		rangeStr = "Range: {} : {}".format(str(holeInfo[5]), str(holeInfo[6]))
+		dc.DrawText(rangeStr, holeInfo_x, holeInfo_y + hiLineSpacing * 2) # range
+		dc.SetFont(self.stdFont) # reset to standard font
 
 	def DrawHoleColumn(self, dc, holeColumn, smoothed):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
@@ -1509,24 +1504,29 @@ class DataCanvas(wxBufferedWindow):
 
 		holeType = holeColumn.datatype()
 		holeName = holeColumn.holeName()
-
 		startX = self.GetHoleStartX(holeName, holeType)
-		# rangeMax = startX + (self.coreImageWidth if self.showCoreImages else 0) + self.plotWidth
-		rangeMax = startX + holeColumn.width()
 
+		# TODO: determine whether the hole column will be visible at all...if so, proceed!
+		# If not, bail(?). I think the 'drawComposite' var is intended to the same thing,
+		# but it's dumb, clipping is a better way to achieve.
+		spliceScrollbarLeft = self.splicerX - 50
+		headerBottom = self.startDepthPix - 20
+		headerClipRegion = wx.Region(0, 0, spliceScrollbarLeft, headerBottom)
+		self.DrawHoleHeader(dc, startX, holeColumn.holeInfo(), headerClipRegion)
+
+		# Clip to prevent drawing over splice area or headers
+		# Clipping region is in effect as long as 'clip' is in scope. Must assign result of
+		# DCClipper() to a variable or it won't work.
+		clip = wx.DCClipper(dc, wx.Region(0, headerBottom, spliceScrollbarLeft, dc.GetSize().height - headerBottom))
+
+		rangeMax = startX + holeColumn.width()
 		if self.showBounds:
 			self.DrawDebugBounds(dc, startX, rangeMax)
 
 		# draw vertical dotted line at left edge of hole column
 		if self.showHoleGrid:
-			if startX < self.splicerX:
-				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-				dc.DrawLines(((startX, self.startDepthPix - 20), (startX, self.Height)))
-			# log only, removing...
-			# if smoothed >= 5:
-			# 	dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-			# 	rangeMax = self.splicerX + (self.holeWidth * 2) + 150
-			# 	dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height)))
+			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+			dc.DrawLines(((startX, headerBottom), (startX, self.Height)))
 
 		# TODO: plot overlays
 
@@ -1548,15 +1548,16 @@ class DataCanvas(wxBufferedWindow):
 				self.continue_flag = r[5] 
 				break
 
-		if smoothed == 0: # unsmoothed data
-			# if range only indicates we're drawing smoothed data, this is
-			# where we abort drawing of unsmoothed data and bail out after
-			# making self.coreCount look as though it's drawn every core
-			if smooth_id == 1:
-				self.coreCount = self.coreCount + holeCoreCount 
-				return holeType 
-		elif smoothed == 3: # shouldn't be hit
-			assert False, "smoothed == 3, how did we get here???"
+		# brg 9/27/2020 don't do this!
+		# if smoothed == 0: # unsmoothed data
+		# 	# if range only indicates we're drawing smoothed data, this is
+		# 	# where we abort drawing of unsmoothed data and bail out after
+		# 	# making self.coreCount look as though it's drawn every core
+		# 	if smooth_id == 1:
+		# 		self.coreCount = self.coreCount + (len(holeColumn.holeData) - 1)
+		# 		return holeType 
+		# elif smoothed == 3: # shouldn't be hit
+		# 	assert False, "smoothed == 3, how did we get here???"
 			# if smooth_id == 1:
 			# 	smoothed = 0
 			# elif smooth_id <= 0:
@@ -1566,18 +1567,12 @@ class DataCanvas(wxBufferedWindow):
 		# Draw hole column in Composite Area only if no portion is obscured by splice area.
 		# This is to prevent any drawing of composite cores in splice area because they're
 		# all being drawn on the same canvas
-		drawComposite = True
-		spliceScrollbarLeft = self.splicerX - 50
-		if smoothed != 2 and smoothed < 5 and spliceScrollbarLeft < startX:
-			drawComposite = False
+		# drawComposite = True
+		# if smoothed != 2 and smoothed < 5 and spliceScrollbarLeft < startX:
+		# 	drawComposite = False
 
-		if drawComposite:
-			self.DrawHoleHeader(dc, startX, holeColumn.holeInfo(), smoothed)
-		
-		# Clip to prevent drawing over splice area or headers
-		# Clipping region is in effect as long as 'clip' is in scope. Must assign result of
-		# DCClipper() to a variable or it won't work.
-		clip = wx.DCClipper(dc, wx.Region(0, self.startDepthPix - 20, spliceScrollbarLeft, dc.GetSize().height))
+		# if drawComposite:
+			# self.DrawHoleHeader(dc, startX, holeColumn.holeInfo(), smoothed)
 
 		# bail if hole doesn't have any data to draw, i.e. hole[0] is the only element.
 		# Elements 1 through len(hole) - 1 contain data for each core in the hole
@@ -1603,12 +1598,11 @@ class DataCanvas(wxBufferedWindow):
 						colStartX += self.coreImageWidth
 				elif column == ColumnType.Plot:
 					plotStartX = colStartX # temporary!
-					self.DrawCorePlot_v2(dc, colStartX, holeColumn.holeName(), core, drawComposite)
+					self.DrawCorePlot_v2(dc, colStartX, holeColumn.holeName(), core)
 
 					# for now we'll continue to draw section boundaries only on the plot area
 					if self.parent.sectionSummary and (self.pressedkeyS == 1 or self.showSectionDepths):
-						if drawComposite and smoothed != 2 and self.depthIntervalVisible(coreTop, coreBot, visibleTopDepth, self.rulerEndDepth):
-							self.DrawSectionBoundaries(dc, colStartX, holeColumn.holeName(), core.coreName(), core.affineOffset())
+						self.DrawSectionBoundaries(dc, colStartX, holeColumn.holeName(), core.coreName(), core.affineOffset())
 
 					colStartX += self.plotWidth
 
@@ -2645,16 +2639,15 @@ class DataCanvas(wxBufferedWindow):
 			for pt in lines:
 				dc.DrawCircle(pt[0], pt[1], self.DiscreteSize)
 
-	def DrawCorePlot_v2(self, dc, plotStartX, holeName, core, drawComposite):
+	def DrawCorePlot_v2(self, dc, plotStartX, holeName, core):
 		points = []
 		for y, x in core.depthDataPairs():
-			if drawComposite:
-				if y <= self.rulerEndDepth:
-					y = self.startDepthPix + (y - self.rulerStartDepth) * self.pixPerMeter
-					x = (x - self.minRange) * self.coefRange + plotStartX
-					points.append((x,y))
-				else: # y > self.rulerEndDepth:
-					break
+			if y <= self.rulerEndDepth:
+				y = self.startDepthPix + (y - self.rulerStartDepth) * self.pixPerMeter
+				x = (x - self.minRange) * self.coefRange + plotStartX
+				points.append((x,y))
+			else: # y > self.rulerEndDepth:
+				break
 		
 		# plot points
 		coreColor = self.parent.affineManager.getShiftColor(holeName, core.coreName())
@@ -3714,11 +3707,11 @@ class DataCanvas(wxBufferedWindow):
 		holeType = ""
 		if len(self.HoleData) == 0:
 			smooth_flag = 1 
-		for data in self.SmoothData: # TODO: ensure smoothed drawing works!
-			for r in data:
-				hole = r 
-				holeType = self.DrawHoleGraph(dc, hole, smooth_flag, holeType) 
-				self.HoleCount = self.HoleCount + 1 
+		# for data in self.SmoothData: # TODO: ensure smoothed drawing works!
+		# 	for r in data:
+		# 		hole = r 
+		# 		holeType = self.DrawHoleGraph(dc, hole, smooth_flag, holeType) 
+		# 		self.HoleCount = self.HoleCount + 1 
 			
 		self.HoleCount = -2 
 		# "Drawing Black Box for Erasing the Parts"
