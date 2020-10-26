@@ -1553,7 +1553,7 @@ class DataCanvas(wxBufferedWindow):
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 			dc.DrawLines(((startX, headerBottom), (startX, self.Height)))
 
-		if holeType == "Natural Gamma":
+		if holeType == "Natural Gamma": # TODO: fix this abomination
 			holeType = "NaturalGamma"
 
 		# apply range for current datatype
@@ -1659,10 +1659,15 @@ class DataCanvas(wxBufferedWindow):
 				# draw handles its own clipping. Any time a new wx.DCClipper() is created
 				# it blows away the existing one, despite wx doc's claims that as long as a DCClipper
 				# is in scope it remains in effect.
-				clip = wx.DCClipper(dc, wx.Region(0, headerBottom, spliceScrollbarLeft, dc.GetSize().height - headerBottom))
-				self.DrawAffineShiftInfo(dc, startX, coreTop, coreBot, holeColumn, core)
+				# 10/25/2020 brg: affine shift info still wasn't clipping correctly...it correctly clipped
+				# affine info for the first shifted core drawn in the current hole, but every affine info
+				# for subsequent cores in the hole still drew in the splice area.
+				# This was resolved by moving DCClipper creation into DrawAffineShiftInfo()
+				clippingRegion = wx.Region(0, headerBottom, spliceScrollbarLeft, self.Height - headerBottom)
+				self.DrawAffineShiftInfo(dc, startX, coreTop, coreBot, holeColumn, core, clippingRegion)
 				# for now, assume there's always a plot column and thus a plotStartX var
-				self.DrawAffineShiftArrow(dc, plotStartX, coreTop, coreBot, holeColumn, core)
+				# self.DrawAffineShiftArrow(dc, plotStartX, coreTop, coreBot, holeColumn, core)
+				self.PrepareTieShiftArrow(dc, plotStartX, coreTop, coreBot, holeColumn, core)
 		# print("For hole {}, plotted cores {}".format(holeColumn.holeName(), coresDrawn))
 		
 			# print("Core Top = {}, bot = {}".format(coreTop, coreBot))
@@ -1674,15 +1679,14 @@ class DataCanvas(wxBufferedWindow):
 		# 	we won't have that data...
 
 
-	def DrawAffineShiftInfo(self, dc, startX, coreTopY, coreBotY, hole, core):
-		shiftInfoY = coreTopY + (coreBotY - coreTopY) / 2
-		y = self.startDepthPix + (shiftInfoY - self.rulerStartDepth) * self.pixPerMeter
-
-		shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole.holeName(), core.coreName())
-
-		# show affine shift direction, distance, and type to left of core, centered on core depth interval
+	# Show affine shift direction, distance, and type to left of core, centered on core depth interval
+	def DrawAffineShiftInfo(self, dc, startX, coreTopY, coreBotY, hole, core, clippingRegion):
 		if self.showAffineShiftInfo:
-			# arrowhead
+			clip = wx.DCClipper(dc, clippingRegion)
+			shiftInfoY = coreTopY + (coreBotY - coreTopY) / 2 # midpoint of core's depth interval
+			y = self.startDepthPix + (shiftInfoY - self.rulerStartDepth) * self.pixPerMeter # depth to pix
+
+			# prepare triangle indicating shift direction
 			arrowheadAdjust = 8 if core.affineOffset() > 0 else -8
 			arrowY = y + 4
 			tribase1 = wx.Point(startX - 4, arrowY)
@@ -1690,21 +1694,21 @@ class DataCanvas(wxBufferedWindow):
 			tribase3 = wx.Point(startX, arrowY + arrowheadAdjust)
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 			dc.SetBrush(wx.Brush(self.colorDict['foreground']))
+
+			# draw triangle, observing right-hand rule
 			if core.affineOffset() > 0:
 				dc.DrawPolygon((tribase3, tribase2, tribase1))
 			else:
 				dc.DrawPolygon((tribase3, tribase1, tribase2))
-			# shift distance text, type			
+
+			# draw shift distance and type
 			dc.DrawText(str(core.affineOffset()), startX - 40, y)
+			shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole.holeName(), core.coreName())
 			dc.DrawText(shiftTypeStr, startX - 32, y - 12)
 
-	def DrawAffineShiftArrow(self, dc, startX, coreTopY, coreBotY, hole, core):
-		shiftInfoY = coreTopY + (coreBotY - coreTopY) / 2
-		y = self.startDepthPix + (shiftInfoY - self.rulerStartDepth) * self.pixPerMeter
-
+	# Draw arrow indicating a TIE between cores
+	def PrepareTieShiftArrow(self, dc, startX, coreTopY, coreBotY, hole, core):
 		shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole.holeName(), core.coreName())
-		
-		# arrow indicating TIE between cores
 		if shiftTypeStr == "TIE" and self.showAffineTieArrows:
 			tieDepth, parentCore = self.parent.affineManager.getTieDepthAndParent(hole.holeName(), core.coreName())
 			# holeType = holeInfo[2]
@@ -1725,19 +1729,27 @@ class DataCanvas(wxBufferedWindow):
 				# save (hole + core, bounding rect) tuple for click/hover detection
 				rx = parentTieX if parentTieX < tieX else tieX
 				arrowRect = wx.Rect(rx, tieY - 5, abs(tieX - parentTieX), 10)
-				self.AffineTieArrows.append((hole.holeName() + core.coreName(), arrowRect))
-
-				if self.MousePos and arrowRect.Inside(self.MousePos):
-					dc.SetPen(wx.Pen(wx.GREEN)) # highlight TIE arrow in green on mouseover
-				else:
-					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
-
-				# circle on parent core, arrow to shifted core
-				dc.DrawCircle(parentTieX, parentY, 3)
 				arrowDir = 5 if parentTieX > tieX else -5
-				dc.DrawLines(((parentTieX, parentY), (tieX, tieY), (tieX, tieY), (tieX+arrowDir, tieY+5), (tieX, tieY), (tieX+arrowDir, tieY-5)))
+				drawData = {}
+				drawData['arrow'] = ((parentTieX, parentY), (tieX, tieY), (tieX, tieY), (tieX+arrowDir, tieY+5), (tieX, tieY), (tieX+arrowDir, tieY-5))
+				drawData['circle'] = (parentTieX, parentY)
+				self.AffineTieArrows.append((hole.holeName() + core.coreName(), arrowRect, drawData))
 
+	def DrawTieShiftArrow(self, dc, arrowRect, drawData):
+		if self.MousePos and arrowRect.Inside(self.MousePos):
+			dc.SetPen(wx.Pen(wx.GREEN)) # highlight TIE arrow in green on mouseover
+		else:
+			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 
+		# circle on parent core, arrow to shifted core
+		circle_x, circle_y = drawData['circle']
+		dc.DrawCircle(circle_x, circle_y, 3) # radius 3
+		dc.DrawLines(drawData['arrow'])
+
+	def DrawTieShiftArrows(self, dc):
+		clip = wx.DCClipper(dc, wx.Region(0, self.startDepthPix - 20, self.splicerX - 60, self.Height - (self.startDepthPix - 20)))
+		for _, arrowRect, drawData in self.AffineTieArrows:
+			self.DrawTieShiftArrow(dc, arrowRect, drawData)
 
 	# prevHoleType used only to draw overlapping cores when D is pressed
 	def DrawHoleGraph(self, dc, hole, smoothed, prevHoleType):
@@ -3735,6 +3747,10 @@ class DataCanvas(wxBufferedWindow):
 			self.DrawHoleColumn(dc, holeColumn)
 			self.HoleCount += 1 # needed?
 
+		# Draw TIE shift arrows. Doing so here insures they'll always
+		# draw over hole plots and images.
+		self.DrawTieShiftArrows(dc)
+
 		self.HoleCount = 0
 		self.coreCount = 0 
 		self.newHoleX = 30.0
@@ -5180,7 +5196,7 @@ class DataCanvas(wxBufferedWindow):
 			count = count + 1
 
 		# handle right-click on an existing tie arrow
-		for holecore, rect in self.AffineTieArrows:
+		for holecore, rect, _ in self.AffineTieArrows:
 			if rect.Inside(wx.Point(pos[0], pos[1])):
 				popupMenu = wx.Menu()
 				popupMenu.Append(2, "Break TIE to {}".format(holecore))
