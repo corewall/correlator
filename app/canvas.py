@@ -240,6 +240,44 @@ class CoreMetadata:
 		return len(self.cmt[10])
 
 
+# Convenience wrapper for DataCanvas.HoleData list elements with
+# methods to access hole metadata
+class HoleMetadata:
+	def __init__(self, holeData):
+		self.holeData = holeData
+		self.hmt = holeData[0][0] # hole metadata tuple
+
+	def holeInfo(self):
+		return self.hmt
+
+	def siteName(self):
+		return self.hmt[0]
+
+	def expName(self):
+		return self.hmt[1]
+
+	def datatype(self):
+		return self.hmt[2]
+
+	def topDepth(self):
+		return self.hmt[3]
+
+	def botDepth(self):
+		return self.hmt[4]
+
+	def minData(self):
+		return self.hmt[5]
+
+	def maxData(self):
+		return self.hmt[6]
+
+	def holeName(self):
+		return self.hmt[7]
+
+	def coreCount(self):
+		return self.hmt[8]
+
+
 # HoleData definition:
 # Each element of HoleData is a list containing a list (yes, redundant) containing elements
 # describing all hole and core data for a single hole+type.
