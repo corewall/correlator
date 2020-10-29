@@ -4845,8 +4845,8 @@ class DataCanvas(wxBufferedWindow):
 
 
 		# Drag core from composite to splice area to add to splice.
-		# Disable during horizontal scroll or when composite ties are active.
-		if len(self.TieData) == 0 and self.selectScroll == 0 and self.grabScrollC == 0:
+		# Disable while scrolling or when there are active composite ties.
+		if len(self.TieData) == 0 and self.selectScroll == 0 and self.grabScrollA == 0 and self.grabScrollC == 0:
 			if pos[0] <= self.splicerX:
 				for key, data in self.DrawData.items():
 					if key == "CoreArea":
