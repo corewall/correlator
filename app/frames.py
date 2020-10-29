@@ -3602,7 +3602,17 @@ class PreferencesPanel():
 
 	def OnShowCoreImages(self, event):
 		self.parent.Window.showCoreImages = self.showCoreImages.IsChecked()
+		self.EnableCoreImageDisplayModeChoice(self.showCoreImages.IsChecked())
 		self.parent.Window.UpdateDrawing()
+
+	def OnCoreImageDisplayMode(self, event): # brgbrg
+		# print("mode = {}".format(self.coreImageDisplayMode.GetSelection()))
+		asDatatype = True if self.coreImageDisplayMode.GetSelection() == 1 else 0
+		self.parent.Window.showImagesAsDatatype = asDatatype
+		self.parent.Window.UpdateDrawing()
+
+	def EnableCoreImageDisplayModeChoice(self, enable):
+		self.coreImageDisplayMode.Enable(enable)
 
 	def OnShowAffineShiftInfo(self, event):
 		self.parent.Window.showAffineShiftInfo = self.showAffineShiftInfo.IsChecked()
@@ -3647,6 +3657,8 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowSectionDepths, self.showSectionDepths)
 		self.showCoreImages = wx.CheckBox(viewPanel, -1, "Show core images")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowCoreImages, self.showCoreImages)
+		self.coreImageDisplayMode = wx.Choice(viewPanel, -1, choices=('next to plots','as a datatype'))
+		self.mainPanel.Bind(wx.EVT_CHOICE, self.OnCoreImageDisplayMode, self.coreImageDisplayMode)
 		self.showAffineShiftInfo = wx.CheckBox(viewPanel, -1, "Show core shift direction and distance")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftInfo, self.showAffineShiftInfo)
 		self.showAffineTieArrows = wx.CheckBox(viewPanel, -1, "Show core tie arrows")
@@ -3664,7 +3676,12 @@ class PreferencesPanel():
 		viewSizer.Add(self.showSpliceWindow, 0, wx.BOTTOM, 5)
 		# viewSizer.Add(self.indSpliceScroll, 0, wx.LEFT, 20)
 		viewSizer.Add(self.showSectionDepths, 0, wx.BOTTOM, 5)
-		viewSizer.Add(self.showCoreImages, 0, wx.BOTTOM, 5)
+
+		imageOptionSizer = wx.BoxSizer(wx.HORIZONTAL)
+		imageOptionSizer.Add(self.showCoreImages, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 3)
+		imageOptionSizer.Add(self.coreImageDisplayMode, 0, wx.ALIGN_CENTER_VERTICAL)
+		viewSizer.Add(imageOptionSizer, 0, wx.BOTTOM, 5)
+		
 		viewSizer.Add(self.showAffineShiftInfo, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showAffineTieArrows, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showCoreInfo, 0, wx.BOTTOM, 5)
