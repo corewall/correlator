@@ -1673,7 +1673,7 @@ class DataCanvas(wxBufferedWindow):
 						# start drawing overlays from other holes of this type...but for
 						# now this retains expected colors for Smoothed & Unsmoothed drawing
 						plotColor = self.colorDict['smooth'] if idx > 0 else None
-						self.DrawCorePlot_v2(dc, colStartX, holeColumn.holeName(), ctp, plotColor)
+						self.DrawCorePlot(dc, colStartX, holeColumn.holeName(), ctp, plotColor)
 
 					# for now we'll continue to draw section boundaries only on the plot area
 					if self.parent.sectionSummary and (self.pressedkeyS == 1 or self.showSectionDepths):
@@ -2557,25 +2557,7 @@ class DataCanvas(wxBufferedWindow):
 	def depthIntervalVisible(self, top, bot, rangetop, rangebot):
 		return self.depthVisible(top, rangetop, rangebot) or self.depthVisible(bot, rangetop, rangebot) or (top <= rangetop and bot >= rangebot)
 
-	def DrawCorePlot(self, dc, plotStartX, lines, pointCount):
-		# clip to plot area
-		if self.showOutOfRangeData: # still must clip to prevent draw into splice area
-			# clip_width = self.splicerX - plotStartX if (plotStartX + self.plotWidth) < self.splicerX else self.splicerX - plotStartX
-			clip_width = (self.splicerX - 60) - plotStartX
-			clip = wx.DCClipper(dc, wx.Region(x=plotStartX, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
-		else:
-			# wx.DCClipper-based clipping region is destroyed when it goes out of scope (i.e. at function end)
-			clip_width = min(self.plotWidth, (self.splicerX - 60) - plotStartX)
-			clip = wx.DCClipper(dc, wx.Region(x=plotStartX, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
-
-		# draw lines
-		if self.DiscretePlotMode == 0 and pointCount > 1:
-			dc.DrawLines(lines)
-		else:
-			for pt in lines:
-				dc.DrawCircle(pt[0], pt[1], self.DiscreteSize)
-
-	def DrawCorePlot_v2(self, dc, plotStartX, holeName, core, plotColor=None):
+	def DrawCorePlot(self, dc, plotStartX, holeName, core, plotColor=None):
 		points = []
 		for y, x in core.depthDataPairs():
 			if y <= self.rulerEndDepth:
