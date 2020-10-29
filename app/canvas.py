@@ -4829,21 +4829,6 @@ class DataCanvas(wxBufferedWindow):
 				self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)
 			return
 
-		count = 0
-		for data in self.LogTieData:
-			for r in data:
-				if (count % 2) == 1: 
-					y = self.startDepthPix + (r[6] - self.SPrulerStartDepth) * self.pixPerMeter
-					x = self.splicerX + self.holeWidth * 2 + 150
-					reg = wx.Rect(r[0] - half, y - half, dotsize_x, dotsize_y)
-					if reg.Inside(wx.Point(pos[0], pos[1])):
-						if r[3] == 0: 
-							self.LogselectedTie = count
-							self.activeSATie = count
-							return
-			count = count + 1
-
-
 		# Drag core from composite to splice area to add to splice.
 		# Disable while scrolling or when there are active composite ties.
 		if len(self.TieData) == 0 and self.selectScroll == 0 and self.grabScrollA == 0 and self.grabScrollC == 0:
@@ -4858,7 +4843,7 @@ class DataCanvas(wxBufferedWindow):
 								if reg.Inside(wx.Point(pos[0], pos[1])):
 									self.dragCore = n
 
-		# make tie 
+		# Detect shift-click on core to prepare for affine tie creation
 		if self.pressedkeyShift == 1:
 			if self.drag == 0:
 				for key, data in self.DrawData.items():
@@ -4869,15 +4854,12 @@ class DataCanvas(wxBufferedWindow):
 								n, x, y, w, h, min, max, hole_idx = r
 								reg = wx.Rect(min, y, max, h)
 								if reg.Inside(wx.Point(pos[0], pos[1])):
-									self.drag = 1 
 									self.selectedCore = n 
 									self.mouseX = pos[0] 
 									self.mouseY = pos[1] 
 									self.currentStartX = min
 									self.currentHole = hole_idx 
 									break
-							if self.drag == 1:
-								break
 
 	def OnDataChange(self, core, shift):
 		coreInfo = self.findCoreInfoByIndex(core)
@@ -5415,61 +5397,59 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.spliceManager.setDirty()
 			self.parent.spliceIntervalPanel.UpdateUI()
 
-		if self.drag == 1:
-			if pos[0] == self.mouseX and pos[1] == self.mouseY:
-				if len(self.TieData) >= 2: # max two ties
-					return
-				fixed = 1 if len(self.TieData) == 0 else 0
-				print("Creating {} TieData for hole {}, core {}".format("fixed" if fixed == 1 else "movable", self.currentHole, self.selectedCore))
-				newTie = CompositeTie(self.currentHole, self.selectedCore, self.currentStartX, pos[1], fixed, self.getDepth(pos[1]))
-				self.TieData.append(newTie) 
+		if pos[0] == self.mouseX and pos[1] == self.mouseY: # why this test?
+			if len(self.TieData) >= 2: # max two ties
+				return
+			fixed = 1 if len(self.TieData) == 0 else 0
+			print("Creating {} TieData for hole {}, core {}".format("fixed" if fixed == 1 else "movable", self.currentHole, self.selectedCore))
+			newTie = CompositeTie(self.currentHole, self.selectedCore, self.currentStartX, pos[1], fixed, self.getDepth(pos[1]))
+			self.TieData.append(newTie) 
 
-				# if we now have two ties, set up guide core
-				if len(self.TieData) == 1:
-					self.UpdateAffineTieCount(1)
-				else: # len(self.TieData) == 0
-					self.activeTie = 1
-					length = len(self.TieData) 
-					fixedTie = self.TieData[length - 2]
-					fixedY = self.getDepth(fixedTie.screenY)
-					fixedX = fixedTie.hole
-					self.guideCore = fixedTie.core
+			if len(self.TieData) == 1:
+				self.UpdateAffineTieCount(1)
+			else: # we now have two ties, set up guide core, eval graph, etc
+				self.activeTie = 1
+				length = len(self.TieData) 
+				fixedTie = self.TieData[length - 2]
+				fixedY = self.getDepth(fixedTie.screenY)
+				fixedX = fixedTie.hole
+				self.guideCore = fixedTie.core
 
-					movableTie = self.TieData[length - 1]
-					shift = fixedTie.depth - movableTie.depth
-					shiftx = (fixedTie.hole - movableTie.hole) * (self.holeWidth + 50) # shiftx is unused in OnUpdateGuideData...don't care about this self.holeWidth
-					self.compositeDepth = fixedTie.depth
-					y2 = fixedTie.depth
-					y1 = movableTie.depth
+				movableTie = self.TieData[length - 1]
+				shift = fixedTie.depth - movableTie.depth
+				shiftx = (fixedTie.hole - movableTie.hole) * (self.holeWidth + 50) # shiftx is unused in OnUpdateGuideData...don't care about this self.holeWidth
+				self.compositeDepth = fixedTie.depth
+				y2 = fixedTie.depth
+				y1 = movableTie.depth
 
-					ciA = self.findCoreInfoByIndex(self.guideCore)
-					ciB = self.findCoreInfoByIndex(movableTie.core)
-					if ciA is not None and ciA.hole == ciB.hole:
-						self.parent.OnShowMessage("Error", "Composite ties cannot be made in the same hole.", 1)
-						self.ClearCompositeTies()
-					elif not self.parent.affineManager.isLegalTie(ciB, ciA):
-						self.parent.OnShowMessage("Error", "Core {}{} is upstream in the tie chain.".format(ciB.hole, ciB.holeCore), 1)
-						self.ClearCompositeTies()
-					else:
-						self.activeCore = self.selectedCore
-						self.OnUpdateGuideData(self.selectedCore, shiftx, shift)
-						self.parent.OnUpdateDepth(shift)
-						self.parent.TieUpdateSend(ciA.leg, ciA.site, ciA.hole, int(ciA.holeCore), ciB.hole, int(ciB.holeCore), y1, shift)
-						testret = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
-						if testret != "":
-							self.parent.OnAddFirstGraph(testret, y2, y1)
-						for data_item in self.range:
-							typeA = ciA.type
-							if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma":
-								typeA = "Natural Gamma"
-							elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma":
-								typeA = "NaturalGamma"
-							if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log":
-								testret = self.EvaluateCorrelation(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
-								if testret != "":
-									self.parent.OnAddGraph(testret, y2, y1)
-						self.parent.OnUpdateGraph()
-						self.UpdateAffineTieCount(len(self.TieData))
+				ciA = self.findCoreInfoByIndex(self.guideCore)
+				ciB = self.findCoreInfoByIndex(movableTie.core)
+				if ciA is not None and ciA.hole == ciB.hole:
+					self.parent.OnShowMessage("Error", "Composite ties cannot be made in the same hole.", 1)
+					self.ClearCompositeTies()
+				elif not self.parent.affineManager.isLegalTie(ciB, ciA):
+					self.parent.OnShowMessage("Error", "Core {}{} is upstream in the tie chain.".format(ciB.hole, ciB.holeCore), 1)
+					self.ClearCompositeTies()
+				else:
+					self.activeCore = self.selectedCore
+					self.OnUpdateGuideData(self.selectedCore, shiftx, shift)
+					self.parent.OnUpdateDepth(shift)
+					self.parent.TieUpdateSend(ciA.leg, ciA.site, ciA.hole, int(ciA.holeCore), ciB.hole, int(ciB.holeCore), y1, shift)
+					testret = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
+					if testret != "":
+						self.parent.OnAddFirstGraph(testret, y2, y1)
+					for data_item in self.range:
+						typeA = ciA.type
+						if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma":
+							typeA = "Natural Gamma"
+						elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma":
+							typeA = "NaturalGamma"
+						if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log":
+							testret = self.EvaluateCorrelation(data_item[0], ciA.hole, int(ciA.holeCore), y2, data_item[0], ciB.hole, int(ciB.holeCore), y1)
+							if testret != "":
+								self.parent.OnAddGraph(testret, y2, y1)
+					self.parent.OnUpdateGraph()
+					self.UpdateAffineTieCount(len(self.TieData))
 
 		self.selectedCore = -1
 		self.spliceTie = -1
@@ -5818,168 +5798,6 @@ class DataCanvas(wxBufferedWindow):
 			# draw guide
 			self.OnDrawGuide()
 			got = 1
-
-		# adjust splice tie - predates Splice Intervals, should be able to discard
-		if self.SPselectedTie >= 0:
-			spliceTie = self.SpliceTieData[self.SPselectedTie]
-			depth = 0
-			shift = 0
-			y1 = 0
-			y2 = 0
-
-			depth = (pos[1] - self.startDepthPix) / self.pixPerMeter + self.SPrulerStartDepth
-			spliceTie.y = pos[1]
-			spliceTie.depth = depth
-			self.selectedCore = spliceTie.core
-			y1 = depth
-
-			prevSpliceTie = self.SpliceTieData[self.SPselectedTie - 1]
-			if self.Constrained == 1:
-				prevSpliceTie.y = pos[1]
-				prevSpliceTie.depth = depth
-				y2 = y1
-
-			elif self.Constrained == 0:
-				shift = prevSpliceTie.depth - depth
-				depth = prevSpliceTie.depth
-				y2 = prevSpliceTie.depth
-
-			self.guideSPCore = prevSpliceTie.core
-			self.spliceDepth = depth
-
-			ciA = self.findCoreInfoByIndex(self.selectedCore)
-			ciB = self.findCoreInfoByIndex(self.guideSPCore)
-
-			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-			if ciA != None and ciB != None and flag == 1:
-				testret = py_correlator.evalcoef_splice(ciA.type, ciA.hole, int(ciA.holeCore), y1, y2)
-				if testret != "":
-					if self.Constrained == 0:
-						shift = y2 - y1
-						self.parent.splicePanel.OnUpdateDepth(shift)
-					self.parent.OnAddFirstGraph(testret, y2, y1)
-
-				for data_item in self.range:
-					typeA = ciA.type
-					if data_item[0] == "Natural Gamma" and typeA == "NaturalGamma":
-						typeA = "Natural Gamma"
-					elif data_item[0] == "NaturalGamma" and typeA == "Natural Gamma":
-						typeA = "NaturalGamma"
-					if data_item[0] != typeA and data_item[0] != "splice" and data_item[0] != "log":
-						testret = py_correlator.evalcoef_splice(data_item[0], ciA.hole, int(ciA.holeCore), y1, y2)
-						if testret != "":
-							self.parent.OnAddGraph(testret, y2, y1)
-				self.parent.OnUpdateGraph()
-
-			self.SPGuideCore = []
-			self.OnUpdateSPGuideData(self.selectedCore, depth, shift)
-
-		if self.LogselectedTie >= 0:
-			logtieNo = self.LogselectedTie
-			if (self.LogselectedTie % 2) == 0: 
-				logtieNo = self.LogselectedTie + 1 
-
-			logtieSize = len(self.LogTieData) - 1
-			if logtieNo <= logtieSize:
-				data = self.LogTieData[logtieNo]
-				depth = 0
-				shift = 0
-				y1 = 0
-				y2 = 0
-				x1 = 0
-				x2 = 0
-				for r in data:
-					x, y, n, f, startx, m, d, splicex, i, raw = r
-					depth = (pos[1] - self.startDepthPix) / self.pixPerMeter + self.SPrulerStartDepth
-					newtag = (x, pos[1], n, f, startx, m, depth, self.splicerX, i, depth)
-					data.remove(r)
-					data.insert(0, newtag)
-					self.LogselectedCore = n
-					y1 = depth
-					x1 = x
-
-				predata = self.LogTieData[logtieNo - 1]
-				y2 = 0
-				n = -1 
-				tieNo = -1
-				for prer in predata:
-					x, y, n, f, startx, m, d, splicex, i, raw = prer
-					tieNo = i 
-					#y2 = (y - self.startDepthPix) / ( self.pixPerMeter / self._gap )+ self.SPrulerStartDepth
-					y2 = d
-					x2 = x
-				shift = y2 - depth
-				depth = y2
-
-				if x1 < x2:
-					temp = y1
-					y1 = y2
-					y2 = temp
-					temp = self.LogselectedCore
-					self.LogselectedCore = n
-					n = temp
-
-				self.saganDepth = y2 
-
-				coreInfo = self.findCoreInfoByIndex(n)
-
-				self.PreviewLog = [-1, -1, 1.0, 0, -1, -1, 1.0]
-				if logtieNo == 1:
-					self.PreviewLog[3] = y1 - y2
-					y3 = 0
-					self.PreviewLog[2] = (y1 - y3) / (y2 - y3)
-					self.PreviewLog[0] = y3
-					self.PreviewLog[1] = y2
-
-					if (logtieNo + 2) < len(self.LogTieData):
-						data = self.LogTieData[logtieNo + 1]
-						for r in data:
-							y3 = r[6]
-
-						self.PreviewLog[4] = y2
-						self.PreviewLog[5] = y3
-						self.PreviewLog[6] = (y3 - y1) / (y3 - y2)
-				elif len(self.LogTieData) == 2 or self.PreviewNumTies == 0 or self.PreviewFirstNo == logtieNo:
-					self.PreviewLog[3] = y1 - y2
-					if self.Floating == False:
-						self.PreviewLog[0] = self.FirstDepth
-						self.PreviewLog[1] = y2
-						self.PreviewLog[2] = (y1 - self.FirstDepth) / (y2 - self.FirstDepth)
-
-						if (logtieNo + 2) < len(self.LogTieData):
-							data = self.LogTieData[logtieNo + 1]
-							for r in data:
-								y3 = r[6]
-
-							self.PreviewLog[4] = y2
-							self.PreviewLog[5] = y3
-							self.PreviewLog[6] = (y3 - y1) / (y3 - y2)
-				else:
-					y3 = 0
-					data = self.LogTieData[logtieNo - 2]
-					for r in data:
-						y3 = r[6]
-					self.PreviewLog[2] = (y1 - y3) / (y2 - y3)
-					self.PreviewLog[0] = y3
-					self.PreviewLog[1] = y2
-
-					if (logtieNo + 2) < len(self.LogTieData):
-						data = self.LogTieData[logtieNo + 1]
-						for r in data:
-							y3 = r[6]
-
-						self.PreviewLog[4] = y2
-						self.PreviewLog[5] = y3
-						self.PreviewLog[6] = (y3 - y1) / (y3 - y2)
-
-				flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
-				if coreInfo != None and flag == 1:
-					testret = py_correlator.evalcoefLog(coreInfo.hole, int(coreInfo.holeCore), y2, y1)
-					if testret != "":
-						self.parent.OnAddFirstGraph(testret, y2, y1)
-						self.parent.OnUpdateGraph()
-				got = 1
-
 
 		if self.selectScroll == 1 and self.grabScrollA == 0 and self.grabScrollC == 0:
 			if pos[0] >= 180 and pos[0] <= (self.Width - 100):
