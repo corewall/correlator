@@ -1645,6 +1645,7 @@ class DataCanvas(wxBufferedWindow):
 		visibleTopDepth = self.rulerStartDepth - (20 / self.pixPerMeter) # todo: save this value as a member instead of computing everywhere
 
 		# for each core in hole
+		drawBoundariesFunc = self.DrawSectionBoundaries if self.pressedkeyS == 1 or self.showSectionDepths else self.DrawCoreBoundaries
 		coresDrawn = []
 		for coreIndex, core in enumerate([CoreMetadata(c) for c in holeColumn.cores()]):
 			coreTop, coreBot = core.topDepth(), core.botDepth()
@@ -1657,8 +1658,8 @@ class DataCanvas(wxBufferedWindow):
 				if column == ColumnType.Image:
 					if self.parent.sectionSummary:
 						self.DrawSectionImages(dc, colStartX, holeColumn.holeName(), core.coreName(), core.affineOffset())
-						if not holeColumn.hasPlot() and (self.pressedkeyS == 1 or self.showSectionDepths):
-							self.DrawSectionBoundaries(dc, colStartX, self.coreImageWidth, holeColumn.holeName(), core.coreName(), core.affineOffset())
+						if not holeColumn.hasPlot():
+							drawBoundariesFunc(dc, colStartX, self.coreImageWidth, holeColumn.holeName(), core.coreName(), core.affineOffset())
 						colStartX += self.coreImageWidth
 				elif column == ColumnType.Plot:
 					plotStartX = colStartX # TODO: stop assuming every HoleColumn will have a plot
@@ -1678,8 +1679,8 @@ class DataCanvas(wxBufferedWindow):
 						self.DrawCorePlot(dc, colStartX, holeColumn.holeName(), ctp, plotColor)
 
 					# for now we'll continue to draw section boundaries only on the plot area
-					if self.parent.sectionSummary and (self.pressedkeyS == 1 or self.showSectionDepths):
-						self.DrawSectionBoundaries(dc, colStartX, self.plotWidth, holeColumn.holeName(), core.coreName(), core.affineOffset())
+					if self.parent.sectionSummary:
+						drawBoundariesFunc(dc, colStartX, self.plotWidth, holeColumn.holeName(), core.coreName(), core.affineOffset())
 
 					colStartX += self.plotWidth
 
@@ -2667,6 +2668,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.DrawLines(((x, y), (x + wid, y), (x + wid, y + hit), (x, y + hit), (x, y)))
 		# dc.DrawLines(((x - 2, y - 2), (x + wid + 2, y - 2), (x + wid + 2, y + hit + 2), (x - 2, y + hit + 2), (x - 2, y - 2)))
 
+	# for each section of a core, draw number, top, and bottom boundaries
 	def DrawSectionBoundaries(self, dc, x, width, hole, coreno, affine_shift):
 		clip = wx.DCClipper(dc, wx.Region(x, self.startDepthPix - 20, (self.splicerX - 60) - x, self.Height - (self.startDepthPix - 20)))
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
@@ -2683,6 +2685,25 @@ class DataCanvas(wxBufferedWindow):
 			if secIndex == len(secrows) - 1: # draw bottom of last section
 				ybot = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
 				dc.DrawLines(((x, ybot), (x + width, ybot)))
+
+	# draw core number, top, and bottom boundaries
+	def DrawCoreBoundaries(self, dc, x, width, hole, coreno, affine_shift):
+		clip = wx.DCClipper(dc, wx.Region(x, self.startDepthPix - 20, (self.splicerX - 60) - x, self.Height - (self.startDepthPix - 20)))
+		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+		secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
+		# print("startDepth = {}, rulerStartDepth = {}, rulerEndDepth = {}".format(self.startDepthPix, self.rulerStartDepth, self.rulerEndDepth))
+		row = secrows[0]
+		top = row.topDepth + affine_shift
+		y = self.startDepthPix + (top - self.rulerStartDepth) * self.pixPerMeter
+		dc.DrawLines(((x, y), (x + width, y)))
+		coreSectionStr = "{}".format(coreno)
+		dc.DrawText(coreSectionStr, x + 2, y)
+
+		row = secrows[-1] # draw bottom of core
+		bot = row.bottomDepth + affine_shift
+		ybot = self.startDepthPix + (bot - self.rulerStartDepth) * self.pixPerMeter
+		dc.DrawLines(((x, ybot), (x + width, ybot)))
+
 
 	def DrawSectionImages(self, dc, startX, hole, coreno, affine_shift):
 		clip = wx.DCClipper(dc, wx.Region(startX, self.startDepthPix - 20, (self.splicerX - 60) - startX, self.Height - (self.startDepthPix - 20)))
