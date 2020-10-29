@@ -1691,7 +1691,7 @@ class DataCanvas(wxBufferedWindow):
 				else:
 					assert false, "Unexpected column type {}".format(column)
 
-			if core.affineOffset() != 0: # TODO: use of plotStartX assumes every HoleColumn has a plot
+			if core.affineOffset() != 0:
 				# Clip to prevent drawing over splice area or headers. Everything else we
 				# draw handles its own clipping. Any time a new wx.DCClipper() is created
 				# it blows away the existing one, despite wx doc's claims that as long as a DCClipper
@@ -1704,7 +1704,8 @@ class DataCanvas(wxBufferedWindow):
 				self.DrawAffineShiftInfo(dc, startX, coreTop, coreBot, holeColumn, core, clippingRegion)
 				# for now, assume there's always a plot column and thus a plotStartX var
 				# self.DrawAffineShiftArrow(dc, plotStartX, coreTop, coreBot, holeColumn, core)
-				self.PrepareTieShiftArrow(dc, plotStartX, coreTop, coreBot, holeColumn, core)
+				if holeColumn.hasPlot():
+					self.PrepareTieShiftArrow(dc, plotStartX, coreTop, coreBot, holeColumn, core)
 		# print("For hole {}, plotted cores {}".format(holeColumn.holeName(), coresDrawn))
 		
 			# print("Core Top = {}, bot = {}".format(coreTop, coreBot))
@@ -1761,7 +1762,8 @@ class DataCanvas(wxBufferedWindow):
 				tieX = (tieX * self.coefRange) + startX
 				parentY = self.getCoord(parentNearDepth)
 				parentTieX = parentNearDatum - self.minRange
-				parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType) + (self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(parentCore.hole)) else 0)
+				showImages = self.showCoreImages and not self.showImagesAsDatatype and self.HoleHasImages(parentCore.hole)
+				parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType) + (self.coreImageWidth if showImages else 0)
 
 				# save (hole + core, bounding rect) tuple for click/hover detection
 				rx = parentTieX if parentTieX < tieX else tieX
@@ -3796,7 +3798,8 @@ class DataCanvas(wxBufferedWindow):
 
 		for holeColumn in self.HoleColumns:
 			self.DrawHoleColumn(dc, holeColumn)
-			self.HoleCount += 1 # needed?
+			if holeColumn.hasPlot():
+				self.HoleCount += 1
 
 		# Draw TIE shift arrows. Doing so here insures they'll always
 		# draw over hole plots and images.
@@ -3809,21 +3812,8 @@ class DataCanvas(wxBufferedWindow):
 		holeType = ""
 		if len(self.HoleData) == 0:
 			smooth_flag = 1 
-		# for data in self.SmoothData: # TODO: ensure smoothed drawing works!
-		# 	for r in data:
-		# 		hole = r 
-		# 		holeType = self.DrawHoleGraph(dc, hole, smooth_flag, holeType) 
-		# 		self.HoleCount = self.HoleCount + 1 
 			
-		self.HoleCount = -2 
-		# "Drawing Black Box for Erasing the Parts"
-		# brg 6/29/2020: draw black rectangle over ruler area...necessary???
-		# Ruler drawing seems to be correct, no artifacts when this code is commented out.
-
-		# dc.SetBrush(wx.Brush(self.colorDict['background']))
-		# dc.SetPen(wx.Pen(self.colorDict['background'], 1))
-		# dc.DrawRectangle(0, 0, self.compositeX, self.Height) # is this necessary?
-
+		self.HoleCount = -2 # hoo boy
 		self.DrawRuler(dc)
 
  		# If no data is loaded, show help text.
@@ -3856,24 +3846,24 @@ class DataCanvas(wxBufferedWindow):
 # 						hole = r 
 # 						self.DrawSplice(dc, hole, smooth_flag)
 
-				if self.ShowLog == True and self.LogData != [] and self.LogSpliceData == []:
-					for data in splice_data:
-						for r in data:
-							hole = r 
-							self.DrawSplice(dc, hole, 3)
-							self.DrawSplice(dc, hole, 4)
-				elif self.ShowLog == True:
-					log_splice_data = []
-					if self.splice_smooth_flag == 1:
-						log_splice_data = self.LogSpliceSmoothData
-					else:
-						log_splice_data = self.LogSpliceData
+				# if self.ShowLog == True and self.LogData != [] and self.LogSpliceData == []:
+				# 	for data in splice_data:
+				# 		for r in data:
+				# 			hole = r 
+				# 			self.DrawSplice(dc, hole, 3)
+				# 			self.DrawSplice(dc, hole, 4)
+				# elif self.ShowLog == True:
+				# 	log_splice_data = []
+				# 	if self.splice_smooth_flag == 1:
+				# 		log_splice_data = self.LogSpliceSmoothData
+				# 	else:
+				# 		log_splice_data = self.LogSpliceData
 
-					for data in log_splice_data:
-						for r in data:
-							hole = r 
-							self.DrawSplice(dc, hole, 3)
-							self.DrawSplice(dc, hole, 4)
+				# 	for data in log_splice_data:
+				# 		for r in data:
+				# 			hole = r 
+				# 			self.DrawSplice(dc, hole, 3)
+				# 			self.DrawSplice(dc, hole, 4)
 
 				splice_data = []
 				if self.splice_smooth_flag == 2:
@@ -3887,67 +3877,67 @@ class DataCanvas(wxBufferedWindow):
 						hole = r 
 						self.DrawSplice(dc, hole, smooth_flag)
 
-				if self.ShowLog == True and self.LogData != []:
-					log_splice_data = []
-					if self.splice_smooth_flag == 2:
-						log_splice_data = self.LogSpliceSmoothData
+		# 		if self.ShowLog == True and self.LogData != []:
+		# 			log_splice_data = []
+		# 			if self.splice_smooth_flag == 2:
+		# 				log_splice_data = self.LogSpliceSmoothData
 
-					if self.LogSpliceSmoothData == []:
-						for data in splice_data:
-							for r in data:
-								hole = r 
-								self.DrawSplice(dc, hole, 5)
-								self.DrawSplice(dc, hole, 6)
-					else: 
-						for data in log_splice_data:
-							for r in data:
-								hole = r 
-								self.DrawSplice(dc, hole, 5)
-								self.DrawSplice(dc, hole, 6)
+		# 			if self.LogSpliceSmoothData == []:
+		# 				for data in splice_data:
+		# 					for r in data:
+		# 						hole = r 
+		# 						self.DrawSplice(dc, hole, 5)
+		# 						self.DrawSplice(dc, hole, 6)
+		# 			else: 
+		# 				for data in log_splice_data:
+		# 					for r in data:
+		# 						hole = r 
+		# 						self.DrawSplice(dc, hole, 5)
+		# 						self.DrawSplice(dc, hole, 6)
 
-			if self.ShowLog == True:
-				log_smooth_flag = 0 
-				log_data = []
-				for r in self.range:
-					if r[0] == 'log':
-						log_smooth_flag = r[4] 
+		# 	if self.ShowLog == True:
+		# 		log_smooth_flag = 0 
+		# 		log_data = []
+		# 		for r in self.range:
+		# 			if r[0] == 'log':
+		# 				log_smooth_flag = r[4] 
 
-				log_data = []
-				if log_smooth_flag == 1:
-					log_data = self.LogSMData
-				else:
-					log_data = self.LogData
+		# 		log_data = []
+		# 		if log_smooth_flag == 1:
+		# 			log_data = self.LogSMData
+		# 		else:
+		# 			log_data = self.LogData
 
-				if self.isLogShifted == False:
+		# 		if self.isLogShifted == False:
 
-					for data in log_data:
-						for r in data:
-							hole = r 
-							self.DrawHoleGraph(dc, hole, 5, None)
-					log_data = []
-					if log_smooth_flag == 2:
-						log_data = self.LogSMData
-					for data in log_data:
-						for r in data:
-							hole = r 
-							self.DrawHoleGraph(dc, hole, 7, None)
-				else:
-					for data in log_data:
-						for r in data:
-							hole = r 
-							self.DrawHoleGraph(dc, hole, 6, None)
-					log_data = []
-					if log_smooth_flag == 2:
-						log_data = self.LogSMData
-					for data in log_data:
-						for r in data:
-							hole = r 
-							self.DrawHoleGraph(dc, hole, 7, None)
+		# 			for data in log_data:
+		# 				for r in data:
+		# 					hole = r 
+		# 					self.DrawHoleGraph(dc, hole, 5, None)
+		# 			log_data = []
+		# 			if log_smooth_flag == 2:
+		# 				log_data = self.LogSMData
+		# 			for data in log_data:
+		# 				for r in data:
+		# 					hole = r 
+		# 					self.DrawHoleGraph(dc, hole, 7, None)
+		# 		else:
+		# 			for data in log_data:
+		# 				for r in data:
+		# 					hole = r 
+		# 					self.DrawHoleGraph(dc, hole, 6, None)
+		# 			log_data = []
+		# 			if log_smooth_flag == 2:
+		# 				log_data = self.LogSMData
+		# 			for data in log_data:
+		# 				for r in data:
+		# 					hole = r 
+		# 					self.DrawHoleGraph(dc, hole, 7, None)
 
-		if self.ShowStrat == True:
-			self.DrawStratCore(dc, False)
-			if len(self.SpliceData) > 0:
-				self.DrawStratCore(dc, True)
+		# if self.ShowStrat == True:
+		# 	self.DrawStratCore(dc, False)
+		# 	if len(self.SpliceData) > 0:
+		# 		self.DrawStratCore(dc, True)
 
 		if self.HasDragCore():
 			self.DrawDragCore(dc)
@@ -3959,148 +3949,51 @@ class DataCanvas(wxBufferedWindow):
 # 		dc.DrawLine(self.compositeX, 0, self.compositeX, 900)
 # 		dc.DrawLine(self.splicerX, 0, self.splicerX, 900)
 
-		### draw active affine and splice ties
-		tempx = 0
-		if self.hideTie == 0: 
-			x = 0
-			x0 = 0
-			y = 0
-			y0 = 0
-			radius = self.tieDotSize / 2
+		self.DrawActiveAffineTies(dc)
 
-			fixedTieDepth = 0
-			for compTie in self.TieData: # draw in-progress composite ties (not established TIE arrows)
-				if compTie.fixed == 1:
-					dc.SetBrush(wx.Brush(self.colorDict['fixedTie']))
-					dc.SetPen(wx.Pen(self.colorDict['fixedTie'], 1))
-				else:
-					dc.SetBrush(wx.Brush(self.colorDict['shiftTie']))
-					dc.SetPen(wx.Pen(self.colorDict['shiftTie'], 1))
+	def DrawActiveAffineTies(self, dc):
+		radius = self.tieDotSize / 2
+		fixedTieDepth = 0
+		for compTie in self.TieData: # draw in-progress composite ties (not established TIE arrows)
+			if compTie.fixed == 1:
+				dc.SetBrush(wx.Brush(self.colorDict['fixedTie']))
+				dc.SetPen(wx.Pen(self.colorDict['fixedTie'], 1))
+			else:
+				dc.SetBrush(wx.Brush(self.colorDict['shiftTie']))
+				dc.SetPen(wx.Pen(self.colorDict['shiftTie'], 1))
 
-				y = self.startDepthPix + (compTie.depth - self.rulerStartDepth) * self.pixPerMeter
-				tempx = round(compTie.depth, 3)
+			y = self.startDepthPix + (compTie.depth - self.rulerStartDepth) * self.pixPerMeter
+			tempx = round(compTie.depth, 3)
 
-				tieHoleName = self.GetHoleNameByHoleDataIndex(compTie.hole)
-				tieHoleType = self.GetHoleTypeByHoleDataIndex(compTie.hole)
-				img_wid = self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(self.GetHoleNameByHoleDataIndex(compTie.hole))) else 0
-				x = self.GetHoleStartX(tieHoleName, tieHoleType)
-				if compTie.depth >= self.rulerStartDepth and compTie.depth <= self.rulerEndDepth:
-					if x < self.splicerX - 65: # splicerX - 65 is roughly left of splice area scrollbar...todo FUDGE
-						# don't draw tie line or end rectangle in Splice Area
-						x_end = min(x + img_wid + self.plotWidth, self.splicerX - 65)
-						dc.DrawCircle(x, y, radius)
-						if compTie.fixed == 1: 
-							dc.SetPen(wx.Pen(self.colorDict['fixedTie'], self.tieline_width, style=wx.DOT))
-						else:
-							rect_x = x + (img_wid + self.plotWidth) - radius
-							if rect_x < self.splicerX - 65:
-								dc.DrawRectangle(x + (img_wid + self.plotWidth) - radius, y - radius, self.tieDotSize, self.tieDotSize)
-							dc.SetPen(wx.Pen(self.colorDict['shiftTie'], self.tieline_width, style=wx.DOT))
+			tieHoleName = self.GetHoleNameByHoleDataIndex(compTie.hole)
+			tieHoleType = self.GetHoleTypeByHoleDataIndex(compTie.hole)
+			# print("Drawing tie points for {} {}".format(tieHoleName, tieHoleType))
+			showImages = self.showCoreImages and not self.showImagesAsDatatype and self.HoleHasImages(self.GetHoleNameByHoleDataIndex(compTie.hole))
+			img_wid = self.coreImageWidth if showImages else 0
+			x = self.GetHoleStartX(tieHoleName, tieHoleType)
+			if compTie.depth >= self.rulerStartDepth and compTie.depth <= self.rulerEndDepth:
+				if x < self.splicerX - 65: # splicerX - 65 is roughly left of splice area scrollbar...todo FUDGE
+					# don't draw tie line or end rectangle in Splice Area
+					x_end = min(x + img_wid + self.plotWidth, self.splicerX - 65)
+					dc.DrawCircle(x, y, radius)
+					if compTie.fixed == 1: 
+						dc.SetPen(wx.Pen(self.colorDict['fixedTie'], self.tieline_width, style=wx.DOT))
+					else:
+						rect_x = x + (img_wid + self.plotWidth) - radius
+						if rect_x < self.splicerX - 65:
+							dc.DrawRectangle(x + (img_wid + self.plotWidth) - radius, y - radius, self.tieDotSize, self.tieDotSize)
+						dc.SetPen(wx.Pen(self.colorDict['shiftTie'], self.tieline_width, style=wx.DOT))
 
-						dc.DrawLine(x, y, x_end, y)
-						
-						posStr = str(tempx)
-						if compTie.fixed == 1: # store fixed depth for shift calc on next go-around
-							fixedTieDepth = round(compTie.depth, 3)
-						else: # movable tie, add shift distance to info str
-							shiftDist =  fixedTieDepth - round(compTie.depth, 3)
-							signChar = '+' if shiftDist > 0 else '' 
-							posStr += ' (' + signChar + str(shiftDist) + ')'
-						dc.DrawText(posStr, x + 10, y + 10) 
-				x0 = x
-				y0 = y 
-
-			if self.spliceWindowOn == 1: # draw splice ties
-				count = 0
-				diff = 0
-				dc.SetTextBackground(self.colorDict['background'])
-				dc.SetTextForeground(self.colorDict['foreground'])
-				for spliceTie in self.SpliceTieData:
-					x = self.splicerX + 50 
-					if count == 0: 
-						dc.SetBrush(wx.Brush(self.colorDict['fixedTie']))
-						dc.SetPen(wx.Pen(self.colorDict['fixedTie'], 1))
-					elif count == 1: 
-						dc.SetBrush(wx.Brush(self.colorDict['shiftTie']))
-						dc.SetPen(wx.Pen(self.colorDict['shiftTie'], 1))
-						x += self.holeWidth + 50
-
-					y = self.startDepthPix + (spliceTie.depth - self.SPrulerStartDepth) * self.pixPerMeter
-
-					if spliceTie.depth >= self.SPrulerStartDepth and spliceTie.depth <= self.SPrulerEndDepth:
-						dc.DrawCircle(x + diff, y, radius)
-						if count == 0: 
-							dc.SetPen(wx.Pen(self.colorDict['fixedTie'], self.tieline_width, style=wx.DOT))
-							dc.DrawLine(x, y, x + self.holeWidth + 50, y)
-						elif count == 1: 
-							dc.DrawRectangle(x + self.holeWidth - radius, y - radius, self.tieDotSize, self.tieDotSize)
-							if spliceTie.constrained == 0:
-								dc.SetPen(wx.Pen(self.colorDict['shiftTie'], self.tieline_width + 1))
-								dc.DrawLine(x0 + diff + self.holeWidth + 50, y0, x + diff, y)
-
-							dc.SetPen(wx.Pen(self.colorDict['shiftTie'], self.tieline_width, style=wx.DOT))
-							dc.DrawLine(x, y, x + self.holeWidth, y)
-
-						dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
-
-					if count == 1 and spliceTie.depth >= self.SPrulerStartDepth and spliceTie.depth <= self.SPrulerEndDepth:
-						count = -1 
-					x0 = x
-					y0 = y 
-					count = count + 1
-					if count >= 2:
-						count = 0
-
-				if self.SpliceData == [] and self.SpliceSmoothData == []:
-					return
-
-				count = 0
-				tie_index = 0
-				for data in self.LogTieData:
-					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
-					dc.SetTextBackground(self.colorDict['background'])
-					dc.SetTextForeground(self.colorDict['foreground'])
-					dc.SetBrush(wx.Brush(self.colorDict['shiftTie']))
-					dc.SetPen(wx.Pen(self.colorDict['shiftTie'], 1))
-					for r in data:
-						y = self.startDepthPix + (r[6] - self.SPrulerStartDepth) * self.pixPerMeter
-						x = self.splicerX + self.holeWidth + 100 
-						if count == 0: 
-							dc.SetBrush(wx.Brush(self.colorDict['fixedTie']))
-							dc.SetPen(wx.Pen(self.colorDict['fixedTie'], 1))
-						elif count == 1: 
-							x += self.holeWidth + 50
-							dc.SetBrush(wx.Brush(self.colorDict['shiftTie']))
-							dc.SetPen(wx.Pen(self.colorDict['shiftTie'], 1))
-						dc.DrawCircle(x, y, radius)
-						if count == 0: 
-							if self.Highlight_Tie == tie_index:
-								dc.SetPen(wx.Pen(self.colorDict['fixedTie'], self.tieline_width))
-							else:
-								dc.SetPen(wx.Pen(self.colorDict['fixedTie'], self.tieline_width, style=wx.DOT))
-							dc.DrawLine(x, y, x + self.holeWidth + 50, y)
-						elif count == 1: 
-							dc.DrawRectangle(x + self.holeWidth - radius, y - radius, self.tieDotSize, self.tieDotSize)
-							if self.Highlight_Tie == tie_index:
-								dc.SetPen(wx.Pen(self.colorDict['shiftTie'], self.tieline_width))
-							else:
-								dc.SetPen(wx.Pen(self.colorDict['shiftTie'], self.tieline_width, style=wx.DOT))
-							dc.DrawLine(x, y, x + self.holeWidth, y)
-
-						dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
-						tempx = r[6]
-						tempx = round(tempx, 3)
-
-						if count == 1:
-							x0 = r[0] - self.holeWidth
-							
-						if count == 1: 
-							tie_index += 1 
-							count = -1 
-						x0 = x
-						y0 = y 
-						count = count + 1
-
+					dc.DrawLine(x, y, x_end, y)
+					
+					posStr = str(tempx)
+					if compTie.fixed == 1: # store fixed depth for shift calc on next go-around
+						fixedTieDepth = round(compTie.depth, 3)
+					else: # movable tie, add shift distance to info str
+						shiftDist =  fixedTieDepth - round(compTie.depth, 3)
+						signChar = '+' if shiftDist > 0 else '' 
+						posStr += ' (' + signChar + str(shiftDist) + ')'
+					dc.DrawText(posStr, x + 10, y + 10) 
 
 	def SetSaganFromFile(self, tie_list):
 		self.LogTieData = []
@@ -4956,7 +4849,7 @@ class DataCanvas(wxBufferedWindow):
 		keyid = event.GetKeyCode()
 		if keyid == 127:
 			self.ClearCompositeTies()
-		elif keyid == 72:
+		elif keyid == 72: # show/hide active affine ties...unused
 			if self.hideTie == 1:
 				self.hideTie = 0
 			else: 
@@ -6367,6 +6260,7 @@ class DataCanvas(wxBufferedWindow):
 						if len(self.TieData) < 2: 
 							# Tie 
 							d = self.getDepth(pos[1])
+							print("Creating TieData for current hole {}, selected core {}".format(self.currentHole, self.selectedCore))
 							newTie = CompositeTie(self.currentHole, self.selectedCore, self.currentStartX, pos[1], fixed, d)
 							self.TieData.append(newTie) 
 
