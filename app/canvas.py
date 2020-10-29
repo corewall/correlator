@@ -462,7 +462,7 @@ class DataCanvas(wxBufferedWindow):
 		self.showAffineTieArrows = True
 		self.showSectionDepths = True
 		self.showCoreImages = False
-		self.showImagesAsDatatype = True
+		self.showImagesAsDatatype = False
 		self.showCoreInfo = False # show hole, core, min/max, quality, stretch on mouseover - see DrawGraphInfo()
 		self.showOutOfRangeData = False # if True, clip data plots to the width of the hole's plot area
 		self.showColorLegend = True # plot color legend
@@ -1678,21 +1678,30 @@ class DataCanvas(wxBufferedWindow):
 						plotColor = self.colorDict['smooth'] if idx > 0 else None
 						self.DrawCorePlot(dc, colStartX, holeColumn.holeName(), ctp, plotColor)
 
+					topPoint = self.getCoord(core.depthDataPairs()[0][0])
+					botPoint = self.getCoord(core.depthDataPairs()[-1][0])
+					if ColumnType.Image in holeColumn.columns():
+						caWidth = self.plotWidth + self.coreImageWidth
+						self.CreateCoreArea(core, startX, caWidth, topPoint, botPoint)
+					else:
+						caWidth = self.plotWidth
+						self.CreateCoreArea(core, plotStartX, caWidth, topPoint, botPoint)
+
 					# for now we'll continue to draw section boundaries only on the plot area
 					if self.parent.sectionSummary:
 						drawBoundariesFunc(dc, colStartX, self.plotWidth, holeColumn.holeName(), core.coreName(), core.affineOffset())
 
 					colStartX += self.plotWidth
-
-					# Have to maintain this godawful CoreInfo and self.coreCount tracking
-					# for numerous functions to work properly.
-					holeInfo = holeColumn.holeData[0]
-					coreInfo = core.cmt
-					coreInfoObj = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], coreInfo[0], coreInfo[3], coreInfo[4], coreTop, coreBot, coreInfo[6], holeInfo[2], coreInfo[8], self.HoleCount, coreInfo[10])
-					self.DrawData["CoreInfo"].append(coreInfoObj)
-					self.coreCount += 1
 				else:
 					assert false, "Unexpected column type {}".format(column)
+
+				# Have to maintain this godawful CoreInfo and self.coreCount tracking
+				# for numerous functions to work properly.
+				holeInfo = holeColumn.holeData[0]
+				coreInfo = core.cmt
+				coreInfoObj = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], coreInfo[0], coreInfo[3], coreInfo[4], coreTop, coreBot, coreInfo[6], holeInfo[2], coreInfo[8], self.HoleCount, coreInfo[10])
+				self.DrawData["CoreInfo"].append(coreInfoObj)
+				self.coreCount += 1
 
 			if core.affineOffset() != 0:
 				# Clip to prevent drawing over splice area or headers. Everything else we
@@ -2584,7 +2593,7 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawCircle(pt[0], pt[1], self.DiscreteSize)
 
 		if len(points) > 0:
-			self.CreateCoreArea(core, plotStartX, points[0][1], points[-1][1])
+			# self.CreateCoreArea(core, plotStartX, points[0][1], points[-1][1])
 			self.DrawHighlight(dc, plotStartX, points[0][1], points[-1][1], len(points))
 
 		if self.guideCore == self.coreCount:
@@ -2601,10 +2610,10 @@ class DataCanvas(wxBufferedWindow):
 		return wx.DCClipper(dc, wx.Region(x=clip_x, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
 
 	# Add core's CoreArea metadata to DrawData
-	def CreateCoreArea(self, core, x, top_y, bot_y):
+	def CreateCoreArea(self, core, x, width, top_y, bot_y):
 		dataMinX = (core.minData() - self.minRange) * self.coefRange + x
 		dataMaxX = (core.maxData() - self.minRange) * self.coefRange + x
-		coreDrawData = [(self.coreCount, dataMinX, top_y, dataMaxX - dataMinX, bot_y - top_y, x, self.plotWidth + 1, self.HoleCount)]
+		coreDrawData = [(self.coreCount, dataMinX, top_y, dataMaxX - dataMinX, bot_y - top_y, x, width + 1, self.HoleCount)]
 		self.DrawData["CoreArea"].append(coreDrawData)
 
     # Draw guide core (movable core data superimposed on fixed core for comparison)
@@ -4791,25 +4800,23 @@ class DataCanvas(wxBufferedWindow):
 		self.activeSPTie = -1
 		self.activeSATie = -1
 
-		# move tie
-		count = 0
+		# move active affine tie
 		dotsize_y = self.tieDotSize + 10
 		half = dotsize_y / 2
-		for tie in self.TieData:
+		for tie_idx, tie in enumerate(self.TieData):
 			tieHoleName = self.GetHoleNameByHoleDataIndex(tie.hole)
 			tieHoleType = self.GetHoleTypeByHoleDataIndex(tie.hole)
 			x = self.GetHoleStartX(tieHoleName, tieHoleType)
 			y = self.startDepthPix + (tie.depth - self.rulerStartDepth) * self.pixPerMeter
-			img_wid = self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(self.GetHoleNameByHoleDataIndex(tie.hole))) else 0
+			img_wid = self.coreImageWidth if (self.showCoreImages and not self.showImagesAsDatatype and self.HoleHasImages(self.GetHoleNameByHoleDataIndex(tie.hole))) else 0
 			dotsize_x = self.tieDotSize + (img_wid + self.plotWidth) + 10 # should extend all the way to right square handle
 			reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
 			if reg.Inside(wx.Point(pos[0], pos[1])):
 				if tie.fixed == 0:
-					self.selectedTie = count
-					if (count % 2) == 1:
-						self.activeTie = count
+					self.selectedTie = tie_idx
+					if tie_idx == 1:
+						self.activeTie = tie_idx
 					return
-			count = count + 1
 
 		# check for click on SpliceIntervalTie - is user starting to drag?
 		img_wid = self.GetCoreImageDisplayWidth()
@@ -5722,6 +5729,7 @@ class DataCanvas(wxBufferedWindow):
 							got = 1
 							l = []
 							self.selectedCore = n
+							print("selectedCore = {}".format(n))
 
 							l.append((n, pos[0], pos[1], x, 1))
 							self.DrawData["MouseInfo"] = l
@@ -5748,7 +5756,7 @@ class DataCanvas(wxBufferedWindow):
 			self.UpdateDrawing()
 			return
 
-		# adjust affine tie
+		# dragging to adjust movable affine tie
 		if self.selectedTie >= 0:
 			movableTie = self.TieData[self.selectedTie]
 			if self.selectedCore != movableTie.core:
@@ -5770,6 +5778,7 @@ class DataCanvas(wxBufferedWindow):
 			# Notify Corelyzer of modified tie point
 			self.parent.TieUpdateSend(ciA.leg, ciA.site, ciB.hole, int(ciB.holeCore), ciA.hole, int(ciA.holeCore), y1, shift)
 
+			# Update evaluation graph
 			flag = self.parent.showELDPanel | self.parent.showCompositePanel | self.parent.showSplicePanel
 			if ciA.hole != None and ciB.hole != None and flag == 1:
 				testret = self.EvaluateCorrelation(ciB.type, ciB.hole, int(ciB.holeCore), y2, ciA.type, ciA.hole, int(ciA.holeCore), y1)
