@@ -1650,6 +1650,11 @@ class DataCanvas(wxBufferedWindow):
 		for coreIndex, core in enumerate([CoreMetadata(c) for c in holeColumn.cores()]):
 			coreTop, coreBot = core.topDepth(), core.botDepth()
 			if not self.depthIntervalVisible(coreTop, coreBot, visibleTopDepth, self.rulerEndDepth):
+				holeInfo = holeColumn.holeData[0]
+				coreInfo = core.cmt
+				coreInfoObj = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], coreInfo[0], coreInfo[3], coreInfo[4], coreTop, coreBot, coreInfo[6], holeInfo[2], coreInfo[8], self.HoleCount, coreInfo[10])
+				self.DrawData["CoreInfo"].append(coreInfoObj)
+				self.coreCount += 1
 				continue # only draw columns for cores within visible depth range
 			coresDrawn.append(core.coreName())
 
