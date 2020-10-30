@@ -2613,7 +2613,7 @@ class DataCanvas(wxBufferedWindow):
 	def CreateCoreArea(self, core, x, width, top_y, bot_y):
 		dataMinX = (core.minData() - self.minRange) * self.coefRange + x
 		dataMaxX = (core.maxData() - self.minRange) * self.coefRange + x
-		coreDrawData = [(self.coreCount, dataMinX, top_y, dataMaxX - dataMinX, bot_y - top_y, x, width + 1, self.HoleCount)]
+		coreDrawData = (self.coreCount, dataMinX, top_y, dataMaxX - dataMinX, bot_y - top_y, x, width + 1, self.HoleCount)
 		self.DrawData["CoreArea"].append(coreDrawData)
 
     # Draw guide core (movable core data superimposed on fixed core for comparison)
@@ -4840,12 +4840,8 @@ class DataCanvas(wxBufferedWindow):
 		# Disable while scrolling or when there are active composite ties.
 		if len(self.TieData) == 0 and self.selectScroll == 0 and self.grabScrollA == 0 and self.grabScrollC == 0:
 			if pos[0] <= self.splicerX:
-				for key, data in self.DrawData.items():
-					if key == "CoreArea":
-						for s in data:
-							area = s
-							for r in area:
-								n, x, y, w, h, min, max, hole_idx = r
+				for area in self.DrawData["CoreArea"]:
+					n, x, y, w, h, min, max, hole_idx = area
 								reg = wx.Rect(min, y, max, h)
 								if reg.Inside(wx.Point(pos[0], pos[1])):
 									self.dragCore = n
@@ -4853,12 +4849,8 @@ class DataCanvas(wxBufferedWindow):
 		# Detect shift-click on core to prepare for affine tie creation
 		if self.pressedkeyShift == 1:
 			if self.drag == 0:
-				for key, data in self.DrawData.items():
-					if key == "CoreArea":
-						for s in data:
-							area = s 
-							for r in area:
-								n, x, y, w, h, min, max, hole_idx = r
+				for area in self.DrawData["CoreArea"]:
+					n, x, y, w, h, min, max, hole_idx = area
 								reg = wx.Rect(min, y, max, h)
 								if reg.Inside(wx.Point(pos[0], pos[1])):
 									self.selectedCore = n 
@@ -5720,19 +5712,18 @@ class DataCanvas(wxBufferedWindow):
 		for key, data in self.DrawData.items():
 			if key == "CoreArea":
 				for area in data:
-					for r in area:
 						# core index, leftmost plotted x coord, topmost plotted y coord, 
 						# width (px), height (px), x coord of left edge of plot area, px width of plot area, hole index
-						n, x, y, w, h, plotMinX, plotWidth, hole_idx = r
+					n, x, y, w, h, plotMinX, plotWidth, hole_idx = area
 						rect = wx.Rect(plotMinX, y, plotWidth, h)
 						if rect.Inside(wx.Point(pos[0], pos[1])):
 							got = 1
-							l = []
 							self.selectedCore = n
-							print("selectedCore = {}".format(n))
+						print("(mouseover) selectedCore = {}".format(n))
 
-							l.append((n, pos[0], pos[1], x, 1))
-							self.DrawData["MouseInfo"] = l
+						mouseInfo = [(n, pos[0], pos[1], x, 1)]
+						self.DrawData["MouseInfo"] = mouseInfo
+						break
 			elif key == "SpliceArea" and self.MousePos[0] > self.splicerX:
 				ydepth = self.getSpliceDepth(pos[1])
 				interval = self.parent.spliceManager.getIntervalAtDepth(ydepth)
