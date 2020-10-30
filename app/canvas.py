@@ -384,6 +384,7 @@ class HoleColumn:
 	def __init__(self, width, holeData, smoothData):
 		self._width = width # hole column width in pixels
 		self._columns = [] # one or more ColumnTypes
+		self.rawHoleData = holeData
 		self.holeData = holeData[0]
 		self.smoothData = smoothData
 		self.hmd = HoleMetadata(holeData)
@@ -1034,18 +1035,6 @@ class DataCanvas(wxBufferedWindow):
 	# hole: hole name string
 	def HoleHasImages(self, hole):
 		return hole in self.HolesWithImages
-
-	# given index of hole in HoleData, return hole name string
-	def GetHoleNameByHoleDataIndex(self, index):
-		assert len(self.HoleData) > index
-		hole = self.HoleData[index]
-		return hole[0][0][7]
-
-	# given index of hole in HoleData, return hole datatype string
-	def GetHoleTypeByHoleDataIndex(self, index):
-		assert len(self.HoleData) > index
-		hole = self.HoleData[index]
-		return hole[0][0][2]
 		
 	# CoreInfo finding routines
 	def findCoreInfoByIndex(self, coreIndex):
@@ -1683,15 +1672,6 @@ class DataCanvas(wxBufferedWindow):
 						plotColor = self.colorDict['smooth'] if idx > 0 else None
 						self.DrawCorePlot(dc, colStartX, holeColumn.holeName(), ctp, plotColor)
 
-					topPoint = self.getCoord(core.depthDataPairs()[0][0])
-					botPoint = self.getCoord(core.depthDataPairs()[-1][0])
-					if ColumnType.Image in holeColumn.columns():
-						caWidth = self.plotWidth + self.coreImageWidth
-						self.CreateCoreArea(core, startX, caWidth, topPoint, botPoint)
-					else:
-						caWidth = self.plotWidth
-						self.CreateCoreArea(core, plotStartX, caWidth, topPoint, botPoint)
-
 					# for now we'll continue to draw section boundaries only on the plot area
 					if self.parent.sectionSummary:
 						drawBoundariesFunc(dc, colStartX, self.plotWidth, holeColumn.holeName(), core.coreName(), core.affineOffset())
@@ -1700,13 +1680,27 @@ class DataCanvas(wxBufferedWindow):
 				else:
 					assert false, "Unexpected column type {}".format(column)
 
-				# Have to maintain this godawful CoreInfo and self.coreCount tracking
-				# for numerous functions to work properly.
-				holeInfo = holeColumn.holeData[0]
-				coreInfo = core.cmt
-				coreInfoObj = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], coreInfo[0], coreInfo[3], coreInfo[4], coreTop, coreBot, coreInfo[6], holeInfo[2], coreInfo[8], self.HoleCount, coreInfo[10])
-				self.DrawData["CoreInfo"].append(coreInfoObj)
-				self.coreCount += 1
+			# Have to maintain this godawful CoreInfo and self.coreCount tracking
+			# for numerous functions to work properly.
+			holeInfo = holeColumn.holeData[0]
+			coreInfo = core.cmt
+			coreInfoObj = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], coreInfo[0], coreInfo[3], coreInfo[4], coreTop, coreBot, coreInfo[6], holeInfo[2], coreInfo[8], self.HoleCount, coreInfo[10])
+			self.DrawData["CoreInfo"].append(coreInfoObj)
+
+			topPoint = self.getCoord(core.depthDataPairs()[0][0])
+			botPoint = self.getCoord(core.depthDataPairs()[-1][0])
+			if holeColumn.columns() == [ColumnType.Image]:
+				caWidth = self.coreImageWidth
+				self.CreateCoreArea(core, startX, caWidth, topPoint, botPoint)
+			elif holeColumn.columns() == [ColumnType.Plot]:
+				caWidth = self.plotWidth
+				self.CreateCoreArea(core, startX, caWidth, topPoint, botPoint)
+			elif len(holeColumn.columns()) == 2:
+				caWidth = self.coreImageWidth + self.plotWidth
+				self.CreateCoreArea(core, startX, caWidth, topPoint, botPoint)
+			else:
+				print("Unexpected number of columns in holeColumn: {}".format(holeColumn.columns()))
+			self.coreCount += 1
 
 			if core.affineOffset() != 0:
 				# Clip to prevent drawing over splice area or headers. Everything else we
@@ -1723,6 +1717,8 @@ class DataCanvas(wxBufferedWindow):
 				# self.DrawAffineShiftArrow(dc, plotStartX, coreTop, coreBot, holeColumn, core)
 				if holeColumn.hasPlot():
 					self.PrepareTieShiftArrow(dc, plotStartX, coreTop, coreBot, holeColumn, core)
+				else:
+					self.PrepareTieShiftArrow(dc, startX, coreTop, coreBot, holeColumn, core)
 
 	# Show affine shift direction, distance, and type to left of core, centered on core depth interval
 	def DrawAffineShiftInfo(self, dc, startX, coreTopY, coreBotY, hole, core, clippingRegion):
@@ -1752,34 +1748,53 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawText(shiftTypeStr, startX - 32, y - 12)
 
 	# Draw arrow indicating a TIE between cores
+	# TODO: Assumes arrows are drawn plot to plot and image to image.
+	# If we allow mixed TIEs between images and data, this will break.
 	def PrepareTieShiftArrow(self, dc, startX, coreTopY, coreBotY, hole, core):
 		shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole.holeName(), core.coreName())
 		if shiftTypeStr == "TIE" and self.showAffineTieArrows:
 			tieDepth, parentCore = self.parent.affineManager.getTieDepthAndParent(hole.holeName(), core.coreName())
-			# holeType = holeInfo[2]
 			holeType = hole.datatype()
-			parentCoreData = self.GetCoreData(parentCore.hole, holeType, parentCore.core)
-			if parentCoreData is not None:
-				nearDepth, nearDatum = self.interpolateDataPoint(core.depthDataPairs(), tieDepth)
+			if holeType == "Image":
+				parentHoleColumn = None
+				for hc in self.HoleColumns:	# find HoleColumn for parent core
+					if hc.holeName() == hole.holeName() and hc.datatype() == holeType:
+						parentHoleColumn = hc
+						break
+				if parentHoleColumn is None:
+					return
+				parentStartX = self.GetHoleStartX(parentCore.hole, holeType)
+				if parentStartX < startX:
+					parentStartX += self.coreImageWidth
+				else:
+					startX += self.coreImageWidth
+				arrowRect, drawData = self._createTieShiftArrowDrawData(parentStartX, startX, self.getCoord(tieDepth))
+				self.AffineTieArrows.append((hole.holeName() + core.coreName(), arrowRect, drawData))
+			else:
 				parentCoreData = self.GetCoreData(parentCore.hole, holeType, parentCore.core)
 				if parentCoreData is not None:
-					parentNearDepth, parentNearDatum = self.interpolateDataPoint(parentCoreData, tieDepth)
-				tieY = self.getCoord(nearDepth)
-				tieX = nearDatum - self.minRange
-				tieX = (tieX * self.coefRange) + startX
-				parentY = self.getCoord(parentNearDepth)
-				parentTieX = parentNearDatum - self.minRange
-				showImages = self.showCoreImages and not self.showImagesAsDatatype and self.HoleHasImages(parentCore.hole)
-				parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType) + (self.coreImageWidth if showImages else 0)
+					nearDepth, nearDatum = self.interpolateDataPoint(core.depthDataPairs(), tieDepth)
+					parentCoreData = self.GetCoreData(parentCore.hole, holeType, parentCore.core)
+					if parentCoreData is not None:
+						parentNearDepth, parentNearDatum = self.interpolateDataPoint(parentCoreData, tieDepth)
+					tieY = self.getCoord(nearDepth)
+					tieX = nearDatum - self.minRange
+					tieX = (tieX * self.coefRange) + startX
+					parentY = self.getCoord(parentNearDepth)
+					parentTieX = parentNearDatum - self.minRange
+					showImages = self.showCoreImages and not self.showImagesAsDatatype and self.HoleHasImages(parentCore.hole)
+					parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType) + (self.coreImageWidth if showImages else 0)
+					arrowRect, drawData = self._createTieShiftArrowDrawData(parentTieX, tieX, tieY)
+					self.AffineTieArrows.append((hole.holeName() + core.coreName(), arrowRect, drawData))
 
-				# save (hole + core, bounding rect) tuple for click/hover detection
-				rx = parentTieX if parentTieX < tieX else tieX
-				arrowRect = wx.Rect(rx, tieY - 5, abs(tieX - parentTieX), 10)
-				arrowDir = 5 if parentTieX > tieX else -5
-				drawData = {}
-				drawData['arrow'] = ((parentTieX, parentY), (tieX, tieY), (tieX, tieY), (tieX+arrowDir, tieY+5), (tieX, tieY), (tieX+arrowDir, tieY-5))
-				drawData['circle'] = (parentTieX, parentY)
-				self.AffineTieArrows.append((hole.holeName() + core.coreName(), arrowRect, drawData))
+	def _createTieShiftArrowDrawData(self, parentX, childX, y):
+		rx = parentX if parentX < childX else childX
+		arrowRect = wx.Rect(rx, y - 5, abs(childX - parentX), 10)
+		arrowDir = 5 if parentX > childX else -5
+		drawData = {}
+		drawData['arrow'] = ((parentX, y), (childX, y), (childX, y), (childX+arrowDir, y+5), (childX, y), (childX+arrowDir, y-5))
+		drawData['circle'] = (parentX, y)
+		return arrowRect, drawData
 
 	def DrawTieShiftArrow(self, dc, arrowRect, drawData):
 		if self.MousePos and arrowRect.Inside(self.MousePos):
@@ -2598,7 +2613,6 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawCircle(pt[0], pt[1], self.DiscreteSize)
 
 		if len(points) > 0:
-			# self.CreateCoreArea(core, plotStartX, points[0][1], points[-1][1])
 			self.DrawHighlight(dc, plotStartX, points[0][1], points[-1][1], len(points))
 
 		if self.guideCore == self.coreCount:
@@ -3408,8 +3422,7 @@ class DataCanvas(wxBufferedWindow):
 
 		for holeColumn in self.HoleColumns:
 			self.DrawHoleColumn(dc, holeColumn)
-			if holeColumn.hasPlot():
-				self.HoleCount += 1
+			self.HoleCount += 1
 
 		# Draw TIE shift arrows. Doing so here insures they'll always
 		# draw over hole plots and images.
@@ -3431,6 +3444,7 @@ class DataCanvas(wxBufferedWindow):
 			msg = "No Data has been loaded. In Data Manager, right-click on a Site, data type, or data file and choose Load."
 			dc.DrawText(msg, self.compositeX + 10, self.getCoord(self.rulerStartDepth))
 
+		# TODO: clean up, own method
 		if self.spliceWindowOn == 1:
 			for data in self.AltSpliceData:
 				for r in data:
@@ -3490,23 +3504,20 @@ class DataCanvas(wxBufferedWindow):
 			y = self.startDepthPix + (compTie.depth - self.rulerStartDepth) * self.pixPerMeter
 			tempx = round(compTie.depth, 3)
 
-			tieHoleName = self.GetHoleNameByHoleDataIndex(compTie.hole)
-			tieHoleType = self.GetHoleTypeByHoleDataIndex(compTie.hole)
-			# print("Drawing tie points for {} {}".format(tieHoleName, tieHoleType))
-			showImages = self.showCoreImages and not self.showImagesAsDatatype and self.HoleHasImages(self.GetHoleNameByHoleDataIndex(compTie.hole))
-			img_wid = self.coreImageWidth if showImages else 0
-			x = self.GetHoleStartX(tieHoleName, tieHoleType)
+			holeColumn = self.HoleColumns[compTie.hole]
+			x = self.GetHoleStartX(holeColumn.holeName(), holeColumn.datatype())
+			width = self._getColumnContentWidth(holeColumn)
 			if compTie.depth >= self.rulerStartDepth and compTie.depth <= self.rulerEndDepth:
 				if x < self.splicerX - 65: # splicerX - 65 is roughly left of splice area scrollbar...todo FUDGE
 					# don't draw tie line or end rectangle in Splice Area
-					x_end = min(x + img_wid + self.plotWidth, self.splicerX - 65)
+					x_end = min(x + width, self.splicerX - 65)
 					dc.DrawCircle(x, y, radius)
 					if compTie.fixed == 1: 
 						dc.SetPen(wx.Pen(self.colorDict['fixedTie'], self.tieline_width, style=wx.DOT))
 					else:
-						rect_x = x + (img_wid + self.plotWidth) - radius
+						rect_x = x + width - radius
 						if rect_x < self.splicerX - 65:
-							dc.DrawRectangle(x + (img_wid + self.plotWidth) - radius, y - radius, self.tieDotSize, self.tieDotSize)
+							dc.DrawRectangle(x + width - radius, y - radius, self.tieDotSize, self.tieDotSize)
 						dc.SetPen(wx.Pen(self.colorDict['shiftTie'], self.tieline_width, style=wx.DOT))
 
 					dc.DrawLine(x, y, x_end, y)
@@ -3518,7 +3529,16 @@ class DataCanvas(wxBufferedWindow):
 						shiftDist =  fixedTieDepth - round(compTie.depth, 3)
 						signChar = '+' if shiftDist > 0 else '' 
 						posStr += ' (' + signChar + str(shiftDist) + ')'
-					dc.DrawText(posStr, x + 10, y + 10) 
+					dc.DrawText(posStr, x + 10, y + 10)
+
+	def _getColumnContentWidth(self, holeColumn):
+		width = 0
+		for c in holeColumn.columns():
+			if c == ColumnType.Image:
+				width += self.coreImageWidth
+			elif c == ColumnType.Plot:
+				width += self.plotWidth
+		return width
 
 	def SetSaganFromFile(self, tie_list):
 		self.LogTieData = []
@@ -4639,12 +4659,11 @@ class DataCanvas(wxBufferedWindow):
 
 		count = 0
 		for tie in self.TieData: # handle context-click on in-progress tie points
-			tieHoleName = self.GetHoleNameByHoleDataIndex(tie.hole)
-			tieHoleType = self.GetHoleTypeByHoleDataIndex(tie.hole)
-			x = self.GetHoleStartX(tieHoleName, tieHoleType)
+			holeColumn = self.HoleColumns[tie.hole]
+			x = self.GetHoleStartX(holeColumn.holeName(), holeColumn.datatype())
 			y = self.startDepthPix + (tie.depth - self.rulerStartDepth) * self.pixPerMeter
-			img_wid = self.coreImageWidth if (self.showCoreImages and self.HoleHasImages(self.GetHoleNameByHoleDataIndex(tie.hole))) else 0 
-			dotsize_x = self.tieDotSize + img_wid + self.plotWidth + 10
+			width = self._getColumnContentWidth(holeColumn)
+			dotsize_x = self.tieDotSize + width + 10
 			reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
 			if reg.Inside(wx.Point(pos[0], pos[1])):
 				self.selectedTie = count
@@ -4809,12 +4828,11 @@ class DataCanvas(wxBufferedWindow):
 		dotsize_y = self.tieDotSize + 10
 		half = dotsize_y / 2
 		for tie_idx, tie in enumerate(self.TieData):
-			tieHoleName = self.GetHoleNameByHoleDataIndex(tie.hole)
-			tieHoleType = self.GetHoleTypeByHoleDataIndex(tie.hole)
-			x = self.GetHoleStartX(tieHoleName, tieHoleType)
+			holeColumn = self.HoleColumns[tie.hole]
+			width = self._getColumnContentWidth(holeColumn)			
+			x = self.GetHoleStartX(holeColumn.holeName(), holeColumn.datatype())
 			y = self.startDepthPix + (tie.depth - self.rulerStartDepth) * self.pixPerMeter
-			img_wid = self.coreImageWidth if (self.showCoreImages and not self.showImagesAsDatatype and self.HoleHasImages(self.GetHoleNameByHoleDataIndex(tie.hole))) else 0
-			dotsize_x = self.tieDotSize + (img_wid + self.plotWidth) + 10 # should extend all the way to right square handle
+			dotsize_x = self.tieDotSize + width + 10 # should extend all the way to right square handle
 			reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
 			if reg.Inside(wx.Point(pos[0], pos[1])):
 				if tie.fixed == 0:
@@ -4847,23 +4865,23 @@ class DataCanvas(wxBufferedWindow):
 			if pos[0] <= self.splicerX:
 				for area in self.DrawData["CoreArea"]:
 					n, x, y, w, h, min, max, hole_idx = area
-								reg = wx.Rect(min, y, max, h)
-								if reg.Inside(wx.Point(pos[0], pos[1])):
-									self.dragCore = n
+					reg = wx.Rect(min, y, max, h)
+					if reg.Inside(wx.Point(pos[0], pos[1])):
+						self.dragCore = n
 
 		# Detect shift-click on core to prepare for affine tie creation
 		if self.pressedkeyShift == 1:
 			if self.drag == 0:
 				for area in self.DrawData["CoreArea"]:
 					n, x, y, w, h, min, max, hole_idx = area
-								reg = wx.Rect(min, y, max, h)
-								if reg.Inside(wx.Point(pos[0], pos[1])):
-									self.selectedCore = n 
-									self.mouseX = pos[0] 
-									self.mouseY = pos[1] 
-									self.currentStartX = min
-									self.currentHole = hole_idx 
-									break
+					reg = wx.Rect(min, y, max, h)
+					if reg.Inside(wx.Point(pos[0], pos[1])):
+						self.selectedCore = n 
+						self.mouseX = pos[0] 
+						self.mouseY = pos[1] 
+						self.currentStartX = min
+						self.currentHole = hole_idx 
+						break
 
 	def OnDataChange(self, core, shift):
 		coreInfo = self.findCoreInfoByIndex(core)
@@ -5407,7 +5425,7 @@ class DataCanvas(wxBufferedWindow):
 			fixed = 1 if len(self.TieData) == 0 else 0
 			print("Creating {} TieData for hole {}, core {}".format("fixed" if fixed == 1 else "movable", self.currentHole, self.selectedCore))
 			newTie = CompositeTie(self.currentHole, self.selectedCore, self.currentStartX, pos[1], fixed, self.getDepth(pos[1]))
-			self.TieData.append(newTie) 
+			self.TieData.append(newTie)
 
 			if len(self.TieData) == 1:
 				self.UpdateAffineTieCount(1)
@@ -5717,14 +5735,14 @@ class DataCanvas(wxBufferedWindow):
 		for key, data in self.DrawData.items():
 			if key == "CoreArea":
 				for area in data:
-						# core index, leftmost plotted x coord, topmost plotted y coord, 
-						# width (px), height (px), x coord of left edge of plot area, px width of plot area, hole index
+					# core index, leftmost plotted x coord, topmost plotted y coord, 
+					# width (px), height (px), x coord of left edge of plot area, px width of plot area, hole index
 					n, x, y, w, h, plotMinX, plotWidth, hole_idx = area
-						rect = wx.Rect(plotMinX, y, plotWidth, h)
-						if rect.Inside(wx.Point(pos[0], pos[1])):
-							got = 1
-							self.selectedCore = n
-						print("(mouseover) selectedCore = {}".format(n))
+					rect = wx.Rect(plotMinX, y, plotWidth, h)
+					if rect.Inside(wx.Point(pos[0], pos[1])):
+						got = 1
+						self.selectedCore = n
+						# print("(mouseover) selectedCore = {}".format(n))
 
 						mouseInfo = [(n, pos[0], pos[1], x, 1)]
 						self.DrawData["MouseInfo"] = mouseInfo
