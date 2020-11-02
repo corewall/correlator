@@ -1615,7 +1615,7 @@ class DataCanvas(wxBufferedWindow):
 			holeType = "NaturalGamma"
 
 		# apply range for current datatype
-		smoothType = SmoothingType(-1)
+		smoothType = SmoothingType.NoSmoothing
 		for r in self.range:
 			if r[0] == holeType:
 				# print("Getting range for {}".format(holeType))
@@ -1635,17 +1635,15 @@ class DataCanvas(wxBufferedWindow):
 
 		# for each core in hole
 		drawBoundariesFunc = self.DrawSectionBoundaries if self.pressedkeyS == 1 or self.showSectionDepths else self.DrawCoreBoundaries
-		coresDrawn = []
 		for coreIndex, core in enumerate([CoreMetadata(c) for c in holeColumn.cores()]):
 			coreTop, coreBot = core.topDepth(), core.botDepth()
+
+			# only draw columns for cores within visible depth range, but
+			# create CoreInfo for all cores
 			if not self.depthIntervalVisible(coreTop, coreBot, visibleTopDepth, self.rulerEndDepth):
-				holeInfo = holeColumn.holeData[0]
-				coreInfo = core.cmt
-				coreInfoObj = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], coreInfo[0], coreInfo[3], coreInfo[4], coreTop, coreBot, coreInfo[6], holeInfo[2], coreInfo[8], self.HoleCount, coreInfo[10])
-				self.DrawData["CoreInfo"].append(coreInfoObj)
+				self.CreateCoreInfo(holeColumn, core.cmt, coreTop, coreBot, self.coreCount)
 				self.coreCount += 1
-				continue # only draw columns for cores within visible depth range
-			coresDrawn.append(core.coreName())
+				continue 
 
 			colStartX = startX
 			for column in holeColumn.columns():
@@ -1680,12 +1678,7 @@ class DataCanvas(wxBufferedWindow):
 				else:
 					assert false, "Unexpected column type {}".format(column)
 
-			# Have to maintain this godawful CoreInfo and self.coreCount tracking
-			# for numerous functions to work properly.
-			holeInfo = holeColumn.holeData[0]
-			coreInfo = core.cmt
-			coreInfoObj = CoreInfo(self.coreCount, holeInfo[0], holeInfo[1], holeInfo[7], coreInfo[0], coreInfo[3], coreInfo[4], coreTop, coreBot, coreInfo[6], holeInfo[2], coreInfo[8], self.HoleCount, coreInfo[10])
-			self.DrawData["CoreInfo"].append(coreInfoObj)
+			self.CreateCoreInfo(holeColumn, core.cmt, coreTop, coreBot, self.coreCount)
 
 			topPoint = self.getCoord(core.depthDataPairs()[0][0])
 			botPoint = self.getCoord(core.depthDataPairs()[-1][0])
@@ -1703,22 +1696,10 @@ class DataCanvas(wxBufferedWindow):
 			self.coreCount += 1
 
 			if core.affineOffset() != 0:
-				# Clip to prevent drawing over splice area or headers. Everything else we
-				# draw handles its own clipping. Any time a new wx.DCClipper() is created
-				# it blows away the existing one, despite wx doc's claims that as long as a DCClipper
-				# is in scope it remains in effect.
-				# 10/25/2020 brg: affine shift info still wasn't clipping correctly...it correctly clipped
-				# affine info for the first shifted core drawn in the current hole, but every affine info
-				# for subsequent cores in the hole still drew in the splice area.
-				# This was resolved by moving DCClipper creation into DrawAffineShiftInfo()
 				clippingRegion = wx.Region(0, headerBottom, spliceScrollbarLeft, self.Height - headerBottom)
 				self.DrawAffineShiftInfo(dc, startX, coreTop, coreBot, holeColumn, core, clippingRegion)
-				# for now, assume there's always a plot column and thus a plotStartX var
-				# self.DrawAffineShiftArrow(dc, plotStartX, coreTop, coreBot, holeColumn, core)
-				if holeColumn.hasPlot():
-					self.PrepareTieShiftArrow(dc, plotStartX, coreTop, coreBot, holeColumn, core)
-				else:
-					self.PrepareTieShiftArrow(dc, startX, coreTop, coreBot, holeColumn, core)
+				arrowStartX = plotStartX if holeColumn.hasPlot() else startX
+				self.PrepareTieShiftArrow(dc, arrowStartX, coreTop, coreBot, holeColumn, core)
 
 	# Show affine shift direction, distance, and type to left of core, centered on core depth interval
 	def DrawAffineShiftInfo(self, dc, startX, coreTopY, coreBotY, hole, core, clippingRegion):
@@ -2634,6 +2615,12 @@ class DataCanvas(wxBufferedWindow):
 		dataMaxX = (core.maxData() - self.minRange) * self.coefRange + x
 		coreDrawData = (self.coreCount, dataMinX, top_y, dataMaxX - dataMinX, bot_y - top_y, x, width + 1, self.HoleCount)
 		self.DrawData["CoreArea"].append(coreDrawData)
+
+	def CreateCoreInfo(self, holeColumn, coreMetadataTuple, coreTop, coreBot, coreCount):
+		holeInfo = holeColumn.holeData[0]
+		coreInfo = coreMetadataTuple
+		coreInfoObj = CoreInfo(coreCount, holeInfo[0], holeInfo[1], holeInfo[7], coreInfo[0], coreInfo[3], coreInfo[4], coreTop, coreBot, coreInfo[6], holeInfo[2], coreInfo[8], self.HoleCount, coreInfo[10])
+		self.DrawData["CoreInfo"].append(coreInfoObj)
 
     # Draw guide core (movable core data superimposed on fixed core for comparison)
 	def DrawGuideCore(self, dc, plotStartX):
