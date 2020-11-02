@@ -3047,7 +3047,7 @@ class AgeDepthPanel():
 				self.parent.Window.splicerX = int(self.parent.Window.Width * 0.6)
 			else :
 				self.parent.Window.splicerX = self.ageX
-			self.parent.Window.MainViewMode = False
+			# self.parent.Window.MainViewMode = False
 			self.parent.Window.DrawData["MouseInfo"] = []
 			self.viewBtn.SetLabel("Main Core View")
 			self.OnAgeViewAdjust(evt)
@@ -3055,7 +3055,7 @@ class AgeDepthPanel():
 		else :
 			self.ageX = self.parent.Window.splicerX 
 			self.parent.Window.splicerX = self.X
-			self.parent.Window.MainViewMode = True 
+			# self.parent.Window.MainViewMode = True 
 			self.parent.Window.DrawData["MouseInfo"] = []
 			self.viewBtn.SetLabel("Age Model View")
 		self.parent.Window.UpdateDrawing()
@@ -3605,8 +3605,7 @@ class PreferencesPanel():
 		self.EnableCoreImageDisplayModeChoice(self.showCoreImages.IsChecked())
 		self.parent.Window.UpdateDrawing()
 
-	def OnCoreImageDisplayMode(self, event): # brgbrg
-		# print("mode = {}".format(self.coreImageDisplayMode.GetSelection()))
+	def OnCoreImageDisplayMode(self, event):
 		asDatatype = True if self.coreImageDisplayMode.GetSelection() == 1 else 0
 		self.parent.Window.showImagesAsDatatype = asDatatype
 		self.parent.Window.UpdateDrawing()
