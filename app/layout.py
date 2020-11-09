@@ -1,151 +1,124 @@
-# layout.py - logiic for flexibly drawing core sections and their columns
+# Logic to control order, grouping, and visibility of hole data columns in main view
+
+from enum import Enum
+
+from utils import HoleMetadata
+
+# class LayoutProperties:
+	# def __init__(self, x_origin, margin, plotWidth, imageWidth):
+
+class ColumnType(Enum):
+	Plot = 1
+	Image = 2
+
+	
+class HoleColumn:
+	def __init__(self, width, holeData, smoothData):
+		self._width = width # hole column width in pixels
+		self._columns = [] # one or more ColumnTypes
+		self.rawHoleData = holeData
+		self.holeData = holeData[0]
+		self.smoothData = smoothData
+		self.hmd = HoleMetadata(holeData)
+
+	def addColumn(self, col):
+		self._columns.append(col)
+
+	def width(self):
+		return self._width
+
+	def holeName(self): # name of associated hole
+		return self.hmd.holeName()
+
+	def fullHoleName(self): # Exp-SiteHole
+		hd = self.holeData[0]
+		return "{}-{}{}".format(hd[1], hd[0], hd[7])
+
+	def hasPlot(self):
+		return ColumnType.Plot in self._columns
+
+	def datatype(self): # datatype of associated hole
+		if self._columns == [ColumnType.Image]:
+			return "Image"
+		else:
+			return self.hmd.datatype()
+
+	def topDepth(self):
+		return self.hmd.topDepth()
+
+	def botDepth(self):
+		return self.hmd.botDepth()
+
+	def minData(self):
+		return self.hmd.minData()
+
+	def maxData(self):
+		return self.hmd.maxData()
+
+	def holeInfo(self):
+		return self.hmd.holeInfo()
+
+	def cores(self):
+		return self.holeData[1:]
+
+	def smoothCores(self):
+		return self.smoothData[1:]
+
+	def columns(self):
+		return self._columns
 
 
-# Dataset {name, scale, data_pairs}
-# A core-level dataset
-class Dataset:
-    def __init__(self, name, data_range, data_pairs):
-        self.name = name # core name
-        self.data_range = data_range # (data min, data max)
-        self.data_pairs = data_pairs
+class LayoutManager:
+	def __init__(self):
+		self.holeColumns = []
+		self.holePositions = []
+		self.holesWithImages = []
+		self.showCoreImages = False
+		self.showImagesAsDatatype = False
 
-## Columns: responsible for drawing themselves given origin/params
+	def _reset(self):
+		self.holeColumns = []
+		self.holePositions = []
 
-# PlotColumn displays one or more Datasets
-# - each Dataset has a show/hide state, color, draw order, etc.
-class PlotColumn:
-    def __init__(self, datasets):
-        # (dataset, show/hide state)
-        self.datasets = [(ds, True) for ds in datasets]
+	def layout(self, holeData, smoothData, holesWithImages, x, margin, plotWidth, imageWidth, showCoreImages, showImagesAsDatatype):
+		self._reset()
+		self.holesWithImages = holesWithImages # gross
+		currentX = x
 
-    def draw(self, dc, origin, height, width):
-        for ds in self.datasets:
-            dc.DrawText("{}".format(ds.name), origin[0] + 5, origin[0] + 5)
+		if showCoreImages and showImagesAsDatatype:
+			holesSeen = []
+			for holeIndex, holeList in enumerate(holeData):
+				hmd = HoleMetadata(holeList)
+				if hmd.holeName() in holesSeen:
+					continue # only one image column per hole if multiple datatypes are loaded
+				if self._holeHasImages(hmd.holeName()):
+					hole_col = HoleColumn(imageWidth + margin, holeList, smoothData[holeIndex][0])
+					hole_col.addColumn(ColumnType.Image)
+					self.holeColumns.append(hole_col)
+					self.holePositions.append((currentX, hmd.holeName() + "Image"))
+					currentX += hole_col.width()
+					holesSeen.append(hmd.holeName())
+		
+		# even if we aren't drawing HoleData (unsmoothed), there will always be HoleData
+		# corresponding to SmoothData, so it's safe to rely on self.HoleData here.  		
+		for holeIndex, holeList in enumerate(holeData):
+			hmd = HoleMetadata(holeList)
+			imagesWithPlots = showCoreImages and not showImagesAsDatatype
 
+			# if hole has imagery and images are being displayed, add self.coreImageWidth
+			img_wid = imageWidth if (imagesWithPlots and self._holeHasImages(hmd.holeName())) else 0
+			hole_wid = margin + plotWidth + img_wid
 
-# ImageColumn displays one image fit to available space
-# - name, source_file(?)
+			hole_col = HoleColumn(hole_wid, holeList, smoothData[holeIndex][0])
+			if imagesWithPlots and self._holeHasImages(hmd.holeName()):
+				hole_col.addColumn(ColumnType.Image)
+			hole_col.addColumn(ColumnType.Plot)
+			self.holeColumns.append(hole_col)
 
-# SpliceColumn...special case of PlotColumn? Selection, etc, different logic
-# Splice really a special case of hole? SpliceHoleLayout?
+			# store as a tuple - DrawStratCore() logic still uses index to access value
+			holeKey = hmd.holeName() + hmd.datatype()
+			self.holePositions.append((currentX, holeKey))
+			currentX += hole_wid        
 
-# Maybe skip a level of this hierarchy? Section/Core/Hole Layout all very similar
-
-# Needed? depth/data pairs are grouped at core, not section, level
-# SectionLayout displays one or more columns in order
-# - for each column, pass draw origin, add width, draw
-class SectionLayout:
-    def __init__(self, cols):
-        self.cols = cols
-
-    def draw(self, dc, origin, height, width):
-        for col in self.cols:
-            col.draw(dc, origin, height, width)
-
-
-# CoreLayout displays one or more SectionLayouts in order
-# - draws section boundaries if enabled
-# class CoreLayout:
-#     def __init__(self, secs):
-#         self.secs = secs
-
-#     def draw(self, dc, origin, height, width):
-#         for sec in self.secs:
-#             sec.draw(dc, origin, height, width)
-#             # pull SectionSummary and draw boundaries + names
-
-class CoreLayout:
-    def __init__(self, cols):
-        self.cols = cols
-
-    def draw(self, dc, origin, height, width):
-        for col in self.cols:
-            col.draw(dc, origin, height, width)
-            # adjust origin for next column
-        # draw section boundaries and names
-        # draw images (section-based)
-
-
-# HoleLayout displays one or more CoreLayouts in order
-# - this level determines the visible depth ranges and draws only CoreLayouts
-# in that range.
-# - no need for show/hide here?
-# - Display HoleHeader
-class HoleLayout:
-    def __init__(self, cores, header):
-        self.cores = cores
-        self.header = header
-
-    def draw(self, dc, origin, height, width):
-        # draw header at specified height
-        # draw dotted line at left edge of hole plot area if self.showHoleGrid = True
-        for core in self.cores:
-            core.draw(dc, origin, height, width)
-            # draw core markers
-
-
-# HoleHeader displays id and other metadata for the displayed data types in the hole
-# - hole-level data display at this point
-class HoleHeader:
-    # def __init__(self, name, datasets):
-        # self.datatypes = datatypes # TODO support for multiple datatypes
-
-    def __init__(self, holeName, holeDatatype, holeRange):
-        self.name = holeName # hole name e.g. 341-U1351B
-        self.datatype = holeDatatype
-        self.range = holeRange
-
-    # TODO? Handle multiple datatypes if needed, fit to available space with
-    # height and width
-    def draw(self, dc, origin, height, width):
-        # dc.SetFont(font) use custom header font
-        x = origin[0]
-        y = origin[1] + 3
-        lineSpacing = 13 # fudge factor, looks good on Win and Mac
-        dc.DrawText(self.name, x, y)
-        dc.DrawText(self.datatype, x, y + lineSpacing)
-        dc.DrawText(self.range, x, y + lineSpacing * 2)
-
-
-# Display a depth scale ruler
-# class RulerLayout(self):
-    # def __init__
-
-# SiteLayout displays one or more HoleLayouts in order
-# - master drawer for the DataCanvas (ignoring Splice for now)
-# - show/hide HoleLayouts
-# - draw each in turn, providing origin/params
-# - knows which layout mouse is over
-# - all assumes Vertical for now...could eventually do VerticalSiteLayout
-# and HorizontalSiteLayout
-class SiteLayout:
-    def __init__(self, holes, height, width, hole_width):
-        self.holes = [(h, True) for h in holes] # (hole, show/hide state)
-        self.height = height
-        self.width = width
-        self.hole_width = hole_width # fixed for now
-
-    def draw(self, dc, origin): # height?
-        self.drawRuler(dc, origin)
-        pos = origin[0] # track width of layouts drawn
-        pos += 50 # ruler width
-        for hole, show in self.holes:
-            # if pos in range
-            h_origin = (pos, origin[1])
-            if show and self.visible(h_origin, self.hole_width):
-                # clip?
-                h.draw(dc, h_origin, self.height, self.hole_width)
-                pos += self.hole_width
-            if pos > self.width:
-                break
-        
-        # done drawing holes, draw filler if needed?
-    
-    def drawRuler(self, dc, origin):
-        pass
-
-    def visible(self, x, width=0):
-        return x < self.width and x + width >= 0
-
-    def addHoleLayout(self, holeLayout):
-        self.holes.append((holeLayout, True))
+	def _holeHasImages(self, holeName):
+		return holeName in self.holesWithImages

@@ -22,6 +22,8 @@ from importManager import py_correlator
 
 import frames
 import splice
+from layout import LayoutManager, ColumnType
+from utils import CoreMetadata
 
 
 # brg 4/9/2014: Why are we defining our own wxBufferedWindow when
@@ -198,85 +200,6 @@ class AffineTiePointEventBroadcaster:
 		for l in self.listeners:
 			l(count)
 
-# convenience class wrapping the core metadata tuples that comprise
-# elements 1...N of each HoleData element, listed below.
-# 0: core name (number as string)
-# 1: top depth
-# 2: bottom depth
-# 3: minimum data value
-# 4: maximum data value
-# 5: affine offset (meters)
-# 6: stretch (related to log/ELD, unused)
-# 7: datatype name
-# 8: quality
-# 9: list of section top depths (unreliable)
-# 10: list of depth/data pairs for this core
-class CoreMetadata:
-	def __init__(self, core_metadata_tuple):
-		self.cmt = core_metadata_tuple
-
-	def coreName(self):
-		return self.cmt[0]
-
-	def topDepth(self):
-		return self.cmt[10][0][0]
-
-	def botDepth(self):
-		return self.cmt[10][-1][0]
-
-	def minData(self):
-		return self.cmt[3]
-
-	def maxData(self):
-		return self.cmt[4]
-
-	def affineOffset(self):
-		return self.cmt[5]
-
-	def depthDataPairs(self):
-		return self.cmt[10]
-
-	def pointCount(self):
-		return len(self.cmt[10])
-
-
-# Convenience wrapper for DataCanvas.HoleData list elements with
-# methods to access hole metadata
-class HoleMetadata:
-	def __init__(self, holeData):
-		self.holeData = holeData
-		self.hmt = holeData[0][0] # hole metadata tuple
-	
-	def holeInfo(self):
-		return self.hmt
-
-	def siteName(self):
-		return self.hmt[0]
-
-	def expName(self):
-		return self.hmt[1]
-
-	def datatype(self):
-		return self.hmt[2]
-
-	def topDepth(self):
-		return self.hmt[3]
-
-	def botDepth(self):
-		return self.hmt[4]
-
-	def minData(self):
-		return self.hmt[5]
-
-	def maxData(self):
-		return self.hmt[6]
-
-	def holeName(self):
-		return self.hmt[7]
-
-	def coreCount(self):
-		return self.hmt[8]
-
 
 # HoleData definition:
 # Each element of HoleData is a list containing a list (yes, redundant) containing elements
@@ -375,66 +298,6 @@ class SmoothingType(Enum):
 	Smoothed = 1
 	SmoothedAndUnsmoothed = 2
 
-class ColumnType(Enum):
-	Plot = 1
-	Image = 2
-
-
-class HoleColumn:
-	def __init__(self, width, holeData, smoothData):
-		self._width = width # hole column width in pixels
-		self._columns = [] # one or more ColumnTypes
-		self.rawHoleData = holeData
-		self.holeData = holeData[0]
-		self.smoothData = smoothData
-		self.hmd = HoleMetadata(holeData)
-
-	def addColumn(self, col):
-		self._columns.append(col)
-
-	def width(self):
-		return self._width
-
-	def holeName(self): # name of associated hole
-		return self.hmd.holeName()
-
-	def fullHoleName(self): # Exp-SiteHole
-		hd = self.holeData[0]
-		return "{}-{}{}".format(hd[1], hd[0], hd[7])
-
-	def hasPlot(self):
-		return ColumnType.Plot in self._columns
-
-	def datatype(self): # datatype of associated hole
-		if self._columns == [ColumnType.Image]:
-			return "Image"
-		else:
-			return self.hmd.datatype()
-
-	def topDepth(self):
-		return self.hmd.topDepth()
-
-	def botDepth(self):
-		return self.hmd.botDepth()
-
-	def minData(self):
-		return self.hmd.minData()
-
-	def maxData(self):
-		return self.hmd.maxData()
-
-	def holeInfo(self):
-		return self.hmd.holeInfo()
-
-	def cores(self):
-		return self.holeData[1:]
-
-	def smoothCores(self):
-		return self.smoothData[1:]
-
-	def columns(self):
-		return self._columns
-
 
 class DataCanvas(wxBufferedWindow):
 	def __init__(self, parent, id= -1):
@@ -442,6 +305,7 @@ class DataCanvas(wxBufferedWindow):
 		## calling wxBufferedWindow.__init__, as it will call the Draw
 		## function.
 		self.drawCount = 0
+		self.layoutManager = LayoutManager()
 
 		stdFontSize = 9 if platform_name[0] == "Windows" else 12 # 12 point too large on Windows, just right on Mac
 		self.stdFont = wx.Font(stdFontSize, wx.SWISS, wx.NORMAL, wx.BOLD)
@@ -689,7 +553,7 @@ class DataCanvas(wxBufferedWindow):
 		self.GuideCoreDatatype = None
 		self.SpliceSmoothData = []
 		self.Images = {}
-		self.HoleWithImages = []
+		self.HolesWithImages = []
 
 		self.LogData = [] 
 		self.LogSMData = [] 
@@ -2580,46 +2444,11 @@ class DataCanvas(wxBufferedWindow):
 
 		dc.EndDrawing()
 
-	# determine leftmost X for each hole's plot column
-	def InitHoleWidths(self):
-		self.WidthsControl = []
-		self.HoleColumns = []
-		currentX = self.compositeX - self.minScrollRange + self.plotLeftMargin
-
-		if self.showCoreImages and self.showImagesAsDatatype:
-			holesSeen = []
-			for holeIndex, holeList in enumerate(self.HoleData):
-				hmd = HoleMetadata(holeList)
-				if hmd.holeName() in holesSeen:
-					continue # only one image column per hole if multiple datatypes are loaded
-				if self.HoleHasImages(hmd.holeName()):
-					hole_col = HoleColumn(self.coreImageWidth + self.plotLeftMargin, holeList, self.SmoothData[holeIndex][0])
-					hole_col.addColumn(ColumnType.Image)
-					self.HoleColumns.append(hole_col)
-					self.WidthsControl.append((currentX, hmd.holeName() + "Image"))
-					currentX += hole_col.width()
-					holesSeen.append(hmd.holeName())
-		
-		# even if we aren't drawing HoleData (unsmoothed), there will always be HoleData
-		# corresponding to SmoothData, so it's safe to rely on self.HoleData here.  		
-		for holeIndex, holeList in enumerate(self.HoleData):
-			hmd = HoleMetadata(holeList)
-			imagesWithPlots = self.showCoreImages and not self.showImagesAsDatatype
-
-			# if hole has imagery and images are being displayed, add self.coreImageWidth
-			img_wid = self.coreImageWidth if (imagesWithPlots and self.HoleHasImages(hmd.holeName())) else 0
-			hole_wid = self.plotLeftMargin + self.plotWidth + img_wid
-
-			hole_col = HoleColumn(hole_wid, holeList, self.SmoothData[holeIndex][0])
-			if imagesWithPlots and self.HoleHasImages(hmd.holeName()):
-				hole_col.addColumn(ColumnType.Image)
-			hole_col.addColumn(ColumnType.Plot)
-			self.HoleColumns.append(hole_col)
-
-			# store as a tuple - DrawStratCore() logic still uses index to access value
-			holeKey = hmd.holeName() + hmd.datatype()
-			self.WidthsControl.append((currentX, holeKey))
-			currentX += hole_wid
+	def LayoutHoleColumns(self):
+		columnSpaceX = self.compositeX - self.minScrollRange + self.plotLeftMargin
+		self.layoutManager.layout(self.HoleData, self.SmoothData, self.HolesWithImages, columnSpaceX, self.plotLeftMargin, self.plotWidth, self.coreImageWidth, self.showCoreImages, self.showImagesAsDatatype)
+		self.HoleColumns = self.layoutManager.holeColumns
+		self.WidthsControl = self.layoutManager.holePositions
 
 	# Disable controls in CompositePanel and FilterPanel that require loaded data to
 	# function and aren't otherwise en/disabled by their respective panel's logic (e.g.
@@ -2665,7 +2494,7 @@ class DataCanvas(wxBufferedWindow):
 		self.newHoleX = 30.0
 		holeType = ""
 
-		self.InitHoleWidths() # figure out layout
+		self.LayoutHoleColumns()
 
 		for holeColumn in self.HoleColumns:
 			self.DrawHoleColumn(dc, holeColumn)
