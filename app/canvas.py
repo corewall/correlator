@@ -22,7 +22,7 @@ from importManager import py_correlator
 
 import frames
 import splice
-from layout import LayoutManager, ColumnType
+from layout import LayoutManager, ColumnType, ImageDatatypeStr
 from utils import CoreMetadata
 
 
@@ -305,7 +305,6 @@ class DataCanvas(wxBufferedWindow):
 		## calling wxBufferedWindow.__init__, as it will call the Draw
 		## function.
 		self.drawCount = 0
-		self.layoutManager = LayoutManager()
 
 		stdFontSize = 9 if platform_name[0] == "Windows" else 12 # 12 point too large on Windows, just right on Mac
 		self.stdFont = wx.Font(stdFontSize, wx.SWISS, wx.NORMAL, wx.BOLD)
@@ -554,6 +553,8 @@ class DataCanvas(wxBufferedWindow):
 		self.SpliceSmoothData = []
 		self.Images = {}
 		self.HolesWithImages = []
+
+		self.layoutManager = LayoutManager()
 
 		self.LogData = [] 
 		self.LogSMData = [] 
@@ -1599,7 +1600,7 @@ class DataCanvas(wxBufferedWindow):
 		if shiftTypeStr == "TIE" and self.showAffineTieArrows:
 			tieDepth, parentCore = self.parent.affineManager.getTieDepthAndParent(hole.holeName(), core.coreName())
 			holeType = hole.datatype()
-			if holeType == "Image":
+			if holeType == ImageDatatypeStr:
 				parentHoleColumn = None
 				for hc in self.HoleColumns:	# find HoleColumn for parent core
 					if hc.holeName() == hole.holeName() and hc.datatype() == holeType:

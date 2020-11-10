@@ -11,6 +11,7 @@ class ColumnType(Enum):
 	Plot = 1
 	Image = 2
 
+ImageDatatypeStr = "Image"
 	
 class HoleColumn:
 	def __init__(self, width, holeData, smoothData):
@@ -27,6 +28,8 @@ class HoleColumn:
 	def width(self):
 		return self._width
 
+	# todo: contentWidth() excluding margin?
+
 	def holeName(self): # name of associated hole
 		return self.hmd.holeName()
 
@@ -39,7 +42,7 @@ class HoleColumn:
 
 	def datatype(self): # datatype of associated hole
 		if self._columns == [ColumnType.Image]:
-			return "Image"
+			return ImageDatatypeStr
 		else:
 			return self.hmd.datatype()
 
@@ -83,31 +86,32 @@ class LayoutManager:
 	def layout(self, holeData, smoothData, holesWithImages, x, margin, plotWidth, imageWidth, showCoreImages, showImagesAsDatatype):
 		self._reset()
 		self.holesWithImages = holesWithImages # gross
-		currentX = x
 
+		datatypes = list(set([HoleMetadata(hd).datatype() for hd in holeData]))
 		if showCoreImages and showImagesAsDatatype:
-			holesSeen = []
-			for holeIndex, holeList in enumerate(holeData):
-				hmd = HoleMetadata(holeList)
-				if hmd.holeName() in holesSeen:
-					continue # only one image column per hole if multiple datatypes are loaded
-				if self._holeHasImages(hmd.holeName()):
-					hole_col = HoleColumn(imageWidth + margin, holeList, smoothData[holeIndex][0])
-					hole_col.addColumn(ColumnType.Image)
-					self.holeColumns.append(hole_col)
-					self.holePositions.append((currentX, hmd.holeName() + "Image"))
-					currentX += hole_col.width()
-					holesSeen.append(hmd.holeName())
+			datatypes = [ImageDatatypeStr] + datatypes
+
+		currentX = x
+		for dt in datatypes:
+			if dt == ImageDatatypeStr and showCoreImages and showImagesAsDatatype:
+				currentX = self._layoutImageColumns(currentX, holeData, smoothData, imageWidth)
+			else:
+				currentX = self._layoutPlotColumns(currentX, holeData, smoothData, dt, plotWidth, imageWidth, showCoreImages, showImagesAsDatatype)
 		
-		# even if we aren't drawing HoleData (unsmoothed), there will always be HoleData
-		# corresponding to SmoothData, so it's safe to rely on self.HoleData here.  		
+	def _holeHasImages(self, holeName):
+		return holeName in self.holesWithImages
+
+	def _layoutPlotColumns(self, currentX, holeData, smoothData, datatype, plotWidth, imageWidth, showCoreImages, showImagesAsDatatype):
 		for holeIndex, holeList in enumerate(holeData):
 			hmd = HoleMetadata(holeList)
+			if hmd.datatype() != datatype:
+				continue
+
 			imagesWithPlots = showCoreImages and not showImagesAsDatatype
 
 			# if hole has imagery and images are being displayed, add self.coreImageWidth
 			img_wid = imageWidth if (imagesWithPlots and self._holeHasImages(hmd.holeName())) else 0
-			hole_wid = margin + plotWidth + img_wid
+			hole_wid = self.margin + plotWidth + img_wid
 
 			hole_col = HoleColumn(hole_wid, holeList, smoothData[holeIndex][0])
 			if imagesWithPlots and self._holeHasImages(hmd.holeName()):
@@ -115,10 +119,22 @@ class LayoutManager:
 			hole_col.addColumn(ColumnType.Plot)
 			self.holeColumns.append(hole_col)
 
-			# store as a tuple - DrawStratCore() logic still uses index to access value
 			holeKey = hmd.holeName() + hmd.datatype()
 			self.holePositions.append((currentX, holeKey))
-			currentX += hole_wid        
+			currentX += hole_wid
+		return currentX
 
-	def _holeHasImages(self, holeName):
-		return holeName in self.holesWithImages
+	def _layoutImageColumns(self, currentX, holeData, smoothData, imageWidth):
+		holesSeen = []
+		for holeIndex, holeList in enumerate(holeData):
+			hmd = HoleMetadata(holeList)
+			if hmd.holeName() in holesSeen:
+				continue # only one image column per hole if multiple datatypes are loaded
+			if self._holeHasImages(hmd.holeName()):
+				hole_col = HoleColumn(imageWidth + self.margin, holeList, smoothData[holeIndex][0])
+				hole_col.addColumn(ColumnType.Image)
+				self.holeColumns.append(hole_col)
+				self.holePositions.append((currentX, hmd.holeName() + ImageDatatypeStr))
+				currentX += hole_col.width()
+				holesSeen.append(hmd.holeName())
+		return currentX
