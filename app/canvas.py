@@ -1510,16 +1510,14 @@ class DataCanvas(wxBufferedWindow):
 				continue 
 
 			colStartX = startX
-			for column in holeColumn.columns():
-				if column == ColumnType.Image:
+			for columnType, width in holeColumn.columns():
+				if columnType == ColumnType.Image:
 					if self.parent.sectionSummary:
 						self.DrawSectionImages(dc, colStartX, holeColumn.holeName(), core.coreName(), core.affineOffset())
 						if not holeColumn.hasPlot():
-							drawBoundariesFunc(dc, colStartX, self.coreImageWidth, holeColumn.holeName(), core.coreName(), core.affineOffset())
-						colStartX += self.coreImageWidth
-				elif column == ColumnType.Plot:
-					plotStartX = colStartX # TODO: stop assuming every HoleColumn will have a plot
-
+							drawBoundariesFunc(dc, colStartX, width, holeColumn.holeName(), core.coreName(), core.affineOffset())
+				elif columnType == ColumnType.Plot:
+					plotStartX = colStartX
 					if smoothType in [SmoothingType.NoSmoothing, SmoothingType.Unsmoothed]:
 						coresToPlot = [core]
 					else: # smoothType in [SmoothingType.Smoothed, SmoothingType.SmoothedAndUnsmoothed]
@@ -1536,27 +1534,18 @@ class DataCanvas(wxBufferedWindow):
 
 					# for now we'll continue to draw section boundaries only on the plot area
 					if self.parent.sectionSummary:
-						drawBoundariesFunc(dc, colStartX, self.plotWidth, holeColumn.holeName(), core.coreName(), core.affineOffset())
-
-					colStartX += self.plotWidth
+						drawBoundariesFunc(dc, colStartX, width, holeColumn.holeName(), core.coreName(), core.affineOffset())
 				else:
 					assert false, "Unexpected column type {}".format(column)
+
+				colStartX += width
 
 			self.CreateCoreInfo(holeColumn, core.cmt, coreTop, coreBot, self.coreCount)
 
 			topPoint = self.getCoord(core.depthDataPairs()[0][0])
 			botPoint = self.getCoord(core.depthDataPairs()[-1][0])
-			if holeColumn.columns() == [ColumnType.Image]:
-				caWidth = self.coreImageWidth
-				self.CreateCoreArea(core, startX, caWidth, topPoint, botPoint)
-			elif holeColumn.columns() == [ColumnType.Plot]:
-				caWidth = self.plotWidth
-				self.CreateCoreArea(core, startX, caWidth, topPoint, botPoint)
-			elif len(holeColumn.columns()) == 2:
-				caWidth = self.coreImageWidth + self.plotWidth
-				self.CreateCoreArea(core, startX, caWidth, topPoint, botPoint)
-			else:
-				print("Unexpected number of columns in holeColumn: {}".format(holeColumn.columns()))
+			self.CreateCoreArea(core, startX, holeColumn.contentWidth(), topPoint, botPoint)
+			# TODO: Create separate CoreArea for image and tag so current mouse x-pos data val doesn't display as it does in plots
 			self.coreCount += 1
 
 			if core.affineOffset() != 0:
@@ -2583,7 +2572,7 @@ class DataCanvas(wxBufferedWindow):
 
 			holeColumn = self.HoleColumns[compTie.hole]
 			x = self.GetHoleStartX(holeColumn.holeName(), holeColumn.datatype())
-			width = self._getColumnContentWidth(holeColumn)
+			width = holeColumn.contentWidth()
 			if compTie.depth >= self.rulerStartDepth and compTie.depth <= self.rulerEndDepth:
 				if x < self.splicerX - 65: # splicerX - 65 is roughly left of splice area scrollbar...todo FUDGE
 					# don't draw tie line or end rectangle in Splice Area
@@ -2607,15 +2596,6 @@ class DataCanvas(wxBufferedWindow):
 						signChar = '+' if shiftDist > 0 else '' 
 						posStr += ' (' + signChar + str(shiftDist) + ')'
 					dc.DrawText(posStr, x + 10, y + 10)
-
-	def _getColumnContentWidth(self, holeColumn):
-		width = 0
-		for c in holeColumn.columns():
-			if c == ColumnType.Image:
-				width += self.coreImageWidth
-			elif c == ColumnType.Plot:
-				width += self.plotWidth
-		return width
 
 	def SetSaganFromFile(self, tie_list):
 		self.LogTieData = []
@@ -3720,7 +3700,7 @@ class DataCanvas(wxBufferedWindow):
 			holeColumn = self.HoleColumns[tie.hole]
 			x = self.GetHoleStartX(holeColumn.holeName(), holeColumn.datatype())
 			y = self.startDepthPix + (tie.depth - self.rulerStartDepth) * self.pixPerMeter
-			width = self._getColumnContentWidth(holeColumn)
+			width = holeColumn.contentWidth()
 			dotsize_x = self.tieDotSize + width + 10
 			reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
 			if reg.Inside(wx.Point(pos[0], pos[1])):
@@ -3867,7 +3847,7 @@ class DataCanvas(wxBufferedWindow):
 		half = dotsize_y / 2
 		for tie_idx, tie in enumerate(self.TieData):
 			holeColumn = self.HoleColumns[tie.hole]
-			width = self._getColumnContentWidth(holeColumn)			
+			width = holeColumn.contentWidth()
 			x = self.GetHoleStartX(holeColumn.holeName(), holeColumn.datatype())
 			y = self.startDepthPix + (tie.depth - self.rulerStartDepth) * self.pixPerMeter
 			dotsize_x = self.tieDotSize + width + 10 # should extend all the way to right square handle
