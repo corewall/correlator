@@ -3632,7 +3632,16 @@ class PreferencesPanel():
 	def OnShowColorLegend(self, event):
 		self.parent.Window.showColorLegend = self.showColorLegend.IsChecked()
 		self.parent.Window.UpdateDrawing()
-		
+
+	def OnDisplayOrderButton(self, event):
+		curDisplayOrder = list(self.parent.Window.layoutManager.getDatatypeOrder()) # copy
+		doDlg = dialog.DisplayOrderDialog(self.parent, curDisplayOrder)
+		pos = self.displayOrderButton.GetScreenPositionTuple()
+		doDlg.SetPosition(pos)
+		if doDlg.ShowModal() == wx.ID_OK:
+			self.parent.Window.layoutManager.setDatatypeOrder(list(doDlg.displayOrder)) # copy
+			self.parent.Window.UpdateDrawing()
+	
 	# def OnShowLogShiftArrows(self, event):
 	# 	self.parent.Window.LogClue = self.showLogShiftArrows.IsChecked()
 	# 	self.parent.Window.UpdateDrawing()
@@ -3668,6 +3677,9 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowOutOfRangeData, self.showOutOfRangeData)
 		self.showColorLegend = wx.CheckBox(viewPanel, -1, "Show plot color legend")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowColorLegend, self.showColorLegend)
+		# todo: group by datatype/hole checkbox
+		self.displayOrderButton = wx.Button(viewPanel, -1, "Display Order...")
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDisplayOrderButton, self.displayOrderButton)
 
 		# self.showLogShiftArrows = wx.CheckBox(viewPanel, -1, "Show log shift arrows")
 		# self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)
@@ -3688,6 +3700,7 @@ class PreferencesPanel():
 		viewSizer.Add(self.showOutOfRangeData, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showColorLegend, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.displayOrderButton, 0, wx.BOTTOM, 5)
 		viewPanel.SetSizer(viewSizer)
 		vbox_top.Add(viewPanel, 0, wx.BOTTOM | wx.EXPAND, 10)
 

@@ -1722,6 +1722,68 @@ class DecimateDialog(wx.Dialog):
 		self.EndModal(wx.ID_OK)
 
 
+class DisplayOrderDialog(wx.Dialog):
+	def __init__(self, parent, displayOrder):
+		wx.Dialog.__init__(self, parent, -1, "Display Order", style=wx.CAPTION | wx.STAY_ON_TOP)
+		self.displayOrder = displayOrder
+		self.createGUI()
+
+	def createGUI(self):
+		mainPanel = wx.Panel(self, -1)
+		mainSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.orderList = wx.ListBox(mainPanel, -1, choices=self.displayOrder, style=wx.LB_SINGLE)
+		self.Bind(wx.EVT_LISTBOX, self.ListSelectionChanged, self.orderList)
+		mainSizer.Add(self.orderList)
+
+		upDownSizer = wx.BoxSizer(wx.VERTICAL)
+		self.upButton = wx.Button(mainPanel, -1, "Move Up")
+		self.Bind(wx.EVT_BUTTON, self.OnUp, self.upButton)
+		self.downButton = wx.Button(mainPanel, -1, "Move Down")
+		self.Bind(wx.EVT_BUTTON, self.OnDown, self.downButton)
+		upDownSizer.Add(self.upButton)
+		upDownSizer.Add(self.downButton)
+		mainSizer.Add(upDownSizer)
+		mainPanel.SetSizer(mainSizer)
+
+		btnPanel = OkButtonPanel(self, okName="Apply")
+		self.Bind(wx.EVT_BUTTON, self.OnApply, btnPanel.ok)
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		sizer.Add(mainPanel, 1, wx.ALL, 10)
+		sizer.Add(btnPanel, 0, wx.ALIGN_CENTER)
+		self.SetSizer(sizer)
+		self.Fit()
+
+		if len(self.displayOrder) > 0:
+			self.orderList.SetSelection(0)
+			self.ListSelectionChanged(None)
+
+	def OnUp(self, evt):
+		sel = self.orderList.GetSelection()
+		if sel > 0:
+			self.displayOrder[sel-1], self.displayOrder[sel] = self.displayOrder[sel], self.displayOrder[sel-1]
+			self.orderList.SetItems(self.displayOrder)
+			self.orderList.SetSelection(sel-1)
+			self.ListSelectionChanged(None)
+
+	def OnDown(self, evt):
+		sel = self.orderList.GetSelection()
+		if sel < self.orderList.GetCount() - 1:
+			self.displayOrder[sel+1], self.displayOrder[sel] = self.displayOrder[sel], self.displayOrder[sel+1]
+			self.orderList.SetItems(self.displayOrder)
+			self.orderList.SetSelection(sel+1)
+			self.ListSelectionChanged(None)
+
+	def ListSelectionChanged(self, evt):
+		sel = self.orderList.GetSelection()
+		self.upButton.Enable(sel > 0)
+		self.downButton.Enable(sel < self.orderList.GetCount() - 1)
+
+	def OnApply(self, evt):
+		self.displayOrder = self.orderList.GetItems()
+		print("New display order = {}".format(self.displayOrder))
+		self.EndModal(wx.ID_OK)
+
+
 class SmoothDialog(wx.Dialog):
 	def __init__(self, parent, width=9, units=1, style=1):
 		wx.Dialog.__init__(self, parent, -1, "Create Smooth Filter", style=wx.CAPTION)

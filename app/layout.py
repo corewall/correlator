@@ -85,6 +85,8 @@ class LayoutManager:
 		self.holesWithImages = []
 		self.showCoreImages = False
 		self.showImagesAsDatatype = False
+		self.groupByDatatype = True
+		self.datatypeOrder = []
 
 	def _reset(self):
 		self.holeColumns = []
@@ -94,20 +96,36 @@ class LayoutManager:
 		self._reset()
 		self.holesWithImages = holesWithImages # gross
 
-		datatypes = list(set([HoleMetadata(hd).datatype() for hd in holeData]))
-		if showCoreImages and showImagesAsDatatype:
-			datatypes = [ImageDatatypeStr] + datatypes
+		# group by datatype
+		datatypes = []
+		if self.groupByDatatype:
+			datatypes = list(set([HoleMetadata(hd).datatype() for hd in holeData]))
+			if showCoreImages and showImagesAsDatatype:
+				datatypes = [ImageDatatypeStr] + datatypes
+		else:
+			pass # todo: group by hole
+
+		if self.datatypeOrder == [] or len(self.datatypeOrder) != len(datatypes) or set(self.datatypeOrder) != set(datatypes):
+			self.datatypeOrder = datatypes
 
 		currentX = x
-		for dt in datatypes:
+		# for dt in datatypes:
+		for dt in self.datatypeOrder:
 			if dt == ImageDatatypeStr and showCoreImages and showImagesAsDatatype:
 				currentX = self._layoutImageColumns(currentX, holeData, smoothData, imageWidth)
 			else:
 				currentX = self._layoutPlotColumns(currentX, holeData, smoothData, dt, plotWidth, imageWidth, showCoreImages, showImagesAsDatatype)
+
+	def getDatatypeOrder(self):
+		return self.datatypeOrder
+
+	def setDatatypeOrder(self, datatypeOrder):
+		self.datatypeOrder = datatypeOrder
 		
 	def _holeHasImages(self, holeName):
 		return holeName in self.holesWithImages
 
+	# for HoleColumns with a PlotColumn and possibly an ImageColumn
 	def _layoutPlotColumns(self, currentX, holeData, smoothData, datatype, plotWidth, imageWidth, showCoreImages, showImagesAsDatatype):
 		for holeIndex, holeList in enumerate(holeData):
 			hmd = HoleMetadata(holeList)
@@ -125,6 +143,7 @@ class LayoutManager:
 			currentX += holeCol.width()
 		return currentX
 
+	# for HoleColumns with nothing but an ImageColumn
 	def _layoutImageColumns(self, currentX, holeData, smoothData, imageWidth):
 		holesSeen = []
 		for holeIndex, holeList in enumerate(holeData):
