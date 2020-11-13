@@ -3638,9 +3638,7 @@ class PreferencesPanel():
 		doDlg = dialog.DisplayOrderDialog(self.parent, curDisplayOrder)
 		pos = self.displayOrderButton.GetScreenPositionTuple()
 		doDlg.SetPosition(pos)
-		if doDlg.ShowModal() == wx.ID_OK:
-			self.parent.Window.layoutManager.setDatatypeOrder(list(doDlg.displayOrder)) # copy
-			self.parent.Window.UpdateDrawing()
+		doDlg.ShowModal()
 
 	def OnGroupByDatatype(self, event):
 		self.parent.Window.layoutManager.setGroupByDatatype(self.groupByDatatype.IsChecked())
