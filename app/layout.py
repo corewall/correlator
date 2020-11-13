@@ -96,34 +96,64 @@ class LayoutManager:
 		self._reset()
 		self.holesWithImages = holesWithImages # gross
 
-		# group by datatype
-		datatypes = []
-		if self.groupByDatatype:
-			datatypes = list(set([HoleMetadata(hd).datatype() for hd in holeData]))
-			if showCoreImages and showImagesAsDatatype:
-				datatypes = [ImageDatatypeStr] + datatypes
-		else:
-			pass # todo: group by hole
-
+		# update datatypeOrder if needed
+		datatypes = list(set([HoleMetadata(hd).datatype() for hd in holeData]))
+		if showCoreImages and showImagesAsDatatype:
+			datatypes = [ImageDatatypeStr] + datatypes
 		if self.datatypeOrder == [] or len(self.datatypeOrder) != len(datatypes) or set(self.datatypeOrder) != set(datatypes):
 			self.datatypeOrder = datatypes
 
+		# create HoleColumns in datatypeOrder, grouping by datatype or by hole
 		currentX = x
-		# for dt in datatypes:
-		for dt in self.datatypeOrder:
-			if dt == ImageDatatypeStr and showCoreImages and showImagesAsDatatype:
-				currentX = self._layoutImageColumns(currentX, holeData, smoothData, imageWidth)
-			else:
-				currentX = self._layoutPlotColumns(currentX, holeData, smoothData, dt, plotWidth, imageWidth, showCoreImages, showImagesAsDatatype)
+		if self.groupByDatatype:
+			for dt in self.datatypeOrder:
+				if dt == ImageDatatypeStr and showCoreImages and showImagesAsDatatype:
+					currentX = self._layoutImageColumns(currentX, holeData, smoothData, imageWidth)
+				else:
+					currentX = self._layoutPlotColumns(currentX, holeData, smoothData, dt, plotWidth, imageWidth, showCoreImages, showImagesAsDatatype)
+		else: # group by hole
+			holeMetadataList = [HoleMetadata(hd) for hd in holeData]
+			holes = list(set([h.holeName() for h in holeMetadataList]))
+			# find holeData corresponding to each hole+datatype pair and create a HoleColumn for it
+			for h in sorted(holes): # TODO: this won't sort correctly if there are 27+ holes (27th hole 'AA' should comes after 26th hole 'Z')
+				for dt in self.datatypeOrder:
+					for idx, hmd in enumerate(holeMetadataList):
+						if showCoreImages and showImagesAsDatatype and hmd.holeName() == h and dt == ImageDatatypeStr and self._holeHasImages(h):
+							currentX += self._createImageColumn(holeData[idx], smoothData[idx][0], imageWidth, currentX, hmd.holeName() + ImageDatatypeStr)
+							break
+						elif hmd.holeName() == h and hmd.datatype() == dt:
+							currentX += self._createPlotColumn(holeData[idx], smoothData[idx][0], plotWidth, imageWidth, currentX, hmd, showCoreImages, showImagesAsDatatype)
+							break
 
 	def getDatatypeOrder(self):
 		return self.datatypeOrder
 
 	def setDatatypeOrder(self, datatypeOrder):
 		self.datatypeOrder = datatypeOrder
+
+	def setGroupByDatatype(self, groupByDatatype):
+		self.groupByDatatype = groupByDatatype
 		
 	def _holeHasImages(self, holeName):
 		return holeName in self.holesWithImages
+
+	# create a HoleColumn with nothing but an ImageColumn
+	def _createImageColumn(self, holeData, smoothData, imageWidth, currentX, holeKey):
+		holeCol = HoleColumn(holeData, smoothData)
+		holeCol.addColumn(ColumnType.Image, imageWidth)
+		self.holeColumns.append(holeCol)
+		self.holePositions.append((currentX, holeKey))
+		return holeCol.width()
+
+	# create a HoleColumn with a PlotColumn and possibly an ImageColumn
+	def _createPlotColumn(self, holeData, smoothData, plotWidth, imageWidth, currentX, hmd, showCoreImages, showImagesAsDatatype):
+		holeCol = HoleColumn(holeData, smoothData)
+		if self._holeHasImages(hmd.holeName()) and showCoreImages and not showImagesAsDatatype:
+			holeCol.addColumn(ColumnType.Image, imageWidth)
+		holeCol.addColumn(ColumnType.Plot, plotWidth)
+		self.holeColumns.append(holeCol)
+		self.holePositions.append((currentX, hmd.holeName() + hmd.datatype()))
+		return holeCol.width()
 
 	# for HoleColumns with a PlotColumn and possibly an ImageColumn
 	def _layoutPlotColumns(self, currentX, holeData, smoothData, datatype, plotWidth, imageWidth, showCoreImages, showImagesAsDatatype):
@@ -131,16 +161,7 @@ class LayoutManager:
 			hmd = HoleMetadata(holeList)
 			if hmd.datatype() != datatype:
 				continue
-
-			holeCol = HoleColumn(holeList, smoothData[holeIndex][0])
-			if self._holeHasImages(hmd.holeName()) and showCoreImages and not showImagesAsDatatype:
-				holeCol.addColumn(ColumnType.Image, imageWidth)
-			holeCol.addColumn(ColumnType.Plot, plotWidth)
-			self.holeColumns.append(holeCol)
-
-			holeKey = hmd.holeName() + hmd.datatype()
-			self.holePositions.append((currentX, holeKey))
-			currentX += holeCol.width()
+			currentX += self._createPlotColumn(holeList, smoothData[holeIndex][0], plotWidth, imageWidth, currentX, hmd, showCoreImages, showImagesAsDatatype)
 		return currentX
 
 	# for HoleColumns with nothing but an ImageColumn
@@ -151,10 +172,6 @@ class LayoutManager:
 			if hmd.holeName() in holesSeen:
 				continue # only one image column per hole if multiple datatypes are loaded
 			if self._holeHasImages(hmd.holeName()):
-				holeCol = HoleColumn(holeList, smoothData[holeIndex][0])
-				holeCol.addColumn(ColumnType.Image, imageWidth)
-				self.holeColumns.append(holeCol)
-				self.holePositions.append((currentX, hmd.holeName() + ImageDatatypeStr))
-				currentX += holeCol.width()
+				currentX += self._createImageColumn(holeList, smoothData[holeIndex][0], imageWidth, currentX, hmd.holeName() + ImageDatatypeStr)
 				holesSeen.append(hmd.holeName())
 		return currentX

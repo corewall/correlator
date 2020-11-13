@@ -3641,6 +3641,10 @@ class PreferencesPanel():
 		if doDlg.ShowModal() == wx.ID_OK:
 			self.parent.Window.layoutManager.setDatatypeOrder(list(doDlg.displayOrder)) # copy
 			self.parent.Window.UpdateDrawing()
+
+	def OnGroupByDatatype(self, event):
+		self.parent.Window.layoutManager.setGroupByDatatype(self.groupByDatatype.IsChecked())
+		self.parent.Window.UpdateDrawing()
 	
 	# def OnShowLogShiftArrows(self, event):
 	# 	self.parent.Window.LogClue = self.showLogShiftArrows.IsChecked()
@@ -3680,6 +3684,9 @@ class PreferencesPanel():
 		# todo: group by datatype/hole checkbox
 		self.displayOrderButton = wx.Button(viewPanel, -1, "Display Order...")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDisplayOrderButton, self.displayOrderButton)
+		self.groupByDatatype = wx.CheckBox(viewPanel, -1, "Group by datatype")
+		self.groupByDatatype.SetValue(True)
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnGroupByDatatype, self.groupByDatatype)
 
 		# self.showLogShiftArrows = wx.CheckBox(viewPanel, -1, "Show log shift arrows")
 		# self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowLogShiftArrows, self.showLogShiftArrows)
@@ -3701,6 +3708,7 @@ class PreferencesPanel():
 		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showColorLegend, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.displayOrderButton, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.groupByDatatype, 0, wx.BOTTOM, 5)
 		viewPanel.SetSizer(viewSizer)
 		vbox_top.Add(viewPanel, 0, wx.BOTTOM | wx.EXPAND, 10)
 
