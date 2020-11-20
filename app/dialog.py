@@ -142,9 +142,9 @@ class ViewDataFileDialog(wx.Dialog):
 		if platform_name[0] == "Windows":
 			# Using wx.RESIZE_BORDER | wx.CLOSE_BOX resulted in odd titlebar-less window on Windows.
 			# This set of style options yields a typical window.
-			style = wx.DEFAULT_DIALOG_STYLE | wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.RESIZE_BORDER
+			style = wx.DEFAULT_DIALOG_STYLE | wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.RESIZE_BORDER | wx.STAY_ON_TOP
 		else:
-			style = wx.RESIZE_BORDER | wx.CLOSE_BOX
+			style = wx.RESIZE_BORDER | wx.CLOSE_BOX | wx.STAY_ON_TOP
 		wx.Dialog.__init__(self, parent, -1, title, style=style)
 
 		self.dataframe = dataframe
@@ -205,7 +205,7 @@ class ViewDataFileDialog(wx.Dialog):
 
 class CustomDataTypeDialog(wx.Dialog):
 	def __init__(self, parent, title):
-		wx.Dialog.__init__(self, parent, -1, title, style=wx.DEFAULT_DIALOG_STYLE)
+		wx.Dialog.__init__(self, parent, -1, title, style=wx.DEFAULT_DIALOG_STYLE | wx.STAY_ON_TOP)
 
 		self.Center()
 		vbox = wx.BoxSizer(wx.VERTICAL)
@@ -267,7 +267,7 @@ class EditBoxDialog(wx.Dialog):
 
 class StratTypeDialog(wx.Dialog):
 	def __init__(self, parent):
-		wx.Dialog.__init__(self, parent, -1, "Stratigraphy Type", size=(300, 130), style= wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, -1, "Stratigraphy Type", size=(300, 130), style=wx.STAY_ON_TOP)
 
 		self.Center()
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
@@ -358,7 +358,7 @@ class ClearDataDialog(wx.Dialog):
 LAST_USE_TOTAL = True
 class SetDepthDialog(wx.Dialog):
 	def __init__(self, parent, totalDepth, sectionDepth, section):
-		wx.Dialog.__init__(self, parent, -1, "Set Depth", style=wx.DEFAULT_DIALOG_STYLE)
+		wx.Dialog.__init__(self, parent, -1, "Set Depth", style=wx.DEFAULT_DIALOG_STYLE | wx.STAY_ON_TOP)
 		
 		global LAST_USE_TOTAL
 		self.useTotal = LAST_USE_TOTAL
@@ -434,7 +434,7 @@ class SetDepthDialog(wx.Dialog):
 
 class AgeListDialog(wx.Dialog):
 	def __init__(self, parent, active_list):
-		wx.Dialog.__init__(self, parent, -1, "Selected Age List", size=(210, 200),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
+		wx.Dialog.__init__(self, parent, -1, "Selected Age List", size=(210, 200),style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 		self.ageList = wx.ListBox(self, -1, (5,5),(200,100), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)
 		self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.ageList)
 		self.selectedNo =  -1 
@@ -465,7 +465,7 @@ class AgeListDialog(wx.Dialog):
 # with a few modifications. Shameful, but time is short.
 class SaveDialog(wx.Dialog):
 	def __init__(self, parent, msg, enableUpdateExisting):
-		wx.Dialog.__init__(self, parent, -1, "About", style=wx.DEFAULT_DIALOG_STYLE)
+		wx.Dialog.__init__(self, parent, -1, "About", style=wx.DEFAULT_DIALOG_STYLE | wx.STAY_ON_TOP)
 
 		self.Center()
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
@@ -506,7 +506,7 @@ class SaveDialog(wx.Dialog):
 # Unused.
 class SaveTableDialog(wx.Dialog):
 	def __init__(self, parent, id, affine, splice):
-		wx.Dialog.__init__(self, parent, id, "Save", size=(340, 180),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE|wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, id, "Save", size=(340, 180),style= wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
 		wx.StaticText(self, -1, 'Check to Save to Data Manager', (50, 10))
 		panel = wx.Panel( self, -1, (10, 30), size=(320, 40), style=wx.BORDER)
@@ -602,7 +602,7 @@ class SpliceListPanel(wx.Panel):
 
 class ExportFormatDialog(wx.Dialog):
 	def __init__(self, parent, title="Select Export Format"):
-		wx.Dialog.__init__(self, parent, -1, title, style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER)
+		wx.Dialog.__init__(self, parent, -1, title, style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER | wx.STAY_ON_TOP)
 
 		sz = wx.BoxSizer(wx.VERTICAL)
 		formatPanel = FormatListPanel(self)
@@ -630,7 +630,7 @@ class ExportFormatDialog(wx.Dialog):
 
 class ExportSpliceDialog(wx.Dialog):
 	def __init__(self, parent, affineItems, initialSelection=None):
-		wx.Dialog.__init__(self, parent, -1, "Export Splice", style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER)
+		wx.Dialog.__init__(self, parent, -1, "Export Splice", style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER | wx.STAY_ON_TOP)
 
 		sz = wx.BoxSizer(wx.VERTICAL)
 		formatPanel = FormatListPanel(self, formatChoices=["CSV", "Text"])
@@ -674,7 +674,7 @@ class ExportSpliceDialog(wx.Dialog):
 
 class ExportELDDialog(wx.Dialog):
 	def __init__(self, parent, affineItems, initialAffine, spliceItems, initialSplice):
-		wx.Dialog.__init__(self, parent, -1, "Export Splice", size=(300, 200),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER)
+		wx.Dialog.__init__(self, parent, -1, "Export Splice", size=(300, 200),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER | wx.STAY_ON_TOP)
 
 		sz = wx.BoxSizer(wx.VERTICAL)
 		formatPanel = FormatListPanel(self)
@@ -724,7 +724,7 @@ class ExportCoreDialog(wx.Dialog):
 	# datatype: string inidcating export datatype
 	# spliceHoles: string combining all holes participating in enabled splice (if any) e.g. "ABD"
 	def __init__(self, parent, enableAffine, enableSplice, holes, siteName, datatype, spliceHoles):
-		wx.Dialog.__init__(self, parent, -1, "Export Core Data", style= wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER)
+		wx.Dialog.__init__(self, parent, -1, "Export Core Data", style= wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER | wx.STAY_ON_TOP)
 		self.holes = holes
 		self.siteName = siteName
 		self.datatype = datatype
@@ -876,7 +876,7 @@ class ExportCoreDialog(wx.Dialog):
 
 class AltSpliceDialog(wx.Dialog):
 	def __init__(self, parent):
-		wx.Dialog.__init__(self, parent, -1, "View Alternate Splice", size=(360, 200),style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE)
+		wx.Dialog.__init__(self, parent, -1, "View Alternate Splice", size=(360, 200),style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 		panel = wx.Panel(self, -1, (15, 15), size=(330, 100), style=wx.BORDER)
 		wx.StaticText(panel, -1, 'Data Type', (10, 20))
 		wx.StaticText(panel, -1, 'Splice', (10, 60))
@@ -927,7 +927,7 @@ class AltSpliceDialog(wx.Dialog):
 
 class ColorTableDialog(wx.Dialog):
 	def __init__(self, parent):
-		wx.Dialog.__init__(self, parent, -1, "Color Set", style=wx.DEFAULT_DIALOG_STYLE)
+		wx.Dialog.__init__(self, parent, -1, "Color Set", style=wx.DEFAULT_DIALOG_STYLE | wx.STAY_ON_TOP)
 		self.colorList = []
 		self.overlapcolorList = []
 		self.initiated = 0
@@ -1359,7 +1359,7 @@ class SetDialog(wx.Dialog):
 		self.outComment = ""
 
 		wx.Dialog.__init__(self, parent, -1, "SET", size=(300,360), style=wx.DEFAULT_DIALOG_STYLE |
-						   wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
+						   wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 		self.SetBackgroundColour(wx.WHITE)
 		dlgSizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -1590,7 +1590,7 @@ class SetDialog(wx.Dialog):
 
 class CorrParamsDialog(wx.Dialog):
 	def __init__(self, parent, minDepthStep, depthStep, winLength, leadLag):
-		wx.Dialog.__init__(self, parent, -1, "Correlation Parameters", size=(280,170), style=wx.CAPTION)
+		wx.Dialog.__init__(self, parent, -1, "Correlation Parameters", size=(280,170), style=wx.CAPTION | wx.STAY_ON_TOP)
 		
 		self.minDepthStep = minDepthStep
 		
@@ -1638,7 +1638,7 @@ class CorrParamsDialog(wx.Dialog):
 
 class DepthRangeDialog(wx.Dialog):
 	def __init__(self, parent, min, max):
-		wx.Dialog.__init__(self, parent, -1, "Depth Display Range", style=wx.CAPTION)
+		wx.Dialog.__init__(self, parent, -1, "Depth Display Range", style=wx.CAPTION | wx.STAY_ON_TOP)
 		
 		# min/max edit controls
 		ctrlPanel = wx.Panel(self, -1)
@@ -1682,7 +1682,7 @@ class DepthRangeDialog(wx.Dialog):
 
 class DecimateDialog(wx.Dialog):
 	def __init__(self, parent, deciValue):
-		wx.Dialog.__init__(self, parent, -1, "Create Decimate Filter", style=wx.CAPTION)
+		wx.Dialog.__init__(self, parent, -1, "Create Decimate Filter", style=wx.CAPTION | wx.STAY_ON_TOP)
 		self.deciValue = deciValue
 		self.createGUI()
 
@@ -1785,7 +1785,7 @@ class DisplayOrderDialog(wx.Dialog):
 
 class SmoothDialog(wx.Dialog):
 	def __init__(self, parent, width=9, units=1, style=1):
-		wx.Dialog.__init__(self, parent, -1, "Create Smooth Filter", style=wx.CAPTION)
+		wx.Dialog.__init__(self, parent, -1, "Create Smooth Filter", style=wx.CAPTION | wx.STAY_ON_TOP)
 		self.parent = parent
 		self.createGUI()
 		self.width.SetValue(str(width))
@@ -1833,7 +1833,7 @@ class SmoothDialog(wx.Dialog):
 
 class CullDialog(wx.Dialog):
 	def __init__(self, parent, cullData):
-		wx.Dialog.__init__(self, parent, -1, "Create Cull Filter", style=wx.CAPTION)
+		wx.Dialog.__init__(self, parent, -1, "Create Cull Filter", style=wx.CAPTION | wx.STAY_ON_TOP)
 		self.parent = parent
 		self.createGUI()
 		self.fillValues(cullData)
@@ -1945,7 +1945,7 @@ class CullDialog(wx.Dialog):
 
 class ApplicationPreferencesDialog(wx.Dialog):
 	def __init__(self, parent, prefs):
-		wx.Dialog.__init__(self, parent, -1, "Correlator Preferences", size=(200,200), style=wx.CAPTION)
+		wx.Dialog.__init__(self, parent, -1, "Correlator Preferences", size=(200,200), style=wx.CAPTION | wx.STAY_ON_TOP)
 
 		self.prefsMap = prefs
 
@@ -1986,7 +1986,7 @@ class ApplicationPreferencesDialog(wx.Dialog):
 
 class AboutDialog(wx.Dialog):
 	def __init__(self, parent, version):
-		wx.Dialog.__init__(self, parent, -1, "About Correlator " + version, style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, -1, "About Correlator " + version, style= wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
 		vertSizer = wx.BoxSizer(wx.VERTICAL)
 		self.SetSizer(vertSizer)

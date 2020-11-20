@@ -67,7 +67,7 @@ CoreExportFormat = TabularFormat("Exported Core Data",
 
 class ImportDialog(wx.Dialog):
     def __init__(self, parent, dlgid, path, dataframe, goalFormat, allowEmptyCells=True):
-        wx.Dialog.__init__(self, parent, dlgid, size=(800,600), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        wx.Dialog.__init__(self, parent, dlgid, size=(800,600), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.STAY_ON_TOP)
 
         self.path = path # source file path
         self.dataframe = dataframe # pandas DataFrame read from self.path
