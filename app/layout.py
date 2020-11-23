@@ -136,6 +136,12 @@ class LayoutManager:
 
 	def setGroupByDatatype(self, groupByDatatype):
 		self.groupByDatatype = groupByDatatype
+
+	def isHoleVisible(self, holeName, datatype):
+		for hc in self.holeColumns:
+			if hc.holeName() == holeName and hc.datatype() == datatype:
+				return True
+		return False
 		
 	def _holeHasImages(self, holeName):
 		return holeName in self.holesWithImages

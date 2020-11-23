@@ -1602,14 +1602,9 @@ class DataCanvas(wxBufferedWindow):
 		if shiftTypeStr == "TIE" and self.showAffineTieArrows:
 			tieDepth, parentCore = self.parent.affineManager.getTieDepthAndParent(hole.holeName(), core.coreName())
 			holeType = hole.datatype()
+			if not self.layoutManager.isHoleVisible(parentCore.hole, holeType):
+				return
 			if holeType == ImageDatatypeStr:
-				parentHoleColumn = None
-				for hc in self.HoleColumns:	# find HoleColumn for parent core
-					if hc.holeName() == hole.holeName() and hc.datatype() == holeType:
-						parentHoleColumn = hc
-						break
-				if parentHoleColumn is None:
-					return
 				parentStartX = self.GetHoleStartX(parentCore.hole, holeType)
 				if parentStartX < startX:
 					parentStartX += self.coreImageWidth
