@@ -23,7 +23,7 @@ from importManager import py_correlator
 import frames
 import splice
 from layout import LayoutManager, ColumnType, ImageDatatypeStr
-from utils import CoreMetadata
+from utils import CoreMetadata, HoleMetadata
 
 
 # brg 4/9/2014: Why are we defining our own wxBufferedWindow when
@@ -986,7 +986,20 @@ class DataCanvas(wxBufferedWindow):
 		if result == None:
 			print "V2: Can't find matching CoreInfo for hole " + str(hole) + ", core (hole index) " + str(core)
 		return result
-		
+
+	# Given DataCanvas.HoleData list, return dict with elements of form
+	# key: datatype (string)
+	# value: list of hole names (strings) with that datatype
+	def getDatatypeHoleDict(self):
+		holeMetadataList = [HoleMetadata(hd) for hd in self.HoleData]
+		typeHolePairs = [(hmd.datatype(), hmd.holeName()) for hmd in holeMetadataList]
+		if self.showCoreImages and self.showImagesAsDatatype:
+			typeHolePairs += [(ImageDatatypeStr, h) for h in self.HolesWithImages]
+		dhDict = {}
+		for dt in list(set([datatype for datatype, _ in typeHolePairs])):
+			holeNames = sorted([name for datatype, name in typeHolePairs if datatype == dt])
+			dhDict[dt] = holeNames
+		return dhDict		
 
 	# convert y coordinate to depth - for composite area
 	def getDepth(self, ycoord):
