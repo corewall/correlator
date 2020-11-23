@@ -87,6 +87,7 @@ class LayoutManager:
 		self.showImagesAsDatatype = False
 		self.groupByDatatype = True
 		self.datatypeOrder = []
+		self.hiddenHoles = [] # hole name + datatype strings
 
 	def _reset(self):
 		self.holeColumns = []
@@ -115,8 +116,10 @@ class LayoutManager:
 			holeMetadataList = [HoleMetadata(hd) for hd in holeData]
 			holes = list(set([h.holeName() for h in holeMetadataList]))
 			# find holeData corresponding to each hole+datatype pair and create a HoleColumn for it
-			for h in sorted(holes): # TODO: this won't sort correctly if there are 27+ holes (27th hole 'AA' should comes after 26th hole 'Z')
+			for h in sorted(holes): # TODO: this won't sort correctly if there are 27+ holes (27th hole 'AA' should come after 26th hole 'Z')
 				for dt in self.datatypeOrder:
+					if h + dt in self.hiddenHoles:
+						continue
 					for idx, hmd in enumerate(holeMetadataList):
 						if showCoreImages and showImagesAsDatatype and hmd.holeName() == h and dt == ImageDatatypeStr and self._holeHasImages(h):
 							currentX += self._createImageColumn(holeData[idx], smoothData[idx][0], imageWidth, currentX, hmd.holeName() + ImageDatatypeStr)
@@ -159,7 +162,7 @@ class LayoutManager:
 	def _layoutPlotColumns(self, currentX, holeData, smoothData, datatype, plotWidth, imageWidth, showCoreImages, showImagesAsDatatype):
 		for holeIndex, holeList in enumerate(holeData):
 			hmd = HoleMetadata(holeList)
-			if hmd.datatype() != datatype:
+			if hmd.datatype() != datatype or (hmd.holeName() + hmd.datatype() in self.hiddenHoles):
 				continue
 			currentX += self._createPlotColumn(holeList, smoothData[holeIndex][0], plotWidth, imageWidth, currentX, hmd, showCoreImages, showImagesAsDatatype)
 		return currentX
@@ -169,7 +172,7 @@ class LayoutManager:
 		holesSeen = []
 		for holeIndex, holeList in enumerate(holeData):
 			hmd = HoleMetadata(holeList)
-			if hmd.holeName() in holesSeen:
+			if hmd.holeName() in holesSeen or (hmd.holeName() + ImageDatatypeStr in self.hiddenHoles):
 				continue # only one image column per hole if multiple datatypes are loaded
 			if self._holeHasImages(hmd.holeName()):
 				currentX += self._createImageColumn(holeList, smoothData[holeIndex][0], imageWidth, currentX, hmd.holeName() + ImageDatatypeStr)

@@ -3640,6 +3640,15 @@ class PreferencesPanel():
 		doDlg.SetPosition(pos)
 		doDlg.ShowModal()
 
+	def OnHoleVisibilityButton(self, event):
+		datatypeHoleDict = self.parent.Window.getDatatypeHoleDict()
+		datatypeOrder = list(self.parent.Window.layoutManager.getDatatypeOrder()) # copy
+		hiddenHoles = self.parent.Window.layoutManager.hiddenHoles # modify directly
+		dlg = dialog.HoleVisibilityDialog(self.parent, datatypeHoleDict, hiddenHoles, datatypeOrder)
+		pos = self.holeVisibilityButton.GetScreenPositionTuple()
+		dlg.SetPosition(pos)
+		dlg.ShowModal()
+
 	def OnGroupByDatatype(self, event):
 		self.parent.Window.layoutManager.setGroupByDatatype(self.groupByDatatype.IsChecked())
 		self.parent.Window.UpdateDrawing()
@@ -3682,6 +3691,8 @@ class PreferencesPanel():
 		# todo: group by datatype/hole checkbox
 		self.displayOrderButton = wx.Button(viewPanel, -1, "Display Order...")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDisplayOrderButton, self.displayOrderButton)
+		self.holeVisibilityButton = wx.Button(viewPanel, -1, "Show/Hide Holes...")
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnHoleVisibilityButton, self.holeVisibilityButton)
 		self.groupByDatatype = wx.CheckBox(viewPanel, -1, "Group by datatype")
 		self.groupByDatatype.SetValue(True)
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnGroupByDatatype, self.groupByDatatype)
@@ -3706,6 +3717,7 @@ class PreferencesPanel():
 		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showColorLegend, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.displayOrderButton, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.holeVisibilityButton, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.groupByDatatype, 0, wx.BOTTOM, 5)
 		viewPanel.SetSizer(viewSizer)
 		vbox_top.Add(viewPanel, 0, wx.BOTTOM | wx.EXPAND, 10)

@@ -1783,6 +1783,59 @@ class DisplayOrderDialog(wx.Dialog):
 		self.parent.Window.UpdateDrawing()
 
 
+# Show/hide holes
+class HoleVisibilityDialog(wx.Dialog):
+	def __init__(self, parent, holes, hiddenHoles, datatypeOrder):
+		wx.Dialog.__init__(self, parent, -1, "Hole Visibility", size=(-1, 400), style=wx.CAPTION | wx.STAY_ON_TOP)
+		self.parent = parent
+		self.holes = holes # dict of datatype str: [hole name strs]
+		self.hiddenHoles = hiddenHoles # list of hole name + datatype strs indicating which holes are currently hidden
+		self.datatypeOrder = datatypeOrder
+		self.createGUI()
+
+	def createGUI(self):
+		mainPanel = wx.Panel(self, -1)
+		mainSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+		self.typeList = wx.ListBox(mainPanel, -1, size=(-1, 120), choices=self.datatypeOrder)
+		self.Bind(wx.EVT_LISTBOX, self.SelectedTypeChanged, self.typeList)
+		self.holeList = wx.CheckListBox(mainPanel, -1, size=(-1, 120))
+		self.Bind(wx.EVT_CHECKLISTBOX, self.HoleItemChecked, self.holeList)
+
+		mainSizer.Add(self.typeList, 0)
+		mainSizer.Add(self.holeList, 0, wx.LEFT, 10)
+		mainPanel.SetSizer(mainSizer)
+
+		self.cancel = wx.Button(self, wx.ID_CANCEL, "Close")
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		sizer.Add(mainPanel, 1, wx.ALL, 10)
+		sizer.Add(self.cancel, 0, wx.ALIGN_CENTER | wx.BOTTOM, 5)
+		self.SetSizerAndFit(sizer)
+
+		if self.typeList.GetCount() > 0:
+			self.typeList.SetSelection(0)
+			self.SelectedTypeChanged(None)
+
+	def SelectedTypeChanged(self, evt):
+		seltype = self.typeList.GetStringSelection()
+		self.holeList.SetItems(self.holes[seltype])
+		for row, h in enumerate(self.holes[seltype]):
+			visible = h + seltype not in self.hiddenHoles
+			self.holeList.Check(row, visible)
+
+	def HoleItemChecked(self, evt):
+		idx = evt.GetInt()
+		visible = self.holeList.IsChecked(idx)
+		holeKey = self.holeList.GetString(idx) + self.typeList.GetStringSelection()
+		# print("{} is now {}".format(holeKey, "visible" if visible else "hidden"))
+		if visible and holeKey in self.hiddenHoles:
+			self.hiddenHoles.remove(holeKey)
+			self.parent.Window.UpdateDrawing()
+		elif not visible and holeKey not in self.hiddenHoles:
+			self.hiddenHoles.append(holeKey)
+			self.parent.Window.UpdateDrawing()
+
+
 class SmoothDialog(wx.Dialog):
 	def __init__(self, parent, width=9, units=1, style=1):
 		wx.Dialog.__init__(self, parent, -1, "Create Smooth Filter", style=wx.CAPTION | wx.STAY_ON_TOP)
