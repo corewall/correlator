@@ -1,5 +1,5 @@
 # Convenience wrapper for DataCanvas.HoleData list elements with
-# methods to access hole metadata
+# methods to access hole metadata.
 class HoleMetadata:
 	def __init__(self, holeData):
 		self.holeData = holeData
@@ -36,8 +36,8 @@ class HoleMetadata:
 		return self.hmt[8]
 
 
-# convenience class wrapping the core metadata tuples that comprise
-# elements 1...N of each HoleData element, listed below.
+# Convenience wrapper for the core metadata tuples that comprise
+# elements 1...N of each DataCanvas.HoleData element, listed below.
 # 0: core name (number as string)
 # 1: top depth
 # 2: bottom depth
