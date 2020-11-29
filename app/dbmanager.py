@@ -4200,6 +4200,17 @@ class DataFrame(wx.Panel):
 			img_files = [os.path.join(core_image_path, f) for f in os.listdir(core_image_path) if f.endswith('.jpg')]
 			self.parent.Window.LoadImages(img_files)
 
+		# print summary of what's been loaded
+		print("Load Complete!")
+		print("HoleData length {}".format(len(self.parent.Window.HoleData)))
+		if len(self.parent.Window.HoleData) > 0:
+			for idx, h in enumerate(self.parent.Window.HoleData):
+				print("  {}: Hole {}, Type {}, contains {} cores: {}".format(idx, h[0][0][7], h[0][0][2], len(h[0]) - 1, [c[0] for c in h[0][1:]]))
+		print("SmoothData length {}".format(len(self.parent.Window.HoleData)))
+		if len(self.parent.Window.SmoothData) > 0:
+			for idx, h in enumerate(self.parent.Window.SmoothData):
+				print("  {}: Hole {}, Type {}, contains {} cores: {}".format(idx, h[0][0][7], h[0][0][2], len(h[0]) - 1, [c[0] for c in h[0][1:]]))
+
 		self.parent.Window.ShowLog = False 
 
 		# self.parent.OnDisableMenu(1, True)
