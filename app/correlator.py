@@ -1516,11 +1516,14 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("fontstartdepth", self.Window.startDepthPix, f)
 		self.WritePreferenceItem("scrollsize", self.Window.ScrollSize, f)
 
-		showSectionDepths = 1 if self.Window.showSectionDepths == True else 0
+		showSectionDepths = int(self.Window.showSectionDepths)
 		self.WritePreferenceItem("showSectionDepths", showSectionDepths, f)
 
-		showCoreImages = 1 if self.Window.showCoreImages == True else 0
+		showCoreImages = int(self.Window.layoutManager.showCoreImages)
 		self.WritePreferenceItem("showCoreImages", showCoreImages, f)
+
+		showImagesAsDatatype = int(self.Window.layoutManager.showImagesAsDatatype)
+		self.WritePreferenceItem("showImagesAsDatatype", showImagesAsDatatype, f)
 
 		showCoreInfo = 1 if self.Window.showCoreInfo == True else 0
 		self.WritePreferenceItem("showCoreInfo", showCoreInfo, f)
@@ -2783,8 +2786,16 @@ class MainFrame(wx.Frame):
 		if self.config.has_option("applications", "showCoreImages"):
 			str_temp = self.config.get("applications", "showCoreImages")
 			if len(str_temp) > 0:
-				self.Window.showCoreImages = True if str_temp == '1' else False 
-				self.optPanel.showCoreImages.SetValue(self.Window.showCoreImages)
+				sci = (str_temp == '1')
+				self.Window.layoutManager.showCoreImages = sci
+				self.optPanel.setShowCoreImages(sci)
+
+		if self.config.has_option("applications", "showImagesAsDatatype"):
+			str_temp = self.config.get("applications", "showImagesAsDatatype")
+			if len(str_temp) > 0:
+				siad = (str_temp == '1')
+				self.Window.layoutManager.showImagesAsDatatype = siad
+				self.optPanel.setShowImagesAsDatatype(siad)
 
 		if self.config.has_option("applications", "showAffineShiftInfo"):
 			str_temp = self.config.get("applications", "showAffineShiftInfo")

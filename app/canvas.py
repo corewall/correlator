@@ -325,8 +325,6 @@ class DataCanvas(wxBufferedWindow):
 		self.showAffineShiftInfo = True  # brgtodo 6/25/2014 grab state from checkbox in frames and dump this var
 		self.showAffineTieArrows = True
 		self.showSectionDepths = True
-		self.showCoreImages = False
-		self.showImagesAsDatatype = False
 		self.showCoreInfo = False # show hole, core, min/max, quality, stretch on mouseover - see DrawGraphInfo()
 		self.showOutOfRangeData = False # if True, clip data plots to the width of the hole's plot area
 		self.showColorLegend = True # plot color legend
@@ -887,7 +885,7 @@ class DataCanvas(wxBufferedWindow):
 		return bmp
 
 	def GetCoreImageDisplayWidth(self):
-		return self.coreImageWidth if self.showCoreImages else 0
+		return self.coreImageWidth if self.layoutManager.showCoreImages else 0
 
 	def _getHoleName(self, txt):
 		holePattern = "U[0-9]+([A-Z]+)" # TODO: make flexible for non-IODP section IDs
@@ -993,7 +991,7 @@ class DataCanvas(wxBufferedWindow):
 	def getDatatypeHoleDict(self):
 		holeMetadataList = [HoleMetadata(hd) for hd in self.HoleData]
 		typeHolePairs = [(hmd.datatype(), hmd.holeName()) for hmd in holeMetadataList]
-		if self.showCoreImages and self.showImagesAsDatatype:
+		if self.layoutManager.showCoreImages and self.layoutManager.showImagesAsDatatype:
 			typeHolePairs += [(ImageDatatypeStr, h) for h in self.HolesWithImages]
 		dhDict = {}
 		for dt in list(set([datatype for datatype, _ in typeHolePairs])):
@@ -1624,7 +1622,7 @@ class DataCanvas(wxBufferedWindow):
 					tieX = (tieX * self.coefRange) + startX
 					parentY = self.getCoord(parentNearDepth)
 					parentTieX = parentNearDatum - self.minRange
-					showImages = self.showCoreImages and not self.showImagesAsDatatype and self.HoleHasImages(parentCore.hole)
+					showImages = self.layoutManager.showCoreImages and not self.layoutManager.showImagesAsDatatype and self.HoleHasImages(parentCore.hole)
 					parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType) + (self.coreImageWidth if showImages else 0)
 					arrowRect, drawData = self._createTieShiftArrowDrawData(parentTieX, tieX, tieY)
 					self.AffineTieArrows.append((hole.holeName() + core.coreName(), arrowRect, drawData))
@@ -1832,7 +1830,7 @@ class DataCanvas(wxBufferedWindow):
 		intervalSelected = (interval == self.parent.spliceManager.getSelected())
 		self.DrawSpliceIntervalPlot(dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed)
 
-		if self.parent.sectionSummary and self.showCoreImages:
+		if self.parent.sectionSummary and self.layoutManager.showCoreImages:
 			self.DrawSpliceIntervalImages(dc, interval, startX)
 
 		if intervalSelected:
@@ -2444,7 +2442,7 @@ class DataCanvas(wxBufferedWindow):
 
 	def LayoutHoleColumns(self):
 		columnSpaceX = self.compositeX - self.minScrollRange + self.plotLeftMargin
-		self.layoutManager.layout(self.HoleData, self.SmoothData, self.HolesWithImages, columnSpaceX, self.plotLeftMargin, self.plotWidth, self.coreImageWidth, self.showCoreImages, self.showImagesAsDatatype)
+		self.layoutManager.layout(self.HoleData, self.SmoothData, self.HolesWithImages, columnSpaceX, self.plotLeftMargin, self.plotWidth, self.coreImageWidth)
 		self.HoleColumns = self.layoutManager.holeColumns
 		self.WidthsControl = self.layoutManager.holePositions
 

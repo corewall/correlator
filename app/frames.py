@@ -3601,13 +3601,13 @@ class PreferencesPanel():
 		self.parent.Window.UpdateDrawing()
 
 	def OnShowCoreImages(self, event):
-		self.parent.Window.showCoreImages = self.showCoreImages.IsChecked()
+		self.parent.Window.layoutManager.showCoreImages = self.showCoreImages.IsChecked()
 		self.EnableCoreImageDisplayModeChoice(self.showCoreImages.IsChecked())
 		self.parent.Window.UpdateDrawing()
 
 	def OnCoreImageDisplayMode(self, event):
 		asDatatype = True if self.coreImageDisplayMode.GetSelection() == 1 else 0
-		self.parent.Window.showImagesAsDatatype = asDatatype
+		self.parent.Window.layoutManager.showImagesAsDatatype = asDatatype
 		self.parent.Window.UpdateDrawing()
 
 	def EnableCoreImageDisplayModeChoice(self, enable):
@@ -3652,6 +3652,13 @@ class PreferencesPanel():
 	def OnGroupByDatatype(self, event):
 		self.parent.Window.layoutManager.setGroupByDatatype(self.groupByDatatype.IsChecked())
 		self.parent.Window.UpdateDrawing()
+
+	def setShowCoreImages(self, sci):
+		self.showCoreImages.SetValue(sci)
+
+	def setShowImagesAsDatatype(self, siad):
+		sel = 1 if siad else 0
+		self.coreImageDisplayMode.SetSelection(sel)
 	
 	# def OnShowLogShiftArrows(self, event):
 	# 	self.parent.Window.LogClue = self.showLogShiftArrows.IsChecked()
