@@ -2974,15 +2974,6 @@ class MainFrame(wx.Frame):
 			if len(str_temp) > 0:
 				self.Directory = str_temp
 
-		# total hole width - still used for splice and log, supplanted
-		# by coreImageWidth and plotWidth for composite area
-		# if self.config.has_option("applications", "datawidth"):
-		# 	str_temp = self.config.get("applications", "datawidth")
-		# 	if len(str_temp) > 0:
-		# 		conf_value = int(str_temp)
-		# 		self.optPanel.holeWidthSlider.SetValue(conf_value)
-		# 		self.optPanel.OnChangeHoleWidth(None)
-
 		if self.config.has_option("applications", "plotwidth"):
 			str_temp = self.config.get("applications", "plotwidth")
 			if len(str_temp) > 0:

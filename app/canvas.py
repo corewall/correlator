@@ -436,22 +436,14 @@ class DataCanvas(wxBufferedWindow):
 		self.spliceHoleWidth = 300
 		self.logHoleWidth = 210
 		
-		# some kind of HoleLayoutManager who knows these things
-		# in addition to display options?
-		self.plotWidth = 250
-		self.coreImageWidth = 50
-		# 0: display full width, stretched/squeezed to fit self.coreImageWidth
-		# 1: display middle third, stretched/squeezed to fit self.coreImageWidth
-		# 2: display at correct aspect ratio - overrides self.coreImageWidth
+		# 0: display full width, stretched/squeezed to fit self.layoutManager.imageWidth
+		# 1: display middle third, stretched/squeezed to fit self.layoutManager.imageWidth
+		# 2: display at correct aspect ratio - overrides self.layoutManager.imageWidth
 		self.coreImageStyle = 0
 		self.coreImageResolution = 3003 # pixels per meter TODO: Hard-coded for test image set
 
 		self.Height = 0 # pixel height of client area
 		self.Width = 0 # pixel width of client area
-
-		# Space to the left of a hole plot in which core number and shift type+distance are displayed.
-		# The hard-coded 50s littered throughout canvas.py should be replaced with this!
-		self.plotLeftMargin = 50
 
 		# y-coordinate where the first depth ruler tick is drawn.
 		# this value - 20 is the top of the plot area i.e. the bottom of hole headers
@@ -829,7 +821,7 @@ class DataCanvas(wxBufferedWindow):
 		else:
 			self.coreImageStyle = new_style
 
-	def _updateCoreImageWidth(self):
+	def _updateImageWidth(self):
 		if self.coreImageStyle == 0 or self.coreImageStyle == 1:
 			# restore old image width
 			self.parent.optPanel.OnChangeImageWidth(None)
@@ -841,8 +833,8 @@ class DataCanvas(wxBufferedWindow):
 			h_phys = h_px / float(self.coreImageResolution)
 			draw_height_px = h_phys * self.pixPerMeter
 			scale = float(draw_height_px) / h_px
-			self.coreImageWidth = int(round(img.GetWidth() * scale))
-			# print("Image is {}px high = {}m at {}px/m; width {} scales to {}".format(h_px, h_phys, self.coreImageResolution, img.GetWidth(), self.coreImageWidth))
+			self.layoutManager.imageWidth = int(round(img.GetWidth() * scale))
+			# print("Image is {}px high = {}m at {}px/m; width {} scales to {}".format(h_px, h_phys, self.coreImageResolution, img.GetWidth(), self.layoutManager.imageWidth))
 		# self.InvalidateImages()
 		# self.UpdateDrawing()
 
@@ -851,7 +843,7 @@ class DataCanvas(wxBufferedWindow):
 		for k, v in self.Images.items():
 			invalidatedImages[k] = (v[0], None)
 		self.Images = invalidatedImages
-		self._updateCoreImageWidth()
+		self._updateImageWidth()
 
 	def LoadImages(self, img_files):
 		self.HolesWithImages = []
@@ -872,20 +864,21 @@ class DataCanvas(wxBufferedWindow):
 		img, bmp = self.Images[sectionName]
 		if bmp is None: # recreate bitmap if it was invalidated
 			if self.coreImageStyle == 0: # full width
-				bmp = img.Scale(self.coreImageWidth, displayHeight).ConvertToBitmap()
+				bmp = img.Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
 			elif self.coreImageStyle == 1: # middle third
 				wid = img.GetWidth()
 				x = int(round(wid / 3.0))
 				img_rect = wx.Rect(x, 0, x, img.GetHeight())
-				bmp = img.GetSubImage(img_rect).Scale(self.coreImageWidth, displayHeight).ConvertToBitmap()
+				bmp = img.GetSubImage(img_rect).Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
 			elif self.coreImageStyle == 2: # aspect ratio
-				# self.coreImageWidth is set to correct pixel width to maintain aspect ratio
-				bmp = img.Scale(self.coreImageWidth, displayHeight).ConvertToBitmap()
+				# self.layoutManager.imageWidth is set to correct pixel width to maintain aspect ratio
+				bmp = img.Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
 			self.Images[sectionName] = (img, bmp)
 		return bmp
 
+	# used only for drawing of core images in splice
 	def GetCoreImageDisplayWidth(self):
-		return self.coreImageWidth if self.layoutManager.showCoreImages else 0
+		return self.layoutManager.imageWidth if self.layoutManager.showCoreImages else 0
 
 	def _getHoleName(self, txt):
 		holePattern = "U[0-9]+([A-Z]+)" # TODO: make flexible for non-IODP section IDs
@@ -1422,10 +1415,10 @@ class DataCanvas(wxBufferedWindow):
 		dc.DrawLine(rangeMax, self.startDepthPix - 20, rangeMax, self.Height) # right edge of hole plot
 		# right edge of next hole plot's info area (core number, affine shift type and distance)
 		dc.SetPen(wx.Pen(wx.YELLOW, 1))
-		dc.DrawLine(rangeMax + self.plotLeftMargin - 1, self.startDepthPix - 20, rangeMax + self.plotLeftMargin - 1, self.Height)
+		dc.DrawLine(rangeMax + self.layoutManager.plotLeftMargin - 1, self.startDepthPix - 20, rangeMax + self.layoutManager.plotLeftMargin - 1, self.Height)
 		dc.SetPen(wx.Pen(wx.BLUE, 1))
-		dc.DrawLine(startX, self.startDepthPix - 20, rangeMax + self.plotLeftMargin, self.startDepthPix - 20) # top of hole plot
-		dc.DrawLine(startX, self.Height, rangeMax + self.plotLeftMargin, self.Height) # bottom of hole plot...obscured by horz scrollbar
+		dc.DrawLine(startX, self.startDepthPix - 20, rangeMax + self.layoutManager.plotLeftMargin, self.startDepthPix - 20) # top of hole plot
+		dc.DrawLine(startX, self.Height, rangeMax + self.layoutManager.plotLeftMargin, self.Height) # bottom of hole plot...obscured by horz scrollbar
 
 		# Draw some debugging lines indicating bounds of Composite Area
 		dc.SetPen(wx.Pen(wx.RED))
@@ -1497,7 +1490,7 @@ class DataCanvas(wxBufferedWindow):
 				self.minRange = r[1]
 				self.maxRange = r[2]
 				if r[3] != 0.0:
-					self.coefRange = self.plotWidth / r[3]
+					self.coefRange = self.layoutManager.plotWidth / r[3]
 				else:
 					self.coefRange = 0 
 				smoothType = SmoothingType(r[4])
@@ -1605,9 +1598,9 @@ class DataCanvas(wxBufferedWindow):
 			if holeType == ImageDatatypeStr:
 				parentStartX = self.GetHoleStartX(parentCore.hole, holeType)
 				if parentStartX < startX:
-					parentStartX += self.coreImageWidth
+					parentStartX += self.layoutManager.imageWidth
 				else:
-					startX += self.coreImageWidth
+					startX += self.layoutManager.imageWidth
 				arrowRect, drawData = self._createTieShiftArrowDrawData(parentStartX, startX, self.getCoord(tieDepth))
 				self.AffineTieArrows.append((hole.holeName() + core.coreName(), arrowRect, drawData))
 			else:
@@ -1623,7 +1616,7 @@ class DataCanvas(wxBufferedWindow):
 					parentY = self.getCoord(parentNearDepth)
 					parentTieX = parentNearDatum - self.minRange
 					showImages = self.layoutManager.showCoreImages and not self.layoutManager.showImagesAsDatatype and self.HoleHasImages(parentCore.hole)
-					parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType) + (self.coreImageWidth if showImages else 0)
+					parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType) + (self.layoutManager.imageWidth if showImages else 0)
 					arrowRect, drawData = self._createTieShiftArrowDrawData(parentTieX, tieX, tieY)
 					self.AffineTieArrows.append((hole.holeName() + core.coreName(), arrowRect, drawData))
 
@@ -1723,7 +1716,7 @@ class DataCanvas(wxBufferedWindow):
 				self.minRange = r[1]
 				self.maxRange = r[2]
 				if r[3] != 0.0:
-					self.coefRangeSplice = self.plotWidth / r[3]
+					self.coefRangeSplice = self.layoutManager.plotWidth / r[3]
 				else:
 					self.coefRangeSplice = 0
 				self.smooth_id = r[4]
@@ -1731,7 +1724,7 @@ class DataCanvas(wxBufferedWindow):
 			
 	def _GetSpliceRangeCoef(self, datamin, datamax):
 		# return self.spliceHoleWidth / (datamax - datamin)
-		return self.plotWidth / (datamax - datamin)
+		return self.layoutManager.plotWidth / (datamax - datamin)
 			
 	def _UpdateSpliceRange(self, datamin, datamax):
 		for r in self.range:
@@ -1771,10 +1764,10 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetPen(whitePen)
 		dc.SetBrush(whiteBrush)
 		img_wid = self.GetCoreImageDisplayWidth()
-		startx = self.splicerX + self.plotLeftMargin + img_wid # beginning of splice plot area
-		endx = startx + self.plotLeftMargin + (self.plotWidth * 2) # right end of splice guide area
+		startx = self.splicerX + self.layoutManager.plotLeftMargin + img_wid # beginning of splice plot area
+		endx = startx + self.layoutManager.plotLeftMargin + (self.layoutManager.plotWidth * 2) # right end of splice guide area
 		ycoord = self.getSpliceCoord(tie.depth())
-		circlex = startx + (self.plotWidth / 2)
+		circlex = startx + (self.layoutManager.plotWidth / 2)
 		namestr = tie.getName()
 		namex = circlex - (dc.GetTextExtent(namestr)[0] / 2)
 		
@@ -1841,7 +1834,7 @@ class DataCanvas(wxBufferedWindow):
 		self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX - img_wid)
 
 	def DrawSpliceIntervalPlot(self, dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed):
-		clip_width = self.Width - startX if self.showOutOfRangeData else self.plotWidth + self.plotLeftMargin
+		clip_width = self.Width - startX if self.showOutOfRangeData else self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin
 		clip = wx.DCClipper(dc, wx.Rect(startX, self.startDepthPix - 20, clip_width, self.Height - (self.startDepthPix - 20)))
 
 		if len(screenPoints) >= 1:
@@ -1867,7 +1860,7 @@ class DataCanvas(wxBufferedWindow):
 		img_clip_top_y = max(drawing_start_y, interval_top_y)
 
 		# wx.DCClipper-based clipping region is destroyed when it goes out of scope (i.e. at function end)
-		rect = wx.Rect(startX - self.coreImageWidth, img_clip_top_y, self.coreImageWidth, interval_bot_y - img_clip_top_y)
+		rect = wx.Rect(startX - self.layoutManager.imageWidth, img_clip_top_y, self.layoutManager.imageWidth, interval_bot_y - img_clip_top_y)
 		clip = wx.DCClipper(dc, rect)
 
 		secrows = self.parent.sectionSummary.getSectionRows(interval.coreinfo.hole, interval.coreinfo.holeCore)
@@ -1880,7 +1873,7 @@ class DataCanvas(wxBufferedWindow):
 			secName = row.fullIdentity()
 			bmp = self.GetImageBitmap(secName, botPx - topPx)
 			if bmp is not None:
-				dc.DrawBitmap(bmp, startX - self.coreImageWidth, topPx)
+				dc.DrawBitmap(bmp, startX - self.layoutManager.imageWidth, topPx)
 
 
 	def GetScreenPoints(self, dataPoints, drawingStart, startX):
@@ -1895,7 +1888,7 @@ class DataCanvas(wxBufferedWindow):
 	# draw info header above splice hole column
 	def DrawSpliceHeader(self, dc):
 		firstint = self.parent.spliceManager.getIntervalAtIndex(0)
-		rangeMax = self.splicerX + self.plotLeftMargin
+		rangeMax = self.splicerX + self.layoutManager.plotLeftMargin
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 		dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height)))
 		dc.DrawText("Leg: " + firstint.coreinfo.site + " Site: " + firstint.coreinfo.leg + " Hole: Splice", rangeMax, 5)
@@ -1904,7 +1897,7 @@ class DataCanvas(wxBufferedWindow):
 	def DrawSplice(self, dc, hole, smoothed):
 		# vertical dotted line separating splice from next splice hole (or core to be spliced)
 		img_wid = self.GetCoreImageDisplayWidth()
-		spliceholewidth = self.splicerX + img_wid + self.plotWidth + (self.plotLeftMargin * 2) # splice plot margin, guide margin (may not be needed)
+		spliceholewidth = self.splicerX + img_wid + self.layoutManager.plotWidth + (self.layoutManager.plotLeftMargin * 2) # splice plot margin, guide margin (may not be needed)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 		dc.DrawLines(((spliceholewidth, self.startDepthPix - 20), (spliceholewidth, self.Height)))
 		
@@ -1915,20 +1908,20 @@ class DataCanvas(wxBufferedWindow):
 			self.DrawSpliceHeader(dc)
 			
 			drawing_start = self.SPrulerStartDepth - 5.0
-			startX = self.splicerX + self.plotLeftMargin + img_wid
+			startX = self.splicerX + self.layoutManager.plotLeftMargin + img_wid
 			clip_y = self.startDepthPix - 20
 			clip_height = self.Height - clip_y
-			clip_rect = wx.Rect(x=startX, y=clip_y, width=self.plotWidth + self.plotLeftMargin, height=clip_height)
+			clip_rect = wx.Rect(x=startX, y=clip_y, width=self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin, height=clip_height)
 			for si in self.parent.spliceManager.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
 				self.DrawSpliceInterval(dc, si, drawing_start, startX, smoothed)
 			if self.parent.spliceManager.hasSelection():
-				selected_x = startX + self.plotWidth + self.plotLeftMargin
+				selected_x = startX + self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin
 				# draw debug guides for left and right bounds of selected core plot, immediately to right of splice
 				# dc.SetPen(wx.Pen(wx.RED, 1))
 				# dc.DrawLine(selected_x, clip_y, selected_x, clip_y + clip_height)
-				# dc.DrawLine(selected_x + self.plotWidth, clip_y, selected_x + self.plotWidth, clip_y + clip_height)
-				guide_clip_rect = wx.Rect(x=selected_x, y=clip_y, width=self.plotWidth, height=clip_height)
-				self.DrawSelectedSpliceGuide(dc, self.parent.spliceManager.getSelected(), drawing_start, startX + self.plotWidth, guide_clip_rect)
+				# dc.DrawLine(selected_x + self.layoutManager.plotWidth, clip_y, selected_x + self.layoutManager.plotWidth, clip_y + clip_height)
+				guide_clip_rect = wx.Rect(x=selected_x, y=clip_y, width=self.layoutManager.plotWidth, height=clip_height)
+				self.DrawSelectedSpliceGuide(dc, self.parent.spliceManager.getSelected(), drawing_start, startX + self.layoutManager.plotWidth, guide_clip_rect)
 		else: # draw help text
 			ypos = self.getSpliceCoord(self.SPrulerStartDepth)
 			dc.DrawText("Drag a core from the left to start a splice.", self.splicerX + 20, ypos + 20)
@@ -1938,7 +1931,7 @@ class DataCanvas(wxBufferedWindow):
 	def DrawAlternateSpliceInfo(self, dc):
 		coreinfo = self.parent.spliceManager.getAltInfo()
 		img_wid = self.GetCoreImageDisplayWidth()
-		rangeMax = self.splicerX + img_wid + ((self.plotWidth + self.plotLeftMargin) * 2)
+		rangeMax = self.splicerX + img_wid + ((self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin) * 2)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 		dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height)))
 		if coreinfo is not None:
@@ -1951,7 +1944,7 @@ class DataCanvas(wxBufferedWindow):
 					
 	def DrawAlternateSplice(self, dc, hole, smoothed):
 		img_wid = self.GetCoreImageDisplayWidth()
-		altSpliceX = self.splicerX + img_wid + ((self.plotWidth + self.plotLeftMargin) * 2)
+		altSpliceX = self.splicerX + img_wid + ((self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin) * 2)
 		
 		# vertical dotted line separating splice from next splice hole (or core to be spliced)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
@@ -1974,8 +1967,8 @@ class DataCanvas(wxBufferedWindow):
 		for pt in interval.coreinfo.coredata:
 			if pt[0] >= drawing_start and pt[0] <= self.SPrulerEndDepth:
 				y = self.startDepthPix + (pt[0] - self.SPrulerStartDepth) * self.pixPerMeter
-				spliceholewidth = self.splicerX + self.plotLeftMargin + img_wid + self.plotWidth
-				x = (pt[1] - self.minRange) * self.coefRangeSplice + spliceholewidth + self.plotLeftMargin
+				spliceholewidth = self.splicerX + self.layoutManager.plotLeftMargin + img_wid + self.layoutManager.plotWidth
+				x = (pt[1] - self.minRange) * self.coefRangeSplice + spliceholewidth + self.layoutManager.plotLeftMargin
 				screenpoints.append((x,y))
 		if len(screenpoints) >= 1:
 			clip = wx.DCClipper(dc, guide_clip_rect)
@@ -2048,7 +2041,7 @@ class DataCanvas(wxBufferedWindow):
 			clip_width = (self.splicerX - 60)
 		else: # clip to plot area
 			clip_x = plotStartX
-			clip_width = min(self.plotWidth + 2, (self.splicerX - 60) - plotStartX)
+			clip_width = min(self.layoutManager.plotWidth + 2, (self.splicerX - 60) - plotStartX)
 		# wx.DCClipper-based clipping region is destroyed when it goes out of scope
 		return wx.DCClipper(dc, wx.Region(x=clip_x, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
 
@@ -2096,7 +2089,7 @@ class DataCanvas(wxBufferedWindow):
 				py = y
 				i = i + 1
 
-		# data_max = plotStartX + self.plotWidth / 2.0
+		# data_max = plotStartX + self.layoutManager.plotWidth / 2.0
 		# draw lines 
 		# if data_max < self.splicerX: # brg let clipping handle this
 		for r in lines:
@@ -2111,7 +2104,7 @@ class DataCanvas(wxBufferedWindow):
 	# Highlight core on mouseover
 	def DrawHighlight(self, dc, x, top_y, bot_y, pointCount):
 		if not self.HasDragCore() and not self.highlightedCore and pointCount > 1:
-			wid = self.plotWidth + 1
+			wid = self.layoutManager.plotWidth + 1
 			# print("core {}{}, test rect={}".format(holeName, core.coreName(), wx.Rect(hx, hy, wid, hit)))
 			if wx.Rect(x, top_y, wid, bot_y - top_y).Contains(self.MousePos):
 				# print("   inside!")
@@ -2223,7 +2216,7 @@ class DataCanvas(wxBufferedWindow):
 		for r in self.range:
 			if r[0] == datatype: 
 				if r[3] != 0.0:
-					self.coefRange = self.plotWidth / r[3]
+					self.coefRange = self.layoutManager.plotWidth / r[3]
 				else:
 					self.coefRange = 0
 				tempx = (x - startx) / self.coefRange + self.minData
@@ -2441,8 +2434,8 @@ class DataCanvas(wxBufferedWindow):
 		dc.EndDrawing()
 
 	def LayoutHoleColumns(self):
-		columnSpaceX = self.compositeX - self.minScrollRange + self.plotLeftMargin
-		self.layoutManager.layout(self.HoleData, self.SmoothData, self.HolesWithImages, columnSpaceX, self.plotLeftMargin, self.plotWidth, self.coreImageWidth)
+		columnSpaceX = self.compositeX - self.minScrollRange + self.layoutManager.plotLeftMargin
+		self.layoutManager.layout(self.HoleData, self.SmoothData, self.HolesWithImages, columnSpaceX, self.layoutManager.plotLeftMargin)
 		self.HoleColumns = self.layoutManager.holeColumns
 		self.WidthsControl = self.layoutManager.holePositions
 
@@ -2462,7 +2455,7 @@ class DataCanvas(wxBufferedWindow):
 				self.minRange = r[1]
 				self.maxRange = r[2]
 				if r[3] != 0.0:
-					self.coefRange = self.plotWidth / r[3]
+					self.coefRange = self.layoutManager.plotWidth / r[3]
 				else:
 					self.coefRange = 0 
 				smooth_id = r[4]
@@ -3868,7 +3861,7 @@ class DataCanvas(wxBufferedWindow):
 		# check for click on SpliceIntervalTie - is user starting to drag?
 		img_wid = self.GetCoreImageDisplayWidth()
 		for siTie in self.parent.spliceManager.getTies():
-			basex = self.splicerX + self.plotLeftMargin + img_wid + (self.plotWidth / 2)
+			basex = self.splicerX + self.layoutManager.plotLeftMargin + img_wid + (self.layoutManager.plotWidth / 2)
 			basey = self.getSpliceCoord(siTie.depth())
 			rect = wx.Rect(basex - 8, basey - 8, 16, 16)
 			if rect.Inside(wx.Point(pos[0], pos[1])):
@@ -3877,7 +3870,7 @@ class DataCanvas(wxBufferedWindow):
 				return
 		
 		# select SpliceInterval at click depth
-		if pos[0] >= self.splicerX and pos[0] < self.splicerX + img_wid + (self.plotLeftMargin * 2) + self.plotWidth:
+		if pos[0] >= self.splicerX and pos[0] < self.splicerX + img_wid + (self.layoutManager.plotLeftMargin * 2) + self.layoutManager.plotWidth:
 			depth = self.getSpliceDepth(pos[1])
 			if not self.parent.spliceManager.select(depth):
 				self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)
@@ -4033,7 +4026,7 @@ class DataCanvas(wxBufferedWindow):
 					typeMin = r[1]
 					typeMax = r[2]
 					if r[3] != 0.0:
-						typeCoefRange = self.plotWidth / r[3]
+						typeCoefRange = self.layoutManager.plotWidth / r[3]
 					else:
 						self.coefRange = 0
 					drawSmooth = (r[4] > 0) # type 0 = Unsmoothed, 1 = SmoothedOnly 2 = Smoothed&Unsmoothed
@@ -4046,7 +4039,7 @@ class DataCanvas(wxBufferedWindow):
 					for v in valuelist:
 						depth, datum = v
 						screenx = (datum - typeMin) * typeCoefRange
-						x = screenx + xoffset - (self.plotWidth / 2)
+						x = screenx + xoffset - (self.layoutManager.plotWidth / 2)
 						screeny = self.getCoord(depth)
 						y = screeny + yoffset
 						dragCoreLines.append((x, y))
@@ -4517,7 +4510,7 @@ class DataCanvas(wxBufferedWindow):
 				if interval is not None:
 					splicemin, splicemax = self._GetSpliceRange(interval.coreinfo.type)
 					spliceCoef = self._GetSpliceRangeCoef(splicemin, splicemax)
-					datamin = (interval.coreinfo.minData - splicemin) * spliceCoef + self.splicerX + 50
+					datamin = (interval.coreinfo.minData - splicemin) * spliceCoef + self.splicerX + 50 # plotLeftMargin?
 					miTuple = (interval.coreinfo.core, pos[0], pos[1], datamin, 0)
 					self.DrawData["MouseInfo"] = [miTuple]
 					got = 1 # must set or DrawData["MouseInfo"] will be cleared

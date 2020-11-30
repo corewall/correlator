@@ -3527,7 +3527,7 @@ class PreferencesPanel():
 	def OnChangePlotWidth(self, event):
 		idx = self.plotWidthSlider.GetValue()
 		plotWidth = 100 + (idx * 2) # width range: 100-300px
-		self.parent.Window.plotWidth = plotWidth
+		self.parent.Window.layoutManager.plotWidth = plotWidth
 		if event is None:
 			return
 		self.parent.Window.UpdateDrawing()
@@ -3535,7 +3535,7 @@ class PreferencesPanel():
 	def OnChangeImageWidth(self, event):
 		idx = self.imageWidthSlider.GetValue()
 		imageWidth = 30 + (idx * 2) # width range: 30-230px
-		self.parent.Window.coreImageWidth = imageWidth
+		self.parent.Window.layoutManager.imageWidth = imageWidth
 		if event is None:
 			return
 		self.parent.Window.InvalidateImages() # wx.Images must be recreated at appropriate width

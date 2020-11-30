@@ -12,8 +12,8 @@ class ColumnType(Enum):
 ImageDatatypeStr = "Image"
 	
 class HoleColumn:
-	def __init__(self, holeData, smoothData):
-		self.margin = 50 # hard-coded...should match DataCanvas.plotLeftMargin
+	def __init__(self, margin, holeData, smoothData):
+		self.margin = margin # width of leftmost space where core number and shift type+distance are displayed
 		self._columns = [] # tuples of (ColumnType, column width in pixels)
 		self.rawHoleData = holeData
 		self.holeData = holeData[0]
@@ -78,12 +78,16 @@ class HoleColumn:
 
 class LayoutManager:
 	def __init__(self):
-		self.holeColumns = []
-		self.holePositions = []
-		self.holesWithImages = []
 		self.showCoreImages = False
 		self.showImagesAsDatatype = False
 		self.groupByDatatype = True
+		self.plotWidth = 250
+		self.imageWidth = 50
+		self.plotLeftMargin = 50
+
+		self.holeColumns = []
+		self.holePositions = []
+		self.holesWithImages = []
 		self.datatypeOrder = []
 		self.hiddenHoles = [] # hole name + datatype strings
 
@@ -91,7 +95,7 @@ class LayoutManager:
 		self.holeColumns = []
 		self.holePositions = []
 
-	def layout(self, holeData, smoothData, holesWithImages, x, margin, plotWidth, imageWidth):
+	def layout(self, holeData, smoothData, holesWithImages, x, margin):
 		self._reset()
 		self.holesWithImages = holesWithImages # gross
 
@@ -107,9 +111,9 @@ class LayoutManager:
 		if self.groupByDatatype:
 			for dt in self.datatypeOrder:
 				if dt == ImageDatatypeStr and self.showCoreImages and self.showImagesAsDatatype:
-					currentX = self._layoutImageColumns(currentX, holeData, smoothData, imageWidth)
+					currentX = self._layoutImageColumns(currentX, holeData, smoothData)
 				else:
-					currentX = self._layoutPlotColumns(currentX, holeData, smoothData, dt, plotWidth, imageWidth)
+					currentX = self._layoutPlotColumns(currentX, holeData, smoothData, dt)
 		else: # group by hole
 			holeMetadataList = [HoleMetadata(hd) for hd in holeData]
 			holes = list(set([h.holeName() for h in holeMetadataList]))
@@ -120,10 +124,10 @@ class LayoutManager:
 						continue
 					for idx, hmd in enumerate(holeMetadataList):
 						if self.showCoreImages and self.showImagesAsDatatype and hmd.holeName() == h and dt == ImageDatatypeStr and self._holeHasImages(h):
-							currentX += self._createImageColumn(holeData[idx], smoothData[idx][0], imageWidth, currentX, hmd.holeName() + ImageDatatypeStr)
+							currentX += self._createImageColumn(holeData[idx], smoothData[idx][0], currentX, hmd.holeName() + ImageDatatypeStr)
 							break
 						elif hmd.holeName() == h and hmd.datatype() == dt:
-							currentX += self._createPlotColumn(holeData[idx], smoothData[idx][0], plotWidth, imageWidth, currentX, hmd)
+							currentX += self._createPlotColumn(holeData[idx], smoothData[idx][0], currentX, hmd)
 							break
 
 	def getDatatypeOrder(self):
@@ -145,40 +149,40 @@ class LayoutManager:
 		return holeName in self.holesWithImages
 
 	# create a HoleColumn with nothing but an ImageColumn
-	def _createImageColumn(self, holeData, smoothData, imageWidth, currentX, holeKey):
-		holeCol = HoleColumn(holeData, smoothData)
-		holeCol.addColumn(ColumnType.Image, imageWidth)
+	def _createImageColumn(self, holeData, smoothData, currentX, holeKey):
+		holeCol = HoleColumn(self.plotLeftMargin, holeData, smoothData)
+		holeCol.addColumn(ColumnType.Image, self.imageWidth)
 		self.holeColumns.append(holeCol)
 		self.holePositions.append((currentX, holeKey))
 		return holeCol.width()
 
 	# create a HoleColumn with a PlotColumn and possibly an ImageColumn
-	def _createPlotColumn(self, holeData, smoothData, plotWidth, imageWidth, currentX, hmd):
-		holeCol = HoleColumn(holeData, smoothData)
+	def _createPlotColumn(self, holeData, smoothData, currentX, hmd):
+		holeCol = HoleColumn(self.plotLeftMargin, holeData, smoothData)
 		if self._holeHasImages(hmd.holeName()) and self.showCoreImages and not self.showImagesAsDatatype:
-			holeCol.addColumn(ColumnType.Image, imageWidth)
-		holeCol.addColumn(ColumnType.Plot, plotWidth)
+			holeCol.addColumn(ColumnType.Image, self.imageWidth)
+		holeCol.addColumn(ColumnType.Plot, self.plotWidth)
 		self.holeColumns.append(holeCol)
 		self.holePositions.append((currentX, hmd.holeName() + hmd.datatype()))
 		return holeCol.width()
 
 	# for HoleColumns with a PlotColumn and possibly an ImageColumn
-	def _layoutPlotColumns(self, currentX, holeData, smoothData, datatype, plotWidth, imageWidth):
+	def _layoutPlotColumns(self, currentX, holeData, smoothData, datatype):
 		for holeIndex, holeList in enumerate(holeData):
 			hmd = HoleMetadata(holeList)
 			if hmd.datatype() != datatype or (hmd.holeName() + hmd.datatype() in self.hiddenHoles):
 				continue
-			currentX += self._createPlotColumn(holeList, smoothData[holeIndex][0], plotWidth, imageWidth, currentX, hmd)
+			currentX += self._createPlotColumn(holeList, smoothData[holeIndex][0], currentX, hmd)
 		return currentX
 
 	# for HoleColumns with nothing but an ImageColumn
-	def _layoutImageColumns(self, currentX, holeData, smoothData, imageWidth):
+	def _layoutImageColumns(self, currentX, holeData, smoothData):
 		holesSeen = []
 		for holeIndex, holeList in enumerate(holeData):
 			hmd = HoleMetadata(holeList)
 			if hmd.holeName() in holesSeen or (hmd.holeName() + ImageDatatypeStr in self.hiddenHoles):
 				continue # only one image column per hole if multiple datatypes are loaded
 			if self._holeHasImages(hmd.holeName()):
-				currentX += self._createImageColumn(holeList, smoothData[holeIndex][0], imageWidth, currentX, hmd.holeName() + ImageDatatypeStr)
+				currentX += self._createImageColumn(holeList, smoothData[holeIndex][0], currentX, hmd.holeName() + ImageDatatypeStr)
 				holesSeen.append(hmd.holeName())
 		return currentX
