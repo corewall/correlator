@@ -298,6 +298,12 @@ class SmoothingType(Enum):
 	Smoothed = 1
 	SmoothedAndUnsmoothed = 2
 
+# Display styles for core imagery
+class ImageDisplayStyle(Enum):
+	FullWidth = 0
+	MiddleThird = 1
+	AspectRatio = 2
+
 
 class DataCanvas(wxBufferedWindow):
 	def __init__(self, parent, id= -1):
@@ -436,10 +442,7 @@ class DataCanvas(wxBufferedWindow):
 		self.spliceHoleWidth = 300
 		self.logHoleWidth = 210
 		
-		# 0: display full width, stretched/squeezed to fit self.layoutManager.imageWidth
-		# 1: display middle third, stretched/squeezed to fit self.layoutManager.imageWidth
-		# 2: display at correct aspect ratio - overrides self.layoutManager.imageWidth
-		self.coreImageStyle = 0
+		self.coreImageStyle = ImageDisplayStyle.FullWidth
 		self.coreImageResolution = 3003 # pixels per meter TODO: Hard-coded for test image set
 
 		self.Height = 0 # pixel height of client area
@@ -822,10 +825,10 @@ class DataCanvas(wxBufferedWindow):
 			self.coreImageStyle = new_style
 
 	def _updateImageWidth(self):
-		if self.coreImageStyle == 0 or self.coreImageStyle == 1:
+		if self.coreImageStyle in [ImageDisplayStyle.FullWidth, ImageDisplayStyle.MiddleThird]:
 			# restore old image width
 			self.parent.optPanel.OnChangeImageWidth(None)
-		elif self.coreImageStyle == 2:
+		elif self.coreImageStyle == ImageDisplayStyle.AspectRatio: # overrides layoutManager.imageWidth to maintain aspect ratio
 			if len(self.Images) == 0:
 				return
 			img, _ = self.Images[self.Images.keys()[0]]
@@ -835,8 +838,6 @@ class DataCanvas(wxBufferedWindow):
 			scale = float(draw_height_px) / h_px
 			self.layoutManager.imageWidth = int(round(img.GetWidth() * scale))
 			# print("Image is {}px high = {}m at {}px/m; width {} scales to {}".format(h_px, h_phys, self.coreImageResolution, img.GetWidth(), self.layoutManager.imageWidth))
-		# self.InvalidateImages()
-		# self.UpdateDrawing()
 
 	def InvalidateImages(self):
 		invalidatedImages = {}
@@ -863,14 +864,14 @@ class DataCanvas(wxBufferedWindow):
 			return None
 		img, bmp = self.Images[sectionName]
 		if bmp is None: # recreate bitmap if it was invalidated
-			if self.coreImageStyle == 0: # full width
+			if self.coreImageStyle == ImageDisplayStyle.FullWidth:
 				bmp = img.Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
-			elif self.coreImageStyle == 1: # middle third
+			elif self.coreImageStyle == ImageDisplayStyle.MiddleThird:
 				wid = img.GetWidth()
 				x = int(round(wid / 3.0))
 				img_rect = wx.Rect(x, 0, x, img.GetHeight())
 				bmp = img.GetSubImage(img_rect).Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
-			elif self.coreImageStyle == 2: # aspect ratio
+			elif self.coreImageStyle == ImageDisplayStyle.AspectRatio:
 				# self.layoutManager.imageWidth is set to correct pixel width to maintain aspect ratio
 				bmp = img.Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
 			self.Images[sectionName] = (img, bmp)

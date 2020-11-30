@@ -3543,7 +3543,7 @@ class PreferencesPanel():
 
 	def OnChangeImageStyle(self, event):
 		style_idx = self.imageStyleChoice.GetSelection()
-		self.parent.Window.UpdateImageStyle(style_idx)
+		self.parent.Window.UpdateImageStyle(canvas.ImageDisplayStyle(style_idx))
 		# disable width slider if aspect ratio style is selected
 		enableWidthControls = False if style_idx == 2 else True
 		self.imageWidthSlider.Enable(enableWidthControls)
