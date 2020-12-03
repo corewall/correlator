@@ -966,7 +966,10 @@ class DataCanvas(wxBufferedWindow):
 						result = c[5] # affine offset
 		return result
 	
-	def findCoreInfoByHoleCoreType_v2(self, hole, core, datatype):
+	# Create a CoreInfo object from the matching self.HoleData element.
+	# Used in cases where self.DrawData["CoreInfo"] is empty and thus
+	# findCoreInfoByHoleCoreType() will return None.
+	def createCoreInfoForHoleCoreType(self, hole, core, datatype):
 		result = None
 		for h in self.HoleData:
 			curHole = h[0] # needless list

@@ -3643,7 +3643,7 @@ class SpliceController:
 			tabularImport.writeToFile(df, exportPath)
 
 	# given a Splice Interval Table row from pandas.DataFrame, return core info,
-	# applied affine shift, unshifed depths and shifted depths (both with file and applied affine) 
+	# applied affine shift, unshifted depths and shifted depths (both with file and applied affine) 
 	def getRowDepths(self, row, datatype=None):
 		hole = row["Hole"]
 		core = str(row["Core"])
@@ -3662,7 +3662,7 @@ class SpliceController:
 				datatype = ci.type
 		if datatype == "NaturalGamma":
 			datatype = "Natural Gamma"
-		coreinfo = self.parent.Window.findCoreInfoByHoleCoreType_v2(hole, core, datatype)
+		coreinfo = self.parent.Window.createCoreInfoForHoleCoreType(hole, core, datatype)
 		if coreinfo is None:
 			print "Couldn't find hole {} core {} of type {}".format(hole, core, datatype)
 			coreinfo = self.parent.Window.findCoreInfoByHoleCore(hole, core)
@@ -3721,7 +3721,7 @@ class SpliceController:
 			hole, core, datatype = row['Hole'], str(row['Core']), row['Data Used']
 			if datatype == "NaturalGamma":
 				datatype = "Natural Gamma"
-			coreinfo = self.parent.Window.findCoreInfoByHoleCoreType_v2(hole, core, datatype)
+			coreinfo = self.parent.Window.createCoreInfoForHoleCoreType(hole, core, datatype)
 			if coreinfo is None:
 				missingCoreStr = "{}{}".format(str(hole), str(core))
 				if datatype in missingData:
