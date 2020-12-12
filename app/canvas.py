@@ -230,14 +230,9 @@ class AffineTiePointEventBroadcaster:
 #
 # CoreArea
 # Contains metadata about core plots that were drawn in the
-# most recent DrawMainView() loop. CoreArea tuples have 8 elements:
+# most recent DrawMainView() loop. CoreArea tuples have 3 elements:
 # - associated CoreInfo object
-# - leftmost plotted x-coord (i.e. the smallest data value in this core)
-# - topmost plotted y-coord (i.e. first coordinate in core's depth/data pairs),
-# - pixel distance between smallest and largest data point x-coords,
-# - pixel distance between top and bottom depth y-coords,
-# - x-coord of left edge of HoleColumn
-# - pixel width of HoleColumn
+# - wx.Rect with the bounds of the drawn core
 # - hole index
 #
 # MouseInfo
@@ -246,10 +241,9 @@ class AffineTiePointEventBroadcaster:
 # - core index
 # - x-coord of mouse
 # - y-coord of mouse
-# - x-coord of smallest data value in core
-# - flag indicating type of core plot mouse is over: 0 = splice, 1 = composite, 2 = log?
-# Appears flag was used to draw mouse info in appropriate area. Currently this element
-# is unused.
+# - x-coord of the left of the HoleColumn's Plot column if mouse is currently
+#   over it. Otherwise, x-coord of the left of the HoleColumn.
+# - boolean indicating whether the mouse is currently over a Plot column
 #
 # MovableSkin
 # Splice scrollbar thumb - bmp, x, y
@@ -1550,7 +1544,7 @@ class DataCanvas(wxBufferedWindow):
 
 			topPoint = self.getCoord(cmd.depthDataPairs()[0][0])
 			botPoint = self.getCoord(cmd.depthDataPairs()[-1][0])
-			self.CreateCoreArea(coreInfo, cmd, startX, holeColumn.contentWidth(), topPoint, botPoint)
+			self.CreateCoreArea(coreInfo, startX, holeColumn.contentWidth(), topPoint, botPoint)
 			self.coreCount += 1
 
 			if cmd.affineOffset() != 0:
@@ -2048,10 +2042,8 @@ class DataCanvas(wxBufferedWindow):
 
 	# Add core's CoreArea metadata to DrawData
 	# cmd: CoreMetadata object
-	def CreateCoreArea(self, coreInfo, cmd, x, width, top_y, bot_y):
-		dataMinX = (cmd.minData() - self.minRange) * self.coefRange + x
-		dataMaxX = (cmd.maxData() - self.minRange) * self.coefRange + x
-		coreDrawData = (coreInfo, dataMinX, top_y, dataMaxX - dataMinX, bot_y - top_y, x, width + 1, self.HoleCount)
+	def CreateCoreArea(self, coreInfo, x, width, top_y, bot_y):
+		coreDrawData = (coreInfo, wx.Rect(x, top_y, width + 1, bot_y - top_y), self.HoleCount)
 		self.DrawData["CoreArea"].append(coreDrawData)
 
 	def CreateCoreInfo(self, holeColumn, coreMetadataTuple, coreTop, coreBot, coreCount):
@@ -3880,22 +3872,20 @@ class DataCanvas(wxBufferedWindow):
 		if len(self.TieData) == 0 and self.selectScroll == 0 and self.grabScrollA == 0 and self.grabScrollC == 0:
 			if pos[0] <= self.splicerX:
 				for area in self.DrawData["CoreArea"]:
-					coreInfo, x, y, w, h, min, max, hole_idx = area
-					reg = wx.Rect(min, y, max, h)
-					if reg.Inside(wx.Point(pos[0], pos[1])):
+					coreInfo, rect, hole_idx = area
+					if rect.Inside(wx.Point(pos[0], pos[1])):
 						self.dragCore = coreInfo.core
 
 		# Detect shift-click on core to prepare for affine tie creation
 		if self.pressedkeyShift == 1:
 			if self.drag == 0:
 				for area in self.DrawData["CoreArea"]:
-					coreInfo, x, y, w, h, min, max, hole_idx = area
-					reg = wx.Rect(min, y, max, h)
-					if reg.Inside(wx.Point(pos[0], pos[1])):
+					coreInfo, rect, hole_idx = area
+					if rect.Inside(wx.Point(pos[0], pos[1])):
 						self.selectedCore = coreInfo.core
 						self.mouseX = pos[0] 
 						self.mouseY = pos[1] 
-						self.currentStartX = min
+						self.currentStartX = rect.GetX()
 						self.currentHole = hole_idx 
 						break
 
@@ -4491,8 +4481,7 @@ class DataCanvas(wxBufferedWindow):
 			for area in self.DrawData["CoreArea"]:
 				# core info, leftmost plotted x coord, topmost plotted y coord, 
 				# width (px), height (px), x coord of left edge of hole column, px width of hole column, hole index
-				coreInfo, x, y, w, h, columnLeftX, columnWidth, hole_idx = area
-				rect = wx.Rect(columnLeftX, y, columnWidth, h)
+				coreInfo, rect, hole_idx = area
 				if rect.Inside(wx.Point(pos[0], pos[1])):
 					got = 1
 					self.selectedCore = coreInfo.core
@@ -4503,7 +4492,7 @@ class DataCanvas(wxBufferedWindow):
 					plotOffset = hc.getColumnOffset(ColumnType.Plot) if overPlot else 0
 					# print("Over column {}, subcolumn {}".format(hc.columnKey(), hc.getColumnTypeAtPos(pos[0])))
 
-					mouseInfo = [(coreInfo, pos[0], pos[1], columnLeftX + plotOffset, overPlot)]
+					mouseInfo = [(coreInfo, pos[0], pos[1], rect.GetX() + plotOffset, overPlot)]
 					self.DrawData["MouseInfo"] = mouseInfo
 					break
 
