@@ -270,8 +270,6 @@ class AffineTiePointEventBroadcaster:
 # DragCore - converted to class DragCoreData, see above
 # CoreInfo - converted to class CoreInfo, see above
 #
-# SpliceArea, LogArea - obsolete
-#
 # Other things that are not easily understood...
 # 
 # self.range is a list of 'range' tuples, each corresponding to a loaded datatype.
@@ -2469,8 +2467,6 @@ class DataCanvas(wxBufferedWindow):
 		# print("{} DrawMainView()".format(self.draw_count))
 		# self.draw_count += 1
 		self.DrawData["CoreArea"] = [] 
-		self.DrawData["SpliceArea"] = [] 
-		self.DrawData["LogArea"] = [] 
 		self.DrawData["CoreInfo"] = []
 		self.AffineTieArrows = [] # (hole+core, bounding rect) for each TIE arrow
 		self.highlightedCore = False # has a core been highlighted (rect drawn around bounds)?
@@ -4485,43 +4481,43 @@ class DataCanvas(wxBufferedWindow):
 				return
 
 		got = 0
-
 		# brg 1/29/2014: if mouse is over options panel, don't bother proceeding - the draw
 		# commands change nothing and cause GUI elements to respond sluggishly
 		if self.MousePos[0] > self.Width:
 			return
 
-		#if self.drag == 0: 
-		for key, data in self.DrawData.items():
-			if key == "CoreArea":
-				for area in data:
-					# core info, leftmost plotted x coord, topmost plotted y coord, 
-					# width (px), height (px), x coord of left edge of hole column, px width of hole column, hole index
-					coreInfo, x, y, w, h, columnLeftX, columnWidth, hole_idx = area
-					rect = wx.Rect(columnLeftX, y, columnWidth, h)
-					if rect.Inside(wx.Point(pos[0], pos[1])):
-						got = 1
-						self.selectedCore = coreInfo.core
-						# print("(mouseover) selectedCore = {}".format(n))
+		# draw info for current mouseover core
+		if "CoreArea" in self.DrawData:
+			for area in self.DrawData["CoreArea"]:
+				# core info, leftmost plotted x coord, topmost plotted y coord, 
+				# width (px), height (px), x coord of left edge of hole column, px width of hole column, hole index
+				coreInfo, x, y, w, h, columnLeftX, columnWidth, hole_idx = area
+				rect = wx.Rect(columnLeftX, y, columnWidth, h)
+				if rect.Inside(wx.Point(pos[0], pos[1])):
+					got = 1
+					self.selectedCore = coreInfo.core
+					# print("(mouseover) selectedCore = {}".format(n))
 
-						hc = self.layoutManager.getColumnAtPos(pos[0])
-						overPlot = hc.getColumnTypeAtPos(pos[0]) == ColumnType.Plot
-						plotOffset = hc.getColumnOffset(ColumnType.Plot) if overPlot else 0
-						# print("Over column {}, subcolumn {}".format(hc.columnKey(), hc.getColumnTypeAtPos(pos[0])))
+					hc = self.layoutManager.getColumnAtPos(pos[0])
+					overPlot = hc.getColumnTypeAtPos(pos[0]) == ColumnType.Plot
+					plotOffset = hc.getColumnOffset(ColumnType.Plot) if overPlot else 0
+					# print("Over column {}, subcolumn {}".format(hc.columnKey(), hc.getColumnTypeAtPos(pos[0])))
 
-						mouseInfo = [(coreInfo, pos[0], pos[1], columnLeftX + plotOffset, overPlot)]
-						self.DrawData["MouseInfo"] = mouseInfo
-						break
-			elif key == "SpliceArea" and self.MousePos[0] > self.splicerX:
-				ydepth = self.getSpliceDepth(pos[1])
-				interval = self.parent.spliceManager.getIntervalAtDepth(ydepth)
-				if interval is not None:
-					splicemin, splicemax = self._GetSpliceRange(interval.coreinfo.type)
-					spliceCoef = self._GetSpliceRangeCoef(splicemin, splicemax)
-					datamin = (interval.coreinfo.minData - splicemin) * spliceCoef + self.splicerX + 50 # plotLeftMargin?
-					miTuple = (interval.coreinfo, pos[0], pos[1], datamin, True)
-					self.DrawData["MouseInfo"] = [miTuple]
-					got = 1 # must set or DrawData["MouseInfo"] will be cleared
+					mouseInfo = [(coreInfo, pos[0], pos[1], columnLeftX + plotOffset, overPlot)]
+					self.DrawData["MouseInfo"] = mouseInfo
+					break
+
+		# draw info for mouseover splice core
+		if self.MousePos[0] > self.splicerX:
+			ydepth = self.getSpliceDepth(pos[1])
+			interval = self.parent.spliceManager.getIntervalAtDepth(ydepth)
+			if interval is not None:
+				splicemin, splicemax = self._GetSpliceRange(interval.coreinfo.type)
+				spliceCoef = self._GetSpliceRangeCoef(splicemin, splicemax)
+				datamin = (interval.coreinfo.minData - splicemin) * spliceCoef + self.splicerX + 50 # plotLeftMargin?
+				miTuple = (interval.coreinfo, pos[0], pos[1], datamin, True)
+				self.DrawData["MouseInfo"] = [miTuple]
+				got = 1 # must set or DrawData["MouseInfo"] will be cleared
 
 		if self.drag == 1:
 			got = 1 

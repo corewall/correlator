@@ -1590,7 +1590,7 @@ class SpliceIntervalPanel():
 		if chr(evt.GetKeyCode()) != ',':
 			evt.Skip()
 
-	# selected SpliceInterval changed through SpliceArea click, update GUI to reflect
+	# selected SpliceInterval changed through click, update GUI to reflect
 	def OnSelectionChange(self):
 		self._updateButtons()
 		self._updateTableSelection()
