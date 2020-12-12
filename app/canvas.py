@@ -236,8 +236,8 @@ class AffineTiePointEventBroadcaster:
 # - topmost plotted y-coord (i.e. first coordinate in core's depth/data pairs),
 # - pixel distance between smallest and largest data point x-coords,
 # - pixel distance between top and bottom depth y-coords,
-# - x-coord of left edge of plot area, todo: HoleColumn area?
-# - pixel width of plot area, todo: HoleColumn area?
+# - x-coord of left edge of HoleColumn
+# - pixel width of HoleColumn
 # - hole index
 #
 # MouseInfo
@@ -2174,8 +2174,7 @@ class DataCanvas(wxBufferedWindow):
 			if bmp is not None:
 				dc.DrawBitmap(bmp, startX, topPx)
 
-	# flag unused
-	def DrawGraphInfo(self, dc, coreInfo, flag):
+	def DrawGraphInfo(self, dc, coreInfo):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
@@ -2198,8 +2197,7 @@ class DataCanvas(wxBufferedWindow):
 
 		return (coreInfo.type, coreInfo.hole)
 	
-	# flag unused
-	def DrawMouseInfo(self, dc, coreInfo, x, y, startx, flag, datatype):
+	def DrawMouseInfo(self, dc, coreInfo, x, y, startx, overPlot, datatype):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetTextBackground(self.colorDict['background'])
@@ -2209,34 +2207,34 @@ class DataCanvas(wxBufferedWindow):
 		ycoord = self.getDepth(y) if x < self.splicerX else self.getSpliceDepth(y)
 		unroundedYcoord = ycoord
 		ycoord = round(ycoord, 3)
-		#if flag == 1:
-		#	dc.DrawText(str(ycoord), self.compositeX + 3, y - 5)
-		#else:
-		#	dc.DrawText(str(ycoord), self.splicerX + 3, y - 5)
 
-		# draw value of current mouse x position based on current core's datatype
-		tempx = 0.0
-		if datatype == "Natural Gamma":
-			datatype = "NaturalGamma"
-		for r in self.range:
-			if r[0] == datatype: 
-				if r[3] != 0.0:
-					self.coefRange = self.layoutManager.plotWidth / r[3]
-				else:
-					self.coefRange = 0
-				tempx = (x - startx) / self.coefRange + self.minData
-				tempx = round(tempx, 3)
-				if self.drag == 0:
-					dc.DrawText(str(tempx), x, self.startDepthPix - 15)
-					# print("Mouse over datatype {}, x-pos = {}, data value = {}".format(datatype, x, tempx))
-				break
+		# draw data value of current mouse x position for hole's datatype
+		data_str = None
+		if overPlot:
+			if datatype == "Natural Gamma":
+				datatype = "NaturalGamma"
+			for r in self.range:
+				if r[0] == datatype:
+					minData = r[1]
+					if r[3] != 0.0:
+						self.coefRange = self.layoutManager.plotWidth / r[3]
+					else:
+						self.coefRange = 0
+					data_at_x = (x - startx) / self.coefRange + minData
+					data_str = str(round(data_at_x, 3))
+					if self.drag == 0:
+						dc.DrawText(data_str, x, self.startDepthPix - 15)
+						# print("Mouse over datatype {}, x-pos = {}, data value = {}, startx = {}, mindata = {}".format(datatype, x, data_str, startx, minData))
+					break
 
 		section, offset = self.parent.GetSectionAtDepth(coreInfo.leg, coreInfo.hole, coreInfo.holeCore, datatype, ycoord)
 		self.statusStr += " Section: " + str(section) + " Section offset: " + str(offset) + "cm"
 
 		# display depth in ruler units
 		yUnitAdjusted = round(unroundedYcoord * self.GetRulerUnitsFactor(), 3)
-		self.statusStr += " Depth: " + str(yUnitAdjusted) + " Data: " + str(tempx)
+		self.statusStr += " Depth: " + str(yUnitAdjusted)
+		if data_str is not None:
+			self.statusStr += " Data: " + data_str
 
 	def DrawAnnotation(self, dc, info, line):
 		dc.SetBrush(wx.TRANSPARENT_BRUSH)
@@ -2384,14 +2382,14 @@ class DataCanvas(wxBufferedWindow):
 		for key, data in self.DrawData.items():
 			if key == "MouseInfo":
 				for r in data:
-					coreInfo, x, y, startx, flag = r
+					coreInfo, x, y, startx, overPlot = r
 					if coreInfo is not None and self.findCoreInfoByHoleCore(coreInfo.hole, coreInfo.holeCore) is not None:
 						if self.showCoreInfo:
-							self.DrawGraphInfo(dc, coreInfo, flag)
+							self.DrawGraphInfo(dc, coreInfo)
 						holeType, holeName = coreInfo.type, coreInfo.hole
 						self.minData = coreInfo.minData
 						self.selectedHoleType = holeType
-						self.DrawMouseInfo(dc, coreInfo, x, y, startx, flag, holeType)
+						self.DrawMouseInfo(dc, coreInfo, x, y, startx, overPlot, holeType)
 			if holeType != "":
 				break
 		self.parent.statusBar.SetStatusText(self.statusStr)
@@ -4497,16 +4495,21 @@ class DataCanvas(wxBufferedWindow):
 		for key, data in self.DrawData.items():
 			if key == "CoreArea":
 				for area in data:
-					# core index, leftmost plotted x coord, topmost plotted y coord, 
-					# width (px), height (px), x coord of left edge of plot area, px width of plot area, hole index
-					coreInfo, x, y, w, h, plotMinX, plotWidth, hole_idx = area
-					rect = wx.Rect(plotMinX, y, plotWidth, h)
+					# core info, leftmost plotted x coord, topmost plotted y coord, 
+					# width (px), height (px), x coord of left edge of hole column, px width of hole column, hole index
+					coreInfo, x, y, w, h, columnLeftX, columnWidth, hole_idx = area
+					rect = wx.Rect(columnLeftX, y, columnWidth, h)
 					if rect.Inside(wx.Point(pos[0], pos[1])):
 						got = 1
 						self.selectedCore = coreInfo.core
 						# print("(mouseover) selectedCore = {}".format(n))
 
-						mouseInfo = [(coreInfo, pos[0], pos[1], x, 1)]
+						hc = self.layoutManager.getColumnAtPos(pos[0])
+						overPlot = hc.getColumnTypeAtPos(pos[0]) == ColumnType.Plot
+						plotOffset = hc.getColumnOffset(ColumnType.Plot) if overPlot else 0
+						# print("Over column {}, subcolumn {}".format(hc.columnKey(), hc.getColumnTypeAtPos(pos[0])))
+
+						mouseInfo = [(coreInfo, pos[0], pos[1], columnLeftX + plotOffset, overPlot)]
 						self.DrawData["MouseInfo"] = mouseInfo
 						break
 			elif key == "SpliceArea" and self.MousePos[0] > self.splicerX:
@@ -4516,7 +4519,7 @@ class DataCanvas(wxBufferedWindow):
 					splicemin, splicemax = self._GetSpliceRange(interval.coreinfo.type)
 					spliceCoef = self._GetSpliceRangeCoef(splicemin, splicemax)
 					datamin = (interval.coreinfo.minData - splicemin) * spliceCoef + self.splicerX + 50 # plotLeftMargin?
-					miTuple = (interval.coreinfo, pos[0], pos[1], datamin, 0)
+					miTuple = (interval.coreinfo, pos[0], pos[1], datamin, True)
 					self.DrawData["MouseInfo"] = [miTuple]
 					got = 1 # must set or DrawData["MouseInfo"] will be cleared
 
