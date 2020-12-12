@@ -4503,8 +4503,8 @@ class DataCanvas(wxBufferedWindow):
 			if interval is not None:
 				splicemin, splicemax = self._GetSpliceRange(interval.coreinfo.type)
 				spliceCoef = self._GetSpliceRangeCoef(splicemin, splicemax)
-				datamin = (interval.coreinfo.minData - splicemin) * spliceCoef + self.splicerX + 50 # plotLeftMargin?
-				miTuple = (interval.coreinfo, pos[0], pos[1], datamin, True)
+				plotLeftX = self.splicerX + self.layoutManager.plotLeftMargin + self.GetCoreImageDisplayWidth()
+				miTuple = (interval.coreinfo, pos[0], pos[1], plotLeftX, pos[0] >= plotLeftX)
 				self.DrawData["MouseInfo"] = [miTuple]
 				got = 1 # must set or DrawData["MouseInfo"] will be cleared
 
