@@ -3633,6 +3633,10 @@ class PreferencesPanel():
 		self.parent.Window.showColorLegend = self.showColorLegend.IsChecked()
 		self.parent.Window.UpdateDrawing()
 
+	def OnShowDepthLine(self, event):
+		self.parent.Window.showDepthLine = self.showDepthLine.IsChecked()
+		self.parent.Window.UpdateDrawing()
+
 	def OnDisplayOrderButton(self, event):
 		curDisplayOrder = list(self.parent.Window.layoutManager.getDatatypeOrder()) # copy
 		doDlg = dialog.DisplayOrderDialog(self.parent, curDisplayOrder)
@@ -3695,6 +3699,8 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowOutOfRangeData, self.showOutOfRangeData)
 		self.showColorLegend = wx.CheckBox(viewPanel, -1, "Show plot color legend")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowColorLegend, self.showColorLegend)
+		self.showDepthLine = wx.CheckBox(viewPanel, -1, "Show line at current depth")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowDepthLine, self.showDepthLine)
 		# todo: group by datatype/hole checkbox
 		self.displayOrderButton = wx.Button(viewPanel, -1, "Display Order...")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDisplayOrderButton, self.displayOrderButton)
@@ -3723,6 +3729,7 @@ class PreferencesPanel():
 		viewSizer.Add(self.showOutOfRangeData, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showColorLegend, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.showDepthLine, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.displayOrderButton, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.holeVisibilityButton, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.groupByDatatype, 0, wx.BOTTOM, 5)

@@ -326,6 +326,7 @@ class DataCanvas(wxBufferedWindow):
 		self.showCoreInfo = False # show hole, core, min/max, quality, stretch on mouseover - see DrawGraphInfo()
 		self.showOutOfRangeData = False # if True, clip data plots to the width of the hole's plot area
 		self.showColorLegend = True # plot color legend
+		self.showDepthLine = False # draw line at current mouse position depth
 		
 		# debug options
 		self.showBounds = False
@@ -2412,10 +2413,9 @@ class DataCanvas(wxBufferedWindow):
 					dc.DrawLines(((self.splicerX, depthStrY), (self.Width, depthStrY)))
 
 			# draw horizontal line indicating mouse depth
-			# dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-			# dc.DrawLines(((self.compositeX, self.MousePos[1]), (self.Width, self.MousePos[1])))
-
-			#self.MousePos = None
+			if self.showDepthLine:
+				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.SOLID))
+				dc.DrawLines(((self.compositeX, self.MousePos[1]), (self.Width, self.MousePos[1])))
 
 		endDrawTime = time.clock()
 		if self.showFPS:
