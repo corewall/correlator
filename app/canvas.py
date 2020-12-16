@@ -2041,7 +2041,6 @@ class DataCanvas(wxBufferedWindow):
 		return wx.DCClipper(dc, wx.Region(x=clip_x, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
 
 	# Add core's CoreArea metadata to DrawData
-	# cmd: CoreMetadata object
 	def CreateCoreArea(self, coreInfo, x, width, top_y, bot_y):
 		coreDrawData = (coreInfo, wx.Rect(x, top_y, width + 1, bot_y - top_y), self.HoleCount)
 		self.DrawData["CoreArea"].append(coreDrawData)
@@ -4479,8 +4478,6 @@ class DataCanvas(wxBufferedWindow):
 		# draw info for current mouseover core
 		if "CoreArea" in self.DrawData:
 			for area in self.DrawData["CoreArea"]:
-				# core info, leftmost plotted x coord, topmost plotted y coord, 
-				# width (px), height (px), x coord of left edge of hole column, px width of hole column, hole index
 				coreInfo, rect, hole_idx = area
 				if rect.Inside(wx.Point(pos[0], pos[1])):
 					got = 1
