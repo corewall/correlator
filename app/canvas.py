@@ -2220,7 +2220,7 @@ class DataCanvas(wxBufferedWindow):
 		section, offset = self.parent.GetSectionAtDepth(coreInfo.leg, coreInfo.hole, coreInfo.holeCore, datatype, ycoord)
 		self.statusStr += " Section: " + str(section) + " Section offset: " + str(offset) + "cm"
 
-		# display depth in ruler units
+		# Status bar: display depth at current mouse y position and data at x if available
 		yUnitAdjusted = round(unroundedYcoord * self.GetRulerUnitsFactor(), 3)
 		self.statusStr += " Depth: " + str(yUnitAdjusted)
 		if data_str is not None:
@@ -2386,6 +2386,7 @@ class DataCanvas(wxBufferedWindow):
 
 		self.selectedHoleType = holeType
 
+		# draw depth at mouse y-position
 		if self.MousePos is not None:
 			dc.SetBrush(wx.TRANSPARENT_BRUSH)
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
@@ -2398,17 +2399,15 @@ class DataCanvas(wxBufferedWindow):
 			ycoord = round(ycoord, 3)
 			depthStrY = self.MousePos[1] - 12 # draw depth text just above horizontal depth line
 			if self.MousePos[0] < self.splicerX:
-				# Draw current depth in left margin of mouseover hole plot
-				if holeName != "" and self.selectedTie < 0: # tie displays its depth, don't show mouse depth on drag
-					dc.DrawText(str(ycoord), self.GetHoleStartX(holeName, holeType), depthStrY)
-				else:
-					dc.DrawText(str(ycoord), self.compositeX + 3, depthStrY)
-				if self.showGrid == True:
+				# Draw current depth in right margin of mouseover hole plot
+				best_x = self.layoutManager.getClosestColumnRightEdge(self.MousePos[0])
+				dc.DrawText(str(ycoord), best_x + 3, depthStrY)
+				if self.showGrid:
 					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 					dc.DrawLines(((self.compositeX, depthStrY), (self.splicerX - 50, depthStrY)))
 			elif self.MousePos[0] <= self.Width: # 1/29/2014 brg: Don't draw depth info if we're over options tab
 				dc.DrawText(str(ycoord), self.splicerX + 3, depthStrY)
-				if self.showGrid == True:
+				if self.showGrid:
 					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 					dc.DrawLines(((self.splicerX, depthStrY), (self.Width, depthStrY)))
 

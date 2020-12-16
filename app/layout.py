@@ -179,6 +179,15 @@ class LayoutManager:
 				return hc
 		return None
 
+	def getClosestColumnRightEdge(self, x):
+		right_edge = 0
+		for cur_x, key in self.holePositions:
+			hc = self.holeColumnDict[key]
+			right_edge = cur_x + hc.contentWidth() # include margin
+			if x >= cur_x and x <= right_edge + hc.margin:
+				return right_edge
+		return right_edge if x > right_edge else 0
+
 	def _holeHasImages(self, holeName):
 		return holeName in self.holesWithImages
 
