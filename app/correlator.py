@@ -3702,6 +3702,7 @@ class SpliceController:
 		df = tabularImport.readFile(filepath)
 		for index, row in df.iterrows(): # itertuples() is faster if needed
 			coreinfo, affineOffset, top, bot, fileTop, fileBot, appliedTop, appliedBot = self.getRowDepths(row)
+			# TODO: Only uses coreinfo for hole and core!
 			if not self.affineMatches(appliedTop, fileTop, coreinfo) or not self.affineMatches(appliedBot, fileBot, coreinfo):
 				canApply = False
 				break
@@ -3721,6 +3722,7 @@ class SpliceController:
 			hole, core, datatype = row['Hole'], str(row['Core']), row['Data Used']
 			if datatype == "NaturalGamma":
 				datatype = "Natural Gamma"
+			# TODO: Don't create a CoreInfo(), just determine whether the hole/core/datatype is present!
 			coreinfo = self.parent.Window.createCoreInfoForHoleCoreType(hole, core, datatype)
 			if coreinfo is None:
 				missingCoreStr = "{}{}".format(str(hole), str(core))
