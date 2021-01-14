@@ -7279,7 +7279,9 @@ class DataFrame(wx.Panel):
 				datatype = ""
 				if ret == wx.ID_OK:
 					datatype = dlg.txt.GetValue() 
-					if datatype.find("-", 0) >= 0:
+					if datatype.strip().lower() == "image":
+						self.parent.OnShowMessage("Error", "'Image' is a reserved data type.", 1)
+					elif datatype.find("-", 0) >= 0:
 						self.parent.OnShowMessage("Error", "Hyphens (-) are not allowed in data type names.", 1)
 					else:
 						if dlg.register.GetValue() == True: 
