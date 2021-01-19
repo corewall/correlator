@@ -2478,7 +2478,15 @@ class DataCanvas(wxBufferedWindow):
 			self.DrawHoleColumn(dc, holeColumn)
 			self.HoleCount += 1
 
-		# Draw TIE shift arrows. Doing so here insures they'll always
+		if True: # self.drawOverlays
+			datatypes = list(set([hc.datatype() for hc in self.HoleColumns if hc.datatype() != ImageDatatypeStr]))
+			for dt in datatypes:
+				dtHoles = sorted([hc for hc in self.HoleColumns if hc.datatype() == dt], key=lambda hc:hc.holeName())
+				targetHole = dtHoles[0]
+				overlayHoles = [hc.cores() for hc in dtHoles[1:]]
+				self.DrawPlotOverlay(dc, targetHole, overlayHoles)
+
+		# Draw TIE shift arrows. Doing so here ensures they'll always
 		# draw over hole plots and images.
 		self.DrawTieShiftArrows(dc)
 
@@ -2584,6 +2592,60 @@ class DataCanvas(wxBufferedWindow):
 						signChar = '+' if shiftDist > 0 else '' 
 						posStr += ' (' + signChar + str(shiftDist) + ')'
 					dc.DrawText(posStr, x + 10, y + 10)
+
+	def DrawPlotOverlay(self, dc, targetHole, overlayHoles):
+		# print("Overlay: targetHole = {}, overlayCores = {}".format(targetHole.columnKey(), len(overlayHoles)))
+		holeType = targetHole.datatype()
+		holeName = targetHole.holeName()
+		startX = self.GetHoleStartX(holeName, holeType)
+		if not targetHole.hasPlot():
+			return
+		
+		overlayX = startX + targetHole.getColumnOffset(ColumnType.Plot)
+
+		if holeType == "Natural Gamma": # TODO: fix this abomination
+			holeType = "NaturalGamma"
+
+		# apply range for current datatype
+		smoothType = SmoothingType.NoSmoothing
+		for r in self.range:
+			if r[0] == holeType:
+				# print("Getting range for {}".format(holeType))
+				self.minRange = r[1]
+				self.maxRange = r[2]
+				if r[3] != 0.0:
+					self.coefRange = self.layoutManager.plotWidth / r[3]
+				else:
+					self.coefRange = 0 
+				smoothType = SmoothingType(r[4])
+				self.continue_flag = r[5] 
+				break
+
+		# print("Hole {} Type {}, smooth_id = {}, continue_flag = {}".format(holeName, holeType, smooth_id, self.continue_flag))
+
+		visibleTopDepth = self.rulerStartDepth - (20 / self.pixPerMeter) # todo: save this value as a member instead of computing everywhere
+
+		# draw each overlay
+		for overlayCoreList in overlayHoles:
+			for overlayIndex, cmd in enumerate([CoreMetadata(c) for c in overlayCoreList]):
+				coreTop, coreBot = cmd.topDepth(), cmd.botDepth()
+				# only draw overlay cores within visible depth range
+				if not self.depthIntervalVisible(coreTop, coreBot, visibleTopDepth, self.rulerEndDepth):
+					continue 
+				if smoothType in [SmoothingType.NoSmoothing, SmoothingType.Unsmoothed]:
+					coresToPlot = [cmd]
+				else:
+					coresToPlot = []
+				# TODO: Smoothed overlay cores
+				# else: # smoothType in [SmoothingType.Smoothed, SmoothingType.SmoothedAndUnsmoothed]
+					# smooth_core = CoreMetadata(holeColumn.smoothCores()[coreIndex])
+					# coresToPlot = [smooth_core] if smoothType == SmoothingType.Smoothed else [cmd, smooth_core]
+				# print("Core {}: smooth_id = {}, coresToPlot len = {}".format(cmd.coreName(), smooth_id, len(coresToPlot)))
+
+				for idx, ctp in enumerate(coresToPlot):
+					# TODO: overlay colors
+					plotColor = wx.Colour(0, 255, 0)
+					self.DrawCorePlot(dc, overlayX, "bogusHoleName", ctp, plotColor)
 
 	def SetSaganFromFile(self, tie_list):
 		self.LogTieData = []
