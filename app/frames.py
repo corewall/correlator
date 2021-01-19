@@ -515,10 +515,7 @@ class CompositePanel():
 		self.grPanel = wx.Panel(self.plotNote, -1)
 		self.grPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
 
-		grSubPanel = wx.Panel(self.grPanel, -1)
-		gpSettingsBtn = wx.BitmapButton(grSubPanel, -1, bmp)
-		self.grText = wx.StaticText(grSubPanel, -1, "[hover to see point data]")
-
+		self.grText = wx.StaticText(self.grPanel, -1, "Mouse over a point to show data.")
 		self.growthPlotCanvas = GrowthRatePlotCanvas(self.grPanel, self.grText)
 		self.growthPlotCanvas.SetEnableGrid(True)
 		self.growthPlotCanvas.SetEnableTitle(False)
@@ -528,11 +525,7 @@ class CompositePanel():
 		self.growthPlotCanvas.Show(True)
 
 		self.grPanel.GetSizer().Add(self.growthPlotCanvas, 1, wx.EXPAND)
-
-		grSubPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
-		grSubPanel.GetSizer().Add(self.grText, 1, wx.ALIGN_CENTER_VERTICAL)
-		grSubPanel.GetSizer().Add(gpSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
-		self.grPanel.GetSizer().Add(grSubPanel, 0, wx.EXPAND)
+		self.grPanel.GetSizer().Add(self.grText, 0, wx.EXPAND)
 		
 		# Affine Table panel
 		atPanel = wx.Panel(self.plotNote, -1)
@@ -557,7 +550,6 @@ class CompositePanel():
 		self.plotNote.AddPage(self.atPanel, "Shifts")
 		
 		# event handling
-		self.grPanel.Bind(wx.EVT_BUTTON, self.OnGrowthSettings, gpSettingsBtn)
 		self.atPanel.Bind(wx.EVT_BUTTON, self.OnBreakTie, self.breakTieButton)
 		self.atPanel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnShiftsTableSelection, self.table)
 
@@ -694,19 +686,6 @@ class CompositePanel():
 			if len(self.parent.Window.TieData) > 0 :
 				self.parent.Window.OnUpdateTie(1)
 				
-	def OnGrowthSettings(self, evt):
-		min = self.parent.optPanel.depthRangeMin.GetValue()
-		max = self.parent.optPanel.depthRangeMax.GetValue()
-		dlg = dialog.DepthRangeDialog(self.plotNote, min, max)
-		pos = self.grText.GetScreenPositionTuple()
-		dlg.SetPosition(pos)
-		if dlg.ShowModal() == wx.ID_OK:
-			self.parent.optPanel.visibleDeptHInterval = dlg.outMax	# update mirrored prefs GUI (brgtodo 9/6/2014 gross)
-			self.parent.optPanel.depthRangeMin.SetValue(str(dlg.outMin))
-			self.parent.optPanel.depthRangeMax.SetValue(str(dlg.outMax))
-			self.parent.optPanel.depthZoomSlider.SetValue(1)
-			self.parent.OnUpdateDepthRange(dlg.outMin, dlg.outMax)
-
 	def OnBreakTie(self, evt):
 		row = self.table.GetSelectedRows()[0] # only one row can be selected
 		corestr = str(self.table.GetCellValue(row, 0)) # str() to convert from Unicode, col 0 is core
@@ -2726,7 +2705,6 @@ class AgeDepthPanel():
 		self.slider1.SetValue(1)
 		self.parent.Window.UpdateDrawing()
 
-
 	def OnDepthViewAdjust(self, evt):
 		min = float(self.min_depth.GetValue()) 
 		max = float(self.max_depth.GetValue()) 
@@ -3557,21 +3535,6 @@ class PreferencesPanel():
 		self.parent.Window.rulerUnits = self.unitsPopup.GetStringSelection()
 		self.parent.Window.UpdateDrawing()
 
-	def OnRulerOneScale(self, event):
-		idx = self.depthZoomSlider.GetValue()
-
-		#self.parent.Window.pixPerMeter = 60 + (idx * 2)
-		minDepth = self.parent.Window.rulerStartDepth
-		maxDepth = minDepth + self.visibleDepthInterval 
-		if event == None: 
-			maxDepth = minDepth + self.visibleDepthInterval
-		x = (self.parent.Window.Height - self.parent.Window.startDepthPix)
-		self.parent.Window.pixPerMeter = idx * x / (maxDepth - minDepth) * 1.0
-		if event == None:
-			return
-		self.parent.Window.InvalidateImages()
-		self.parent.Window.UpdateDrawing()
-
 	def OnTieShiftScale(self, event):
 		self.parent.Window.shift_range = float(self.tie_shift.GetValue())
 
@@ -3586,15 +3549,28 @@ class PreferencesPanel():
 		self.parent.Window.UpdateDrawing()
 
 	def OnDepthViewAdjust(self, event):
-		minDepth = float(self.depthRangeMin.GetValue())
-		maxDepth = float(self.depthRangeMax.GetValue())
-		if minDepth >= maxDepth:
-			return
-		self.visibleDepthInterval = maxDepth - minDepth
-		self.depthZoomSlider.SetValue(1)
-		
-		updateScroll = event is not None
-		self.parent.OnUpdateDepthRange(minDepth, maxDepth, updateScroll)
+		try:
+			interval = float(self.depthRangeText.GetValue())
+		except ValueError:
+			if event is not None: # 'Apply' button was clicked
+				self.parent.OnShowMessage("Error", "{} is not a valid depth.".format(self.depthRangeText.GetValue()), 1)
+				return
+			else:
+				print("WARNING: Invalid depth interval {} in displayRangeText, defaulting to 10m.".format(self.depthRangeText.GetValue()))
+				interval = 10.0 # default to 10m
+				self.depthRangeText.SetValue(str(interval))
+		self.visibleDepthInterval = interval
+		self.parent.OnUpdateDisplayInterval(interval, updateScroll=event is not None)
+
+	def OnZoomIn(self, event):
+		interval = float(self.depthRangeText.GetValue())
+		self.depthRangeText.SetValue(str(interval / 2.0))
+		self.OnDepthViewAdjust(event)
+
+	def OnZoomOut(self, event):
+		interval = float(self.depthRangeText.GetValue())
+		self.depthRangeText.SetValue(str(interval * 2.0))
+		self.OnDepthViewAdjust(event)
 		
 	def OnShowSectionDepths(self, event):
 		self.parent.Window.showSectionDepths = self.showSectionDepths.IsChecked()
@@ -3701,7 +3677,6 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowColorLegend, self.showColorLegend)
 		self.showDepthLine = wx.CheckBox(viewPanel, -1, "Show line at current depth")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowDepthLine, self.showDepthLine)
-		# todo: group by datatype/hole checkbox
 		self.displayOrderButton = wx.Button(viewPanel, -1, "Display Order...")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDisplayOrderButton, self.displayOrderButton)
 		self.holeVisibilityButton = wx.Button(viewPanel, -1, "Show/Hide Holes...")
@@ -3753,29 +3728,28 @@ class PreferencesPanel():
 
 		depthRangePanel = wx.Panel(depthScalePanel, -1)
 		depthRangeSizer = wx.BoxSizer(wx.HORIZONTAL)
-		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, "Interval"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 15)
-		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, 'min'), 0, wx.ALIGN_CENTER_VERTICAL)
-		self.depthRangeMin = wx.TextCtrl(depthRangePanel, -1, "11.0", size=(65,-1))
-		depthRangeSizer.Add(self.depthRangeMin, 0, wx.LEFT, 5)
-		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, 'max'), 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
-		self.depthRangeMax = wx.TextCtrl(depthRangePanel, -1, "25.0", size=(65, -1))
-		depthRangeSizer.Add(self.depthRangeMax, 0, wx.LEFT, 5)
+		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, "Display Interval"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 10)
+		self.depthRangeText = wx.TextCtrl(depthRangePanel, -1, "10", size=(55,-1))
+		depthRangeSizer.Add(self.depthRangeText, 0, wx.LEFT, 5)
+		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, 'm'), 2, wx.LEFT | wx.ALIGN_CENTER_VERTICAL)
 
 		depthRangePanel.SetSizer(depthRangeSizer)
-		depthScaleSizer.Add(depthRangePanel, 0, wx.BOTTOM, 5)
+		depthScaleSizer.Add(depthRangePanel, 0, wx.BOTTOM, 10)
 
-		depthScaleApply = wx.Button(depthScalePanel, -1, "Apply Interval")
-		depthScaleSizer.Add(depthScaleApply, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
+		depthScaleApply = wx.Button(depthRangePanel, -1, "Apply")
+		depthRangeSizer.Add(depthScaleApply, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 10)
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDepthViewAdjust, depthScaleApply)
 
-		depthSliderPanel = wx.Panel(depthScalePanel, -1)
-		depthSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.depthZoomSlider = wx.Slider(depthSliderPanel, -1, 1, 1, 10)
-		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnRulerOneScale, self.depthZoomSlider)
-		depthSliderSizer.Add(wx.StaticText(depthSliderPanel, -1, "Zoom"))
-		depthSliderSizer.Add(self.depthZoomSlider, 1, wx.EXPAND | wx.LEFT, 15)
-		depthSliderPanel.SetSizer(depthSliderSizer)
-		depthScaleSizer.Add(depthSliderPanel, 0, wx.EXPAND)
+		depthZoomPanel = wx.Panel(depthScalePanel, -1)
+		depthZoomSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.zoomInBtn = wx.Button(depthZoomPanel, -1, "Zoom In")
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnZoomIn, self.zoomInBtn)
+		self.zoomOutBtn = wx.Button(depthZoomPanel, -1, "Zoom Out")
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnZoomOut, self.zoomOutBtn)
+		depthZoomSizer.Add(self.zoomInBtn, 1, wx.BOTTOM, 5)
+		depthZoomSizer.Add(self.zoomOutBtn, 1, wx.LEFT | wx.BOTTOM, 5)
+		depthZoomPanel.SetSizer(depthZoomSizer)
+		depthScaleSizer.Add(depthZoomPanel, 0, wx.EXPAND)
 
 		depthScalePanel.SetSizer(depthScaleSizer)
 		vbox_top.Add(depthScalePanel, 0, wx.BOTTOM | wx.EXPAND, 10)

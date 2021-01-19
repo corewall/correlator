@@ -628,15 +628,12 @@ class MainFrame(wx.Frame):
 		self.UpdateData()
 
 	def OnUpdateDepth(self, depth):
-		self.compositePanel.OnUpdateDepth(depth)
-		
-	# Preferences "Depth Ruler Scale" min/max changed
-	def OnUpdateDepthRange(self, minDepth, maxDepth, updateScroll=True):
-		self.Window.rulerStartDepth = minDepth
-		self.Window.SPrulerStartDepth = minDepth
-		x = (self.Window.Height - self.Window.startDepthPix)
-		self.Window.pixPerMeter = x / float(maxDepth - minDepth)
+		self.compositePanel.OnUpdateDepth(depth)	
 
+	# Preferences "Display Interval" changed
+	def OnUpdateDisplayInterval(self, interval, updateScroll=True):
+		x = (self.Window.Height - self.Window.startDepthPix)
+		self.Window.pixPerMeter = x / interval
 		if updateScroll:
 			self.Window.UpdateScroll(1)
 			self.Window.UpdateScroll(2)
@@ -1504,10 +1501,7 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("plotwidth", self.optPanel.plotWidthSlider.GetValue(), f)
 		self.WritePreferenceItem("imagewidth", self.optPanel.imageWidthSlider.GetValue(), f)
 		self.WritePreferenceItem("rulerunits", self.Window.GetRulerUnitsStr(), f)
-		self.WritePreferenceItem("rulerscale", self.optPanel.depthZoomSlider.GetValue(), f)
-
-		rulerRangeStr = str(self.optPanel.depthRangeMin.GetValue()) + " " + str(self.optPanel.depthRangeMax.GetValue())
-		self.WritePreferenceItem("rulerrange", rulerRangeStr, f)
+		self.WritePreferenceItem("displayInterval", self.optPanel.depthRangeText.GetValue(), f)
 
 		self.WritePreferenceItem("tiedotsize", self.Window.tieDotSize, f)
 		self.WritePreferenceItem("tiewidth", self.Window.tieline_width, f)
@@ -2683,20 +2677,11 @@ class MainFrame(wx.Frame):
 		unitIndex = self.Window.GetRulerUnitsIndex()
 		self.optPanel.unitsPopup.SetSelection(unitIndex)
 
-		if self.config.has_option("applications", "rulerrange"):
-			conf_str = self.config.get("applications", "rulerrange")
+		if self.config.has_option("applications", "displayInterval"):
+			conf_str = self.config.get("applications", "displayInterval")
 			if len(conf_str) > 0:
-				conf_array = conf_str.split()
-				self.optPanel.depthRangeMin.SetValue(conf_array[0])
-				self.optPanel.depthRangeMax.SetValue(conf_array[1])
+				self.optPanel.depthRangeText.SetValue(conf_str)
 				self.optPanel.OnDepthViewAdjust(None)
-
-		if self.config.has_option("applications", "rulerscale"):
-			str_temp = self.config.get("applications", "rulerscale")
-			if len(str_temp) > 0:
-				conf_value = int ( str_temp )
-				self.optPanel.depthZoomSlider.SetValue(conf_value)
-				self.optPanel.OnRulerOneScale(None)
 
 		if self.config.has_option("applications", "shiftrange"):
 			str_temp = self.config.get("applications", "shiftrange")
