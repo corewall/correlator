@@ -1349,7 +1349,7 @@ class DataCanvas(wxBufferedWindow):
 
 		unitAdjFactor = self.GetRulerUnitsFactor()
 		while True:
-			adjPos = pos * unitAdjFactor # pos in meters, adjust *100 if displaying cm, *1000 if mm
+			adjPos = round(pos * unitAdjFactor, 3) # pos in meters, adjust *100 if displaying cm, *1000 if mm
 
 			dc.DrawLines(((self.compositeX - 10, depth), (self.compositeX, depth))) # depth-labeled ticks
 			wid, hit = dc.GetTextExtent(str(adjPos))
@@ -1382,7 +1382,7 @@ class DataCanvas(wxBufferedWindow):
 			self.SPrulerHeight = self.Height - self.startDepthPix
 			
 			while True:
-				adjPos = pos * unitAdjFactor
+				adjPos = round(pos * unitAdjFactor, 3)
 				dc.DrawLines(((self.splicerX - 10, depth), (self.splicerX, depth)))
 				wid, hit = dc.GetTextExtent(str(adjPos))
 				dc.DrawRotatedText(str(adjPos), self.splicerX - 5 - hit * 2, depth + wid/2, 90.0)
