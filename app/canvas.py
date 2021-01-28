@@ -2635,6 +2635,7 @@ class DataCanvas(wxBufferedWindow):
 
 		# draw each overlay
 		for overlayHole in overlayHoles:
+			overlayColor = self._getOverlayColor(overlayHole)
 			for overlayIndex, cmd in enumerate([CoreMetadata(c) for c in overlayHole.cores()]):
 				coreTop, coreBot = cmd.topDepth(), cmd.botDepth()
 				# only draw overlay cores within visible depth range
@@ -2642,16 +2643,13 @@ class DataCanvas(wxBufferedWindow):
 					continue 
 				if smoothType in [SmoothingType.NoSmoothing, SmoothingType.Unsmoothed]:
 					coresToPlot = [cmd]
-				else:
-					coresToPlot = []
-				# TODO: Smoothed overlay cores
-				# else: # smoothType in [SmoothingType.Smoothed, SmoothingType.SmoothedAndUnsmoothed]
-					# smooth_core = CoreMetadata(holeColumn.smoothCores()[coreIndex])
-					# coresToPlot = [smooth_core] if smoothType == SmoothingType.Smoothed else [cmd, smooth_core]
+				else: # smoothType in [SmoothingType.Smoothed, SmoothingType.SmoothedAndUnsmoothed]
+					smooth_core = CoreMetadata(overlayHole.smoothCores()[overlayIndex])
+					coresToPlot = [smooth_core] if smoothType == SmoothingType.Smoothed else [cmd, smooth_core]
 				# print("Core {}: smooth_id = {}, coresToPlot len = {}".format(cmd.coreName(), smooth_id, len(coresToPlot)))
 
 				for idx, ctp in enumerate(coresToPlot):
-					self.DrawCorePlot(dc, overlayX, overlayHole.holeName(), ctp, self._getOverlayColor(overlayHole))
+					self.DrawCorePlot(dc, overlayX, overlayHole.holeName(), ctp, overlayColor)
 
 	def SetSaganFromFile(self, tie_list):
 		self.LogTieData = []
