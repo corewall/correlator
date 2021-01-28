@@ -327,6 +327,7 @@ class DataCanvas(wxBufferedWindow):
 		self.showOutOfRangeData = False # if True, clip data plots to the width of the hole's plot area
 		self.showColorLegend = True # plot color legend
 		self.showDepthLine = False # draw line at current mouse position depth
+		self.showPlotOverlays = True # overlay all plots of the same datatype on the first hole in alphabetical order
 		
 		# debug options
 		self.showBounds = False
@@ -1436,7 +1437,6 @@ class DataCanvas(wxBufferedWindow):
 	# Uses self.holeInfoFont, which is slightly smaller than self.stdFont to accommodate three lines
 	# in available space.
 	def DrawHoleHeader(self, dc, startX, holeColumn, clipRegion):
-		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 		dc.SetFont(self.holeInfoFont)
 		holeInfo_x = startX
 		holeInfo_y = 3
@@ -1527,10 +1527,9 @@ class DataCanvas(wxBufferedWindow):
 					# print("Core {}: smooth_id = {}, coresToPlot len = {}".format(cmd.coreName(), smooth_id, len(coresToPlot)))
 
 					for idx, ctp in enumerate(coresToPlot):
-						# TODO: we'll need a more a elegant way to assign colors when we
-						# start drawing overlays from other holes of this type...but for
-						# now this retains expected colors for Smoothed & Unsmoothed drawing
-						plotColor = self.colorDict['smooth'] if idx > 0 else None
+						plotColor = self.colorDict['smooth'] if idx > 0 else None # default color if None
+						if self.showPlotOverlays:
+							plotColor = self._getOverlayColor(holeColumn)
 						self.DrawCorePlot(dc, colStartX, holeColumn.holeName(), ctp, plotColor)
 
 					# for now we'll continue to draw section boundaries only on the plot area
@@ -1553,6 +1552,16 @@ class DataCanvas(wxBufferedWindow):
 				self.DrawAffineShiftInfo(dc, startX, coreTop, coreBot, holeColumn, cmd, clippingRegion)
 				arrowStartX = plotStartX if holeColumn.hasPlot() else startX
 				self.PrepareTieShiftArrow(dc, arrowStartX, coreTop, coreBot, holeColumn, cmd)
+
+	# Return wx.Colour for overlay of holeColumns that aren't first alphabetically for their datatype.
+	# If hole is first alphabetically, return None, indicating default color.
+	def _getOverlayColor(self, holeColumn):
+		dtHoles = sorted([hc for hc in self.HoleColumns if hc.datatype() == holeColumn.datatype()], key=lambda hc:hc.holeName())
+		dtIndex = dtHoles.index(holeColumn)
+		if dtIndex > 0:
+			return self.overlapcolorList[(dtIndex - 1) % len(self.overlapcolorList)] # % to avoid overrun in unlikely event of 10+ holes
+		else:
+			return None
 
 	# Show affine shift direction, distance, and type to left of core, centered on core depth interval
 	def DrawAffineShiftInfo(self, dc, startX, coreTopY, coreBotY, hole, core, clippingRegion):
@@ -2478,13 +2487,12 @@ class DataCanvas(wxBufferedWindow):
 			self.DrawHoleColumn(dc, holeColumn)
 			self.HoleCount += 1
 
-		if True: # self.drawOverlays
+		if self.showPlotOverlays:
 			datatypes = list(set([hc.datatype() for hc in self.HoleColumns if hc.datatype() != ImageDatatypeStr]))
 			for dt in datatypes:
 				dtHoles = sorted([hc for hc in self.HoleColumns if hc.datatype() == dt], key=lambda hc:hc.holeName())
-				targetHole = dtHoles[0]
-				overlayHoles = [hc.cores() for hc in dtHoles[1:]]
-				self.DrawPlotOverlay(dc, targetHole, overlayHoles)
+				targetHole = dtHoles[0] # draw overlays on first hole alphabetically
+				self.DrawPlotOverlay(dc, targetHole, dtHoles[1:])
 
 		# Draw TIE shift arrows. Doing so here ensures they'll always
 		# draw over hole plots and images.
@@ -2626,8 +2634,8 @@ class DataCanvas(wxBufferedWindow):
 		visibleTopDepth = self.rulerStartDepth - (20 / self.pixPerMeter) # todo: save this value as a member instead of computing everywhere
 
 		# draw each overlay
-		for overlayCoreList in overlayHoles:
-			for overlayIndex, cmd in enumerate([CoreMetadata(c) for c in overlayCoreList]):
+		for overlayHole in overlayHoles:
+			for overlayIndex, cmd in enumerate([CoreMetadata(c) for c in overlayHole.cores()]):
 				coreTop, coreBot = cmd.topDepth(), cmd.botDepth()
 				# only draw overlay cores within visible depth range
 				if not self.depthIntervalVisible(coreTop, coreBot, visibleTopDepth, self.rulerEndDepth):
@@ -2643,9 +2651,7 @@ class DataCanvas(wxBufferedWindow):
 				# print("Core {}: smooth_id = {}, coresToPlot len = {}".format(cmd.coreName(), smooth_id, len(coresToPlot)))
 
 				for idx, ctp in enumerate(coresToPlot):
-					# TODO: overlay colors
-					plotColor = wx.Colour(0, 255, 0)
-					self.DrawCorePlot(dc, overlayX, "bogusHoleName", ctp, plotColor)
+					self.DrawCorePlot(dc, overlayX, overlayHole.holeName(), ctp, self._getOverlayColor(overlayHole))
 
 	def SetSaganFromFile(self, tie_list):
 		self.LogTieData = []
