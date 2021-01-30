@@ -419,6 +419,8 @@ class DataCanvas(wxBufferedWindow):
 							'background': wx.Colour(0, 0, 0), 'foreground': wx.Colour(255, 255, 255), \
 							'corrWindow': wx.Colour(178, 34, 34), 'guide': wx.Colour(224, 255, 255) }
 		assert len(self.colorDictKeys) == len(self.colorDict)
+
+		self.imageCoreSectionNumberColor = wx.Colour(238, 238, 0) # yellow
 		
 		self.overlapcolorList = [ wx.Colour(238, 0, 0), wx.Colour(0, 139, 0), \
 				wx.Colour(0, 255, 255), wx.Colour(238, 216, 174), wx.Colour(30, 144, 255), \
@@ -1516,7 +1518,7 @@ class DataCanvas(wxBufferedWindow):
 					if self.parent.sectionSummary:
 						self.DrawSectionImages(dc, colStartX, holeColumn.holeName(), cmd.coreName(), cmd.affineOffset())
 						if not holeColumn.hasPlot():
-							drawBoundariesFunc(dc, colStartX, width, holeColumn.holeName(), cmd.coreName(), cmd.affineOffset())
+							drawBoundariesFunc(dc, colStartX, width, holeColumn.holeName(), cmd.coreName(), cmd.affineOffset(), self.imageCoreSectionNumberColor)
 				elif columnType == ColumnType.Plot:
 					plotStartX = colStartX
 					if smoothType in [SmoothingType.NoSmoothing, SmoothingType.Unsmoothed]:
@@ -2124,9 +2126,11 @@ class DataCanvas(wxBufferedWindow):
 		# dc.DrawLines(((x - 2, y - 2), (x + wid + 2, y - 2), (x + wid + 2, y + hit + 2), (x - 2, y + hit + 2), (x - 2, y - 2)))
 
 	# for each section of a core, draw number, top, and bottom boundaries
-	def DrawSectionBoundaries(self, dc, x, width, hole, coreno, affine_shift):
+	def DrawSectionBoundaries(self, dc, x, width, hole, coreno, affine_shift, color=None):
 		clip = wx.DCClipper(dc, wx.Region(x, self.startDepthPix - 20, (self.splicerX - 60) - x, self.Height - (self.startDepthPix - 20)))
-		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+		penColor = self.colorDict['foreground'] if color is None else color
+		dc.SetPen(wx.Pen(penColor, 1, style=wx.DOT))
+		dc.SetTextForeground(penColor)
 		secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
 		# print("startDepth = {}, rulerStartDepth = {}, rulerEndDepth = {}".format(self.startDepthPix, self.rulerStartDepth, self.rulerEndDepth))
 		for secIndex, row in enumerate(secrows):
@@ -2142,9 +2146,11 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawLines(((x, ybot), (x + width, ybot)))
 
 	# draw core number, top, and bottom boundaries
-	def DrawCoreBoundaries(self, dc, x, width, hole, coreno, affine_shift):
+	def DrawCoreBoundaries(self, dc, x, width, hole, coreno, affine_shift, color=None):
 		clip = wx.DCClipper(dc, wx.Region(x, self.startDepthPix - 20, (self.splicerX - 60) - x, self.Height - (self.startDepthPix - 20)))
-		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+		penColor = self.colorDict['foreground'] if color is None else color
+		dc.SetPen(wx.Pen(penColor, 1, style=wx.DOT))
+		dc.SetTextForeground(penColor)
 		secrows = self.parent.sectionSummary.getSectionRows(hole, coreno)
 		# print("startDepth = {}, rulerStartDepth = {}, rulerEndDepth = {}".format(self.startDepthPix, self.rulerStartDepth, self.rulerEndDepth))
 		row = secrows[0]

@@ -1109,6 +1109,16 @@ class ColorTableDialog(wx.Dialog):
 		panel2.SetSizer(grid1)
 		vbox_top.Add(panel2, 0, wx.TOP | wx.LEFT, 9)
 
+		icsnPanel = wx.Panel(self, -1)
+		self.imageCoreSectionNumberPicker = self._makeColorPicker(icsnPanel, 200)
+		self.imageCoreSectionNumberPicker.SetColour(self.parent.Window.imageCoreSectionNumberColor)
+		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeImageCoreSectionNumberColor, self.imageCoreSectionNumberPicker)
+		icsnSizer = wx.BoxSizer(wx.HORIZONTAL)
+		icsnSizer.Add(self.imageCoreSectionNumberPicker, 0)
+		icsnSizer.Add(wx.StaticText(icsnPanel, -1, 'Core/Section number on images'), 0, wx.LEFT, 5)
+		icsnPanel.SetSizer(icsnSizer)
+		vbox_top.Add(icsnPanel, 0, wx.TOP, 10)
+
 		grid4 = wx.BoxSizer(wx.HORIZONTAL)
 		applyBtn = wx.Button(self, -1, "Apply")
 		self.Bind(wx.EVT_BUTTON, self.OnApplyColor, applyBtn)
@@ -1123,6 +1133,9 @@ class ColorTableDialog(wx.Dialog):
 		self.Fit()
 		self.updateItem()
 		wx.EVT_KEY_UP(self, self.OnCharUp)
+
+	def ChangeImageCoreSectionNumberColor(self, evt):
+		self.parent.Window.imageCoreSectionNumberColor = self.imageCoreSectionNumberPicker.GetColour()
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
