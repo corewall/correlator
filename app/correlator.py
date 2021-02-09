@@ -9,11 +9,11 @@ import socket
 import sys
 import traceback
 
-platform_name = platform.uname()
-if platform_name[5] == "i386":
-	os.system('sh swap_intel_library')
-elif platform_name[5] == "powerpc":
-	os.system('sh swap_ppc_library')
+# platform_name = platform.uname()
+# if platform_name[5] == "i386":
+#     os.system('sh swap_intel_library')
+# elif platform_name[5] == "powerpc":
+#     os.system('sh swap_ppc_library')
 
 #!/usr/bin/env python
 
@@ -23,7 +23,7 @@ elif platform_name[5] == "powerpc":
 import wx
 from wx.lib import plot
 import pandas
-import UniversalAnalytics
+# import UniversalAnalytics
 
 import random, sys, re, time, configparser, string, uuid, pickle
 import getpass
