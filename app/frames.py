@@ -8,7 +8,7 @@ from __future__ import print_function
 import platform
 platform_name = platform.uname()
 
-import random, sys, os, re, time, ConfigParser, string
+import random, sys, os, re, time, string
 from datetime import datetime
 import math
 

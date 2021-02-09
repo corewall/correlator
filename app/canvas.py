@@ -17,7 +17,7 @@ from wx.lib import plot
 import numpy
 
 from datetime import datetime
-import random, sys, os, re, time, ConfigParser, string, traceback
+import random, sys, os, re, time, string, traceback
 
 from importManager import py_correlator
 
