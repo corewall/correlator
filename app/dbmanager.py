@@ -3,6 +3,7 @@
 ## For Mac-OSX
 #/usr/bin/env pythonw
 
+from __future__ import print_function
 import os.path
 import platform
 platform_name = platform.uname()
@@ -29,7 +30,7 @@ from smooth import SmoothParameters
 
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
-	return apply(os.path.join, tuple(path.split('/')))
+	return os.path.join(*tuple(path.split('/')))
 
 
 FormatDict = {"Text":0, "CSV":1, "XML":2}
@@ -207,7 +208,7 @@ class DataFrame(wx.Panel):
 			df = tabularImport.readCorrelatorDataFile(filepath)
 		else:
 			df = tabularImport.readFile(filepath)
-		print df
+		print(df)
 		dlg = dialog.ViewDataFileDialog(self, title=filepath, dataframe=df)
 		dlg.ShowModal()
 
@@ -327,7 +328,7 @@ class DataFrame(wx.Panel):
 		elif opId == 21:
 			self.OnIMPORT_IMAGE()
 		elif opId == 22:
-			print "Export XML Data!"
+			print("Export XML Data!")
 			# EXPORT XML TABLES
 			type = self.tree.GetItemText(self.selectedIdx, 1)
 			path = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10)
@@ -355,12 +356,12 @@ class DataFrame(wx.Panel):
 			else:
 				self.SAVE_CULL_TO_XML(path, filename)
 		elif opId == 23:
-			print "Export Core Data!"
+			print("Export Core Data!")
 			self.OnExportCoreData(self.selectedIdx, False)
 		elif opId == 24:
 			self.IMPORT_AGE_MODEL()
 		elif opId == 25:
-			print "Export Core Data (typed)!"
+			print("Export Core Data (typed)!")
 			self.OnExportCoreData(self.selectedIdx, True)
 		elif opId == 26:
 			self.tree.SetItemText(self.selectedIdx, "Discrete", 1) 
@@ -1867,13 +1868,13 @@ class DataFrame(wx.Panel):
 	# this is necessary to create affine, splice, and ELD tables on the fly
 	def GetAllSiteHoles(self, siteRoot):
 		holeData = []
-		print "site = {}".format(self.tree.GetItemText(siteRoot, 0))
+		print("site = {}".format(self.tree.GetItemText(siteRoot, 0)))
 		kids = self.GetChildren(siteRoot)
 		for k in kids:
 			nodeName = self.tree.GetItemText(k, 0)
 			typeInt, annot = self.parent.TypeStrToInt(nodeName)
 			if nodeName not in STD_SITE_NODES:
-				print "found type {}".format(nodeName)
+				print("found type {}".format(nodeName))
 				subkids = self.GetChildren(k)
 				for sk in subkids:
 					if self.tree.GetItemText(sk, 0) != "-Cull Table":
@@ -1889,11 +1890,11 @@ class DataFrame(wx.Panel):
 	def LoadAllHoles(self, siteItem=None):
 		if not siteItem:
 			siteItem = self.GetSelectedSite()
-		print "LoadAllHoles: site = {}".format(self.tree.GetItemText(siteItem, 0))
+		print("LoadAllHoles: site = {}".format(self.tree.GetItemText(siteItem, 0)))
 		self.parent.Window.range = []
 		for hd in self.GetAllSiteHoles(siteItem):
 			result = py_correlator.openHoleFile(hd[0], -1, hd[1], hd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, hd[2])
-			print "tried loading {}, result = {}".format(hd[0], result)
+			print("tried loading {}, result = {}".format(hd[0], result))
 
 	
 	def GetTables(self, siteRoot, tableTypeStr):
@@ -2423,42 +2424,42 @@ class DataFrame(wx.Panel):
 					type_f = ""
 				elif token[0] == "culltable":
 					if type == '-Cull Table' and hole == token[1]: 
-						print "[DEBUG] > skipped cull"
+						print("[DEBUG] > skipped cull")
 					else:
 						fout.write(line + '\n')
 				elif token[0] == "strat":
 					if type == 'Stratigraphy' and hole == token[2]: 
-						print "[DEBUG] > skipped strat"
+						print("[DEBUG] > skipped strat")
 					else:
 						fout.write(line + '\n')
 				elif token[0] == "age":
 					if type == 'Age Models' and hole == token[1]: 
-						print "[DEBUG] > skipped age"
+						print("[DEBUG] > skipped age")
 					else:
 						fout.write(line + '\n')
 				elif token[0] == "image":
 					if type == 'Image Data' and hole == token[1]: 
-						print "[DEBUG] > skipped image table"
+						print("[DEBUG] > skipped image table")
 					else:
 						fout.write(line + '\n')
 				elif token[0] == "affinetable":
 					if type == 'AFFINE' and hole == token[1]: 
-						print "[DEBUG] > skipped affine table"
+						print("[DEBUG] > skipped affine table")
 					else:
 						fout.write(line + '\n')
 				elif token[0] == "splicetable":
 					if type == 'SPLICE' and hole == token[1]: 
-						print "[DEBUG] > skipped splice"
+						print("[DEBUG] > skipped splice")
 					else:
 						fout.write(line + '\n')
 				elif token[0] == "eldtable":
 					if type == 'ELD' and hole == token[1]: 
-						print "[DEBUG] > skipped eld"
+						print("[DEBUG] > skipped eld")
 					else:
 						fout.write(line + '\n')
 				elif token[0] == "log":
 					if type == 'Downhole Log Data' and hole == token[1]: 
-						print "[DEBUG] > skipped log"
+						print("[DEBUG] > skipped log")
 					else:
 						fout.write(line + '\n')
 				else:
@@ -3237,9 +3238,9 @@ class DataFrame(wx.Panel):
 					py_correlator.smooth('Log', int(smooth_array[0]), 2)
 				else:
 					py_correlator.smooth('Log', int(smooth_array[0]), 1)
-			print "Getting log data...",
+			print("Getting log data...", end=' ')
 			ret = py_correlator.getData(5)
-			print "done"
+			print("done")
 			if ret != "":
 				mudline = py_correlator.getMudline()
 				if mudline != 0.0:
@@ -3771,7 +3772,7 @@ class DataFrame(wx.Panel):
 						sectionDict[ssrow.identity()] = ssrow
 
 		ssRows = sorted(list(sectionDict.values()), key=lambda r:(r.hole, int(r.core), r.section))
-		print "Inferred {} section summary rows".format(len(sectionDict))
+		print("Inferred {} section summary rows".format(len(sectionDict)))
 		return ssRows
 		
 	# Load all Section Summary files for the current site, aggregating them
@@ -3790,7 +3791,7 @@ class DataFrame(wx.Panel):
 						siteDir = self.GetSelectedSiteName()
 						ssFilepath = self.parent.DBPath +'db/' + siteDir + '/' + ssFilename
 						secSummFiles.append(ssFilepath)
-						print "Section Summary file [{}] found!".format(ssFilename)
+						print("Section Summary file [{}] found!".format(ssFilename))
 			if len(secSummFiles) > 0:
 				sectionSummary = SectionSummary.createWithFiles(secSummFiles)
 		return sectionSummary
@@ -3820,7 +3821,7 @@ class DataFrame(wx.Panel):
 					ssrows = self.InferSectionSummaryRows(self.parent.Window.HoleData, site, hole, core)
 					if len(ssrows) == 0:
 						hcstr = "{}{}".format(hole, core)
-						print "Couldn't infer Section Summary rows for {}{}".format(hcstr)
+						print("Couldn't infer Section Summary rows for {}{}".format(hcstr))
 						failedInferredCores.append(hcstr)
 					else:
 						inferredRows += ssrows
@@ -5361,7 +5362,7 @@ class DataFrame(wx.Panel):
 
 				if isUniversal == False:	
 					if type != self.handler.datatype:
-						print "[ERROR] Data type is different"
+						print("[ERROR] Data type is different")
 
 			if valid == True:
 				filename = self.Add_CULLTABLE(item, type)
@@ -5852,7 +5853,7 @@ class DataFrame(wx.Panel):
 								total_count += 1
 					#print "[DEBUG] Total number of columns = " +str(total_count)
 				elif  first_char >= 'A' and first_char <= 'z' :
-					print "[DEBUG] additional Line =" + line 
+					print("[DEBUG] additional Line =" + line) 
 				else:
 
 					if correaltor_flag == False :
@@ -6865,7 +6866,7 @@ class DataFrame(wx.Panel):
 		measFileDir, measFileName = os.path.split(mdpath)
 		ssFileName = '-'.join(measFileName.split('-')[:3]) + "_Sections.csv"
 		ssFilePath = os.path.join(measFileDir, ssFileName)
-		print "Seeking Section Summary file named {} for auto-import...".format(ssFilePath)
+		print("Seeking Section Summary file named {} for auto-import...".format(ssFilePath))
 		if os.path.exists(ssFilePath):
 			ssdf, errmsg = tabularImport._parseFile(ssFilePath, tabularImport.SectionSummaryFormat, checkcols=True)
 			if ssdf is not None:
@@ -6874,7 +6875,7 @@ class DataFrame(wx.Panel):
 			else:
 				self.parent.OnShowMessage("Error", "Could not load associated section summary file {}:\n{}".format(ssFileName, errmsg), 1)
 		else:
-			print "No Section Summary file named {} found for auto-import.".format(ssFilePath)		
+			print("No Section Summary file named {} found for auto-import.".format(ssFilePath))		
 
 	# import measurement data file(s) in self.paths
 	def OnIMPORT(self, event):

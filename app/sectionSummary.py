@@ -1,6 +1,7 @@
 '''
 Routines and classes for loading of tabular data and conversion to target formats
 '''
+from __future__ import print_function
 
 import os
 import unittest
@@ -70,7 +71,7 @@ class SectionSummary:
             coremax = cores['BottomDepth'].max()
             return coremin, coremax
         else:
-            print "getCoreRange(): Couldn't find cores for site {} hole {} core {}".format(site, hole, core)
+            print("getCoreRange(): Couldn't find cores for site {} hole {} core {}".format(site, hole, core))
         return None
     
     # return type of core
@@ -80,7 +81,7 @@ class SectionSummary:
         if not cores.empty:
             return cores.iloc[0]['CoreType']
         else:
-            print "getCoreType(): Couldn't find cores for site {} hole {} core {}".format(site, hole, core)
+            print("getCoreType(): Couldn't find cores for site {} hole {} core {}".format(site, hole, core))
         return None
     
     def getSites(self):
@@ -139,7 +140,7 @@ class SectionSummary:
     def checkStrType(self, argList):
         for arg in argList:
             if not isinstance(arg, str):
-                print "SectionSummary ERROR: encountered non-str query element {}".format(arg)
+                print("SectionSummary ERROR: encountered non-str query element {}".format(arg))
     
     def _findCores(self, site, hole, core):
         # omitting core here and below since it's an integer at present
@@ -147,7 +148,7 @@ class SectionSummary:
         df = self.dataframe
         cores = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core)]
         if cores.empty:
-            print "SectionSummary: Could not find core {}-{}{}".format(site, hole, core)
+            print("SectionSummary: Could not find core {}-{}{}".format(site, hole, core))
         return cores
 
     def _findSection(self, site, hole, core, section):
@@ -155,7 +156,7 @@ class SectionSummary:
         df = self.dataframe
         section = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core) & (df.Section == section)]
         if section.empty:
-            print "SectionSummary: Could not find {}-{}{}-{}".format(site, hole, core, section)
+            print("SectionSummary: Could not find {}-{}{}-{}".format(site, hole, core, section))
         return section
     
     def _findSectionAtDepth(self, site, hole, core, depth):

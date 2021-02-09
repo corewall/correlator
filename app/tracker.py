@@ -1,3 +1,4 @@
+from __future__ import print_function
 # March 29 2018
 # Google Analytics launch tracking logic.
 # Generalized and pulled into its own module to simplify use in other apps.

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import wx
 
 from importManager import py_correlator
@@ -28,7 +29,7 @@ def MakeDecimateString(dec):
 from the provided HoleData or DownholeLogTable """
 def MakeRangeList(data, name):
 	if not isinstance(data, HoleData) and not isinstance(data, DownholeLogTable):
-		print "MakeRangeList() expects HoleData or DownholeLogData"
+		print("MakeRangeList() expects HoleData or DownholeLogData")
 		return []
 	min = float(data.min)
 	max = float(data.max)
@@ -99,11 +100,11 @@ class HoleSet:
 		return "HoleSet %s: %s, %s %s %s %s %s" % (self.type, self.GetCullFile(), self.continuous, str(self.decimate), self.smooth, self.min, self.max)
 
 	def dump(self):
-		print self
+		print(self)
 		for hole in self.holes.values():
-			print hole
+			print(hole)
 		if self.HasCull():
-			print self.cullTable
+			print(self.cullTable)
 	
 	def AddHole(self, hole):
 		if isinstance(hole, HoleData) and hole.name not in self.holes:
@@ -153,25 +154,25 @@ class SiteData:
 		return "SiteData %s" % (self.name)
 
 	def dump(self):
-		print self
+		print(self)
 		for hs in self.holeSets.values():
 			hs.dump()
 		for at in self.affineTables:
-			print at
+			print(at)
 		for st in self.spliceTables:
-			print st
+			print(st)
 		for et in self.eldTables:
-			print et
+			print(et)
 		for lt in self.logTables:
-			print lt
+			print(lt)
 		for st in self.stratTables:
-			print st
+			print(st)
 		for at in self.ageTables:
-			print at
+			print(at)
 		for st in self.seriesTables:
-			print st
+			print(st)
 		for it in self.imageTables:
-			print it
+			print(it)
 
 	def SyncToGui(self):
 		for hs in self.holeSets.values():
@@ -228,13 +229,13 @@ class SiteData:
 		if type in self.holeSets:
 			self.holeSets[type].decimate = decimate
 		else:
-			print "Couldn't find type " + type + " in site " + self.name + " holeSets"
+			print("Couldn't find type " + type + " in site " + self.name + " holeSets")
 
 	def SetSmooth(self, type, smoothStr):
 		if type in self.holeSets:
 			self.holeSets[type].smooth = smoothStr
 		else:
-			print "Couldn't find type " + type + " in site " + self.name + " holeSets"
+			print("Couldn't find type " + type + " in site " + self.name + " holeSets")
 
 	def GetDir(self):
 		return self.name + '/'
@@ -705,9 +706,9 @@ class DBView:
 		culledTypes = []
 		for hole in holeList:
 			if hole.holeSet.type not in culledTypes and hole.holeSet.IsCullEnabled():
-				print "loading cull"
+				print("loading cull")
 				coretype, annot = self.parent.TypeStrToInt(hole.holeSet.type)
-				print "coretype = " + str(coretype) + ", annot = " + annot
+				print("coretype = " + str(coretype) + ", annot = " + annot)
 				py_correlator.openCullTable(sitePath + hole.holeSet.cullTable.file, coretype, annot)
 				culledTypes.append(hole.holeSet.type)
 
@@ -1035,7 +1036,7 @@ class SavedTableGUI:
 		elif self.name == "ELD":
 			return self.site.eldTables
 		else:
-			print "GetTables(): Unexpected saved table type: " + self.name
+			print("GetTables(): Unexpected saved table type: " + self.name)
 			return []
 
 class LogTableGUI:

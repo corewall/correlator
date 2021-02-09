@@ -2,6 +2,7 @@
 
 ## For Mac-OSX
 #/usr/bin/env pythonw
+from __future__ import print_function
 import platform
 platform_name = platform.uname()
 
@@ -2171,5 +2172,5 @@ if __name__ == "__main__":
 	app = MockApp()
 	dlg = EditBoxDialog(app.frame, "Please Input Text")
 	result = dlg.ShowModal()
-	print "dialog result = {}, text = {}".format(result, dlg.getText())
+	print("dialog result = {}, text = {}".format(result, dlg.getText()))
 	

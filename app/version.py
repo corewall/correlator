@@ -1,3 +1,4 @@
+from __future__ import print_function
 BaseVersion = "3.2"
 VersionSuffix = "b1"
 LongVersionSuffix = ""
@@ -19,5 +20,5 @@ LongVersion = GetLongVersion()
 
 
 if __name__ == "__main__":
-	print "GetShortVersion() = " + GetShortVersion()
-	print "GetLongVersion() = " + GetLongVersion()
+	print("GetShortVersion() = " + GetShortVersion())
+	print("GetLongVersion() = " + GetLongVersion())

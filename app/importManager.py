@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Import of the py_correlator C++ glue module became a bit complicated due to the need
 # for 32- and 64-bit builds on Windows. Pulling import code into its own module allows
 # a one-liner wherever py_correlator is needed: "from importManager import py_correlator"
@@ -12,11 +13,11 @@ if platform.uname()[0] == "Windows":
 	is64bit = sys.maxsize > 2**32
 
 	if is64bit == True:
-		print "Windows 64-bit Python detected, importing py_correlator64"
+		print("Windows 64-bit Python detected, importing py_correlator64")
 		import py_correlator64 as py_correlator
 	else:
-		print "Windows 32-bit Python detected, importing py_correlator (32-bit)"
+		print("Windows 32-bit Python detected, importing py_correlator (32-bit)")
 		import py_correlator
 else:
 	import py_correlator
-	print "OS X detected, importing py_correlator"
+	print("OS X detected, importing py_correlator")

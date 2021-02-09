@@ -5,6 +5,7 @@ Created on Nov 16, 2015
 
 Support for the creation and editing of Splice Interval Tables.
 '''
+from __future__ import print_function
 
 import unittest
 
@@ -445,7 +446,7 @@ class SpliceBuilder:
             testInterval = Interval(mindepth, maxdepth)
             result = [i for i in self.ints if i.overlaps(testInterval)]
         else:
-            print "Bogus search range: mindepth = {}, maxdepth = {}".format(mindepth, maxdepth)
+            print("Bogus search range: mindepth = {}, maxdepth = {}".format(mindepth, maxdepth))
         return result
     
     def getIntervalAtDepth(self, depth):
@@ -496,7 +497,7 @@ class SpliceBuilder:
                 #print "Added {}, have {} splice intervals: = {}".format(interval, len(self.ints), self.ints)
             added = True
         else:
-            print "couldn't add interval {}".format(interval)
+            print("couldn't add interval {}".format(interval))
         return added
     
     # for adding pre-existing, loaded SpliceIntervals
@@ -516,7 +517,7 @@ class SpliceBuilder:
         u = union([i.interval for i in self.ints])
         e = [i for i in u if i.encompasses(interval)]
         if len(e) > 0:
-            print "Interval {} encompassed by {}".format(interval, e)
+            print("Interval {} encompassed by {}".format(interval, e))
         return len(e) == 0
 
     # return union of all overlapping Intervals in self.ints    
