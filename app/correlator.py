@@ -67,7 +67,7 @@ class MainFrame(wx.Frame):
         self.user = user
         self.Width = winsize[0]
         self.Height = winsize[1]
-        #self.Width, self.Height = self.GetClientSizeTuple()
+        #self.Width, self.Height = self.GetClientSize()
         self.scroll = 1 
         self.half = (self.Width / 2) - 32 
         # make the menu
@@ -1488,7 +1488,7 @@ class MainFrame(wx.Frame):
         else:
             self.WritePreferenceItem("winy", winPT[1], f)
 
-        width, height = self.GetClientSizeTuple()
+        width, height = self.GetClientSize()
         self.WritePreferenceItem("width", width, f)
         self.WritePreferenceItem("height", height, f)
 
@@ -2567,7 +2567,7 @@ class MainFrame(wx.Frame):
         scroll_start = self.Window.startDepthPix * 0.7
         #l = []
 
-        #self.Width, self.Height = self.GetClientSizeTuple()
+        #self.Width, self.Height = self.GetClientSize()
         if self.config.has_option("applications", "width"):
             str_temp =  self.config.get("applications", "width")
             if len(str_temp) > 0:
