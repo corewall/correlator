@@ -2274,7 +2274,7 @@ class DataCanvas(wxBufferedWindow):
             self._drawColorLegend(dc, start, y, itemList)
 
     def Draw(self, dc):
-        beginDrawTime = time.clock()
+        beginDrawTime = time.perf_counter()
 
         # dc.BeginDrawing()
         dc.SetBackground(wx.Brush(self.colorDict['background']))
@@ -2417,7 +2417,7 @@ class DataCanvas(wxBufferedWindow):
                 dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.SOLID))
                 dc.DrawLines(((self.compositeX, self.MousePos[1]), (self.Width, self.MousePos[1])))
 
-        endDrawTime = time.clock()
+        endDrawTime = time.perf_counter()
         if self.showFPS:
             crudeFPS = round(1.0 / (endDrawTime - beginDrawTime), 1)
             dc.DrawText(str(crudeFPS) + "fps", 0, 0)
