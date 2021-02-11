@@ -505,7 +505,7 @@ class CompositePanel():
         crFont.SetPointSize(10)
         self.crText.SetFont(crFont)
         crSubPanel.GetSizer().Add(self.crText, 1, wx.ALIGN_CENTER_VERTICAL)
-        crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_CENTER_VERTICAL)
         
         self.crPanel.GetSizer().Add(self.corrPlotCanvas, 1, wx.EXPAND)
         self.crPanel.GetSizer().Add(crSubPanel, 0, wx.EXPAND)
@@ -532,7 +532,7 @@ class CompositePanel():
 
         grSubPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         grSubPanel.GetSizer().Add(self.grText, 1, wx.ALIGN_CENTER_VERTICAL)
-        grSubPanel.GetSizer().Add(gpSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        grSubPanel.GetSizer().Add(gpSettingsBtn, 0, wx.ALIGN_CENTER_VERTICAL)
         self.grPanel.GetSizer().Add(grSubPanel, 0, wx.EXPAND)
         
         # Affine Table panel
@@ -638,7 +638,7 @@ class CompositePanel():
 
         self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine (and Splice if one exists)...")
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
-        vbox.Add(self.saveButton, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL | wx.BOTTOM, 2)
+        vbox.Add(self.saveButton, 0, wx.EXPAND | wx.BOTTOM, 2)
         self.saveButton.Enable(False)
 
         self.mainPanel.SetSizer(vbox)
@@ -894,7 +894,7 @@ class SplicePanel():
         crFont.SetPointSize(10)
         self.crText.SetFont(crFont)
         crSubPanel.GetSizer().Add(self.crText, 1, wx.ALIGN_CENTER_VERTICAL)
-        crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_CENTER_VERTICAL)
         
         panel2.GetSizer().Add(self.corrPlotCanvas, 1, wx.EXPAND)
         panel2.GetSizer().Add(crSubPanel, 0, wx.EXPAND)
@@ -911,11 +911,12 @@ class SplicePanel():
         self.OnUpdateDrawing()
         vbox.Add(panel2, 1, wx.TOP | wx.BOTTOM | wx.EXPAND, 5)
 
+        # 2/10/2021: Commenting obsolete FlexGridSizer
         # Panel 3
         panel3 = wx.Panel(self.mainPanel, -1)
-        #hbox3 = wx.BoxSizer(wx.HORIZONTAL)
+        hbox3 = wx.BoxSizer(wx.HORIZONTAL)
 
-        hbox3 = wx.FlexGridSizer(3, 2)
+        hbox3 = wx.FlexGridSizer(3, 2, gap=(0,0))
         sizer34 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Append mode'), orient=wx.VERTICAL)
         if platform_name[0] == "Windows" :		
             self.only = wx.RadioButton(panel3, -1, "Next core only        ", style=wx.RB_GROUP)
@@ -942,7 +943,7 @@ class SplicePanel():
         sizer34.Add(self.appendButton, 1, wx.TOP, 5)
         hbox3.Add(sizer34, 1, wx.RIGHT, 10)
 
-        sizer31_1 = wx.FlexGridSizer(3, 1)
+        sizer31_1 = wx.FlexGridSizer(3, 1, gap=(0,0))
         sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Depth adjust (m)'), orient=wx.VERTICAL)
         self.depth = wx.TextCtrl(panel3, -1, "0.0", size=(buttonsize, 25), style=wx.SUNKEN_BORDER )
         self.depth.Enable(False)
@@ -977,7 +978,7 @@ class SplicePanel():
         sizer33.Add(self.unconst, 1, wx.TOP, 1)
         hbox3.Add(sizer33)
 
-        sizer32 = wx.GridSizer(3, 1)
+        sizer32 = wx.GridSizer(3, 1, gap=(0,0))
         self.spliceButton = wx.Button(panel3, -1, "Splice To Tie", size=(buttonsize, 30))
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSplice, self.spliceButton)
         self.spliceButton.Enable(False)
@@ -1007,7 +1008,7 @@ class SplicePanel():
 
         self.saveButton = wx.Button(self.mainPanel, -1, "Save Splice Table", size =(150, 30))
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
-        vbox.Add(self.saveButton, 0, wx.ALIGN_CENTER_VERTICAL)
+        vbox.Add(self.saveButton, 0)
         self.saveButton.Enable(False)
 
         vbox_top.Add(vbox, 1, wx.LEFT, 5)
@@ -1322,7 +1323,7 @@ class EvalPlotPanel(wx.Panel):
         crFont.SetPointSize(10)
         self.crText.SetFont(crFont)
         psz.Add(self.crText, 1, wx.ALIGN_CENTER_VERTICAL)
-        psz.Add(settingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        psz.Add(settingsBtn, 0, wx.ALIGN_CENTER_VERTICAL)
         paramPanel.SetSizer(psz)
         
         evsz.Add(paramPanel, 0, wx.EXPAND)
@@ -1458,7 +1459,7 @@ class SpliceIntervalPanel():
         tieSplitPanel.Bind(wx.EVT_BUTTON, self.OnTopTieButton, self.topTieButton)
         self.botTieButton = wx.Button(tieSplitPanel, -1, "Edit Bottom Tie")
         tieSplitPanel.Bind(wx.EVT_BUTTON, self.OnBotTieButton, self.botTieButton)
-        tspsz = wx.FlexGridSizer(rows=2, cols=2, vgap=10)
+        tspsz = wx.FlexGridSizer(rows=2, cols=2, gap=(0,10))
         tspsz.AddGrowableCol(1, proportion=1)
         tspsz.Add(wx.StaticText(tieSplitPanel, -1, "Top: "), 1, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
         tspsz.Add(self.topTieButton, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL)
@@ -1700,9 +1701,9 @@ class AutoPanel():
         # Panel 1
         panel1 = wx.Panel(self.mainPanel, -1)
         sizer1 = wx.StaticBoxSizer(wx.StaticBox(panel1, -1, 'Core-Log Depth Matching Parameters'), orient=wx.VERTICAL)
-        sizer1.Add(wx.StaticText(panel1, -1, 'Stretch/Compress core data between:', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+        sizer1.Add(wx.StaticText(panel1, -1, 'Stretch/Compress core data between:', (5, 5)), 0)
 
-        grid1 = wx.FlexGridSizer(2, 4)
+        grid1 = wx.FlexGridSizer(2, 4, gap=(0,0))
         self.valueA1 = wx.TextCtrl(panel1, -1, "85.0", size=(60, 25), style=wx.SUNKEN_BORDER )
         grid1.Add(self.valueA1)
         grid1.Add(wx.StaticText(panel1, -1, '%  and', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
@@ -1718,9 +1719,9 @@ class AutoPanel():
         grid1.Add(wx.StaticText(panel1, -1, '% intervals', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
         sizer1.Add(grid1, 0, wx.TOP, 5)
 
-        sizer1.Add(wx.StaticText(panel1, -1, 'Slide Log up/down between:', (5, 5)), 0, wx.TOP | wx.ALIGN_CENTER_VERTICAL, 9)
+        sizer1.Add(wx.StaticText(panel1, -1, 'Slide Log up/down between:', (5, 5)), 0, wx.TOP, 9)
 
-        grid12 = wx.FlexGridSizer(2, 4)
+        grid12 = wx.FlexGridSizer(2, 4, gap=(0,0))
         self.valueB1 = wx.TextCtrl(panel1, -1, "-5.1", size =(60, 25), style=wx.SUNKEN_BORDER )
         grid12.Add(self.valueB1)
         grid12.Add(wx.StaticText(panel1, -1, 'm  and', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
@@ -1732,7 +1733,7 @@ class AutoPanel():
         grid12.Add(wx.StaticText(panel1, -1, 'm intervals', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
         sizer1.Add(grid12, 0, wx.TOP, 5)
 
-        grid13 = wx.FlexGridSizer(2, 3)
+        grid13 = wx.FlexGridSizer(2, 3, gap=(0,0))
         grid13.Add(wx.StaticText(panel1, -1, 'Correlation depth step: ', (5, 5)), 0, wx.TOP | wx.ALIGN_CENTER_VERTICAL, 9)
         self.valueC = wx.TextCtrl(panel1, -1, "0.15", size =(60, 25), style=wx.SUNKEN_BORDER )
         if platform_name[0] == "Windows" :	
@@ -1754,16 +1755,16 @@ class AutoPanel():
         panel1.SetSizer(sizer1)
         vbox.Add(panel1, 0, wx.TOP, 9)
 
-        vbox.Add(wx.StaticText(self.mainPanel, -1, 'Select Hole(s):', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+        vbox.Add(wx.StaticText(self.mainPanel, -1, 'Select Hole(s):', (5, 5)), 0)
         
         buttonsize = 300
         if platform_name[0] == "Windows" :
             buttonsize = 285
             
         if self.parent.Height > 768 :
-            self.fileList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,95), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)
+            self.fileList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,95), style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)
         else :
-            self.fileList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,65), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)
+            self.fileList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,65), style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)
 
         vbox.Add(self.fileList, 0, wx.BOTTOM, 3)
         self.fileList.SetForegroundColour(wx.BLACK)
@@ -1781,7 +1782,7 @@ class AutoPanel():
         panel2 = wx.Panel(self.mainPanel, -1)
         sizer2 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'LD Recommended Depth Matching'), orient=wx.VERTICAL)
 
-        grid2 = wx.FlexGridSizer(3, 2)
+        grid2 = wx.FlexGridSizer(3, 2, gap=(0,0))
         self.valueD1 = wx.TextCtrl(panel2, -1, "", size=(80, 25), style=wx.SUNKEN_BORDER )
         self.valueD1.SetEditable(False)
         grid2.Add(self.valueD1)
@@ -1808,10 +1809,10 @@ class AutoPanel():
             buttonsize = 285
             
         if self.parent.Height > 768 :
-            self.resultList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,130), "", style=wx.LB_NEEDED_SB)
+            self.resultList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,130), style=wx.LB_NEEDED_SB)
         else :
             #self.resultList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,100), "", style=wx.LB_NEEDED_SB)
-            self.resultList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,60), "", style=wx.LB_NEEDED_SB)
+            self.resultList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,60), style=wx.LB_NEEDED_SB)
 
         self.mainPanel.Bind(wx.EVT_LISTBOX, self.OnSelectRate, self.resultList)
         vbox.Add(self.resultList, 0, wx.BOTTOM, 3)
@@ -1822,7 +1823,7 @@ class AutoPanel():
             
         # Panel 3
         panel3 = wx.Panel(self.mainPanel, -1)
-        grid3 = wx.FlexGridSizer(1, 3)
+        grid3 = wx.FlexGridSizer(1, 3, gap=(0,0))
         self.resetBtn = wx.Button(panel3, -1, "Reset", size=(buttonsize, 30))
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDismiss, self.resetBtn)
         grid3.Add(self.resetBtn, 0)
@@ -1844,7 +1845,7 @@ class AutoPanel():
         #vbox.Add(wx.StaticText(self.mainPanel, -1, '*Log data is required.', (5, 5)), 0, wx.BOTTOM, 9)
         self.saveButton = wx.Button(self.mainPanel, -1, "Save ELD Table", size =(150, 30))
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
-        vbox.Add(self.saveButton, 0, wx.ALIGN_CENTER_VERTICAL)
+        vbox.Add(self.saveButton, 0)
         self.saveButton.Enable(False)
 
         vbox.Add(wx.StaticText(self.mainPanel, -1, '* Auto Correlation will stretch/compress', (5, 5)), 0, wx.BOTTOM, 2)
@@ -2176,7 +2177,7 @@ class ELDPanel():
         crFont.SetPointSize(10)
         self.crText.SetFont(crFont)
         crSubPanel.GetSizer().Add(self.crText, 1, wx.ALIGN_CENTER_VERTICAL)
-        crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
         
         panel2.GetSizer().Add(self.corrPlotCanvas, 1, wx.EXPAND)
         panel2.GetSizer().Add(crSubPanel, 0, wx.EXPAND)
@@ -2188,14 +2189,14 @@ class ELDPanel():
         buttonsize = 300
         if platform_name[0] == "Windows" :
             buttonsize = 285
-        self.fileList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,105), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB)
+        self.fileList = wx.ListBox(self.mainPanel, -1, (0,0), (buttonsize,105), style=wx.LB_HSCROLL|wx.LB_NEEDED_SB)
         self.mainPanel.Bind(wx.EVT_LISTBOX, self.OnSelectTie, self.fileList)
         vbox.Add(self.fileList, 0, wx.BOTTOM, 3)
 
         # Panel 3
         panel3 = wx.Panel(self.mainPanel, -1)
         #hbox3 = wx.BoxSizer(wx.HORIZONTAL)
-        hbox3 = wx.FlexGridSizer(1, 2)
+        hbox3 = wx.FlexGridSizer(1, 2, gap=(5,5))
         hbox3.AddGrowableCol(0)
         sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Apply Option'), orient=wx.VERTICAL)
         
@@ -2228,7 +2229,7 @@ class ELDPanel():
         if platform_name[0] == "Windows" :
             buttonsize = 135
             
-        sizer32 = wx.GridSizer(4, 1)
+        sizer32 = wx.GridSizer(4, 1, gap=(0,0))
         clearBtn = wx.Button(panel3, -1, "Remove", size=(buttonsize, 30))
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnClear, clearBtn)
         sizer32.Add(clearBtn)
@@ -2252,7 +2253,7 @@ class ELDPanel():
 
         self.saveButton = wx.Button(self.mainPanel, -1, "Save ELD Table", size =(150, 30))
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
-        vbox.Add(self.saveButton, 0, wx.ALIGN_CENTER_VERTICAL)
+        vbox.Add(self.saveButton, 0)
         self.saveButton.Enable(False)
 
         vbox_top.Add(vbox, 1, wx.LEFT, 5)
@@ -2469,7 +2470,7 @@ class AgeDepthPanel():
             buttonsize = 285
             
         if self.parent.Height > 768 :
-            self.ageList = wx.ListBox(self.mainPanel, -1, (0, 0), (buttonsize,220), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)	 
+            self.ageList = wx.ListBox(self.mainPanel, -1, (0, 0), (buttonsize,220), style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)	 
             font = self.ageList.GetFont()
             font.SetFamily(wx.FONTFAMILY_ROMAN)
             self.ageList.SetFont(font)
@@ -2477,7 +2478,7 @@ class AgeDepthPanel():
 
         else :
             #self.ageList = wx.ListBox(self.mainPanel, -1, (0, 0), (buttonsize,170), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)	 
-            self.ageList = wx.ListBox(self.mainPanel, -1, (0, 0), (buttonsize,120), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)	 
+            self.ageList = wx.ListBox(self.mainPanel, -1, (0, 0), (buttonsize,120), style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)	 
             font = self.ageList.GetFont()
             font.SetFamily(wx.FONTFAMILY_ROMAN)
             self.ageList.SetFont(font)
@@ -2501,11 +2502,11 @@ class AgeDepthPanel():
 
         # Panel 2
         panel2 = wx.Panel(self.mainPanel, -1)
-        grid2 = wx.FlexGridSizer(1, 2)
+        grid2 = wx.FlexGridSizer(1, 2, gap=(0,0))
         grid2.AddGrowableCol(1, 1)
 
         sizer21 = wx.StaticBoxSizer(wx.StaticBox(panel2, -1, 'User-defined Age'), orient=wx.VERTICAL)
-        grid21 = wx.FlexGridSizer(4, 2)
+        grid21 = wx.FlexGridSizer(4, 2, gap=(0,0))
     
         if platform_name[0] == "Windows" :					
             self.depth_label = wx.StaticText(panel2, -1, "CCSF(m)")
@@ -2539,7 +2540,7 @@ class AgeDepthPanel():
             sizer21.Add(grid21)			
         grid2.Add(sizer21)
 
-        grid22 = wx.GridSizer(4, 1)
+        grid22 = wx.GridSizer(4, 1, gap=(0,0))
         removeBtn = wx.Button(panel2, -1, "Remove", size =(110, 30))
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnRemoveAge, removeBtn)
         grid22.Add(removeBtn, 0, wx.TOP, 1)
@@ -2570,7 +2571,7 @@ class AgeDepthPanel():
 
         # Panel 3
         panel3 = wx.Panel(self.mainPanel, -1)
-        grid3 = wx.FlexGridSizer(1, 2)
+        grid3 = wx.FlexGridSizer(1, 2, gap=(0,0))
         grid3.AddGrowableCol(1, 1)
 
         sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'Plot age versus'), orient=wx.VERTICAL)
@@ -2593,7 +2594,7 @@ class AgeDepthPanel():
         sizer31.Add(self.plotEldOpt)
         grid3.Add(sizer31)
 
-        grid32 = wx.GridSizer(2, 1)
+        grid32 = wx.GridSizer(2, 1, gap=(0,0))
 
         saveBtn = wx.Button(panel3, -1, "Save Age/Depth", size = (120, 30))
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, saveBtn)
@@ -2632,7 +2633,7 @@ class AgeDepthPanel():
         self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnAgeZoom, self.slider1)
         sizer4.Add(self.slider1, 0, flag=wx.EXPAND)
 
-        grid42 = wx.FlexGridSizer(1, 5)
+        grid42 = wx.FlexGridSizer(1, 5, gap=(0,0))
         grid42.Add(wx.StaticText(panel4, -1, 'min:', (5, 5)))
         self.min_age = wx.TextCtrl(panel4, -1, "0.0", size =(50, 25), style=wx.SUNKEN_BORDER | wx.TE_PROCESS_ENTER )
         grid42.Add(self.min_age)
@@ -2657,7 +2658,7 @@ class AgeDepthPanel():
         self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnAgeDepthZoom, self.slider2)
         sizer5.Add(self.slider2, 0,wx.EXPAND)
 
-        grid51 = wx.FlexGridSizer(1, 5)
+        grid51 = wx.FlexGridSizer(1, 5, gap=(0,0))
         grid51.Add(wx.StaticText(panel5, -1, 'min:', (5, 5)))
         self.min_depth = wx.TextCtrl(panel5, -1, "0.0", size =(50, 25), style=wx.SUNKEN_BORDER | wx.TE_PROCESS_ENTER )
         grid51.Add(self.min_depth)
@@ -3800,7 +3801,7 @@ class PreferencesPanel():
         varScalePanel = wx.Panel(self.mainPanel, -1)
         varScaleSizer = wx.StaticBoxSizer(wx.StaticBox(varScalePanel, -1, 'Display Range'), orient=wx.VERTICAL)
 
-        self.variableChoice = wx.Choice(varScalePanel, -1, (0,0), (270,-1), (""))
+        self.variableChoice = wx.Choice(varScalePanel, -1, (0,0), (270,-1))
         varScalePanel.Bind(wx.EVT_CHOICE, self.SetTYPE, self.variableChoice)
 
         varSizer = wx.BoxSizer(wx.HORIZONTAL)
