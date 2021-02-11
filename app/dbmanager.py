@@ -1699,7 +1699,7 @@ class DataFrame(wx.Panel):
                 cmd = 'cp \"' + path + '\" \"' + fullname + '\"'
                 os.system(cmd)
 
-             tempstamp = str(datetime.today())
+            tempstamp = str(datetime.today())
             last = tempstamp.find(":", 0)
             last = tempstamp.find(":", last+1)
             #stamp = tempstamp[0:10] + "," + tempstamp[12:16]
@@ -1794,7 +1794,7 @@ class DataFrame(wx.Panel):
             if not self.ValidateStratFile(path, leg, site, title):
                 return
 
-             tempstamp = str(datetime.today())
+            tempstamp = str(datetime.today())
             last = tempstamp.find(":", 0)
             last = tempstamp.find(":", last+1)
             #stamp = tempstamp[0:10] + "," + tempstamp[12:16]
@@ -4394,7 +4394,7 @@ class DataFrame(wx.Panel):
         smoothString = params.toString() if params is not None else ""
         typeNodes = self.GetChildren(self.loadedSiteNode, test=lambda c: self.tree.GetItemText(c, 0) == datatype)
         if len(typeNodes) > 0:
-             typeNode = typeNodes[0]
+            typeNode = typeNodes[0]
             for dataNode in self.GetChildren(typeNode):
                 self.tree.SetItemText(dataNode, smoothString, 12)
                 smooth = -1 if params is None else params.style
@@ -7396,7 +7396,7 @@ class DataFrame(wx.Panel):
 
         if opId == 1:
             self.selectedDataType = self.dataPanel.GetColLabelValue(self.selectedCol)
-             end = len(self.selectedDataType) -1
+            end = len(self.selectedDataType) - 1
             if self.selectedDataType[end] == '\n' or self.selectedDataType[end] == '\r':
                 self.selectedDataType = self.selectedDataType[0:end]
             self.selectedDataType = self.RemoveBACK(self.selectedDataType)
@@ -7404,7 +7404,7 @@ class DataFrame(wx.Panel):
             self.dataPanel.SetColLabelValue(self.selectedCol, "Data")
         elif opId == 2:
             self.selectedDepthType = self.dataPanel.GetColLabelValue(self.selectedCol)
-             end = len(self.selectedDepthType) -1
+            end = len(self.selectedDepthType) - 1
             if self.selectedDepthType[end] == '\n' or self.selectedDepthType[end] == '\r':
                 self.selectedDepthType = self.selectedDepthType[0:end]
             self.selectedDepthType = self.RemoveBACK(self.selectedDepthType)

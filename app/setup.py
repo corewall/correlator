@@ -16,7 +16,7 @@ coreDir = os.environ["CORE_DIRECTORY"]
 #OPTIONS = {'argv_emulation': True}
 
 module1 = Extension('py_correlator',
-					define_macros = [('CORRELATOR_MACOSX', None)],
+                    define_macros = [('CORRELATOR_MACOSX', None)],
                     include_dirs = [coreDir + '/include'],
                     libraries = ['core'],
                     library_dirs = [coreDir + '/lib'],
@@ -26,12 +26,12 @@ setup(
     app=['correlator.py'],
     setup_requires=['py2app'],
     data_files=[],
-	options=dict(py2app=dict(
-		plist=dict(
-			CFBundleIconFile="./icons/corey",
-			CFBundleShortVersionString="1.7.a7",
-			CFBundleVersion="1.7 alpha 7"
-		))),
+    options=dict(py2app=dict(
+        plist=dict(
+            CFBundleIconFile="./icons/corey",
+            CFBundleShortVersionString="1.7.a7",
+            CFBundleVersion="1.7 alpha 7"
+        ))),
     ext_modules=[module1]
 )
 

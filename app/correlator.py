@@ -9,7 +9,7 @@ import socket
 import sys
 import traceback
 
-# platform_name = platform.uname()
+platform_name = platform.uname()
 # if platform_name[5] == "i386":
 #     os.system('sh swap_intel_library')
 # elif platform_name[5] == "powerpc":
