@@ -12,7 +12,7 @@ import shutil
 import pandas
 
 import wx 
-import wx.gizmos as gizmos
+import wx.lib.gizmos as gizmos
 from wx.lib import plot
 import random, sys, os, re, time, string
 from datetime import datetime
@@ -456,7 +456,7 @@ class DataFrame(wx.Panel):
         
     def AddSectionSummary(self, secsumm, originalPath):
         siteNode = self.GetSelectedSite()
-        if siteNode.IsOk():
+        if siteNode.IsOk(): # wxTODO
             siteName = self.GetSelectedSiteName()
             ssListFound, secSummItem = self.FindItem(siteNode, "Section Summaries")
             if ssListFound:
@@ -497,16 +497,16 @@ class DataFrame(wx.Panel):
     def GetSelectedSiteName(self):
         sitename = ""
         selsite = self.GetSelectedSite()
-        if selsite.IsOk():
+        if selsite.IsOk(): # wxTODO
             sitename = self.tree.GetItemText(selsite, 0) 
         return sitename
     
     # get wxTreeItem Site for current selection in self.tree
     def GetSelectedSite(self):
         item = self.tree.GetSelection()
-        while item.IsOk():
+        while item.IsOk(): # wxTODO
             parent = self.tree.GetItemParent(item)
-            if parent.IsOk():
+            if parent.IsOk(): # wxTODO
                 if self.IsRootNode(parent):
                     break
             item = parent
@@ -516,6 +516,7 @@ class DataFrame(wx.Panel):
     def IsDatatypeNode(self, node):
         datatypeNode = False
         parent = self.tree.GetItemParent(node)
+        # wxTODO IsOk()
         if parent.IsOk() and self.IsSiteNode(parent) and self.tree.GetItemText(node, 0) not in STD_SITE_NODES:
             datatypeNode = True
         return datatypeNode
@@ -524,7 +525,7 @@ class DataFrame(wx.Panel):
     def IsSiteNode(self, node):
         siteNode = False
         parent = self.tree.GetItemParent(node)
-        if parent.IsOk():
+        if parent.IsOk(): # wxTODO
             siteNode = self.IsRootNode(parent)
         return siteNode
     
@@ -532,6 +533,7 @@ class DataFrame(wx.Panel):
     def IsSavedTablesNode(self, node):
         savedTablesNode = False
         parent = self.tree.GetItemParent(node)
+        # wxTODO IsOk()
         if parent.IsOk() and self.IsSiteNode(parent) and self.tree.GetItemText(node, 0) == ST_NODE:
             savedTablesNode = True
         return savedTablesNode
@@ -574,6 +576,7 @@ class DataFrame(wx.Panel):
         
     def GetSiteNameForNode(self, node):
         siteNode = self.GetSiteForNode(node)
+        # wxTODO IsOk()
         if siteNode.IsOk() and siteNode is not None:
             return self.tree.GetItemText(siteNode, 0)
         assert "Client failed to provide legit sub-site node"
@@ -1858,7 +1861,7 @@ class DataFrame(wx.Panel):
     def GetChildren(self, parentNode, test=None):
         kids = []
         childNode, _ = self.tree.GetFirstChild(parentNode) # _ for unused cookie item
-        while childNode.IsOk():
+        while childNode is not None:
             if test is None or test(childNode):
                 kids.append(childNode)
             childNode = self.tree.GetNextSibling(childNode)
@@ -3204,7 +3207,7 @@ class DataFrame(wx.Panel):
         if dldItem[0] == True:
             logCount = self.tree.GetChildrenCount(dldItem[1], False)
             (child, cookie) = self.tree.GetFirstChild(dldItem[1])
-            while child.IsOk():
+            while child.IsOk(): # wxTODO
                 if self.tree.GetItemText(child, 2) == "Enable":
                     enabledLogItem = child
                     break
