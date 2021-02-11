@@ -12,7 +12,7 @@ import random, sys, os, re, time, string
 from datetime import datetime
 import math
 
-import numpy.oldnumeric as _Numeric
+# import numpy.oldnumeric as _Numeric
 import numpy
 import warnings
 warnings.simplefilter('ignore', numpy.RankWarning) # stifle RankWarnings when computing growth rate
