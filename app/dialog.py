@@ -1735,6 +1735,7 @@ class DecimateDialog(wx.Dialog):
 		self.EndModal(wx.ID_OK)
 
 
+# Modify datatype display order.
 class DisplayOrderDialog(wx.Dialog):
 	def __init__(self, parent, displayOrder):
 		wx.Dialog.__init__(self, parent, -1, "Display Order", size=(-1, 400), style=wx.CAPTION | wx.STAY_ON_TOP)
@@ -1796,7 +1797,7 @@ class DisplayOrderDialog(wx.Dialog):
 		self.parent.Window.UpdateDrawing()
 
 
-# Show/hide holes
+# Show/hide specific hole+datatype combinations.
 class HoleVisibilityDialog(wx.Dialog):
 	def __init__(self, parent, holes, hiddenHoles, datatypeOrder):
 		wx.Dialog.__init__(self, parent, -1, "Hole Visibility", size=(-1, 400), style=wx.CAPTION | wx.STAY_ON_TOP)
@@ -1847,6 +1848,122 @@ class HoleVisibilityDialog(wx.Dialog):
 		elif not visible and holeKey not in self.hiddenHoles:
 			self.hiddenHoles.append(holeKey)
 			self.parent.Window.UpdateDrawing()
+
+
+
+# Control datatype order and hole visibility in a single dialog.
+# Holes are displayed or hidden for all data types. No support for show/hide 
+# of specific hole+datatype combinations as in HoleVisibilityDialog above, even
+# though LayoutManager.hiddenHoles allows it. Decided that level of granularity
+# was not needed.
+class HoleOrderAndDisplayDialog(wx.Dialog):
+	def __init__(self, parent, holes, hiddenHoles, displayOrder):
+		wx.Dialog.__init__(self, parent, -1, "Show and Order Data Types", size=(-1, 400), style=wx.CAPTION | wx.STAY_ON_TOP)
+		self.parent = parent
+		self.holes = holes # dict of datatype str: [hole name strs]
+		self.hiddenHoles = hiddenHoles # list of hole name + datatype strs indicating which holes are currently hidden
+		self.displayOrder = displayOrder
+		self.createGUI()
+
+	def createGUI(self):
+		mainPanel = wx.Panel(self, -1)
+		mainSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+		# move up/down arrows
+		upDownSizer = wx.BoxSizer(wx.VERTICAL)
+		self.upButton = wx.Button(mainPanel, -1, "Move Up")
+		self.Bind(wx.EVT_BUTTON, self.OnUp, self.upButton)
+		self.downButton = wx.Button(mainPanel, -1, "Move Down")
+		self.Bind(wx.EVT_BUTTON, self.OnDown, self.downButton)
+		upDownSizer.Add(self.upButton, 0, wx.ALIGN_CENTER | wx.BOTTOM, 5)
+		upDownSizer.Add(self.downButton, 0, wx.ALIGN_CENTER)
+
+		# datatype list
+		typeSizer = wx.BoxSizer(wx.VERTICAL)
+		typeSizer.Add(wx.StaticText(mainPanel, -1, "Position"), 0)
+		self.typeList = wx.ListBox(mainPanel, -1, size=(-1, 120), choices=self.displayOrder)
+		self.Bind(wx.EVT_LISTBOX, self.ListSelectionChanged, self.typeList)
+		typeSizer.Add(self.typeList, 1)
+
+		# hole list
+		holeSizer = wx.BoxSizer(wx.VERTICAL)
+		holeSizer.Add(wx.StaticText(mainPanel, -1, "Show holes"), 0)
+		self.holeList = wx.CheckListBox(mainPanel, -1, size=(-1, 120))
+		sortedHoles = sorted(self._getUniqueHoles())
+		self.Bind(wx.EVT_CHECKLISTBOX, self.HoleItemChecked, self.holeList)
+		holeSizer.Add(self.holeList, 1)
+		
+		# add and check hole list items
+		self.holeList.SetItems(sortedHoles)
+		for row, h in enumerate(sortedHoles):
+			visible = len([hh for hh in self.hiddenHoles if hh.startswith(h)]) == 0
+			self.holeList.Check(row, visible)
+
+		mainSizer.Add(upDownSizer, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+		mainSizer.Add(typeSizer, 0)
+		mainSizer.Add(holeSizer, 0, wx.LEFT, 10)
+		mainPanel.SetSizer(mainSizer)
+
+		self.cancel = wx.Button(self, wx.ID_CANCEL, "Close")
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		sizer.Add(mainPanel, 1, wx.ALL, 10)
+		sizer.Add(self.cancel, 0, wx.ALIGN_CENTER | wx.BOTTOM, 5)
+		self.SetSizerAndFit(sizer)
+
+		if self.typeList.GetCount() > 0:
+			self.typeList.SetSelection(0)
+
+	def HoleItemChecked(self, evt):
+		idx = evt.GetInt()
+		visible = self.holeList.IsChecked(idx)
+		hole = self.holeList.GetString(idx)
+		holeKeys = [hole + dt for dt in self.displayOrder if hole in self.holes[dt]]
+		# print("{} is now {}".format(holeKey, "visible" if visible else "hidden"))
+		redraw = False
+		if visible:
+			for hk in holeKeys:
+				if hk in self.hiddenHoles:
+					self.hiddenHoles.remove(hk)
+					redraw = True
+		else: # not visible
+			for hk in holeKeys:
+				if hk not in self.hiddenHoles:
+					self.hiddenHoles.append(hk)
+					redraw = True
+		if redraw:
+			self.parent.Window.UpdateDrawing()
+
+	def OnUp(self, evt):
+		sel = self.typeList.GetSelection()
+		if sel > 0:
+			self.displayOrder[sel-1], self.displayOrder[sel] = self.displayOrder[sel], self.displayOrder[sel-1]
+			self.typeList.SetItems(self.displayOrder)
+			self.typeList.SetSelection(sel-1)
+			self.Update()
+
+	def OnDown(self, evt):
+		sel = self.typeList.GetSelection()
+		if sel < self.typeList.GetCount() - 1:
+			self.displayOrder[sel+1], self.displayOrder[sel] = self.displayOrder[sel], self.displayOrder[sel+1]
+			self.typeList.SetItems(self.displayOrder)
+			self.typeList.SetSelection(sel+1)
+			self.Update()
+
+	def ListSelectionChanged(self, evt):
+		sel = self.typeList.GetSelection()
+		self.upButton.Enable(sel > 0)
+		self.downButton.Enable(sel < self.typeList.GetCount() - 1)
+
+	def Update(self):
+		self.ListSelectionChanged(None)
+		self.parent.Window.layoutManager.setDatatypeOrder(list(self.displayOrder)) # copy
+		self.parent.Window.UpdateDrawing()
+
+	def _getUniqueHoles(self):
+		holes = []
+		for h in self.holes.values():
+			holes += h
+		return list(set(h))
 
 
 class SmoothDialog(wx.Dialog):
