@@ -3757,7 +3757,7 @@ class PreferencesPanel():
 		depthZoomSizer.Add(self.zoomInBtn, 1, wx.BOTTOM, 5)
 		depthZoomSizer.Add(self.zoomOutBtn, 1, wx.LEFT | wx.BOTTOM, 5)
 		depthZoomPanel.SetSizer(depthZoomSizer)
-		depthScaleSizer.Add(depthZoomPanel, 0, wx.EXPAND)
+		depthScaleSizer.Add(depthZoomPanel, 0)
 
 		depthScalePanel.SetSizer(depthScaleSizer)
 		vbox_top.Add(depthScalePanel, 0, wx.BOTTOM | wx.EXPAND, 10)
@@ -3781,13 +3781,13 @@ class PreferencesPanel():
 		varScalePanel = wx.Panel(self.mainPanel, -1)
 		varScaleSizer = wx.StaticBoxSizer(wx.StaticBox(varScalePanel, -1, 'Display Range'), orient=wx.VERTICAL)
 
-		self.variableChoice = wx.Choice(varScalePanel, -1, (0,0), (270,-1), (""))
+		self.variableChoice = wx.Choice(varScalePanel, -1, (0,0), (-1,-1), (""))
 		varScalePanel.Bind(wx.EVT_CHOICE, self.SetTYPE, self.variableChoice)
 
 		varSizer = wx.BoxSizer(wx.HORIZONTAL)
 		varSizer.Add(wx.StaticText(varScalePanel, -1, "Data Type"))
-		varSizer.Add(self.variableChoice, 1, wx.LEFT | wx.EXPAND, 5)
-		varScaleSizer.Add(varSizer,  0, wx.BOTTOM, 10)
+		varSizer.Add(self.variableChoice, 1, wx.LEFT, 5)
+		varScaleSizer.Add(varSizer, 0, wx.EXPAND | wx.BOTTOM, 10)
 
 		varRangeSizer = wx.BoxSizer(wx.HORIZONTAL)
 		varRangeSizer.Add(wx.StaticText(varScalePanel, -1, "Range"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 15)
@@ -3804,7 +3804,7 @@ class PreferencesPanel():
 		varScaleSizer.Add(varApply, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnChangeMinMax, varApply)
 		varScalePanel.SetSizer(varScaleSizer)
-		vbox_top.Add(varScalePanel, 0, wx.BOTTOM | wx.EXPAND, 10)
+		vbox_top.Add(varScalePanel, 0, wx.EXPAND | wx.BOTTOM, 10)
 
 		# Hole Width Slider
 		# self.holeWidthSlider = wx.Slider(self.mainPanel, -1, value=10, minValue=1, maxValue=20)

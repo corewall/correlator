@@ -11,7 +11,7 @@ from enum import Enum
 
 import wx 
 import wx.lib.sheet as sheet
-from wx.lib import plot
+from wx.lib import plot, scrolledpanel
 
 import numpy
 
@@ -650,7 +650,8 @@ class DataCanvas(wxBufferedWindow):
 		self.parent.filterPanel = frames.FilterPanel(self.parent, self.filterPanel)
 		self.filterPanel.Hide()
 
-		self.optPanel = wx.Panel(self.sideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
+		self.optPanel = scrolledpanel.ScrolledPanel(self.sideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER | wx.VSCROLL)
+		self.optPanel.SetupScrolling()
 		self.parent.optPanel = frames.PreferencesPanel(self.parent, self.optPanel)
 		self.optPanel.Hide()
 
