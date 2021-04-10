@@ -3643,15 +3643,16 @@ class PreferencesPanel():
 		dlg.ShowModal()
 
 	def OnGroupByDatatype(self, event):
-		self.parent.Window.layoutManager.setGroupByDatatype(self.groupByDatatype.IsChecked())
+		self.parent.Window.layoutManager.setGroupByDatatype(self.dtRadio.GetValue())
 		self.parent.Window.UpdateDrawing()
 
 	# def setShowCoreImages(self, sci):
 	# 	self.showCoreImages.SetValue(sci)
 
 	# def setShowImagesAsDatatype(self, siad):
-	# 	sel = 1 if siad else 0
-	# 	self.coreImageDisplayMode.SetSelection(sel)
+	# 	# sel = 1 if siad else 0
+	# 	self.dtRadio.SetValue(siad)
+	# 	self.holeRadio.SetValue(siad)
 	
 	# def OnShowLogShiftArrows(self, event):
 	# 	self.parent.Window.LogClue = self.showLogShiftArrows.IsChecked()
@@ -3675,12 +3676,16 @@ class PreferencesPanel():
 
 		groupBySizer = wx.BoxSizer(wx.HORIZONTAL)
 		groupBySizer.Add(wx.StaticText(layoutPanel, -1, "Group by"), 0, wx.RIGHT, 10)
-		dtRadio = wx.RadioButton(layoutPanel, -1, "Data type", style=wx.RB_GROUP)
-		holeRadio = wx.RadioButton(layoutPanel, -1, "Hole")
-		groupBySizer.Add(dtRadio, 1)
-		groupBySizer.Add(holeRadio, 1)
+		self.dtRadio = wx.RadioButton(layoutPanel, -1, "Data type", style=wx.RB_GROUP)
+		self.holeRadio = wx.RadioButton(layoutPanel, -1, "Hole")
+		self.dtRadio.SetValue(True)
+		self.mainPanel.Bind(wx.EVT_RADIOBUTTON, self.OnGroupByDatatype, self.dtRadio)
+		self.mainPanel.Bind(wx.EVT_RADIOBUTTON, self.OnGroupByDatatype, self.holeRadio)
+		groupBySizer.Add(self.dtRadio, 1)
+		groupBySizer.Add(self.holeRadio, 1)
 
 		self.showPlotOverlays = wx.CheckBox(layoutPanel, -1, "Overlay plots by data type")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowPlotOverlays, self.showPlotOverlays)
 		self.showPlotOverlays.SetValue(True)
 
 		layoutSizer.Add(self.displayOrderButton, 0, wx.BOTTOM | wx.EXPAND, 10)

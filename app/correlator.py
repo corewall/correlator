@@ -1510,6 +1510,9 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("fontstartdepth", self.Window.startDepthPix, f)
 		self.WritePreferenceItem("scrollsize", self.Window.ScrollSize, f)
 
+		groupByDatatype = int(self.optPanel.dtRadio.GetValue())
+		self.WritePreferenceItem("groupByDatatype", groupByDatatype, f)
+
 		showSectionDepths = int(self.Window.showSectionDepths)
 		self.WritePreferenceItem("showSectionDepths", showSectionDepths, f)
 
@@ -2768,12 +2771,13 @@ class MainFrame(wx.Frame):
 				self.Window.showSectionDepths = True if str_temp == '1' else False 
 				self.optPanel.showSectionDepths.SetValue(self.Window.showSectionDepths)
 
-		# if self.config.has_option("applications", "showImagesAsDatatype"):
-		# 	str_temp = self.config.get("applications", "showImagesAsDatatype")
-		# 	if len(str_temp) > 0:
-		# 		siad = (str_temp == '1')
-		# 		self.Window.layoutManager.showImagesAsDatatype = siad
-		# 		self.optPanel.setShowImagesAsDatatype(siad)
+		if self.config.has_option("applications", "groupByDatatype"):
+			str_temp = self.config.get("applications", "groupByDatatype")
+			if len(str_temp) > 0:
+				gbdt = (str_temp == '1')
+				self.Window.layoutManager.groupByDatatype = gbdt
+				self.optPanel.dtRadio.SetValue(gbdt)
+				self.optPanel.holeRadio.SetValue(not gbdt)
 
 		if self.config.has_option("applications", "showAffineShiftInfo"):
 			str_temp = self.config.get("applications", "showAffineShiftInfo")
