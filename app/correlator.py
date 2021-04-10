@@ -2768,19 +2768,12 @@ class MainFrame(wx.Frame):
 				self.Window.showSectionDepths = True if str_temp == '1' else False 
 				self.optPanel.showSectionDepths.SetValue(self.Window.showSectionDepths)
 
-		if self.config.has_option("applications", "showCoreImages"):
-			str_temp = self.config.get("applications", "showCoreImages")
-			if len(str_temp) > 0:
-				sci = (str_temp == '1')
-				self.Window.layoutManager.showCoreImages = sci
-				self.optPanel.setShowCoreImages(sci)
-
-		if self.config.has_option("applications", "showImagesAsDatatype"):
-			str_temp = self.config.get("applications", "showImagesAsDatatype")
-			if len(str_temp) > 0:
-				siad = (str_temp == '1')
-				self.Window.layoutManager.showImagesAsDatatype = siad
-				self.optPanel.setShowImagesAsDatatype(siad)
+		# if self.config.has_option("applications", "showImagesAsDatatype"):
+		# 	str_temp = self.config.get("applications", "showImagesAsDatatype")
+		# 	if len(str_temp) > 0:
+		# 		siad = (str_temp == '1')
+		# 		self.Window.layoutManager.showImagesAsDatatype = siad
+		# 		self.optPanel.setShowImagesAsDatatype(siad)
 
 		if self.config.has_option("applications", "showAffineShiftInfo"):
 			str_temp = self.config.get("applications", "showAffineShiftInfo")
