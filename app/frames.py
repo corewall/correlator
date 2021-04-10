@@ -3680,7 +3680,7 @@ class PreferencesPanel():
 		groupBySizer.Add(dtRadio, 1)
 		groupBySizer.Add(holeRadio, 1)
 
-		self.showPlotOverlays = wx.CheckBox(layoutPanel, -1, "Overlay plots by datatype")
+		self.showPlotOverlays = wx.CheckBox(layoutPanel, -1, "Overlay plots by data type")
 		self.showPlotOverlays.SetValue(True)
 
 		layoutSizer.Add(self.displayOrderButton, 0, wx.BOTTOM | wx.EXPAND, 10)
@@ -3725,14 +3725,14 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnZoomIn, self.zoomInBtn)
 		self.zoomOutBtn = wx.Button(depthZoomPanel, -1, "Zoom Out")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnZoomOut, self.zoomOutBtn)
-		depthZoomSizer.Add(self.zoomInBtn, 1, wx.BOTTOM, 5)
-		depthZoomSizer.Add(self.zoomOutBtn, 1, wx.LEFT | wx.BOTTOM, 5)
+		depthZoomSizer.Add(self.zoomInBtn, 1, wx.BOTTOM | wx.EXPAND, 5)
+		depthZoomSizer.Add(self.zoomOutBtn, 1, wx.LEFT | wx.BOTTOM | wx.EXPAND, 5)
 		depthZoomPanel.SetSizer(depthZoomSizer)
-		depthScaleSizer.Add(depthZoomPanel, 0, wx.BOTTOM, 10)
+		depthScaleSizer.Add(depthZoomPanel, 0, wx.BOTTOM | wx.EXPAND, 10)
 
 		# Keyboard up/down arrow shift distance
 		kbsSizer = wx.BoxSizer(wx.HORIZONTAL)
-		kbsSizer.Add(wx.StaticText(depthScalePanel, -1, "Up/down toggle"), 0, wx.ALIGN_CENTER_VERTICAL)
+		kbsSizer.Add(wx.StaticText(depthScalePanel, -1, "Up/down toggle"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
 		self.tie_shift = wx.TextCtrl(depthScalePanel, -1, "0.0", size=(50,-1))
 		kbsSizer.Add(self.tie_shift)
 		kbsSizer.Add(wx.StaticText(depthScalePanel, -1, "m"), 0, wx.ALIGN_CENTER_VERTICAL)
@@ -3777,7 +3777,7 @@ class PreferencesPanel():
 
 		varScaleSizer.Add(varRangeSizer, 0, wx.BOTTOM | wx.ALIGN_RIGHT, 15)
 
-		self.showOutOfRangeData = wx.CheckBox(varScalePanel, -1, "Show data ranging beyond hole width")
+		self.showOutOfRangeData = wx.CheckBox(varScalePanel, -1, "Show data outside track")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowOutOfRangeData, self.showOutOfRangeData)
 		varScaleSizer.Add(self.showOutOfRangeData, 0, wx.BOTTOM, 10)
 
@@ -3834,8 +3834,8 @@ class PreferencesPanel():
 		viewSizer.Add(self.showSectionDepths, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showCoreInfo, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)
-		viewSizer.Add(self.showDepthLine, 0, wx.BOTTOM, 10)
-		viewSizer.Add(self.showColorLegend, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.showDepthLine, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.showColorLegend, 0, wx.BOTTOM, 10)
 
 		# Color Set
 		colorButton = wx.Button(viewPanel, -1, "Set Colors...")
