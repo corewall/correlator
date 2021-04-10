@@ -327,6 +327,7 @@ class DataCanvas(wxBufferedWindow):
 		self.showOutOfRangeData = False # if True, clip data plots to the width of the hole's plot area
 		self.showColorLegend = True # plot color legend
 		self.showDepthLine = False # draw line at current mouse position depth
+		self.depthLinePos = None
 		self.showPlotOverlays = True # overlay all plots of the same datatype on the first hole in alphabetical order
 		
 		# debug options
@@ -2414,9 +2415,9 @@ class DataCanvas(wxBufferedWindow):
 			ycoord = ycoord * self.GetRulerUnitsFactor()
 			ycoord = round(ycoord, 3)
 			depthStrY = self.MousePos[1] - 12 # draw depth text just above horizontal depth line
+			best_x = self.layoutManager.getClosestColumnRightEdge(self.MousePos[0])
 			if self.MousePos[0] < self.splicerX:
 				# Draw current depth in right margin of mouseover hole plot
-				best_x = self.layoutManager.getClosestColumnRightEdge(self.MousePos[0])
 				dc.DrawText(str(ycoord), best_x + 3, depthStrY)
 				if self.showGrid:
 					dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
@@ -2429,8 +2430,13 @@ class DataCanvas(wxBufferedWindow):
 
 			# draw horizontal line indicating mouse depth
 			if self.showDepthLine:
+				if self.depthLinePos is None:
+					depthLinePos = self.getDepth(self.MousePos[1])
+				else:
+					depthLinePos = self.depthLinePos
+					dc.DrawText(str(round(depthLinePos, 3)), best_x + 3, self.getCoord(depthLinePos) -12)
 				dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.SOLID))
-				dc.DrawLines(((self.compositeX, self.MousePos[1]), (self.Width, self.MousePos[1])))
+				dc.DrawLines(((self.compositeX, self.getCoord(depthLinePos)), (self.Width, self.getCoord(depthLinePos))))
 
 		endDrawTime = time.clock()
 		if self.showFPS:
@@ -3946,6 +3952,7 @@ class DataCanvas(wxBufferedWindow):
 					coreInfo, rect, hole_idx = area
 					if rect.Inside(wx.Point(pos[0], pos[1])):
 						self.dragCore = coreInfo.core
+						return
 
 		# Detect shift-click on core to prepare for affine tie creation
 		if self.pressedkeyShift == 1:
@@ -3958,7 +3965,15 @@ class DataCanvas(wxBufferedWindow):
 						self.mouseY = pos[1] 
 						self.currentStartX = rect.GetX()
 						self.currentHole = hole_idx 
-						break
+						return
+
+		# Toggle depth line fix/follow mouse
+		if self.showDepthLine:
+			if self.depthLinePos is None:
+				self.depthLinePos = self.getDepth(pos[1])
+			else:
+				self.depthLinePos = None
+		
 
 	def OnDataChange(self, core, shift):
 		coreInfo = self.findCoreInfoByIndex(core)
