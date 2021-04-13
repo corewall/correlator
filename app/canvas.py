@@ -3944,16 +3944,6 @@ class DataCanvas(wxBufferedWindow):
 				self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)
 			return
 
-		# Drag core from composite to splice area to add to splice.
-		# Disable while scrolling or when there are active composite ties.
-		if len(self.TieData) == 0 and self.selectScroll == 0 and self.grabScrollA == 0 and self.grabScrollC == 0:
-			if pos[0] <= self.splicerX:
-				for area in self.DrawData["CoreArea"]:
-					coreInfo, rect, hole_idx = area
-					if rect.Inside(wx.Point(pos[0], pos[1])):
-						self.dragCore = coreInfo.core
-						return
-
 		# Detect shift-click on core to prepare for affine tie creation
 		if self.pressedkeyShift == 1:
 			if self.drag == 0:
@@ -3967,8 +3957,17 @@ class DataCanvas(wxBufferedWindow):
 						self.currentHole = hole_idx 
 						return
 
-		# Toggle depth line fix/follow mouse
-		if self.showDepthLine:
+		# Drag core from composite to splice area to add to splice.
+		# Disable while scrolling or when there are active composite ties.
+		if len(self.TieData) == 0 and self.selectScroll == 0 and self.grabScrollA == 0 and self.grabScrollC == 0:
+			if pos[0] <= self.splicerX:
+				for area in self.DrawData["CoreArea"]:
+					coreInfo, rect, hole_idx = area
+					if rect.Inside(wx.Point(pos[0], pos[1])):
+						self.dragCore = coreInfo.core
+
+		# Toggle between fixed depth line and following mouse cursor
+		if self.showDepthLine and self.selectScroll == 0 and self.grabScrollA == 0 and self.grabScrollC == 0:
 			if self.depthLinePos is None:
 				self.depthLinePos = self.getDepth(pos[1])
 			else:

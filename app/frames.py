@@ -3611,6 +3611,8 @@ class PreferencesPanel():
 
 	def OnShowDepthLine(self, event):
 		self.parent.Window.showDepthLine = self.showDepthLine.IsChecked()
+		if self.parent.Window.showDepthLine:
+			self.parent.Window.depthLinePos = None # forget last fixed line position, follow cursor
 		self.parent.Window.UpdateDrawing()
 
 	def OnShowPlotOverlays(self, event):
