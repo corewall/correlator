@@ -3663,7 +3663,7 @@ class PreferencesPanel():
 
 		self.showSpliceWindow = wx.CheckBox(self.mainPanel, -1, 'Show splice window partition')
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnActivateWindow, self.showSpliceWindow)
-		vbox_top.Add(self.showSpliceWindow, 0, wx.BOTTOM, 10)
+		vbox_top.Add(self.showSpliceWindow, 0, wx.ALL, 10)
 
 		### Data selections and arrangements panel
 		layoutPanel = wx.Panel(self.mainPanel, -1)
@@ -3801,7 +3801,7 @@ class PreferencesPanel():
 		self.iwsLabel = wx.StaticText(varScalePanel, -1, "Image Width")
 		imageWidthSliderSizer.Add(self.iwsLabel)
 		imageWidthSliderSizer.Add(self.imageWidthSlider, 1, wx.EXPAND)
-		varScaleSizer.Add(imageWidthSliderSizer, 0, wx.EXPAND | wx.BOTTOM, 10)
+		varScaleSizer.Add(imageWidthSliderSizer, 0, wx.EXPAND)
 
 		vbox_top.Add(varScalePanel, 0, wx.EXPAND | wx.BOTTOM, 10)
 
