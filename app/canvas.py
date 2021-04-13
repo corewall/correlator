@@ -730,6 +730,7 @@ class DataCanvas(wxBufferedWindow):
 		self.SpliceData = []
 		self.SpliceSmoothData = []
 		self.Images = {} # todo? imageDB?
+		self.imageCullPct = None # if images are culled, a float with cull percentage e.g. 22.5
 		self.HolesWithImages = []
 		self.LogSpliceData = []
 		self.LogSpliceSmoothData = []
@@ -815,11 +816,6 @@ class DataCanvas(wxBufferedWindow):
 				self.range.append(newrange)
 				break
 
-	def UpdateImageStyle(self, new_style):
-		if new_style == self.coreImageStyle:
-			return
-		else:
-			self.coreImageStyle = new_style
 
 	def _updateImageWidth(self):
 		if self.coreImageStyle in [ImageDisplayStyle.FullWidth, ImageDisplayStyle.MiddleThird]:
@@ -856,20 +852,20 @@ class DataCanvas(wxBufferedWindow):
 		# print("Loaded images: {}".format(self.Images))
 		# print("Holes with images: {}".format(self.HolesWithImages))
 
+	def CountImages(self):
+		return len(self.Images)
+
 	def GetImageBitmap(self, sectionName, displayHeight):
 		if sectionName not in self.Images:
 			return None
 		img, bmp = self.Images[sectionName]
 		if bmp is None: # recreate bitmap if it was invalidated
-			if self.coreImageStyle == ImageDisplayStyle.FullWidth:
-				bmp = img.Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
-			elif self.coreImageStyle == ImageDisplayStyle.MiddleThird:
-				wid = img.GetWidth()
-				x = int(round(wid / 3.0))
-				img_rect = wx.Rect(x, 0, x, img.GetHeight())
-				bmp = img.GetSubImage(img_rect).Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
-			elif self.coreImageStyle == ImageDisplayStyle.AspectRatio:
-				# self.layoutManager.imageWidth is set to correct pixel width to maintain aspect ratio
+			if self.imageCullPct is not None:
+				cull_wid = img.GetWidth() * (self.imageCullPct / 100.0) # total pixels to cull
+				vis_wid = img.GetWidth() - cull_wid # resulting image width
+				culled_img_rect = wx.Rect(cull_wid/2.0, 0, vis_wid, img.GetHeight())
+				bmp = img.GetSubImage(culled_img_rect).Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
+			else:
 				bmp = img.Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
 			self.Images[sectionName] = (img, bmp)
 		return bmp

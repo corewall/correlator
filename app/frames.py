@@ -21,6 +21,7 @@ import wx.grid
 from wx.lib import plot
 
 from importManager import py_correlator
+from layout import ImageDatatypeStr
 
 import canvas
 import dialog
@@ -3102,6 +3103,10 @@ class AgeDepthPanel():
 class FilterPanel():
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
+		self.decPanel = None
+		self.smoothPanel = None
+		self.cullPanel = None
+		self.imgPanel = None
 		self.parent = parent
 		self.locked = False
 		self.prevSelected = 0
@@ -3148,6 +3153,7 @@ class FilterPanel():
 		decSizer.Add(decBtnPanel, 1, wx.EXPAND)
 		decPanel.SetSizer(decSizer)
 		vbox_top.Add(decPanel, 0, wx.TOP | wx.EXPAND, 5)
+		self.decPanel = decPanel
 
 		### Smoothing
 		smoothPanel = wx.Panel(self.mainPanel, -1)
@@ -3172,6 +3178,7 @@ class FilterPanel():
 
 		smoothPanel.SetSizer(smoothSizer)
 		vbox_top.Add(smoothPanel, 0, wx.TOP | wx.EXPAND, 5)
+		self.smoothPanel = smoothPanel
 
 		### Culling
 		cullPanel = wx.Panel(self.mainPanel, -1)
@@ -3199,7 +3206,33 @@ class FilterPanel():
 		cullSizer.Add(cullBtnPanel)
 
 		vbox_top.Add(cullPanel, 0, wx.TOP | wx.EXPAND, 5)
+		self.cullPanel = cullPanel
+
+		# Image lateral culling
+		imgPanel = wx.Panel(self.mainPanel, -1)
+		imgSizer = wx.StaticBoxSizer(wx.StaticBox(imgPanel, -1, 'Image culling'), orient=wx.VERTICAL)
+		self.imgState = wx.StaticText(imgPanel, -1, "None")
+		imgBtnPanel = wx.Panel(imgPanel, -1)
+		imgBtnSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+		self.imgCreate = wx.Button(imgBtnPanel, -1, "Create", size=(120, 30))
+		imgPanel.Bind(wx.EVT_BUTTON, self.OnCreateImageCull, self.imgCreate)
+
+		self.imgDelete = wx.Button(imgBtnPanel, -1, "Delete", size=(120, 30))
+		self.imgDelete.Enable(False)
+		imgPanel.Bind(wx.EVT_BUTTON, self.OnClearImageCull, self.imgDelete)
+
+		imgBtnSizer.Add(self.imgCreate, 0)
+		imgBtnSizer.Add(self.imgDelete, 0)
+		imgBtnPanel.SetSizer(imgBtnSizer)
+
+		imgSizer.Add(self.imgState, 1, wx.BOTTOM, 10)
+		imgSizer.Add(imgBtnPanel, 1, wx.EXPAND)
+		imgPanel.SetSizer(imgSizer)
+		vbox_top.Add(imgPanel, 0, wx.TOP | wx.EXPAND, 5)
+
 		self.mainPanel.SetSizer(vbox_top)
+		self.imgPanel = imgPanel
 
 	# Disable all controls and re-init status text. Used when no data is loaded.
 	def DisableAllControls(self):
@@ -3310,20 +3343,37 @@ class FilterPanel():
 	def SetTYPE(self, event):
 		self.all.Enable(True) # ensure dropdown is enabled
 		type = self._curType() # get self.all type, correcting for "Natural Gamma" spacing
-		data = self.parent.dataFrame.GetDECIMATE(type) # returns tuple of decimate, smooth data
-		self.UpdateDecimateState(data[0])
-		if data[1] != "":
-			smoothParams = SmoothParameters.createWithString(data[1])
-			self.UpdateSmoothState(smoothParams)
+
+		# update filter UI based on selected type
+		self._updateVisibleFilters(type)
+		
+		if type == ImageDatatypeStr:
+			icp = self.parent.Window.imageCullPct
+			self.UpdateImageCullState(icp)
 		else:
-			self.UpdateSmoothState(None)
+			data = self.parent.dataFrame.GetDECIMATE(type) # returns tuple of decimate, smooth data
+			self.UpdateDecimateState(data[0])
+			if data[1] != "":
+				smoothParams = SmoothParameters.createWithString(data[1])
+				self.UpdateSmoothState(smoothParams)
+			else:
+				self.UpdateSmoothState(None)
 
-		cullData = self.parent.dataFrame.GetCULL(type)
-		if cullData == None and type == "NaturalGamma":
-			type = "Natural Gamma"
 			cullData = self.parent.dataFrame.GetCULL(type)
-		self.UpdateCullState(cullData)
+			if cullData == None and type == "NaturalGamma":
+				type = "Natural Gamma"
+				cullData = self.parent.dataFrame.GetCULL(type)
+			self.UpdateCullState(cullData)
 
+	# show appropriate filters for data types vs Image
+	def _updateVisibleFilters(self, selectedType):
+		showDataFilters = selectedType != ImageDatatypeStr
+		self.decPanel.Show(showDataFilters)
+		self.smoothPanel.Show(showDataFilters)
+		self.cullPanel.Show(showDataFilters)
+		self.imgPanel.Show(not showDataFilters)
+		self.mainPanel.GetSizer().Layout()
+		
 	# Apply decimate value to given datatype.
 	# datatype: data type string
 	# deciValue: integer decimate value
@@ -3368,6 +3418,33 @@ class FilterPanel():
 		self.deciCreate.Enable(True)
 		self.deciCreate.SetLabel("Edit" if decimate else "Create")
 		self.deciDelete.Enable(decimate)
+
+	def UpdateImageCullState(self, icp):
+		cullExists = icp is not None
+		if cullExists:
+			self.imgState.SetLabel("Trim {}% from left and right of images".format(icp))
+		else:
+			self.imgState.SetLabel("None.")
+		self.imgCreate.Enable(True)
+		self.imgCreate.SetLabel("Edit" if cullExists else "Create")
+		self.imgDelete.Enable(cullExists)
+
+	def OnCreateImageCull(self, event):
+		icdlg = dialog.ImageCullDialog(self.parent, self.parent.Window.imageCullPct)
+		pos = self.imgCreate.GetScreenPositionTuple()
+		icdlg.SetPosition(pos)
+		if icdlg.ShowModal() != wx.ID_OK:
+			return
+		self.parent.Window.imageCullPct = icdlg.icpValue
+		self.UpdateImageCullState(icdlg.icpValue)
+		self.parent.Window.InvalidateImages()
+		self.parent.Window.UpdateDrawing()
+
+	def OnClearImageCull(self, event):
+		self.parent.Window.imageCullPct = None
+		self.UpdateImageCullState(self.parent.Window.imageCullPct)
+		self.parent.Window.InvalidateImages()
+		self.parent.Window.UpdateDrawing()
 
 	def _curType(self):
 		datatype = self.all.GetStringSelection()
@@ -3517,18 +3594,6 @@ class PreferencesPanel():
 		if event is None:
 			return
 		self.parent.Window.InvalidateImages() # wx.Images must be recreated at appropriate width
-		self.parent.Window.UpdateDrawing()
-
-	def OnChangeImageStyle(self, event):
-		style_idx = self.imageStyleChoice.GetSelection()
-		self.parent.Window.UpdateImageStyle(canvas.ImageDisplayStyle(style_idx))
-		# disable width slider if aspect ratio style is selected
-		enableWidthControls = False if style_idx == 2 else True
-		self.imageWidthSlider.Enable(enableWidthControls)
-		self.iwsLabel.Enable(enableWidthControls)
-		if event is None:
-			return
-		self.parent.Window.InvalidateImages() # wx.Images must be recreated with new style
 		self.parent.Window.UpdateDrawing()
 
 	def OnChangeRulerUnits(self, evt):

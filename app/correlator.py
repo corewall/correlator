@@ -39,6 +39,7 @@ from affine import AffineBuilder, AffineCoreInfo, aci, acistr, isTie, isSet, isI
 import splice
 import tabularImport
 import prefs
+from layout import ImageDatatypeStr
 
 app = None
 Prefs = None
@@ -846,6 +847,7 @@ class MainFrame(wx.Frame):
 	# 	self.optPanel.indSpliceScroll.SetValue(enable)
 	# 	self.miIndependentScroll.Check(enable)
 
+	# Add current data types to comboBox
 	def RebuildComboBox(self, comboBox, typeNames):
 		comboBox.Clear()
 		if len(typeNames) > 0:
@@ -864,7 +866,10 @@ class MainFrame(wx.Frame):
 				for holeIdx in range(len(holeData)):
 					typeNames.append(holeData[holeIdx][0][0][2])
 
-			self.RebuildComboBox(self.filterPanel.all, typeNames)
+			filterPanelTypes = list(typeNames)
+			if self.Window.CountImages() > 0:
+				filterPanelTypes.append(ImageDatatypeStr)
+			self.RebuildComboBox(self.filterPanel.all, filterPanelTypes)
 			self.filterPanel.SetTYPE(event=None) # update controls to reflect current selection
 			self.RebuildComboBox(self.optPanel.variableChoice, typeNames)
 			self.optPanel.SetTYPE(event=None)

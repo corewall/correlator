@@ -1735,6 +1735,48 @@ class DecimateDialog(wx.Dialog):
 		self.EndModal(wx.ID_OK)
 
 
+class ImageCullDialog(wx.Dialog):
+	def __init__(self, parent, imageCullPct):
+		wx.Dialog.__init__(self, parent, -1, "Create image cull filter", style=wx.CAPTION | wx.STAY_ON_TOP)
+		self.icpValue = imageCullPct
+		self.createGUI()
+
+	def createGUI(self):
+		panel = wx.Panel(self, -1)
+		self.icp = wx.TextCtrl(panel, -1, str("0" if self.icpValue is None else self.icpValue), size=(50,-1))
+		icSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Remove lateral image margins"), orient=wx.HORIZONTAL)
+		icSizer.Add(wx.StaticText(panel,  -1, "Trim"), 0, wx.ALIGN_CENTER_VERTICAL)
+		icSizer.Add(self.icp, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
+		icSizer.Add(wx.StaticText(panel,  -1, "% from left and right of images"), 0, wx.ALIGN_CENTER_VERTICAL)
+		panel.SetSizer(icSizer)
+
+		btnPanel = OkButtonPanel(self, okName="Apply")
+		self.Bind(wx.EVT_BUTTON, self.OnApply, btnPanel.ok)
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		sizer.Add(panel, 1, wx.ALL, 10)
+		sizer.Add(btnPanel, 0, wx.ALIGN_CENTER)
+		self.SetSizer(sizer)
+		self.Fit()
+
+	def OnInvalid(self):
+		dlg = MessageDialog(self, "Error", "Value must be between 0.0 and 99.0.", 1)
+		dlg.ShowModal()
+		dlg.Destroy()
+
+	def OnApply(self, evt):
+		icpValue = None
+		try:
+			icpValue = float(self.icp.GetValue())
+		except ValueError:
+			self.OnInvalid()
+			return
+		if icpValue < 0.0 or icpValue > 99.0:
+			self.OnInvalid()
+			return
+		self.icpValue = icpValue
+		self.EndModal(wx.ID_OK)
+
+
 # Modify datatype display order.
 class DisplayOrderDialog(wx.Dialog):
 	def __init__(self, parent, displayOrder):
