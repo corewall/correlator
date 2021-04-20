@@ -1585,6 +1585,7 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawPolygon((tribase3, tribase1, tribase2))
 
 			# draw shift distance and type
+			dc.SetTextForeground(self.colorDict['foreground'])
 			dc.DrawText(str(core.affineOffset()), startX - 40, y)
 			shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole.holeName(), core.coreName())
 			dc.DrawText(shiftTypeStr, startX - 32, y - 12)
