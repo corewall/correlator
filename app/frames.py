@@ -3734,9 +3734,9 @@ class PreferencesPanel():
 		layoutPanel = wx.Panel(self.mainPanel, -1)
 		layoutSizer = wx.StaticBoxSizer(wx.StaticBox(layoutPanel, -1, "Data selections and arrangements"), orient=wx.VERTICAL)
 
-		self.displayOrderButton = wx.Button(layoutPanel, -1, "Display Order...")
+		self.displayOrderButton = wx.Button(layoutPanel, -1, "Show/arrange data types...")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDisplayOrderButton, self.displayOrderButton)
-		self.holeVisibilityButton = wx.Button(layoutPanel, -1, "Show/Hide Holes...")
+		self.holeVisibilityButton = wx.Button(layoutPanel, -1, "Show holes...")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnHoleVisibilityButton, self.holeVisibilityButton)
 
 		groupBySizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -3776,7 +3776,7 @@ class PreferencesPanel():
 
 		depthRangePanel = wx.Panel(depthScalePanel, -1)
 		depthRangeSizer = wx.BoxSizer(wx.HORIZONTAL)
-		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, "Display Interval"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 10)
+		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, "Display interval"), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 10)
 		self.depthRangeText = wx.TextCtrl(depthRangePanel, -1, "10", size=(55,-1))
 		depthRangeSizer.Add(self.depthRangeText, 0, wx.LEFT, 5)
 		depthRangeSizer.Add(wx.StaticText(depthRangePanel, -1, 'm'), 2, wx.LEFT | wx.ALIGN_CENTER_VERTICAL)
@@ -3790,9 +3790,9 @@ class PreferencesPanel():
 
 		depthZoomPanel = wx.Panel(depthScalePanel, -1)
 		depthZoomSizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.zoomInBtn = wx.Button(depthZoomPanel, -1, "Zoom In")
+		self.zoomInBtn = wx.Button(depthZoomPanel, -1, "Zoom in")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnZoomIn, self.zoomInBtn)
-		self.zoomOutBtn = wx.Button(depthZoomPanel, -1, "Zoom Out")
+		self.zoomOutBtn = wx.Button(depthZoomPanel, -1, "Zoom out")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnZoomOut, self.zoomOutBtn)
 		depthZoomSizer.Add(self.zoomInBtn, 1, wx.BOTTOM | wx.EXPAND, 5)
 		depthZoomSizer.Add(self.zoomOutBtn, 1, wx.LEFT | wx.BOTTOM | wx.EXPAND, 5)
@@ -3816,7 +3816,7 @@ class PreferencesPanel():
 
 		### Data range panel
 		varScalePanel = wx.Panel(self.mainPanel, -1)
-		varScaleSizer = wx.StaticBoxSizer(wx.StaticBox(varScalePanel, -1, 'Data Range'), orient=wx.VERTICAL)
+		varScaleSizer = wx.StaticBoxSizer(wx.StaticBox(varScalePanel, -1, 'Data range'), orient=wx.VERTICAL)
 
 		self.variableChoice = wx.Choice(varScalePanel, -1, (0,0), (-1,-1), (""))
 		varScalePanel.Bind(wx.EVT_CHOICE, self.SetTYPE, self.variableChoice)
@@ -3854,7 +3854,7 @@ class PreferencesPanel():
 		self.plotWidthSlider = wx.Slider(varScalePanel, -1, value=0, minValue=0, maxValue=100)
 		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangePlotWidth, self.plotWidthSlider)
 		plotWidthSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
-		plotWidthSliderSizer.Add(wx.StaticText(varScalePanel, -1, "Plot Width"))
+		plotWidthSliderSizer.Add(wx.StaticText(varScalePanel, -1, "Track width"))
 		plotWidthSliderSizer.Add(self.plotWidthSlider, 1, wx.EXPAND)
 		varScaleSizer.Add(plotWidthSliderSizer, 0, wx.EXPAND | wx.BOTTOM, 10)
 
@@ -3862,7 +3862,7 @@ class PreferencesPanel():
 		self.imageWidthSlider = wx.Slider(varScalePanel, -1, value=0, minValue=0, maxValue=100)
 		self.mainPanel.Bind(wx.EVT_COMMAND_SCROLL, self.OnChangeImageWidth, self.imageWidthSlider)
 		imageWidthSliderSizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.iwsLabel = wx.StaticText(varScalePanel, -1, "Image Width")
+		self.iwsLabel = wx.StaticText(varScalePanel, -1, "Image width")
 		imageWidthSliderSizer.Add(self.iwsLabel)
 		imageWidthSliderSizer.Add(self.imageWidthSlider, 1, wx.EXPAND)
 		varScaleSizer.Add(imageWidthSliderSizer, 0, wx.EXPAND)
@@ -3907,7 +3907,7 @@ class PreferencesPanel():
 		viewSizer.Add(self.showColorLegend, 0, wx.BOTTOM, 10)
 
 		# Color Set
-		colorButton = wx.Button(viewPanel, -1, "Set Colors...")
+		colorButton = wx.Button(viewPanel, -1, "Set colors...")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnChangeColor, colorButton)
 		viewSizer.Add(colorButton, 1, wx.EXPAND)
 
