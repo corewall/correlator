@@ -1515,6 +1515,9 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("fontstartdepth", self.Window.startDepthPix, f)
 		self.WritePreferenceItem("scrollsize", self.Window.ScrollSize, f)
 
+		spoInt = int(self.Window.showPlotOverlays)
+		self.WritePreferenceItem("showPlotOverlays", spoInt, f)
+
 		groupByDatatype = int(self.optPanel.dtRadio.GetValue())
 		self.WritePreferenceItem("groupByDatatype", groupByDatatype, f)
 
@@ -2775,6 +2778,13 @@ class MainFrame(wx.Frame):
 			if len(str_temp) > 0:
 				self.Window.showSectionDepths = True if str_temp == '1' else False 
 				self.optPanel.showSectionDepths.SetValue(self.Window.showSectionDepths)
+
+		if self.config.has_option("applications", "showPlotOverlays"):
+			str_temp = self.config.get("applications", "showPlotOverlays")
+			if len(str_temp) > 0:
+				spo = (str_temp == '1')
+				self.Window.showPlotOverlays = spo
+				self.optPanel.showPlotOverlays.SetValue(spo)
 
 		if self.config.has_option("applications", "groupByDatatype"):
 			str_temp = self.config.get("applications", "groupByDatatype")

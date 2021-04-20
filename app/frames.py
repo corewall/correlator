@@ -3751,7 +3751,6 @@ class PreferencesPanel():
 
 		self.showPlotOverlays = wx.CheckBox(layoutPanel, -1, "Overlay plots by data type")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowPlotOverlays, self.showPlotOverlays)
-		self.showPlotOverlays.SetValue(True)
 
 		layoutSizer.Add(self.displayOrderButton, 0, wx.BOTTOM | wx.EXPAND, 10)
 		layoutSizer.Add(self.holeVisibilityButton, 0, wx.BOTTOM | wx.EXPAND, 10)

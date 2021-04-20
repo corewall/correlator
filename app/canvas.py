@@ -327,7 +327,7 @@ class DataCanvas(wxBufferedWindow):
 		self.showOutOfRangeData = False # if True, clip data plots to the width of the hole's plot area
 		self.showColorLegend = True # plot color legend
 		self.showDepthLine = False # draw line at current mouse position depth
-		self.showPlotOverlays = True # overlay all plots of the same datatype on the first hole in alphabetical order
+		self.showPlotOverlays = False # overlay all plots of the same datatype on the first hole in alphabetical order
 		
 		# debug options
 		self.showBounds = False
