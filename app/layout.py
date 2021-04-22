@@ -102,8 +102,8 @@ class HoleColumn:
 
 class LayoutManager:
 	def __init__(self):
-		self.showCoreImages = False
-		self.showImagesAsDatatype = False
+		self.showCoreImages = True
+		self.showImagesAsDatatype = True
 		self.groupByDatatype = True
 		self.plotWidth = 250
 		self.imageWidth = 50

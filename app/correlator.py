@@ -39,6 +39,7 @@ from affine import AffineBuilder, AffineCoreInfo, aci, acistr, isTie, isSet, isI
 import splice
 import tabularImport
 import prefs
+from layout import ImageDatatypeStr
 
 app = None
 Prefs = None
@@ -846,6 +847,7 @@ class MainFrame(wx.Frame):
 	# 	self.optPanel.indSpliceScroll.SetValue(enable)
 	# 	self.miIndependentScroll.Check(enable)
 
+	# Add current data types to comboBox
 	def RebuildComboBox(self, comboBox, typeNames):
 		comboBox.Clear()
 		if len(typeNames) > 0:
@@ -864,7 +866,10 @@ class MainFrame(wx.Frame):
 				for holeIdx in range(len(holeData)):
 					typeNames.append(holeData[holeIdx][0][0][2])
 
-			self.RebuildComboBox(self.filterPanel.all, typeNames)
+			filterPanelTypes = list(typeNames)
+			if self.Window.CountImages() > 0:
+				filterPanelTypes.append(ImageDatatypeStr)
+			self.RebuildComboBox(self.filterPanel.all, filterPanelTypes)
 			self.filterPanel.SetTYPE(event=None) # update controls to reflect current selection
 			self.RebuildComboBox(self.optPanel.variableChoice, typeNames)
 			self.optPanel.SetTYPE(event=None)
@@ -1510,11 +1515,14 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("fontstartdepth", self.Window.startDepthPix, f)
 		self.WritePreferenceItem("scrollsize", self.Window.ScrollSize, f)
 
+		spoInt = int(self.Window.showPlotOverlays)
+		self.WritePreferenceItem("showPlotOverlays", spoInt, f)
+
+		groupByDatatype = int(self.optPanel.dtRadio.GetValue())
+		self.WritePreferenceItem("groupByDatatype", groupByDatatype, f)
+
 		showSectionDepths = int(self.Window.showSectionDepths)
 		self.WritePreferenceItem("showSectionDepths", showSectionDepths, f)
-
-		showCoreImages = int(self.Window.layoutManager.showCoreImages)
-		self.WritePreferenceItem("showCoreImages", showCoreImages, f)
 
 		showImagesAsDatatype = int(self.Window.layoutManager.showImagesAsDatatype)
 		self.WritePreferenceItem("showImagesAsDatatype", showImagesAsDatatype, f)
@@ -2768,19 +2776,20 @@ class MainFrame(wx.Frame):
 				self.Window.showSectionDepths = True if str_temp == '1' else False 
 				self.optPanel.showSectionDepths.SetValue(self.Window.showSectionDepths)
 
-		if self.config.has_option("applications", "showCoreImages"):
-			str_temp = self.config.get("applications", "showCoreImages")
+		if self.config.has_option("applications", "showPlotOverlays"):
+			str_temp = self.config.get("applications", "showPlotOverlays")
 			if len(str_temp) > 0:
-				sci = (str_temp == '1')
-				self.Window.layoutManager.showCoreImages = sci
-				self.optPanel.setShowCoreImages(sci)
+				spo = (str_temp == '1')
+				self.Window.showPlotOverlays = spo
+				self.optPanel.showPlotOverlays.SetValue(spo)
 
-		if self.config.has_option("applications", "showImagesAsDatatype"):
-			str_temp = self.config.get("applications", "showImagesAsDatatype")
+		if self.config.has_option("applications", "groupByDatatype"):
+			str_temp = self.config.get("applications", "groupByDatatype")
 			if len(str_temp) > 0:
-				siad = (str_temp == '1')
-				self.Window.layoutManager.showImagesAsDatatype = siad
-				self.optPanel.setShowImagesAsDatatype(siad)
+				gbdt = (str_temp == '1')
+				self.Window.layoutManager.groupByDatatype = gbdt
+				self.optPanel.dtRadio.SetValue(gbdt)
+				self.optPanel.holeRadio.SetValue(not gbdt)
 
 		if self.config.has_option("applications", "showAffineShiftInfo"):
 			str_temp = self.config.get("applications", "showAffineShiftInfo")

@@ -328,7 +328,7 @@ class DataCanvas(wxBufferedWindow):
 		self.showColorLegend = True # plot color legend
 		self.showDepthLine = False # draw line at current mouse position depth
 		self.depthLinePos = None
-		self.showPlotOverlays = True # overlay all plots of the same datatype on the first hole in alphabetical order
+		self.showPlotOverlays = False # overlay all plots of the same datatype on the first hole in alphabetical order
 		
 		# debug options
 		self.showBounds = False
@@ -408,7 +408,7 @@ class DataCanvas(wxBufferedWindow):
 		# Use dictionary so we can name colors - also need a list of names since dictionary is unordered
 		self.colorDictKeys = [ 'mbsf', 'ccsfTie', 'ccsfSet', 'ccsfRel', 'eld', 'smooth', 'splice', 'log', 'mudlineAdjust', \
 								'fixedTie', 'shiftTie', 'paleomag', 'diatom', 'rad', 'foram', \
-								'nano', 'background', 'foreground', 'corrWindow', 'guide' ] 
+								'nano', 'background', 'foreground', 'corrWindow', 'guide', 'imageOverlay' ] 
 		self.colorDict = { 'mbsf': wx.Colour(238, 238, 0), 'ccsfTie': wx.Colour(0, 139, 0), \
 							'ccsfSet': wx.Colour(0, 102, 255), 'ccsfRel': wx.Colour(255, 153, 0), \
 							'eld': wx.Colour(0, 255, 255), 'smooth': wx.Colour(238, 216, 174), \
@@ -418,11 +418,10 @@ class DataCanvas(wxBufferedWindow):
 							'diatom': wx.Colour(218, 165, 32), 'rad': wx.Colour(147, 112, 219), \
 							'foram': wx.Colour(84, 139, 84), 'nano': wx.Colour(219, 112, 147), \
 							'background': wx.Colour(0, 0, 0), 'foreground': wx.Colour(255, 255, 255), \
-							'corrWindow': wx.Colour(178, 34, 34), 'guide': wx.Colour(224, 255, 255) }
+							'corrWindow': wx.Colour(178, 34, 34), 'guide': wx.Colour(224, 255, 255), \
+							'imageOverlay': wx.Colour(238,238,0) }
 		assert len(self.colorDictKeys) == len(self.colorDict)
 
-		self.imageCoreSectionNumberColor = wx.Colour(238, 238, 0) # yellow
-		
 		self.overlapcolorList = [ wx.Colour(238, 0, 0), wx.Colour(0, 139, 0), \
 				wx.Colour(0, 255, 255), wx.Colour(238, 216, 174), wx.Colour(30, 144, 255), \
 				wx.Colour(147, 112, 219), wx.Colour(84, 139, 84), wx.Colour(219, 112, 147), \
@@ -731,6 +730,7 @@ class DataCanvas(wxBufferedWindow):
 		self.SpliceData = []
 		self.SpliceSmoothData = []
 		self.Images = {} # todo? imageDB?
+		self.imageCullPct = None # if images are culled, a float with cull percentage e.g. 22.5
 		self.HolesWithImages = []
 		self.LogSpliceData = []
 		self.LogSpliceSmoothData = []
@@ -816,11 +816,6 @@ class DataCanvas(wxBufferedWindow):
 				self.range.append(newrange)
 				break
 
-	def UpdateImageStyle(self, new_style):
-		if new_style == self.coreImageStyle:
-			return
-		else:
-			self.coreImageStyle = new_style
 
 	def _updateImageWidth(self):
 		if self.coreImageStyle in [ImageDisplayStyle.FullWidth, ImageDisplayStyle.MiddleThird]:
@@ -857,20 +852,20 @@ class DataCanvas(wxBufferedWindow):
 		# print("Loaded images: {}".format(self.Images))
 		# print("Holes with images: {}".format(self.HolesWithImages))
 
+	def CountImages(self):
+		return len(self.Images)
+
 	def GetImageBitmap(self, sectionName, displayHeight):
 		if sectionName not in self.Images:
 			return None
 		img, bmp = self.Images[sectionName]
 		if bmp is None: # recreate bitmap if it was invalidated
-			if self.coreImageStyle == ImageDisplayStyle.FullWidth:
-				bmp = img.Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
-			elif self.coreImageStyle == ImageDisplayStyle.MiddleThird:
-				wid = img.GetWidth()
-				x = int(round(wid / 3.0))
-				img_rect = wx.Rect(x, 0, x, img.GetHeight())
-				bmp = img.GetSubImage(img_rect).Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
-			elif self.coreImageStyle == ImageDisplayStyle.AspectRatio:
-				# self.layoutManager.imageWidth is set to correct pixel width to maintain aspect ratio
+			if self.imageCullPct is not None:
+				cull_wid = img.GetWidth() * (self.imageCullPct / 100.0) # total pixels to cull
+				vis_wid = img.GetWidth() - cull_wid # resulting image width
+				culled_img_rect = wx.Rect(cull_wid/2.0, 0, vis_wid, img.GetHeight())
+				bmp = img.GetSubImage(culled_img_rect).Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
+			else:
 				bmp = img.Scale(self.layoutManager.imageWidth, displayHeight).ConvertToBitmap()
 			self.Images[sectionName] = (img, bmp)
 		return bmp
@@ -1520,7 +1515,7 @@ class DataCanvas(wxBufferedWindow):
 					if self.parent.sectionSummary:
 						self.DrawSectionImages(dc, colStartX, holeColumn.holeName(), cmd.coreName(), cmd.affineOffset())
 						if not holeColumn.hasPlot():
-							drawBoundariesFunc(dc, colStartX, width, holeColumn.holeName(), cmd.coreName(), cmd.affineOffset(), self.imageCoreSectionNumberColor)
+							drawBoundariesFunc(dc, colStartX, width, holeColumn.holeName(), cmd.coreName(), cmd.affineOffset(), self.colorDict['imageOverlay'])
 				elif columnType == ColumnType.Plot:
 					plotStartX = colStartX
 					if smoothType in [SmoothingType.NoSmoothing, SmoothingType.Unsmoothed]:
@@ -1590,6 +1585,7 @@ class DataCanvas(wxBufferedWindow):
 				dc.DrawPolygon((tribase3, tribase1, tribase2))
 
 			# draw shift distance and type
+			dc.SetTextForeground(self.colorDict['foreground'])
 			dc.DrawText(str(core.affineOffset()), startX - 40, y)
 			shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole.holeName(), core.coreName())
 			dc.DrawText(shiftTypeStr, startX - 32, y - 12)
