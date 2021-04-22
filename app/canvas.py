@@ -407,7 +407,7 @@ class DataCanvas(wxBufferedWindow):
 		# Use dictionary so we can name colors - also need a list of names since dictionary is unordered
 		self.colorDictKeys = [ 'mbsf', 'ccsfTie', 'ccsfSet', 'ccsfRel', 'eld', 'smooth', 'splice', 'log', 'mudlineAdjust', \
 								'fixedTie', 'shiftTie', 'paleomag', 'diatom', 'rad', 'foram', \
-								'nano', 'background', 'foreground', 'corrWindow', 'guide' ] 
+								'nano', 'background', 'foreground', 'corrWindow', 'guide', 'imageOverlay' ] 
 		self.colorDict = { 'mbsf': wx.Colour(238, 238, 0), 'ccsfTie': wx.Colour(0, 139, 0), \
 							'ccsfSet': wx.Colour(0, 102, 255), 'ccsfRel': wx.Colour(255, 153, 0), \
 							'eld': wx.Colour(0, 255, 255), 'smooth': wx.Colour(238, 216, 174), \
@@ -417,11 +417,10 @@ class DataCanvas(wxBufferedWindow):
 							'diatom': wx.Colour(218, 165, 32), 'rad': wx.Colour(147, 112, 219), \
 							'foram': wx.Colour(84, 139, 84), 'nano': wx.Colour(219, 112, 147), \
 							'background': wx.Colour(0, 0, 0), 'foreground': wx.Colour(255, 255, 255), \
-							'corrWindow': wx.Colour(178, 34, 34), 'guide': wx.Colour(224, 255, 255) }
+							'corrWindow': wx.Colour(178, 34, 34), 'guide': wx.Colour(224, 255, 255), \
+							'imageOverlay': wx.Colour(238,238,0) }
 		assert len(self.colorDictKeys) == len(self.colorDict)
 
-		self.imageCoreSectionNumberColor = wx.Colour(238, 238, 0) # yellow
-		
 		self.overlapcolorList = [ wx.Colour(238, 0, 0), wx.Colour(0, 139, 0), \
 				wx.Colour(0, 255, 255), wx.Colour(238, 216, 174), wx.Colour(30, 144, 255), \
 				wx.Colour(147, 112, 219), wx.Colour(84, 139, 84), wx.Colour(219, 112, 147), \
@@ -1515,7 +1514,7 @@ class DataCanvas(wxBufferedWindow):
 					if self.parent.sectionSummary:
 						self.DrawSectionImages(dc, colStartX, holeColumn.holeName(), cmd.coreName(), cmd.affineOffset())
 						if not holeColumn.hasPlot():
-							drawBoundariesFunc(dc, colStartX, width, holeColumn.holeName(), cmd.coreName(), cmd.affineOffset(), self.imageCoreSectionNumberColor)
+							drawBoundariesFunc(dc, colStartX, width, holeColumn.holeName(), cmd.coreName(), cmd.affineOffset(), self.colorDict['imageOverlay'])
 				elif columnType == ColumnType.Plot:
 					plotStartX = colStartX
 					if smoothType in [SmoothingType.NoSmoothing, SmoothingType.Unsmoothed]:

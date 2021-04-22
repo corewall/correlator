@@ -1111,7 +1111,7 @@ class ColorTableDialog(wx.Dialog):
 
 		icsnPanel = wx.Panel(self, -1)
 		self.imageCoreSectionNumberPicker = self._makeColorPicker(icsnPanel, 200)
-		self.imageCoreSectionNumberPicker.SetColour(self.parent.Window.imageCoreSectionNumberColor)
+		self.imageCoreSectionNumberPicker.SetColour(self.parent.Window.colorDict['imageOverlay'])
 		self.Bind(wx.EVT_COLOURPICKER_CHANGED, self.ChangeImageCoreSectionNumberColor, self.imageCoreSectionNumberPicker)
 		icsnSizer = wx.BoxSizer(wx.HORIZONTAL)
 		icsnSizer.Add(self.imageCoreSectionNumberPicker, 0)
@@ -1135,7 +1135,8 @@ class ColorTableDialog(wx.Dialog):
 		wx.EVT_KEY_UP(self, self.OnCharUp)
 
 	def ChangeImageCoreSectionNumberColor(self, evt):
-		self.parent.Window.imageCoreSectionNumberColor = self.imageCoreSectionNumberPicker.GetColour()
+		self.parent.Window.colorDict['imageOverlay'] = self.imageCoreSectionNumberPicker.GetColour()
+		self.colorList.insert(20, self.imageCoreSectionNumberPicker.GetColour())
 
 	def OnCharUp(self,event):
 		keyid = event.GetKeyCode() 
@@ -1199,31 +1200,41 @@ class ColorTableDialog(wx.Dialog):
 			wx.Colour(127, 255, 212), wx.Colour(255, 246, 143), wx.Colour(30, 144, 255), \
 			wx.Colour(255, 0, 0), wx.Colour(155, 48, 255), wx.Colour(139, 0, 0), \
 			wx.Colour(0, 139, 0), wx.Colour(139, 0, 0), wx.Colour(173, 255, 47), \
-			wx.Colour(255, 255, 255), wx.Colour(255, 140, 0), wx.Colour(0, 245, 255), wx.Colour(0, 0, 0), wx.Colour(255, 255, 255), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
+			wx.Colour(255, 255, 255), wx.Colour(255, 140, 0), wx.Colour(0, 245, 255), \
+			wx.Colour(0, 0, 0), wx.Colour(255, 255, 255), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255), \
+			wx.Colour(238,238,238)]
 		elif currentColorSet == "Corporate":
 			self.colorList = [ wx.Colour(34, 139, 34), wx.Colour(0, 0, 255), wx.Colour(0, 0, 255), wx.Colour(0, 0, 255), \
 			wx.Colour(0, 255, 255), wx.Colour(205, 133, 63), wx.Colour(139, 76, 57), \
 			wx.Colour(125, 38, 205), wx.Colour(105, 139, 105), wx.Colour(139, 0, 0), \
 			wx.Colour(0, 139, 0), wx.Colour(30, 144, 255), wx.Colour(255, 255, 255), \
-			wx.Colour(143, 188, 143), wx.Colour(255, 20, 147), wx.Colour(72, 61, 139), wx.Colour(220, 220, 220), wx.Colour(0, 0, 0), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
+			wx.Colour(143, 188, 143), wx.Colour(255, 20, 147), wx.Colour(72, 61, 139), \
+			wx.Colour(220, 220, 220), wx.Colour(0, 0, 0), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255), \
+			wx.Colour(238,238,238)]
 		elif currentColorSet == "Maritime":
 			self.colorList = [ wx.Colour(60, 179, 113), wx.Colour(250, 128, 114), wx.Colour(250, 128, 114), wx.Colour(250, 128, 114), \
 			wx.Colour(72, 61, 139), wx.Colour(92, 92, 92), wx.Colour(25, 25, 112), \
 			wx.Colour(125, 38, 205), wx.Colour(255, 99, 71), wx.Colour(255, 0, 0), \
 			wx.Colour(0, 255, 0), wx.Colour(255, 0, 0), wx.Colour(0, 255, 0), \
-			wx.Colour(255, 255, 255), wx.Colour(255, 192, 203), wx.Colour(191, 239, 255), wx.Colour(102, 205, 170), wx.Colour(54, 100, 139), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
+			wx.Colour(255, 255, 255), wx.Colour(255, 192, 203), wx.Colour(191, 239, 255), \
+			wx.Colour(102, 205, 170), wx.Colour(54, 100, 139), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255), \
+			wx.Colour(238,238,238)]
 		elif currentColorSet == "Earth":
 			self.colorList = [ wx.Colour(112, 128, 144), wx.Colour(85, 107, 47), wx.Colour(85, 107, 47), wx.Colour(85, 107, 47), \
 			wx.Colour(0, 255, 255), wx.Colour(150, 150, 150), wx.Colour(135, 206, 235), \
 			wx.Colour(238, 130, 238), wx.Colour(165, 42, 42), wx.Colour(255, 0, 0), \
 			wx.Colour(0, 255, 0), wx.Colour(0, 0, 255), wx.Colour(0, 255, 127), \
-			wx.Colour(255, 255, 255), wx.Colour(255, 105, 180), wx.Colour(165, 42, 42), wx.Colour(255, 222, 173), wx.Colour(165, 42, 42), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
+			wx.Colour(255, 255, 255), wx.Colour(255, 105, 180), wx.Colour(165, 42, 42), \
+			wx.Colour(255, 222, 173), wx.Colour(165, 42, 42), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255), \
+			wx.Colour(238,238,238)]
 		elif currentColorSet == "Santa Fe":
 			self.colorList = [ wx.Colour(0, 100, 0), wx.Colour(99, 184, 255), wx.Colour(99, 184, 255), wx.Colour(99, 184, 255), \
 			wx.Colour(0, 255, 255), wx.Colour(255, 228, 225), wx.Colour(255, 105, 180), \
 			wx.Colour(160, 32, 240), wx.Colour(255, 192, 203), wx.Colour(255, 0, 0), \
 			wx.Colour(0, 255, 0), wx.Colour(255, 0, 0), wx.Colour(255, 255, 255), \
-			wx.Colour(155, 205, 155), wx.Colour(255, 20, 147), wx.Colour(100, 149, 237), wx.Colour(205, 85, 85), wx.Colour(255, 231, 186), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255)] 
+			wx.Colour(155, 205, 155), wx.Colour(255, 20, 147), wx.Colour(100, 149, 237), \
+			wx.Colour(205, 85, 85), wx.Colour(255, 231, 186), wx.Colour(30, 144, 255), wx.Colour(224, 255, 255), \
+			wx.Colour(238,238,238)]
 		elif currentColorSet == "Custom":
 			for key in self.parent.Window.colorDictKeys:
 				self.colorList.append(self.parent.Window.colorDict[key])
@@ -1249,6 +1260,7 @@ class ColorTableDialog(wx.Dialog):
 		self.colorPicker18.SetColour(self.colorList[17])
 		self.colorPicker19.SetColour(self.colorList[18])
 		self.colorPicker20.SetColour(self.colorList[19])
+		self.imageCoreSectionNumberPicker.SetColour(self.colorList[20])
 
 		self.holePicker01.SetColour(self.overlapcolorList[0])
 		self.holePicker02.SetColour(self.overlapcolorList[1])
@@ -1259,6 +1271,7 @@ class ColorTableDialog(wx.Dialog):
 		self.holePicker07.SetColour(self.overlapcolorList[6])
 		self.holePicker08.SetColour(self.overlapcolorList[7])
 		self.holePicker09.SetColour(self.overlapcolorList[8])
+
 
 	def ChangeHoleColor(self, event):
 		idx = event.GetId() - 101 # see 9/17/2012 brg

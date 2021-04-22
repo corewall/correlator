@@ -3641,19 +3641,6 @@ class PreferencesPanel():
 		self.parent.Window.showSectionDepths = self.showSectionDepths.IsChecked()
 		self.parent.Window.UpdateDrawing()
 
-	# def OnShowCoreImages(self, event):
-	# 	self.parent.Window.layoutManager.showCoreImages = self.showCoreImages.IsChecked()
-	# 	self.EnableCoreImageDisplayModeChoice(self.showCoreImages.IsChecked())
-	# 	self.parent.Window.UpdateDrawing()
-
-	# def OnCoreImageDisplayMode(self, event):
-	# 	asDatatype = True if self.coreImageDisplayMode.GetSelection() == 1 else 0
-	# 	self.parent.Window.layoutManager.showImagesAsDatatype = asDatatype
-	# 	self.parent.Window.UpdateDrawing()
-
-	# def EnableCoreImageDisplayModeChoice(self, enable):
-	# 	self.coreImageDisplayMode.Enable(enable)
-
 	def OnShowAffineShiftInfo(self, event):
 		self.parent.Window.showAffineShiftInfo = self.showAffineShiftInfo.IsChecked()
 		self.parent.Window.UpdateDrawing()
@@ -3711,18 +3698,6 @@ class PreferencesPanel():
 		self.parent.Window.layoutManager.setGroupByDatatype(self.dtRadio.GetValue())
 		self.parent.Window.UpdateDrawing()
 
-	# def setShowCoreImages(self, sci):
-	# 	self.showCoreImages.SetValue(sci)
-
-	# def setShowImagesAsDatatype(self, siad):
-	# 	# sel = 1 if siad else 0
-	# 	self.dtRadio.SetValue(siad)
-	# 	self.holeRadio.SetValue(siad)
-	
-	# def OnShowLogShiftArrows(self, event):
-	# 	self.parent.Window.LogClue = self.showLogShiftArrows.IsChecked()
-	# 	self.parent.Window.UpdateDrawing()
-	
 	def addItemsInFrame(self):
 		vbox_top = wx.BoxSizer(wx.VERTICAL)
 
