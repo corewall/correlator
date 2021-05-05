@@ -1852,27 +1852,27 @@ class DisplayOrderDialog(wx.Dialog):
 		self.parent.Window.UpdateDrawing()
 
 
-# Show/hide specific hole+datatype combinations.
+# Show/hide holes by name.
+# - visibleHoles: input dict of hole name:visbility pairs {'A':True, 'B':False, ...}
 class HoleVisibilityDialog(wx.Dialog):
-	def __init__(self, parent, holes, hiddenHoles, datatypeOrder):
-		wx.Dialog.__init__(self, parent, -1, "Hole Visibility", size=(-1, 400), style=wx.CAPTION | wx.STAY_ON_TOP)
+	def __init__(self, parent, visibleHoles):
+		wx.Dialog.__init__(self, parent, -1, "Show holes", size=(-1, 200), style=wx.CAPTION | wx.STAY_ON_TOP)
 		self.parent = parent
-		self.holes = holes # dict of datatype str: [hole name strs]
-		self.hiddenHoles = hiddenHoles # list of hole name + datatype strs indicating which holes are currently hidden
-		self.datatypeOrder = datatypeOrder
-		self.createGUI()
+		self.createGUI(visibleHoles)
 
-	def createGUI(self):
+	def createGUI(self, visibleHoles):
 		mainPanel = wx.Panel(self, -1)
 		mainSizer = wx.BoxSizer(wx.HORIZONTAL)
 
-		self.typeList = wx.ListBox(mainPanel, -1, size=(-1, 120), choices=self.datatypeOrder)
-		self.Bind(wx.EVT_LISTBOX, self.SelectedTypeChanged, self.typeList)
 		self.holeList = wx.CheckListBox(mainPanel, -1, size=(-1, 120))
+		sortedHoleKeys = sorted(visibleHoles.keys())
+		self.holeList.SetItems(sortedHoleKeys)
+		for row, h in enumerate(sortedHoleKeys):
+			self.holeList.Check(row, visibleHoles[h])
+
 		self.Bind(wx.EVT_CHECKLISTBOX, self.HoleItemChecked, self.holeList)
 
-		mainSizer.Add(self.typeList, 0)
-		mainSizer.Add(self.holeList, 0, wx.LEFT, 10)
+		mainSizer.Add(self.holeList)
 		mainPanel.SetSizer(mainSizer)
 
 		self.cancel = wx.Button(self, wx.ID_CANCEL, "Close")
@@ -1881,29 +1881,12 @@ class HoleVisibilityDialog(wx.Dialog):
 		sizer.Add(self.cancel, 0, wx.ALIGN_CENTER | wx.BOTTOM, 5)
 		self.SetSizerAndFit(sizer)
 
-		if self.typeList.GetCount() > 0:
-			self.typeList.SetSelection(0)
-			self.SelectedTypeChanged(None)
-
-	def SelectedTypeChanged(self, evt):
-		seltype = self.typeList.GetStringSelection()
-		self.holeList.SetItems(self.holes[seltype])
-		for row, h in enumerate(self.holes[seltype]):
-			visible = h + seltype not in self.hiddenHoles
-			self.holeList.Check(row, visible)
-
 	def HoleItemChecked(self, evt):
-		idx = evt.GetInt()
-		visible = self.holeList.IsChecked(idx)
-		holeKey = self.holeList.GetString(idx) + self.typeList.GetStringSelection()
-		# print("{} is now {}".format(holeKey, "visible" if visible else "hidden"))
-		if visible and holeKey in self.hiddenHoles:
-			self.hiddenHoles.remove(holeKey)
-			self.parent.Window.UpdateDrawing()
-		elif not visible and holeKey not in self.hiddenHoles:
-			self.hiddenHoles.append(holeKey)
-			self.parent.Window.UpdateDrawing()
-
+		curVisibleHoles = {}
+		for idx in range(self.holeList.GetCount()):
+			curVisibleHoles[self.holeList.GetString(idx)] = self.holeList.IsChecked(idx)
+		self.parent.Window.layoutManager.updateVisibleHoles(curVisibleHoles)
+		self.parent.Window.UpdateDrawing()
 
 
 # Control datatype order and hole visibility in a single dialog.

@@ -987,7 +987,11 @@ class DataCanvas(wxBufferedWindow):
 		for dt in list(set([datatype for datatype, _ in typeHolePairs])):
 			holeNames = sorted([name for datatype, name in typeHolePairs if datatype == dt])
 			dhDict[dt] = holeNames
-		return dhDict		
+		return dhDict
+
+	# return sorted list of currently-loaded hole names
+	def getLoadedHoles(self):
+		return sorted(list(set([HoleMetadata(hd).holeName() for hd in self.HoleData])))
 
 	# convert y coordinate to depth - for composite area
 	def getDepth(self, ycoord):

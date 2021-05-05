@@ -3679,10 +3679,14 @@ class PreferencesPanel():
 		doDlg.ShowModal()
 
 	def OnHoleVisibilityButton(self, event):
-		datatypeHoleDict = self.parent.Window.getDatatypeHoleDict()
-		datatypeOrder = list(self.parent.Window.layoutManager.getDatatypeOrder()) # copy
-		hiddenHoles = self.parent.Window.layoutManager.hiddenHoles # modify directly
-		dlg = dialog.HoleVisibilityDialog(self.parent, datatypeHoleDict, hiddenHoles, datatypeOrder)
+		# Only show loaded holes in dialog. (layoutManager visible holes dict preserves
+		# last-known visibility state for previously-loaded holes that may not currently
+		# be loaded.)
+		lmVisDict = self.parent.Window.layoutManager.visibleHoles
+		holeVisDict = {}
+		for h in self.parent.Window.getLoadedHoles():
+			holeVisDict[h] = lmVisDict[h]
+		dlg = dialog.HoleVisibilityDialog(self.parent, holeVisDict)
 		pos = self.holeVisibilityButton.GetScreenPositionTuple()
 		dlg.SetPosition(pos)
 		dlg.ShowModal()
