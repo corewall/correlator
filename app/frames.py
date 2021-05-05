@@ -3671,32 +3671,23 @@ class PreferencesPanel():
 		self.parent.Window.showPlotOverlays = self.showPlotOverlays.IsChecked()
 		self.parent.Window.UpdateDrawing()
 
-	def OnDisplayOrderButton(self, event):
-		curDisplayOrder = list(self.parent.Window.layoutManager.getDatatypeOrder()) # copy
-		doDlg = dialog.DisplayOrderDialog(self.parent, curDisplayOrder)
-		pos = self.displayOrderButton.GetScreenPositionTuple()
-		doDlg.SetPosition(pos)
-		doDlg.ShowModal()
-
 	def OnHoleVisibilityButton(self, event):
 		# Only show loaded holes in dialog. (layoutManager visible holes dict preserves
 		# last-known visibility state for previously-loaded holes that may not currently
 		# be loaded.)
 		lmVisDict = self.parent.Window.layoutManager.visibleHoles
-		holeVisDict = {}
-		for h in self.parent.Window.getLoadedHoles():
-			holeVisDict[h] = lmVisDict[h]
+		holeVisDict = {h:lmVisDict[h] for h in self.parent.Window.getLoadedHoles()}
 		dlg = dialog.HoleVisibilityDialog(self.parent, holeVisDict)
 		pos = self.holeVisibilityButton.GetScreenPositionTuple()
 		dlg.SetPosition(pos)
 		dlg.ShowModal()
 
-	def OnHoleOrderAndDisplayButton(self, event):
-		datatypeHoleDict = self.parent.Window.getDatatypeHoleDict()
+	def OnDatatypeVisibilityAndOrderButton(self, event):
 		datatypeOrder = list(self.parent.Window.layoutManager.getDatatypeOrder()) # copy
-		hiddenHoles = self.parent.Window.layoutManager.hiddenHoles # modify directly
-		dlg = dialog.HoleOrderAndDisplayDialog(self.parent, datatypeHoleDict, hiddenHoles, datatypeOrder)
-		pos = self.holeVisibilityButton.GetScreenPositionTuple()
+		lmVisDict = self.parent.Window.layoutManager.visibleDatatypes
+		typeVisDict = {dt:lmVisDict[dt] for dt in datatypeOrder}
+		dlg = dialog.DatatypeVisibilityAndOrderDialog(self.parent, datatypeOrder, typeVisDict)
+		pos = self.displayOrderButton.GetScreenPositionTuple()
 		dlg.SetPosition(pos)
 		dlg.ShowModal()
 
@@ -3716,7 +3707,7 @@ class PreferencesPanel():
 		layoutSizer = wx.StaticBoxSizer(wx.StaticBox(layoutPanel, -1, "Data selections and arrangements"), orient=wx.VERTICAL)
 
 		self.displayOrderButton = wx.Button(layoutPanel, -1, "Show/arrange data types...")
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDisplayOrderButton, self.displayOrderButton)
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnDatatypeVisibilityAndOrderButton, self.displayOrderButton)
 		self.holeVisibilityButton = wx.Button(layoutPanel, -1, "Show holes...")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnHoleVisibilityButton, self.holeVisibilityButton)
 

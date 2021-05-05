@@ -114,7 +114,6 @@ class LayoutManager:
 		self.holePositions = []
 		self.holesWithImages = []
 		self.datatypeOrder = []
-		# self.hiddenHoles = [] # hole name + datatype keys
 		self.visibleHoles = {}
 		self.visibleDatatypes = {}
 
@@ -123,23 +122,20 @@ class LayoutManager:
 		self.holeColumnDict = {}
 		self.holePositions = []
 
+	# If new elts (holes or datatypes) aren't found in visDict, add them
+	# with default visibility True.
 	def _updateVisibility(self, elts, visDict):
 		for e in elts:
-			if e not in visDict: # add new elts with default value True
+			if e not in visDict:
 				visDict[e] = True
 
 	def updateVisibleHoles(self, vh):
 		for hole in vh.keys():
 			self.visibleHoles[hole] = vh[hole]
 
-	# TODO: Hook this up in hole visibility dialog and new show/hide
-	# in layout manager. Repeat for datatypes.
-
-	def getVisibleDatatypes(self):
-		return dict(self.visibleDatatypes)
-
-	def setVisibleDatatypes(self, vd):
-		self.visibleDatatypes = vd
+	def updateVisibleDatatypes(self, vd):
+		for datatype in vd.keys():
+			self.visibleDatatypes[datatype] = vd[datatype]
 
 	def layout(self, holeData, smoothData, holesWithImages, x, margin):
 		self._reset()
@@ -152,9 +148,8 @@ class LayoutManager:
 		if self.datatypeOrder == [] or len(self.datatypeOrder) != len(datatypes) or set(self.datatypeOrder) != set(datatypes):
 			self.datatypeOrder = datatypes
 
-		# update hole/datatype visibility tracking
+		# update hole/datatype visibility tracking, adding newly-loaded holes/types
 		holes = list(set([HoleMetadata(hd).holeName() for hd in holeData]))
-		# datatypes = list(set([HoleMetadata(hd).datatype() for hd in self.holedata]))
 		self._updateVisibility(holes, self.visibleHoles)
 		self._updateVisibility(self.datatypeOrder, self.visibleDatatypes)
 
@@ -172,8 +167,7 @@ class LayoutManager:
 			# find holeData corresponding to each hole+datatype pair and create a HoleColumn for it
 			for h in sorted(holes): # TODO: this won't sort correctly if there are 27+ holes (27th hole 'AA' should come after 26th hole 'Z')
 				for dt in self.datatypeOrder:
-					# if h + dt in self.hiddenHoles:
-					if not self.visibleHoles[h]:
+					if not self.visibleHoles[h] or not self.visibleDatatypes[dt]:
 						continue
 					for idx, hmd in enumerate(holeMetadataList):
 						if self.showCoreImages and self.showImagesAsDatatype and hmd.holeName() == h and dt == ImageDatatypeStr and self._holeHasImages(h):
@@ -240,7 +234,7 @@ class LayoutManager:
 	def _layoutPlotColumns(self, currentX, holeData, smoothData, datatype):
 		for holeIndex, holeList in enumerate(holeData):
 			hmd = HoleMetadata(holeList)
-			if hmd.datatype() != datatype or not self.visibleHoles[hmd.holeName()]: #(hmd.holeName() + hmd.datatype() in self.hiddenHoles):
+			if hmd.datatype() != datatype or not self.visibleHoles[hmd.holeName()] or not self.visibleDatatypes[datatype]:
 				continue
 			currentX += self._createPlotColumn(holeList, smoothData[holeIndex][0], currentX, hmd)
 		return currentX
@@ -250,7 +244,7 @@ class LayoutManager:
 		holesSeen = []
 		for holeIndex, holeList in enumerate(holeData):
 			hmd = HoleMetadata(holeList)
-			if hmd.holeName() in holesSeen or not self.visibleHoles[hmd.holeName()]: #(hmd.holeName() + ImageDatatypeStr in self.hiddenHoles):
+			if hmd.holeName() in holesSeen or not self.visibleHoles[hmd.holeName()] or not self.visibleDatatypes[ImageDatatypeStr]:
 				continue # only one image column per hole if multiple datatypes are loaded
 			if self._holeHasImages(hmd.holeName()):
 				currentX += self._createImageColumn(holeList, smoothData[holeIndex][0], currentX, hmd.holeName() + ImageDatatypeStr)
