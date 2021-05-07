@@ -16,10 +16,10 @@ class HoleColumn:
 		self.leftX = leftX # x coordinate of left of column
 		self.margin = margin # width of leftmost space where core number and shift type+distance are displayed
 		self._columns = [] # tuples of (ColumnType, column width in pixels)
-		self.rawHoleData = holeData
-		self.holeData = holeData[0]
-		self.smoothData = smoothData
-		self.hmd = HoleMetadata(holeData)
+		self.rawHoleData = holeData # raw input data (DataCanvas.HoleData)
+		self.holeData = holeData[0] # input data without seemingly-useless enclosing list
+		self.smoothData = smoothData # raw input smooth data (DataCanvas.SmoothData)
+		self.hmd = HoleMetadata(holeData) # convenience wrapper
 
 	def addColumn(self, columnType, width):
 		self._columns.append((columnType, width))
@@ -102,20 +102,20 @@ class HoleColumn:
 
 class LayoutManager:
 	def __init__(self):
-		self.showCoreImages = True
-		self.showImagesAsDatatype = True
-		self.groupByDatatype = True
+		self.showCoreImages = True # TODO always True, cleanup - use holesWithImages instead
+		self.showImagesAsDatatype = True # TODO always True, cleanup
+		self.groupByDatatype = True # if True group HoleColumns by datatype, else group by hole
 		self.plotWidth = 250
 		self.imageWidth = 50
 		self.plotLeftMargin = 50
 
-		self.holeColumns = []
-		self.holeColumnDict = {}
-		self.holePositions = []
-		self.holesWithImages = []
-		self.datatypeOrder = []
-		self.visibleHoles = {}
-		self.visibleDatatypes = {}
+		self.holeColumns = [] # HoleColumns in current layout
+		self.holeColumnDict = {} # HoleColumns in current layout keyed on hole+datatype str
+		self.holePositions = [] # list of (xpos, HoleColumn) tuples
+		self.holesWithImages = [] # holes with imagery
+		self.datatypeOrder = [] # display order of datatypes
+		self.visibleHoles = {} # hole (str):visible (bool)
+		self.visibleDatatypes = {} # datatype (str):visible(bool)
 
 	def _reset(self):
 		self.holeColumns = []
