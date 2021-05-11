@@ -1524,9 +1524,6 @@ class MainFrame(wx.Frame):
 		showSectionDepths = int(self.Window.showSectionDepths)
 		self.WritePreferenceItem("showSectionDepths", showSectionDepths, f)
 
-		showImagesAsDatatype = int(self.Window.layoutManager.showImagesAsDatatype)
-		self.WritePreferenceItem("showImagesAsDatatype", showImagesAsDatatype, f)
-
 		showCoreInfo = 1 if self.Window.showCoreInfo == True else 0
 		self.WritePreferenceItem("showCoreInfo", showCoreInfo, f)
 

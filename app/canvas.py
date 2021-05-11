@@ -981,7 +981,7 @@ class DataCanvas(wxBufferedWindow):
 	def getDatatypeHoleDict(self):
 		holeMetadataList = [HoleMetadata(hd) for hd in self.HoleData]
 		typeHolePairs = [(hmd.datatype(), hmd.holeName()) for hmd in holeMetadataList]
-		if self.layoutManager.showCoreImages and self.layoutManager.showImagesAsDatatype:
+		if self.layoutManager.showCoreImages:
 			typeHolePairs += [(ImageDatatypeStr, h) for h in self.HolesWithImages]
 		dhDict = {}
 		for dt in list(set([datatype for datatype, _ in typeHolePairs])):
@@ -1622,10 +1622,7 @@ class DataCanvas(wxBufferedWindow):
 					tieY = self.getCoord(nearDepth)
 					tieX = nearDatum - self.minRange
 					tieX = (tieX * self.coefRange) + startX
-					parentY = self.getCoord(parentNearDepth)
-					parentTieX = parentNearDatum - self.minRange
-					showImages = self.layoutManager.showCoreImages and not self.layoutManager.showImagesAsDatatype and self.HoleHasImages(parentCore.hole)
-					parentTieX = (parentTieX * self.coefRange) + self.GetHoleStartX(parentCore.hole, holeType) + (self.layoutManager.imageWidth if showImages else 0)
+					parentTieX = (parentNearDatum - self.minRange) * self.coefRange + self.GetHoleStartX(parentCore.hole, holeType)
 					arrowRect, drawData = self._createTieShiftArrowDrawData(parentTieX, tieX, tieY)
 					self.AffineTieArrows.append((hole.holeName() + core.coreName(), arrowRect, drawData))
 
