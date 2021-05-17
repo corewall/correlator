@@ -102,7 +102,6 @@ class HoleColumn:
 
 class LayoutManager:
 	def __init__(self):
-		self.showCoreImages = True # TODO always True, cleanup - use holesWithImages instead
 		self.groupByDatatype = True # if True group HoleColumns by datatype, else group by hole
 		self.plotWidth = 250
 		self.imageWidth = 50
@@ -142,8 +141,9 @@ class LayoutManager:
 
 		# update datatypeOrder if needed
 		datatypes = list(set([HoleMetadata(hd).datatype() for hd in holeData]))
-		if self.showCoreImages:
+		if len(self.holesWithImages) > 0:
 			datatypes = [ImageDatatypeStr] + datatypes
+
 		if self.datatypeOrder == [] or len(self.datatypeOrder) != len(datatypes) or set(self.datatypeOrder) != set(datatypes):
 			self.datatypeOrder = datatypes
 
@@ -156,7 +156,7 @@ class LayoutManager:
 		currentX = x
 		if self.groupByDatatype:
 			for dt in self.datatypeOrder:
-				if dt == ImageDatatypeStr and self.showCoreImages:
+				if dt == ImageDatatypeStr:
 					currentX = self._layoutImageColumns(currentX, holeData, smoothData)
 				else:
 					currentX = self._layoutPlotColumns(currentX, holeData, smoothData, dt)
@@ -169,7 +169,7 @@ class LayoutManager:
 					if not self.visibleHoles[h] or not self.visibleDatatypes[dt]:
 						continue
 					for idx, hmd in enumerate(holeMetadataList):
-						if self.showCoreImages and hmd.holeName() == h and dt == ImageDatatypeStr and self._holeHasImages(h):
+						if hmd.holeName() == h and dt == ImageDatatypeStr and self._holeHasImages(h):
 							currentX += self._createImageColumn(holeData[idx], smoothData[idx][0], currentX, hmd.holeName() + ImageDatatypeStr)
 							break
 						elif hmd.holeName() == h and hmd.datatype() == dt:

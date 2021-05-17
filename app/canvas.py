@@ -849,8 +849,8 @@ class DataCanvas(wxBufferedWindow):
 			assert hole_name is not None
 			if hole_name not in self.HolesWithImages:
 				self.HolesWithImages.append(hole_name)
-		# print("Loaded images: {}".format(self.Images))
-		# print("Holes with images: {}".format(self.HolesWithImages))
+		print("Loaded images: {}".format(self.Images))
+		print("Holes with images: {}".format(self.HolesWithImages))
 
 	def CountImages(self):
 		return len(self.Images)
@@ -872,7 +872,7 @@ class DataCanvas(wxBufferedWindow):
 
 	# used only for drawing of core images in splice
 	def GetCoreImageDisplayWidth(self):
-		return self.layoutManager.imageWidth if self.layoutManager.showCoreImages else 0
+		return self.layoutManager.imageWidth if len(self.HolesWithImages) > 0 else 0
 
 	def _getHoleName(self, txt):
 		holePattern = "U[0-9]+([A-Z]+)" # TODO: make flexible for non-IODP section IDs
@@ -981,8 +981,7 @@ class DataCanvas(wxBufferedWindow):
 	def getDatatypeHoleDict(self):
 		holeMetadataList = [HoleMetadata(hd) for hd in self.HoleData]
 		typeHolePairs = [(hmd.datatype(), hmd.holeName()) for hmd in holeMetadataList]
-		if self.layoutManager.showCoreImages:
-			typeHolePairs += [(ImageDatatypeStr, h) for h in self.HolesWithImages]
+		typeHolePairs += [(ImageDatatypeStr, h) for h in self.HolesWithImages]
 		dhDict = {}
 		for dt in list(set([datatype for datatype, _ in typeHolePairs])):
 			holeNames = sorted([name for datatype, name in typeHolePairs if datatype == dt])
@@ -1829,7 +1828,7 @@ class DataCanvas(wxBufferedWindow):
 		intervalSelected = (interval == self.parent.spliceManager.getSelected())
 		self.DrawSpliceIntervalPlot(dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed)
 
-		if self.parent.sectionSummary and self.layoutManager.showCoreImages:
+		if self.parent.sectionSummary:
 			self.DrawSpliceIntervalImages(dc, interval, startX)
 
 		if intervalSelected:
