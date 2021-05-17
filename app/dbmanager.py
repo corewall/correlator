@@ -4195,7 +4195,8 @@ class DataFrame(wx.Panel):
 				self.parent.UpdateELD(True)
 
 		# load imagery into canvas
-		core_image_path = os.path.join(self.parent.DBPath, 'db', 'core_images')
+		core_image_path = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images')
+		print("Loading imagery from {}".format(core_image_path))
 		if os.path.exists(core_image_path):
 			img_files = [os.path.join(core_image_path, f) for f in os.listdir(core_image_path) if f.endswith('.jpg')]
 			self.parent.Window.LoadImages(img_files)
