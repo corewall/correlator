@@ -23,7 +23,7 @@ from importManager import py_correlator
 import frames
 import splice
 from layout import LayoutManager, ColumnType, ImageDatatypeStr
-from utils import CoreMetadata, HoleMetadata
+from utils import CoreMetadata, HoleMetadata, getHoleName
 
 
 # brg 4/9/2014: Why are we defining our own wxBufferedWindow when
@@ -845,7 +845,7 @@ class DataCanvas(wxBufferedWindow):
 			img = wx.Image(f)
 			img_key = os.path.basename(f).replace('-A.jpg', '')
 			self.Images[img_key] = (img, None) # wx.Image, wx.Bitmap
-			hole_name = self._getHoleName(img_key)
+			hole_name = getHoleName(img_key)
 			assert hole_name is not None
 			if hole_name not in self.HolesWithImages:
 				self.HolesWithImages.append(hole_name)
@@ -873,13 +873,6 @@ class DataCanvas(wxBufferedWindow):
 	# used only for drawing of core images in splice
 	def GetCoreImageDisplayWidth(self):
 		return self.layoutManager.imageWidth if len(self.HolesWithImages) > 0 else 0
-
-	def _getHoleName(self, txt):
-		holePattern = "U[0-9]+([A-Z]+)" # TODO: make flexible for non-IODP section IDs
-		hole = re.search(holePattern, txt)
-		if hole and len(hole.groups()) == 1:
-			return hole.groups()[0]
-		return None
 
 	# hole: hole name string
 	def HoleHasImages(self, hole):

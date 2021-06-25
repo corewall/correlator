@@ -1,3 +1,14 @@
+import re
+
+# Parse hole from full section name. Assumes IODP naming convention.
+def getHoleName(iodpName):
+	holePattern = "U[0-9]+([A-Z]+)" # TODO: make flexible for non-IODP section IDs
+	hole = re.search(holePattern, iodpName)
+	if hole and len(hole.groups()) == 1:
+		return hole.groups()[0]
+	return None
+
+
 # Convenience wrapper for DataCanvas.HoleData list elements with
 # methods to access hole metadata.
 class HoleMetadata:
