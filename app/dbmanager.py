@@ -4,10 +4,9 @@
 #/usr/bin/env pythonw
 
 import os.path
-import platform
+import platform, shutil
 platform_name = platform.uname()
 
-import shutil
 import pandas
 
 import wx 
@@ -22,6 +21,7 @@ from importManager import py_correlator
 import dialog
 import tabularImport
 import splice
+from utils import getHoleName
 import xml_handler
 from affine import convert_pre_v3_AffineTable, AffineBuilder, aci, acistr
 from sectionSummary import SectionSummary, SectionSummaryRow
@@ -38,7 +38,8 @@ FormatDict = {"Text":0, "CSV":1, "XML":2}
 # STD_SITE_NODES = ["Saved Tables", "Downhole Log Data", "Stratigraphy", "Age Models", "Image Data", "Section Summaries"]
 ST_NODE = "Saved Tables"
 SS_NODE = "Section Summaries"
-STD_SITE_NODES = [ST_NODE, SS_NODE]
+IMG_NODE = "Images"
+STD_SITE_NODES = [ST_NODE, SS_NODE, IMG_NODE]
 
 class DataFrame(wx.Panel):
 	def __init__(self, parent):
@@ -324,7 +325,7 @@ class DataFrame(wx.Panel):
 			siteNode = self.GetSiteForNode(self.selectedIdx)
 			self.OnUPDATE_DB_FILE(self.tree.GetItemText(siteNode, 0), siteNode)
 			self.needsReload = True
-		elif opId == 21:
+		elif opId == 21: # obsolete image handling
 			self.OnIMPORT_IMAGE()
 		elif opId == 22:
 			print "Export XML Data!"
@@ -450,9 +451,62 @@ class DataFrame(wx.Panel):
 			self.OnIMPORT_CULLTABLE(True)
 		elif opId == 33:
 			self.IMPORT_TIME_SERIES()
+		elif opId == 34: # add new core images
+			self.AddCoreImages()
 
 		self.selectedIdx = None
+
+	def AddCoreImages(self): # BRGBRG
+		dlg = wx.DirDialog(self, "Select Image Folder", style=wx.OPEN | wx.MULTIPLE)
+		if dlg.ShowModal() == wx.ID_OK:
+			imgPath = dlg.GetPath()
+			print("Selected image path: {}".format(imgPath))
+			# determine current site
+			dbImgPath = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images_foo')
+			if not os.path.exists(dbImgPath):
+				print("{} does not exist, creating".format(dbImgPath))
+				os.mkdir(dbImgPath)
+			self._importCoreImages(imgPath, dbImgPath)
+
+	def _importCoreImages(self, importPath, dbPath):
+		imgFiles = [os.path.join(importPath, f) for f in os.listdir(importPath) if f.endswith('.jpg')]
+		print("Copying {} image files into {}".format(len(imgFiles), dbPath))
+		pd = wx.ProgressDialog("Image Import", "", len(imgFiles), self, wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
+		for count, f in enumerate(imgFiles):
+			shutil.copy(f, os.path.join(dbPath, os.path.basename(f)))
+			pd.Update(count+1, "Importing {}".format(os.path.basename(f)))
+		# TODO: pop success message, summary of what was imported?
 		
+		# use image names to determine how many images there are for each hole, and
+		# update dbmanager line items accordingly
+		holeCounts = {}
+		for f in imgFiles:
+			hole = getHoleName(os.path.basename(f))
+			if hole not in holeCounts:
+				holeCounts[hole] = 1
+			else:
+				holeCounts[hole] += 1
+		print("Hole counts: {}".format(holeCounts))
+
+		siteName = self.GetSelectedSiteName()
+		siteNode = self.GetSelectedSite()
+		if siteNode.IsOk():
+			imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
+			if imgNodeFound:
+				# TODO: update for each key (hole name) in hole counts
+				print("Found Images node for site {}".format(siteName))
+				for k,v in holeCounts.items():
+					imgItem = self.tree.AppendItem(imgNode, k)
+					self.tree.SetItemText(imgItem, "{} images".format(v), 1)
+					self.tree.SetItemText(imgItem, self.GetTimestamp(), 6)
+					self.tree.SetItemText(imgItem, self.parent.user, 7)
+					self.tree.SetItemText(imgItem, importPath, 9)
+					self.tree.SetItemText(imgItem, dbPath, 10)
+				self.tree.SortChildren(imgNode)
+				self.OnUPDATE_DB_FILE(siteName, self.tree.GetItemParent(imgNode))
+			else:
+				assert "No Images node, that's bad."
+
 	def AddSectionSummary(self, secsumm, originalPath):
 		siteNode = self.GetSelectedSite()
 		if siteNode.IsOk():
@@ -769,6 +823,9 @@ class DataFrame(wx.Panel):
 				else:
 					popupMenu.Append(5, "&Add new data")
 					wx.EVT_MENU(popupMenu, 5, self.OnPOPMENU)
+
+					popupMenu.Append(34, "Add new &images")
+					wx.EVT_MENU(popupMenu, 34, self.OnPOPMENU)
 
 					popupMenu.Append(1, "&Load")
 					wx.EVT_MENU(popupMenu, 1, self.OnPOPMENU)
@@ -2800,6 +2857,19 @@ class DataFrame(wx.Panel):
 				ssLine = '\nsecsumm: {}: {}: {}: {}: {}: {}\n'.format(ssName, ssTime, ssUser, ssFilename, ssSourcePath, ssDbPath)
 				fileOut.write(ssLine)
 
+	def WriteCoreImageLines(self, imgRoot, fileOut):
+		for imgItem in self.GetChildren(imgRoot):
+			imgHole = self.tree.GetItemText(imgItem)
+			imgCount = self.tree.GetItemText(imgItem, 1)
+			imgTime = self.tree.GetItemText(imgItem, 6)
+			imgUser = self.tree.GetItemText(imgItem, 7)
+			imgSourcePath = self.tree.GetItemText(imgItem, 9)
+			imgDbPath = self.tree.GetItemText(imgItem, 10)
+			if imgHole != "":
+				imgLine = '\ncoreimage: {}: {}: {}: {}: {}: {}\n'.format(imgHole, imgCount, imgTime, imgUser, imgSourcePath, imgDbPath)
+				print("Writing line {}".format(imgLine))
+				fileOut.write(imgLine)
+
 	# Rewrite site's datalist.db file based on self.tree contents.
 	# title - name of site for which to rewrite datalist.db
 	# parentItem - self.tree site node
@@ -2909,6 +2979,8 @@ class DataFrame(wx.Panel):
 						fout.write(s)
 			elif type == "Section Summaries":
 				self.WriteSectionSummaryLine(selectItem, fout)
+			elif type == IMG_NODE:
+				self.WriteCoreImageLines(selectItem, fout)
 			else:  # data type node
 				totalcount = self.tree.GetChildrenCount(selectItem, False)
 				if totalcount > 0:
@@ -3041,6 +3113,8 @@ class DataFrame(wx.Panel):
 							fout.write(s)
 				elif type == "Section Summaries":
 					self.WriteSectionSummaryLine(selectItem, fout)
+				elif type == IMG_NODE:
+					self.WriteCoreImageLines(selectItem, fout)
 				else:
 					totalcount = self.tree.GetChildrenCount(selectItem, False)
 					if totalcount > 0:
@@ -4844,6 +4918,7 @@ class DataFrame(wx.Panel):
 				age_child = self.tree.AppendItem(siteNode, 'Age Models')
 				image_child = self.tree.AppendItem(siteNode, 'Image Data')
 				secSummRoot = self.tree.AppendItem(siteNode, 'Section Summaries')
+				imgRoot = self.tree.AppendItem(siteNode, IMG_NODE)
 				self.tree.SortChildren(siteNode)
 				typeNode = None
 				hole_child = None
@@ -5089,6 +5164,17 @@ class DataFrame(wx.Panel):
 									self.tree.SetItemText(ssChild, token[4].strip(), 8) # file
 									self.tree.SetItemText(ssChild, token[5].strip(), 9) # source path
 									self.tree.SetItemText(ssChild, token[6].strip(), 10) # db path
+						elif token[0] == "coreimage":
+							if imgRoot is not None:
+								holeName = token[1].strip()
+								imgItem = self.tree.AppendItem(imgRoot, holeName)
+								if len(token) > 2:
+									self.tree.SetItemText(imgItem, token[2].strip(), 1) # count
+									self.tree.SetItemText(imgItem, token[3].strip(), 6) # timestamp
+									self.tree.SetItemText(imgItem, token[4].strip(), 7) # user
+									self.tree.SetItemText(imgItem, token[5].strip(), 9) # source path
+									self.tree.SetItemText(imgItem, token[6].strip(), 10) # DB path
+
 				
 				sub_f.close()
 				self.tree.SortChildren(secSummRoot)
