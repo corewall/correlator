@@ -480,28 +480,33 @@ class DataFrame(wx.Panel):
 		# use image names to determine how many images there are for each hole, and
 		# update dbmanager line items accordingly
 		holeCounts = {}
-		for f in imgFiles:
+		for f in [os.path.join(dbPath, f) for f in os.listdir(dbPath) if f.endswith('.jpg')]:
 			hole = getHoleName(os.path.basename(f))
 			if hole not in holeCounts:
 				holeCounts[hole] = 1
 			else:
 				holeCounts[hole] += 1
-		print("Hole counts: {}".format(holeCounts))
+		print("DB core image counts by hole: {}".format(holeCounts))
 
 		siteName = self.GetSelectedSiteName()
 		siteNode = self.GetSelectedSite()
 		if siteNode.IsOk():
 			imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
 			if imgNodeFound:
-				# TODO: update for each key (hole name) in hole counts
-				print("Found Images node for site {}".format(siteName))
-				for k,v in holeCounts.items():
-					imgItem = self.tree.AppendItem(imgNode, k)
-					self.tree.SetItemText(imgItem, "{} images".format(v), 1)
+				for holeName, count in holeCounts.items():
+					imgItem = None
+					for imgChild in self.GetChildren(imgNode):
+						if self.tree.GetItemText(imgChild) == holeName:
+							imgItem = imgChild
+							break
+					if imgItem is None:
+						imgItem = self.tree.AppendItem(imgNode, holeName)
+					self.tree.SetItemText(imgItem, "{} images".format(count), 1)
 					self.tree.SetItemText(imgItem, self.GetTimestamp(), 6)
 					self.tree.SetItemText(imgItem, self.parent.user, 7)
 					self.tree.SetItemText(imgItem, importPath, 9)
 					self.tree.SetItemText(imgItem, dbPath, 10)
+
 				self.tree.SortChildren(imgNode)
 				self.OnUPDATE_DB_FILE(siteName, self.tree.GetItemParent(imgNode))
 			else:
