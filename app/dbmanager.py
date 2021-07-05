@@ -228,7 +228,7 @@ class DataFrame(wx.Panel):
 		opId = event.GetId()
 		self.currentIdx = self.tree.GetSelections()
 		if opId == 1:	# LOAD CORE
-			self.OnLOAD()
+			self.LoadData()
 		elif opId == 2: # VIEW FILE
 			filename = self.tree.GetItemText(self.selectedIdx, 8)
 			if filename != "":
@@ -3974,7 +3974,15 @@ class DataFrame(wx.Panel):
 			smooth = smoothParams.style
 		return smooth
 
-	def OnLOAD(self):
+	# Wrapper with progress bar for main loading f'n OnLOAD
+	def LoadData(self):
+		pd = wx.ProgressDialog("Load Data", "", 100, self, wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
+		self.OnLOAD(pd)
+		pd.Destroy()
+
+	# Main loading f'n.
+	# - prog: wx.ProgressDialog to update during loading
+	def OnLOAD(self, prog):
 		self.propertyIdx = None
 		self.title = ""
 		self.cullData = []
@@ -3995,6 +4003,7 @@ class DataFrame(wx.Panel):
 		if self.parent.Window.HoleData != []:
 			self.logFileptr.write("Closed All Files Loaded. \n\n")
 
+		prog.Pulse("Loading data files...")
 
 		# NEED TO FIND UNIVERSAL CULL
 		universal_cull_item = None 
@@ -4212,7 +4221,9 @@ class DataFrame(wx.Panel):
 			self.parent.OnShowMessage("Error", "No data files are enabled.", 1)
 			self.parent.OnNewData(None)
 			return
-			
+
+		prog.Pulse("Loading metadata...")
+
 		if previousType != "":
 			titleItem = self.tree.GetItemParent(parentItem)
 			ret = self.OnLOAD_CULLTABLE(parentItem, previousType)
@@ -4273,6 +4284,7 @@ class DataFrame(wx.Panel):
 		found, savedTablesItem = self.FindItem(parentItem, 'Saved Tables')
 		affinePath = None
 		if found:
+			prog.Pulse("Loading affine table...")
 			affineItem = self.FindSavedTable(savedTablesItem, "AFFINE")
 			if affineItem is not None:
 				affineFile = self.tree.GetItemText(affineItem, 8)
@@ -4300,6 +4312,7 @@ class DataFrame(wx.Panel):
 						return
 
 				if self.parent.spliceManager.canApplyAffine(filepath):
+					prog.Pulse("Loading splice table...")
 					self.parent.spliceManager.loadSplice(filepath)
 				else:
 					self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)
@@ -4314,6 +4327,7 @@ class DataFrame(wx.Panel):
 		core_image_path = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images')
 		print("Loading imagery from {}".format(core_image_path))
 		if os.path.exists(core_image_path):
+			prog.Pulse("Loading images...")
 			img_files = [os.path.join(core_image_path, f) for f in os.listdir(core_image_path) if f.endswith('.jpg')]
 			self.parent.Window.LoadImages(img_files)
 
