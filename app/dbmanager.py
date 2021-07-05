@@ -181,6 +181,17 @@ class DataFrame(wx.Panel):
 			os.remove(filepath)
 			self.tree.Delete(self.selectedIdx)
 			self.OnUPDATE_DB_FILE(siteName, siteNode)
+
+	def OnImagesMenu(self, event):
+		opId = event.GetId()
+		if opId == 1: # add new images
+			self.AddCoreImages()
+		elif opId == 2: # update
+			self.UpdateCoreImages()
+		elif opId == 3: # delete(?)
+			pass
+		elif opId == 4: # export splice image
+			self.ExportSplicedImage()
 	
 	# Enable specified item in Data Manager. Enforces single Enabled table per type (affine, splice).
 	# item - self.tree node of item to enable/disable
@@ -456,13 +467,12 @@ class DataFrame(wx.Panel):
 
 		self.selectedIdx = None
 
-	def AddCoreImages(self): # BRGBRG
+	def AddCoreImages(self):
 		dlg = wx.DirDialog(self, "Select Image Folder", style=wx.OPEN | wx.MULTIPLE)
 		if dlg.ShowModal() == wx.ID_OK:
 			imgPath = dlg.GetPath()
 			print("Selected image path: {}".format(imgPath))
-			# determine current site
-			dbImgPath = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images_foo')
+			dbImgPath = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images')
 			if not os.path.exists(dbImgPath):
 				print("{} does not exist, creating".format(dbImgPath))
 				os.mkdir(dbImgPath)
@@ -475,7 +485,6 @@ class DataFrame(wx.Panel):
 		for count, f in enumerate(imgFiles):
 			shutil.copy(f, os.path.join(dbPath, os.path.basename(f)))
 			pd.Update(count+1, "Importing {}".format(os.path.basename(f)))
-		# TODO: pop success message, summary of what was imported?
 		
 		# use image names to determine how many images there are for each hole, and
 		# update dbmanager line items accordingly
@@ -490,27 +499,43 @@ class DataFrame(wx.Panel):
 
 		siteName = self.GetSelectedSiteName()
 		siteNode = self.GetSelectedSite()
-		if siteNode.IsOk():
-			imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
-			if imgNodeFound:
-				for holeName, count in holeCounts.items():
-					imgItem = None
-					for imgChild in self.GetChildren(imgNode):
-						if self.tree.GetItemText(imgChild) == holeName:
-							imgItem = imgChild
-							break
-					if imgItem is None:
-						imgItem = self.tree.AppendItem(imgNode, holeName)
-					self.tree.SetItemText(imgItem, "{} images".format(count), 1)
-					self.tree.SetItemText(imgItem, self.GetTimestamp(), 6)
-					self.tree.SetItemText(imgItem, self.parent.user, 7)
-					self.tree.SetItemText(imgItem, importPath, 9)
-					self.tree.SetItemText(imgItem, dbPath, 10)
+		if not siteNode.IsOk():
+			print("_importCoreImages(): Bad site node, bailing.")
+		imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
+		if not imgNodeFound:
+			assert False, "No Images node, that's bad."
+		for holeName, count in holeCounts.items():
+			imgItem = None
+			for imgChild in self.GetChildren(imgNode):
+				if self.tree.GetItemText(imgChild) == holeName:
+					imgItem = imgChild
+					break
+			if imgItem is None:
+				imgItem = self.tree.AppendItem(imgNode, holeName)
+			self.tree.SetItemText(imgItem, "{} images".format(count), 1)
+			self.tree.SetItemText(imgItem, self.GetTimestamp(), 6)
+			self.tree.SetItemText(imgItem, self.parent.user, 7)
+			self.tree.SetItemText(imgItem, importPath, 9)
+			self.tree.SetItemText(imgItem, dbPath, 10)
 
-				self.tree.SortChildren(imgNode)
-				self.OnUPDATE_DB_FILE(siteName, self.tree.GetItemParent(imgNode))
-			else:
-				assert "No Images node, that's bad."
+		self.tree.SortChildren(imgNode)
+		self.OnUPDATE_DB_FILE(siteName, self.tree.GetItemParent(imgNode))
+
+	# Update imported images with contents of original image import dir(s)
+	def UpdateCoreImages(self):
+		siteNode = self.GetSelectedSite()
+		if not siteNode.IsOk():
+			print("UpdateCoreImages(): Bad site node, bailing.")
+		importPaths = []
+		imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
+		if imgNodeFound:
+			importPaths = [self.tree.GetItemText(i,9) for i in self.GetChildren(imgNode)]
+		dbImgPath = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images')
+		for ip in importPaths:
+			self._importCoreImages(ip, dbImgPath)
+
+	def ExportSplicedImage(self):
+		print("ExportSplicedImage(): IMPLEMENT ME")
 
 	def AddSectionSummary(self, secsumm, originalPath):
 		siteNode = self.GetSelectedSite()
@@ -639,6 +664,14 @@ class DataFrame(wx.Panel):
 	def MakeSectionSummaryPopup(self, popupMenu):
 		popupMenu.Append(1, "&Import Section Summary File(s)...")
 		wx.EVT_MENU(popupMenu, 1, self.OnSecSummMenu)
+
+	def MakeImagesPopup(self, popupMenu):
+		popupMenu.Append(1, "Add new &images")
+		popupMenu.Append(2, "&Update")
+		popupMenu.Append(3, "&Delete") # needed?
+		popupMenu.Append(4, "&Export spliced image")
+		for opid in [1,2,3,4]:
+			wx.EVT_MENU(popupMenu, opid, self.OnImagesMenu)
 
 	def ConfirmClearDisplayData(self):
 		msg = "This operation will clear all data in the Display, including "
@@ -825,6 +858,10 @@ class DataFrame(wx.Panel):
 					wx.EVT_MENU(popupMenu, 21, self.OnPOPMENU)
 				elif str_name == "Section Summaries":
 					self.MakeSectionSummaryPopup(popupMenu)
+				elif self.tree.GetItemText(self.selectedIdx, 0) == IMG_NODE:
+					self.MakeImagesPopup(popupMenu)
+				elif self.tree.GetItemText(self.tree.GetItemParent(self.selectedIdx), 0) == IMG_NODE:
+					pass
 				else:
 					popupMenu.Append(5, "&Add new data")
 					wx.EVT_MENU(popupMenu, 5, self.OnPOPMENU)
