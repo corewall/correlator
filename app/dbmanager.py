@@ -482,11 +482,19 @@ class DataFrame(wx.Panel):
 	# - dbPath: destination database path for image files
 	def _importCoreImages(self, importPath, dbPath):
 		imgFiles = [os.path.join(importPath, f) for f in os.listdir(importPath) if f.endswith('.jpg')]
-		print("Copying {} image files into {}".format(len(imgFiles), dbPath))
+		dbFiles = [f for f in os.listdir(dbPath) if f.endswith('.jpg')]
+		# print("Copying {} image files into {}".format(len(imgFiles), dbPath))
 		pd = wx.ProgressDialog("Image Import", "", len(imgFiles), self, wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
 		for count, f in enumerate(imgFiles):
-			shutil.copy(f, os.path.join(dbPath, os.path.basename(f)))
 			pd.Update(count+1, "Importing {}".format(os.path.basename(f)))
+			fname = os.path.basename(f)
+			if fname in dbFiles: # file already exists in dest, only copy if its timestamp is more recent
+				dstModifiedTime = os.path.getmtime(os.path.join(dbPath, fname))
+				srcModifiedTime = os.path.getmtime(f)
+				# print("found matching filename {}: dst time = {}, src time = {}".format(fname, dstModifiedTime, srcModifiedTime))
+				if dstModifiedTime >= srcModifiedTime:
+					continue
+			shutil.copy(f, os.path.join(dbPath, fname))
 
 		self._updateImageNodes(importPath, dbPath)
 		
