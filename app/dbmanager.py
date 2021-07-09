@@ -478,6 +478,8 @@ class DataFrame(wx.Panel):
 				os.mkdir(dbImgPath)
 			self._importCoreImages(imgPath, dbImgPath)
 
+	# - importPath: path from which to copy image files
+	# - dbPath: destination database path for image files
 	def _importCoreImages(self, importPath, dbPath):
 		imgFiles = [os.path.join(importPath, f) for f in os.listdir(importPath) if f.endswith('.jpg')]
 		print("Copying {} image files into {}".format(len(imgFiles), dbPath))
@@ -485,9 +487,12 @@ class DataFrame(wx.Panel):
 		for count, f in enumerate(imgFiles):
 			shutil.copy(f, os.path.join(dbPath, os.path.basename(f)))
 			pd.Update(count+1, "Importing {}".format(os.path.basename(f)))
+
+		self._updateImageNodes(importPath, dbPath)
 		
-		# use image names to determine how many images there are for each hole, and
-		# update dbmanager line items accordingly
+	# Update image item nodes for selected site in self.tree
+	def _updateImageNodes(self, importPath, dbPath):
+		# count images per hole
 		holeCounts = {}
 		for f in [os.path.join(dbPath, f) for f in os.listdir(dbPath) if f.endswith('.jpg')]:
 			hole = getHoleName(os.path.basename(f))
@@ -501,10 +506,12 @@ class DataFrame(wx.Panel):
 		siteNode = self.GetSelectedSite()
 		if not siteNode.IsOk():
 			print("_importCoreImages(): Bad site node, bailing.")
+			return
 		imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
 		if not imgNodeFound:
 			assert False, "No Images node, that's bad."
-		for holeName, count in holeCounts.items():
+		self._updateImageImportPaths(imgNode, importPath)
+		for holeName, count in holeCounts.items(): # create/update db tree items
 			imgItem = None
 			for imgChild in self.GetChildren(imgNode):
 				if self.tree.GetItemText(imgChild) == holeName:
@@ -515,24 +522,38 @@ class DataFrame(wx.Panel):
 			self.tree.SetItemText(imgItem, "{} images".format(count), 1)
 			self.tree.SetItemText(imgItem, self.GetTimestamp(), 6)
 			self.tree.SetItemText(imgItem, self.parent.user, 7)
-			self.tree.SetItemText(imgItem, importPath, 9)
 			self.tree.SetItemText(imgItem, dbPath, 10)
 
 		self.tree.SortChildren(imgNode)
 		self.OnUPDATE_DB_FILE(siteName, self.tree.GetItemParent(imgNode))
+	
+	# return list of image import paths parsed from Images node
+	def _getImageImportPaths(self, imgNode):
+		pathsStr = self.tree.GetItemText(imgNode, 9)
+		return pathsStr.split(',') if len(pathsStr) > 0 else []
+
+	# if not present, add newPath to import paths in Image node
+	def _updateImageImportPaths(self, imgNode, newPath):
+		if newPath not in self._getImageImportPaths(imgNode):
+			print("New import path {}, adding".format(newPath))
+			paths = self._getImageImportPaths(imgNode) + [newPath]
+			self.tree.SetItemText(imgNode, ','.join(paths), 9)
+		else:
+			print("Import path {} is already known".format(newPath))
 
 	# Update imported images with contents of original image import dir(s)
 	def UpdateCoreImages(self):
 		siteNode = self.GetSelectedSite()
 		if not siteNode.IsOk():
 			print("UpdateCoreImages(): Bad site node, bailing.")
-		importPaths = []
+			return
 		imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
-		if imgNodeFound:
-			importPaths = [self.tree.GetItemText(i,9) for i in self.GetChildren(imgNode)]
+		if not imgNodeFound:
+			print("UpdateCoreImages(): No image node, bailing.")
+			return
 		dbImgPath = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images')
-		for ip in importPaths:
-			self._importCoreImages(ip, dbImgPath)
+		for path in self._getImageImportPaths(imgNode):
+			self._importCoreImages(path, dbImgPath)
 
 	def ExportSplicedImage(self):
 		print("ExportSplicedImage(): IMPLEMENT ME")
@@ -2899,17 +2920,20 @@ class DataFrame(wx.Panel):
 				ssLine = '\nsecsumm: {}: {}: {}: {}: {}: {}\n'.format(ssName, ssTime, ssUser, ssFilename, ssSourcePath, ssDbPath)
 				fileOut.write(ssLine)
 
+	def WriteImageImportPaths(self, imgRoot, fileOut):
+		imgImportPaths = self._getImageImportPaths(imgRoot)
+		s = "\ncoreimagepaths: {}".format(','.join(imgImportPaths))
+		fileOut.write(s)
+
 	def WriteCoreImageLines(self, imgRoot, fileOut):
 		for imgItem in self.GetChildren(imgRoot):
 			imgHole = self.tree.GetItemText(imgItem)
 			imgCount = self.tree.GetItemText(imgItem, 1)
 			imgTime = self.tree.GetItemText(imgItem, 6)
 			imgUser = self.tree.GetItemText(imgItem, 7)
-			imgSourcePath = self.tree.GetItemText(imgItem, 9)
 			imgDbPath = self.tree.GetItemText(imgItem, 10)
 			if imgHole != "":
-				imgLine = '\ncoreimage: {}: {}: {}: {}: {}: {}\n'.format(imgHole, imgCount, imgTime, imgUser, imgSourcePath, imgDbPath)
-				print("Writing line {}".format(imgLine))
+				imgLine = '\ncoreimage: {}: {}: {}: {}: {}\n'.format(imgHole, imgCount, imgTime, imgUser, imgDbPath)
 				fileOut.write(imgLine)
 
 	# Rewrite site's datalist.db file based on self.tree contents.
@@ -3022,6 +3046,7 @@ class DataFrame(wx.Panel):
 			elif type == "Section Summaries":
 				self.WriteSectionSummaryLine(selectItem, fout)
 			elif type == IMG_NODE:
+				self.WriteImageImportPaths(selectItem, fout)
 				self.WriteCoreImageLines(selectItem, fout)
 			else:  # data type node
 				totalcount = self.tree.GetChildrenCount(selectItem, False)
@@ -3156,6 +3181,7 @@ class DataFrame(wx.Panel):
 				elif type == "Section Summaries":
 					self.WriteSectionSummaryLine(selectItem, fout)
 				elif type == IMG_NODE:
+					self.WriteImageImportPaths(selectItem, fout)
 					self.WriteCoreImageLines(selectItem, fout)
 				else:
 					totalcount = self.tree.GetChildrenCount(selectItem, False)
@@ -5228,8 +5254,11 @@ class DataFrame(wx.Panel):
 									self.tree.SetItemText(imgItem, token[2].strip(), 1) # count
 									self.tree.SetItemText(imgItem, token[3].strip(), 6) # timestamp
 									self.tree.SetItemText(imgItem, token[4].strip(), 7) # user
-									self.tree.SetItemText(imgItem, token[5].strip(), 9) # source path
-									self.tree.SetItemText(imgItem, token[6].strip(), 10) # DB path
+									self.tree.SetItemText(imgItem, token[5].strip(), 10) # DB path
+						elif token[0] == "coreimagepaths":
+							# set import paths in site's Image node
+							if imgRoot is not None:
+								self.tree.SetItemText(imgRoot, token[1].strip(), 9)
 
 				
 				sub_f.close()
