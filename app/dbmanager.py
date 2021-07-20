@@ -2951,7 +2951,7 @@ class DataFrame(wx.Panel):
 				fileOut.write(ssLine)
 
 	def WriteImageImportPaths(self, siteName, fileOut):
-		if len(self.imageImportPaths[siteName]) > 0:
+		if siteName in self.imageImportPaths and len(self.imageImportPaths[siteName]) > 0:
 			s = "\ncoreimagepaths: {}\n".format(','.join(self.imageImportPaths[siteName]))
 			fileOut.write(s)
 
