@@ -6431,6 +6431,7 @@ class DataFrame(wx.Panel):
 		siteNode = None
 		filesToUpdate = []
 		if self.IsSiteNode(selectItem):
+			self.UpdateCoreImages()
 			siteNode = selectItem
 			for dtNode in [node for node in self.GetChildren(selectItem) if self.tree.GetItemText(node, 0) not in STD_SITE_NODES]:
 				for fileNode in self.GetChildren(dtNode):
