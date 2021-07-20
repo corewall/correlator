@@ -60,6 +60,7 @@ class DataFrame(wx.Panel):
 		self.cullData = [] 
 		self.selectBackup = None # selected node at Load
 		self.loadedSiteNode = None # site node of selected node at Load
+		self.imageImportPaths = {} # key: site name string; value: list of import paths for that site
 
 		 # has enabled state of hole data or affine/splice tables changed since last Load?
 		self.needsReload = False
@@ -509,8 +510,8 @@ class DataFrame(wx.Panel):
 				if dstModifiedTime >= srcModifiedTime:
 					continue
 			shutil.copy(f, os.path.join(dbPath, fname))
-		self._updateImageNodes(dbPath)
 		self._updateImageImportPaths(importPath)
+		self._updateImageNodes(dbPath)
 		
 	# Update image item nodes for selected site in self.tree
 	def _updateImageNodes(self, dbPath):
@@ -549,47 +550,33 @@ class DataFrame(wx.Panel):
 		self.tree.SortChildren(imgNode)
 		self.OnUPDATE_DB_FILE(siteName, self.tree.GetItemParent(imgNode))
 	
-	# return list of image import paths parsed from Images node
-	def _getImageImportPaths(self, imgNode):
-		pathsStr = self.tree.GetItemText(imgNode, 9)
-		return pathsStr.split(',') if len(pathsStr) > 0 else []
-
-	# if not present, add newPath to import paths in Image node
+	# if not present, add newPath to self.imageImportPaths for selected site
 	def _updateImageImportPaths(self, newPath):
-		siteNode = self.GetSelectedSite()
-		imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
-		if newPath not in self._getImageImportPaths(imgNode):
+		siteName = self.GetSelectedSiteName()
+		if newPath not in self.imageImportPaths[siteName]:
 			print("New import path {}, adding".format(newPath))
-			paths = self._getImageImportPaths(imgNode) + [newPath]
-			self.tree.SetItemText(imgNode, ','.join(paths), 9)
+			self.imageImportPaths[siteName].append(newPath)
 		else:
 			print("Import path {} is already known".format(newPath))
 
 	# Update imported images with contents of original image import dir(s)
 	def UpdateCoreImages(self):
-		siteNode = self.GetSelectedSite()
-		if not siteNode.IsOk():
-			print("UpdateCoreImages(): Bad site node, bailing.")
-			return
-		imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
-		if not imgNodeFound:
-			print("UpdateCoreImages(): No image node, bailing.")
-			return
-		dbImgPath = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images')
-		for path in self._getImageImportPaths(imgNode):
+		siteName = self.GetSelectedSiteName()
+		dbImgPath = os.path.join(self.parent.DBPath, 'db', siteName, 'core_images')
+		for path in self.imageImportPaths[siteName]:
+			print("Updating images from path {}".format(path))
 			self._importCoreImages(path, dbImgPath)
 		self._updateImageNodes(dbImgPath)
 
 	# - hole: optional; string; specific hole name for which to delete image files
 	def DeleteCoreImages(self, hole=None):
-		siteNode = self.GetSelectedSite()
-		imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
-		dbImgPath = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images')
+		siteName = self.GetSelectedSiteName()
+		dbImgPath = os.path.join(self.parent.DBPath, 'db', siteName, 'core_images')
 		imgFiles = [os.path.join(dbImgPath, f) for f in os.listdir(dbImgPath) if f.endswith('.jpg')]
 		if hole is not None:
 			imgFiles = [f for f in imgFiles if getHoleName(os.path.basename(f)) == hole] # ???
 		else: # clear import paths
-			self.tree.SetItemText(imgNode, "", 9)
+			self.imageImportPaths[siteName] = []
 		for f in imgFiles:
 			os.remove(f)
 		self._updateImageNodes(dbImgPath)
@@ -2963,10 +2950,10 @@ class DataFrame(wx.Panel):
 				ssLine = '\nsecsumm: {}: {}: {}: {}: {}: {}\n'.format(ssName, ssTime, ssUser, ssFilename, ssSourcePath, ssDbPath)
 				fileOut.write(ssLine)
 
-	def WriteImageImportPaths(self, imgRoot, fileOut):
-		imgImportPaths = self._getImageImportPaths(imgRoot)
-		s = "\ncoreimagepaths: {}\n".format(','.join(imgImportPaths))
-		fileOut.write(s)
+	def WriteImageImportPaths(self, siteName, fileOut):
+		if len(self.imageImportPaths[siteName]) > 0:
+			s = "\ncoreimagepaths: {}\n".format(','.join(self.imageImportPaths[siteName]))
+			fileOut.write(s)
 
 	def WriteCoreImageLines(self, imgRoot, fileOut):
 		for imgItem in self.GetChildren(imgRoot):
@@ -3089,7 +3076,7 @@ class DataFrame(wx.Panel):
 			elif type == "Section Summaries":
 				self.WriteSectionSummaryLine(selectItem, fout)
 			elif type == IMG_NODE:
-				self.WriteImageImportPaths(selectItem, fout)
+				self.WriteImageImportPaths(title, fout)
 				self.WriteCoreImageLines(selectItem, fout)
 			else:  # data type node
 				totalcount = self.tree.GetChildrenCount(selectItem, False)
@@ -3224,7 +3211,7 @@ class DataFrame(wx.Panel):
 				elif type == "Section Summaries":
 					self.WriteSectionSummaryLine(selectItem, fout)
 				elif type == IMG_NODE:
-					self.WriteImageImportPaths(selectItem, fout)
+					self.WriteImageImportPaths(title, fout)
 					self.WriteCoreImageLines(selectItem, fout)
 				else:
 					totalcount = self.tree.GetChildrenCount(selectItem, False)
@@ -5045,6 +5032,7 @@ class DataFrame(wx.Panel):
 				secSummRoot = self.tree.AppendItem(siteNode, 'Section Summaries')
 				imgRoot = self.tree.AppendItem(siteNode, IMG_NODE)
 				self.tree.SortChildren(siteNode)
+				self.imageImportPaths[data_item] = [] # init import paths
 				typeNode = None
 				hole_child = None
 				token_nums = 0
@@ -5299,10 +5287,10 @@ class DataFrame(wx.Panel):
 									self.tree.SetItemText(imgItem, token[4].strip(), 7) # user
 									self.tree.SetItemText(imgItem, token[5].strip(), 10) # DB path
 						elif token[0] == "coreimagepaths":
-							# set import paths in site's Image node
-							if imgRoot is not None:
-								self.tree.SetItemText(imgRoot, token[1].strip(), 9)
-
+							cip_token = token[1].strip()
+							if len(cip_token) > 0:
+								paths = token[1].strip().split(',')
+								self.imageImportPaths[data_item] = paths
 				
 				sub_f.close()
 				self.tree.SortChildren(secSummRoot)
