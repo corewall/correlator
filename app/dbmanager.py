@@ -189,9 +189,23 @@ class DataFrame(wx.Panel):
 		elif opId == 2: # update
 			self.UpdateCoreImages()
 		elif opId == 3: # delete(?)
-			pass
+			str = "Are you sure you want to delete all images for site {}?".format(self.GetSelectedSiteName())
+			ret = self.parent.OnShowMessage("Confirm Delete", str, 2)
+			if ret == wx.ID_OK:
+				self.DeleteCoreImages()
 		elif opId == 4: # export splice image
 			self.ExportSplicedImage()
+
+	def OnImageItemMenu(self, event):
+		opId = event.GetId()
+		if opId == 1: # delete
+			hole = self.tree.GetItemText(self.selectedIdx)
+			str = "Are you sure you want to delete images for hole {}?".format(hole)
+			ret = self.parent.OnShowMessage("Confirm Delete", str, 2)
+			if ret == wx.ID_OK:
+				self.DeleteCoreImages(hole)
+		else:
+			assert False, "Unexpected menu ID {} in image item menu".format(opId)
 	
 	# Enable specified item in Data Manager. Enforces single Enabled table per type (affine, splice).
 	# item - self.tree node of item to enable/disable
@@ -495,11 +509,11 @@ class DataFrame(wx.Panel):
 				if dstModifiedTime >= srcModifiedTime:
 					continue
 			shutil.copy(f, os.path.join(dbPath, fname))
-
-		self._updateImageNodes(importPath, dbPath)
+		self._updateImageNodes(dbPath)
+		self._updateImageImportPaths(importPath)
 		
 	# Update image item nodes for selected site in self.tree
-	def _updateImageNodes(self, importPath, dbPath):
+	def _updateImageNodes(self, dbPath):
 		# count images per hole
 		holeCounts = {}
 		for f in [os.path.join(dbPath, f) for f in os.listdir(dbPath) if f.endswith('.jpg')]:
@@ -513,12 +527,12 @@ class DataFrame(wx.Panel):
 		siteName = self.GetSelectedSiteName()
 		siteNode = self.GetSelectedSite()
 		if not siteNode.IsOk():
-			print("_importCoreImages(): Bad site node, bailing.")
+			print("updateImageNodes(): Bad site node, bailing.")
 			return
 		imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
 		if not imgNodeFound:
 			assert False, "No Images node, that's bad."
-		self._updateImageImportPaths(imgNode, importPath)
+		self.tree.DeleteChildren(imgNode)
 		for holeName, count in holeCounts.items(): # create/update db tree items
 			imgItem = None
 			for imgChild in self.GetChildren(imgNode):
@@ -541,7 +555,9 @@ class DataFrame(wx.Panel):
 		return pathsStr.split(',') if len(pathsStr) > 0 else []
 
 	# if not present, add newPath to import paths in Image node
-	def _updateImageImportPaths(self, imgNode, newPath):
+	def _updateImageImportPaths(self, newPath):
+		siteNode = self.GetSelectedSite()
+		imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
 		if newPath not in self._getImageImportPaths(imgNode):
 			print("New import path {}, adding".format(newPath))
 			paths = self._getImageImportPaths(imgNode) + [newPath]
@@ -562,6 +578,21 @@ class DataFrame(wx.Panel):
 		dbImgPath = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images')
 		for path in self._getImageImportPaths(imgNode):
 			self._importCoreImages(path, dbImgPath)
+		self._updateImageNodes(dbImgPath)
+
+	# - hole: optional; string; specific hole name for which to delete image files
+	def DeleteCoreImages(self, hole=None):
+		siteNode = self.GetSelectedSite()
+		imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE)
+		dbImgPath = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images')
+		imgFiles = [os.path.join(dbImgPath, f) for f in os.listdir(dbImgPath) if f.endswith('.jpg')]
+		if hole is not None:
+			imgFiles = [f for f in imgFiles if getHoleName(os.path.basename(f)) == hole] # ???
+		else: # clear import paths
+			self.tree.SetItemText(imgNode, "", 9)
+		for f in imgFiles:
+			os.remove(f)
+		self._updateImageNodes(dbImgPath)
 
 	def ExportSplicedImage(self):
 		print("ExportSplicedImage(): IMPLEMENT ME")
@@ -697,10 +728,14 @@ class DataFrame(wx.Panel):
 	def MakeImagesPopup(self, popupMenu):
 		popupMenu.Append(1, "Add new &images")
 		popupMenu.Append(2, "&Update")
-		popupMenu.Append(3, "&Delete") # needed?
+		popupMenu.Append(3, "&Delete")
 		popupMenu.Append(4, "&Export spliced image")
 		for opid in [1,2,3,4]:
 			wx.EVT_MENU(popupMenu, opid, self.OnImagesMenu)
+
+	def MakeImageItemPopup(self, popupMenu):
+		popupMenu.Append(1, "&Delete")
+		wx.EVT_MENU(popupMenu, 1, self.OnImageItemMenu)
 
 	def ConfirmClearDisplayData(self):
 		msg = "This operation will clear all data in the Display, including "
@@ -890,7 +925,7 @@ class DataFrame(wx.Panel):
 				elif self.tree.GetItemText(self.selectedIdx, 0) == IMG_NODE:
 					self.MakeImagesPopup(popupMenu)
 				elif self.tree.GetItemText(self.tree.GetItemParent(self.selectedIdx), 0) == IMG_NODE:
-					pass
+					self.MakeImageItemPopup(popupMenu)
 				else:
 					popupMenu.Append(5, "&Add new data")
 					wx.EVT_MENU(popupMenu, 5, self.OnPOPMENU)
@@ -2930,7 +2965,7 @@ class DataFrame(wx.Panel):
 
 	def WriteImageImportPaths(self, imgRoot, fileOut):
 		imgImportPaths = self._getImageImportPaths(imgRoot)
-		s = "\ncoreimagepaths: {}".format(','.join(imgImportPaths))
+		s = "\ncoreimagepaths: {}\n".format(','.join(imgImportPaths))
 		fileOut.write(s)
 
 	def WriteCoreImageLines(self, imgRoot, fileOut):
@@ -6216,6 +6251,9 @@ class DataFrame(wx.Panel):
 					if prevMax == -1:
 						prevMax = max
 					elif prevMax != max:
+						# TODO: This message can be misleading. Error also occurs if rows aren't of consistent
+						# length, most commonly when a row has a blank value at the end, causing the cell count
+						# to be one less than expected.
 						self.parent.OnShowMessage("Error", "Column names must match exactly to import multiple files", 1)
 						self.importbtn.Enable(False)
 						self.OnINITGENERICSHEET()
