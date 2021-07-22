@@ -831,14 +831,8 @@ class DataFrame(wx.Panel):
 					popupMenu.Append(6, "&Delete")
 					wx.EVT_MENU(popupMenu, 6, self.DeleteSecSummFile)
 				else:
-					popupMenu.Append(1, "&Load")
-					wx.EVT_MENU(popupMenu, 1, self.OnPOPMENU)
-
 					popupMenu.Append(2, "&View")
 					wx.EVT_MENU(popupMenu, 2, self.OnPOPMENU)
-
-					# popupMenu.Append(3, "&Edit")
-					# wx.EVT_MENU(popupMenu, 3, self.OnPOPMENU)
 
 					if self.tree.GetItemText(self.selectedIdx, 2) == "Disable":
 						popupMenu.Append(19, "&Enable")
@@ -914,51 +908,30 @@ class DataFrame(wx.Panel):
 				elif self.tree.GetItemText(self.tree.GetItemParent(self.selectedIdx), 0) == IMG_NODE:
 					self.MakeImageItemPopup(popupMenu)
 				else:
-					popupMenu.Append(5, "&Add new data")
-					wx.EVT_MENU(popupMenu, 5, self.OnPOPMENU)
-
-					popupMenu.Append(34, "Add new &images")
-					wx.EVT_MENU(popupMenu, 34, self.OnPOPMENU)
-
-					popupMenu.Append(1, "&Load")
-					wx.EVT_MENU(popupMenu, 1, self.OnPOPMENU)
-
 					parentItem = self.tree.GetItemParent(self.selectedIdx)
+					if self.IsRootNode(parentItem): # site-level node
+						popupMenu.Append(1, "&Load")
+						wx.EVT_MENU(popupMenu, 1, self.OnPOPMENU)
+						popupMenu.Append(5, "&Add new data")
+						wx.EVT_MENU(popupMenu, 5, self.OnPOPMENU)
+						popupMenu.Append(34, "Add new &images")
+						wx.EVT_MENU(popupMenu, 34, self.OnPOPMENU)
+
 					if not self.IsRootNode(parentItem):
-						# popupMenu.Append(3, "&Edit")
-						# wx.EVT_MENU(popupMenu, 3, self.OnPOPMENU)
-
-						# if self.tree.GetItemText(self.selectedIdx, 1) == "Continuous":
-						# 	popupMenu.Append(26, "&Discrete")
-						# 	wx.EVT_MENU(popupMenu, 26, self.OnPOPMENU)
-						# else:
-						# 	popupMenu.Append(27, "&Continuous")
-						# 	wx.EVT_MENU(popupMenu, 27, self.OnPOPMENU)
-
 						popupMenu.Append(19, "&Enable")
 						wx.EVT_MENU(popupMenu, 19, self.OnPOPMENU)
 						popupMenu.Append(20, "&Disable")
 						wx.EVT_MENU(popupMenu, 20, self.OnPOPMENU)
-
-						# popupMenu.Append(9, "&Import cull table")
-						# wx.EVT_MENU(popupMenu, 9, self.OnPOPMENU)
-
-						popupMenu.Append(7, "&Update")
-						wx.EVT_MENU(popupMenu, 7, self.OnPOPMENU)
-
 						popupMenu.Append(25, "&Export")
 						wx.EVT_MENU(popupMenu, 25, self.OnPOPMENU)
 
-						popupMenu.Append(6, "&Delete")
-						wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
-					else:
-						popupMenu.Append(7, "&Update")
-						wx.EVT_MENU(popupMenu, 7, self.OnPOPMENU)
+					popupMenu.Append(7, "&Update")
+					wx.EVT_MENU(popupMenu, 7, self.OnPOPMENU)
 
-						popupMenu.Append(6, "&Delete")
-						wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
+					popupMenu.Append(6, "&Delete")
+					wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
 
-			self.tree.PopupMenu(popupMenu, pos)
+			self.tree.PopupMenu(popupMenu)
 		return
 
 	# prepare parameters for ExportCoreData()
@@ -4046,6 +4019,8 @@ class DataFrame(wx.Panel):
 
 		self.parent.INIT_CHANGES()
 
+		# brg 7/21/2021: There can be only one selection, but some logic depends
+		# on self.selectBackup being a list...leaving for now.
 		items = self.tree.GetSelections()
 		self.selectBackup = self.tree.GetSelections()
 		self.loadedSiteNode = self.GetSiteForNode(self.selectBackup[0])
@@ -4053,8 +4028,10 @@ class DataFrame(wx.Panel):
 		if len(items) > 0:
 			self.parent.OnNewData(None)
 		else:
-			self.parent.OnShowMessage("Error", "A site item or subitem must be selected to load data", 1)
+			self.parent.OnShowMessage("Error", "A site item must be selected to load data", 1)
 			return False
+
+		selectItem = items[0]
 
 		if self.parent.Window.HoleData != []:
 			self.logFileptr.write("Closed All Files Loaded. \n\n")
@@ -4073,204 +4050,103 @@ class DataFrame(wx.Panel):
 		previousType = "" 
 		previousItem = None 
 		count_load = 0
-		for selectItem in items:
-			if self.IsRootNode(selectItem):
-				self.parent.OnShowMessage("Error", "Cannot load Root item: select a site item or subitem.", 1)
-				return False
-			elif self.tree.GetItemText(selectItem, 0) == "Saved Tables":
-				self.parent.OnShowMessage("Error", "Table is not allowed to select", 1)
-				return False
-			else:
-				# if there is no subItem, then this function returns "" back
-				#self.parent.CurrentDataNo = selectrows[0]
+		if self.IsRootNode(selectItem):
+			self.parent.OnShowMessage("Error", "Cannot load Root item: select a site item or subitem.", 1)
+			return False
+		elif self.tree.GetItemText(selectItem, 0) == "Saved Tables":
+			self.parent.OnShowMessage("Error", "Table is not allowed to select", 1)
+			return False
 
-				self.parent.logFileptr.write("Load Files: \n")
+		self.parent.logFileptr.write("Load Files: \n")
 
-				if len(self.tree.GetItemText(selectItem, 8)) > 0: # Load a single data file
-					parentItem = self.tree.GetItemParent(selectItem)
-					type = self.tree.GetItemText(parentItem, 0)
-					if universal_cull_item == None:
-						cull_parentItem = self.tree.GetItemParent(parentItem)
-						universal_cull_item = self.Find_UCULL(cull_parentItem) 
+		parentItem = selectItem
+		if universal_cull_item == None:
+			universal_cull_item = self.Find_UCULL(parentItem) 
 
-					# it appears that a cull table will never be loaded for a single hole
-					# since multiple selection is impossible thus previousType will == "" when
-					# we reach this point. Strangely, that's for the best since loading a cull
-					# table before loading data results in a C++ side crash (because dataptr is NULL).
-					if previousType != "" and previousType != type and count_load > 0:
-						assert False # should never reach this line due to above
-# 						ret = self.OnLOAD_CULLTABLE(parentItem, type)
-# 						if ret == "":
-# 							self.OnLOAD_UCULLTABLE(universal_cull_item, type)
-# 
-# 						smooth = -1
-# 						smooth_data = self.tree.GetItemText(previousItem, 12)
-# 						if smooth_data != "":
-# 							smooth_array = smooth_data.split()
-# 							if "UnsmoothedOnly" == smooth_array[2]:
-# 								smooth = 0 
-# 							elif "SmoothedOnly" == smooth_array[2]:
-# 								smooth = 1 
-# 							elif "Smoothed&Unsmoothed" == smooth_array[2]:
-# 								smooth = 2 
-# 							if smooth_array[1] == "Depth(cm)":
-# 								py_correlator.smooth(type, int(smooth_array[0]), 2)
-# 							else:
-# 								py_correlator.smooth(type, int(smooth_array[0]), 1)
-# 
-# 						continue_flag = True 
-# 						if self.tree.GetItemText(previousItem, 1) == "Discrete":
-# 							continue_flag = False 
-# 
-# 						min = float(self.tree.GetItemText(previousItem, 4))
-# 						max = float(self.tree.GetItemText(previousItem, 5))
-# 						coef = max - min
-# 						newrange = previousType, min, max, coef, smooth, continue_flag
-# 						self.parent.Window.range.append(newrange)
+		total = self.tree.GetChildrenCount(parentItem, False)
+		if total > 0:
+			child = self.tree.GetFirstChild(parentItem)
+			selectItem = child[0]
+			str_txt = self.tree.GetItemText(selectItem, 0)
 
-					# load data for a single hole+datatype pair 
-					if self.tree.GetItemText(selectItem, 2) == "Enable" and self.tree.GetItemText(selectItem, 0) != "-Cull Table":
-						if self.OnLOAD_ITEM(selectItem) == 0:
+			if str_txt not in STD_SITE_NODES:
+				totalcount = self.tree.GetChildrenCount(selectItem, False)
+				if totalcount > 0:
+					child = self.tree.GetFirstChild(selectItem)
+					child_item = child[0]
+					if self.tree.GetItemText(child_item, 2) == "Enable" and self.tree.GetItemText(child_item, 0) != "-Cull Table":
+						if self.OnLOAD_ITEM(child_item) == 0:
 							self.parent.OnNewData(None)
-							filename = self.tree.GetItemText(selectItem, 8)
+							filename = self.tree.GetItemText(child_item, 8)
 							self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
 							return
 						else:
-							count_load += 1 
-							previousType = type 
-							previousItem = selectItem
+							count_load += 1
+					for k in range(1, totalcount):
+						child_item = self.tree.GetNextSibling(child_item)
+						if self.tree.GetItemText(child_item, 2) == "Enable"  and self.tree.GetItemText(child_item, 0) != "-Cull Table":
+							if self.OnLOAD_ITEM(child_item) == 0 :
+								self.parent.OnNewData(None)
+								filename = self.tree.GetItemText(child_item, 8)
+								self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
+								return
+							else:
+								count_load += 1
 
-				else: # selection is not a hole node, handle data type and site nodes
-					type = self.tree.GetItemText(selectItem, 0)
-					if self.IsDatatypeNode(selectItem):
-						parentItem = self.tree.GetItemParent(selectItem)
-						# if universal_cull_item == None:
-						# 	universal_cull_item = self.Find_UCULL(parentItem) 
+				if count_load > 0:
+					ret = self.OnLOAD_CULLTABLE(selectItem, str_txt)
 
-						totalcount = self.tree.GetChildrenCount(selectItem, False)
-						if totalcount > 0:
-							child = self.tree.GetFirstChild(selectItem)
-							child_item = child[0]
-							if self.tree.GetItemText(child_item, 2) == "Enable" and self.tree.GetItemText(child_item, 0) != "-Cull Table":
+					smooth = self.ApplySmooth(str_txt, selectItem)
+
+					continue_flag = True 
+					if self.tree.GetItemText(selectItem, 1) == "Discrete":
+						continue_flag = False 
+
+					min = float(self.tree.GetItemText(selectItem, 4))
+					max = float(self.tree.GetItemText(selectItem, 5))
+					coef = max - min
+					newrange = str_txt, min, max, coef, smooth, continue_flag
+					self.parent.Window.range.append(newrange)
+
+			for k in range(1, total):
+				selectItem = self.tree.GetNextSibling(selectItem)
+				str_txt = self.tree.GetItemText(selectItem, 0)
+				if str_txt not in STD_SITE_NODES: 
+					totalcount = self.tree.GetChildrenCount(selectItem, False)
+					if totalcount > 0:
+						child = self.tree.GetFirstChild(selectItem)
+						child_item = child[0]
+						if self.tree.GetItemText(child_item, 2) == "Enable"  and self.tree.GetItemText(child_item, 0) != "-Cull Table":
+							if self.OnLOAD_ITEM(child_item) == 0:
+								self.parent.OnNewData(None)
+								filename = self.tree.GetItemText(child_item, 8)
+								self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
+								return
+							else:
+								count_load += 1
+						for l in range(1, totalcount):
+							child_item = self.tree.GetNextSibling(child_item)
+							if self.tree.GetItemText(child_item, 2) == "Enable"  and self.tree.GetItemText(child_item, 0) != "-Cull Table":
 								if self.OnLOAD_ITEM(child_item) == 0:
 									self.parent.OnNewData(None)
 									filename = self.tree.GetItemText(child_item, 8)
 									self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
 									return
 								else:
-									count_load += 1 
-							for k in range(1, totalcount):
-								child_item = self.tree.GetNextSibling(child_item)
-								if self.tree.GetItemText(child_item, 2) == "Enable" and self.tree.GetItemText(child_item, 0) != "-Cull Table":
-									if self.OnLOAD_ITEM(child_item) == 0:
-										self.parent.OnNewData(None)
-										filename = self.tree.GetItemText(child_item, 8)
-										self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
-										return
-									else:
-										count_load += 1 
-										
-							if count_load > 0:
-								ret = self.OnLOAD_CULLTABLE(selectItem, type)
-								smooth = self.ApplySmooth(type, selectItem)
-								continue_flag = True 
-								if self.tree.GetItemText(selectItem, 1) == "Discrete":
-									continue_flag = False 
+									count_load += 1
 
-								min = float(self.tree.GetItemText(selectItem, 4))
-								max = float(self.tree.GetItemText(selectItem, 5))
-								coef = max - min
-								newrange = type, min, max, coef, smooth, continue_flag
-								self.parent.Window.range.append(newrange) 
-					else: # selectItem is a site node
-						parentItem = selectItem
-						if universal_cull_item == None:
-							universal_cull_item = self.Find_UCULL(parentItem) 
+					if count_load > 0:
+						ret = self.OnLOAD_CULLTABLE(selectItem, str_txt)
 
-						total = self.tree.GetChildrenCount(parentItem, False)
-						if total > 0:
-							child = self.tree.GetFirstChild(parentItem)
-							selectItem = child[0]
-							str_txt = self.tree.GetItemText(selectItem, 0)
-
-							if str_txt not in STD_SITE_NODES:
-								totalcount = self.tree.GetChildrenCount(selectItem, False)
-								if totalcount > 0:
-									child = self.tree.GetFirstChild(selectItem)
-									child_item = child[0]
-									if self.tree.GetItemText(child_item, 2) == "Enable" and self.tree.GetItemText(child_item, 0) != "-Cull Table":
-										if self.OnLOAD_ITEM(child_item) == 0:
-											self.parent.OnNewData(None)
-											filename = self.tree.GetItemText(child_item, 8)
-											self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
-											return
-										else:
-											count_load += 1
-									for k in range(1, totalcount):
-										child_item = self.tree.GetNextSibling(child_item)
-										if self.tree.GetItemText(child_item, 2) == "Enable"  and self.tree.GetItemText(child_item, 0) != "-Cull Table":
-											if self.OnLOAD_ITEM(child_item) == 0 :
-												self.parent.OnNewData(None)
-												filename = self.tree.GetItemText(child_item, 8)
-												self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
-												return
-											else:
-												count_load += 1
-
-								if count_load > 0:
-									ret = self.OnLOAD_CULLTABLE(selectItem, str_txt)
-
-									smooth = self.ApplySmooth(str_txt, selectItem)
-
-									continue_flag = True 
-									if self.tree.GetItemText(selectItem, 1) == "Discrete":
-										continue_flag = False 
-
-									min = float(self.tree.GetItemText(selectItem, 4))
-									max = float(self.tree.GetItemText(selectItem, 5))
-									coef = max - min
-									newrange = str_txt, min, max, coef, smooth, continue_flag
-									self.parent.Window.range.append(newrange)
-
-							for k in range(1, total):
-								selectItem = self.tree.GetNextSibling(selectItem)
-								str_txt = self.tree.GetItemText(selectItem, 0)
-								if str_txt not in STD_SITE_NODES: 
-									totalcount = self.tree.GetChildrenCount(selectItem, False)
-									if totalcount > 0:
-										child = self.tree.GetFirstChild(selectItem)
-										child_item = child[0]
-										if self.tree.GetItemText(child_item, 2) == "Enable"  and self.tree.GetItemText(child_item, 0) != "-Cull Table":
-											if self.OnLOAD_ITEM(child_item) == 0:
-												self.parent.OnNewData(None)
-												filename = self.tree.GetItemText(child_item, 8)
-												self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
-												return
-											else:
-												count_load += 1
-										for l in range(1, totalcount):
-											child_item = self.tree.GetNextSibling(child_item)
-											if self.tree.GetItemText(child_item, 2) == "Enable"  and self.tree.GetItemText(child_item, 0) != "-Cull Table":
-												if self.OnLOAD_ITEM(child_item) == 0:
-													self.parent.OnNewData(None)
-													filename = self.tree.GetItemText(child_item, 8)
-													self.parent.OnShowMessage("Error", "Could not load data file {}".format(filename), 1)
-													return
-												else:
-													count_load += 1
-
-									if count_load > 0:
-										ret = self.OnLOAD_CULLTABLE(selectItem, str_txt)
-
-										smooth = self.ApplySmooth(str_txt, selectItem)
-										continue_flag = True 
-										if self.tree.GetItemText(selectItem, 1) == "Discrete":
-											continue_flag = False 
-										min = float(self.tree.GetItemText(selectItem, 4))
-										max = float(self.tree.GetItemText(selectItem, 5))
-										coef = max - min
-										newrange = str_txt, min, max, coef, smooth, continue_flag
-										self.parent.Window.range.append(newrange)
+						smooth = self.ApplySmooth(str_txt, selectItem)
+						continue_flag = True 
+						if self.tree.GetItemText(selectItem, 1) == "Discrete":
+							continue_flag = False 
+						min = float(self.tree.GetItemText(selectItem, 4))
+						max = float(self.tree.GetItemText(selectItem, 5))
+						coef = max - min
+						newrange = str_txt, min, max, coef, smooth, continue_flag
+						self.parent.Window.range.append(newrange)
 
 
 		if count_load == 0:
