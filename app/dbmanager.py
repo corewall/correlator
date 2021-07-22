@@ -484,9 +484,10 @@ class DataFrame(wx.Panel):
 		self.selectedIdx = None
 
 	def AddCoreImages(self):
-		dlg = wx.DirDialog(self, "Select Image Folder", style=wx.OPEN | wx.MULTIPLE)
+		dlg = wx.DirDialog(self, "Select Image Folder", defaultPath=self.parent.Directory, style=wx.OPEN | wx.MULTIPLE)
 		if dlg.ShowModal() == wx.ID_OK:
 			imgPath = dlg.GetPath()
+			self.parent.Directory = imgPath
 			print("Selected image path: {}".format(imgPath))
 			dbImgPath = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), IMG_DB_DIR)
 			if not os.path.exists(dbImgPath):
