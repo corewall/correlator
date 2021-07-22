@@ -716,6 +716,7 @@ class DataFrame(wx.Panel):
 		popupMenu.Append(1, "Add new &images")
 		popupMenu.Append(2, "&Update")
 		popupMenu.Append(3, "&Delete")
+		# popupMenu.Append(4, "&Export spliced image")
 		for opid in [1,2,3]: # ,4]:
 			wx.EVT_MENU(popupMenu, opid, self.OnImagesMenu)
 
