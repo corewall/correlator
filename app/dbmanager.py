@@ -40,6 +40,7 @@ ST_NODE = "Saved Tables"
 SS_NODE = "Section Summaries"
 IMG_NODE = "Images"
 STD_SITE_NODES = [ST_NODE, SS_NODE, IMG_NODE]
+IMG_DB_DIR = "core_images"
 
 class DataFrame(wx.Panel):
 	def __init__(self, parent):
@@ -487,7 +488,7 @@ class DataFrame(wx.Panel):
 		if dlg.ShowModal() == wx.ID_OK:
 			imgPath = dlg.GetPath()
 			print("Selected image path: {}".format(imgPath))
-			dbImgPath = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images')
+			dbImgPath = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), IMG_DB_DIR)
 			if not os.path.exists(dbImgPath):
 				print("{} does not exist, creating".format(dbImgPath))
 				os.mkdir(dbImgPath)
@@ -562,7 +563,7 @@ class DataFrame(wx.Panel):
 	# Update imported images with contents of original image import dir(s)
 	def UpdateCoreImages(self):
 		siteName = self.GetSelectedSiteName()
-		dbImgPath = os.path.join(self.parent.DBPath, 'db', siteName, 'core_images')
+		dbImgPath = os.path.join(self.parent.DBPath, 'db', siteName, IMG_DB_DIR)
 		for path in self.imageImportPaths[siteName]:
 			print("Updating images from path {}".format(path))
 			self._importCoreImages(path, dbImgPath)
@@ -571,7 +572,7 @@ class DataFrame(wx.Panel):
 	# - hole: optional; string; specific hole name for which to delete image files
 	def DeleteCoreImages(self, hole=None):
 		siteName = self.GetSelectedSiteName()
-		dbImgPath = os.path.join(self.parent.DBPath, 'db', siteName, 'core_images')
+		dbImgPath = os.path.join(self.parent.DBPath, 'db', siteName, IMG_DB_DIR)
 		imgFiles = [os.path.join(dbImgPath, f) for f in os.listdir(dbImgPath) if f.endswith('.jpg')]
 		if hole is not None:
 			imgFiles = [f for f in imgFiles if getHoleName(os.path.basename(f)) == hole] # ???
@@ -4256,7 +4257,7 @@ class DataFrame(wx.Panel):
 				self.parent.UpdateELD(True)
 
 		# load imagery into canvas
-		core_image_path = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), 'core_images')
+		core_image_path = os.path.join(self.parent.DBPath, 'db', self.GetSelectedSiteName(), IMG_DB_DIR)
 		print("Loading imagery from {}".format(core_image_path))
 		if os.path.exists(core_image_path):
 			prog.Pulse("Loading images...")
