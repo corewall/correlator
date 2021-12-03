@@ -60,6 +60,9 @@ class SectionSummary:
     def containsSection(self, site, hole, core, section):
         sections = self._findSection(site, hole, core, section)
         return not sections.empty
+
+    def hasColumn(self, colname):
+        return colname in self.dataframe.columns
     
     # return depth of top of top section, bottom of bottom section
     def getCoreRange(self, site, hole, core):
@@ -174,7 +177,8 @@ class SectionSummary:
 # todo? SectionSummaryRow in which data is just a pandas series with methods to access
 # each item (e.g. site(), coreType())? Child of SectionSummaryRow "interface" class?
 class SectionSummaryRow:
-    def __init__(self, exp, site, hole, core, coreType, section, topDepth, bottomDepth):
+    def __init__(self, row, exp, site, hole, core, coreType, section, topDepth, bottomDepth):
+        self.row = row # raw Pandas series
         self.exp = exp
         self.site = site
         self.hole = hole
@@ -186,7 +190,7 @@ class SectionSummaryRow:
         
     @classmethod
     def createWithPandasSeries(cls, row):
-        return cls(row['Exp'], row['Site'], row['Hole'], row['Core'], row['CoreType'], row['Section'], row['TopDepth'], row['BottomDepth'])
+        return cls(row, row['Exp'], row['Site'], row['Hole'], row['Core'], row['CoreType'], row['Section'], row['TopDepth'], row['BottomDepth'])
         
     def asPandasSeries(self):
         return pandas.Series({'Exp':self.exp, 'Site':self.site, 'Hole':self.hole, 'Core':self.core, 'CoreType':self.coreType,

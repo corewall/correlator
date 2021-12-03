@@ -196,7 +196,7 @@ class DataFrame(wx.Panel):
 			if ret == wx.ID_OK:
 				self.DeleteCoreImages()
 		elif opId == 4: # export splice image
-			self.ExportSplicedImage()
+			self.OnExportSplicedImage(self.selectedIdx)
 
 	def OnImageItemMenu(self, event):
 		opId = event.GetId()
@@ -583,9 +583,6 @@ class DataFrame(wx.Panel):
 			os.remove(f)
 		self._updateImageNodes(dbImgPath)
 
-	def ExportSplicedImage(self):
-		print("ExportSplicedImage(): IMPLEMENT ME")
-
 	def AddSectionSummary(self, secsumm, originalPath):
 		siteNode = self.GetSelectedSite()
 		if siteNode.IsOk():
@@ -718,8 +715,8 @@ class DataFrame(wx.Panel):
 		popupMenu.Append(1, "Add new &images")
 		popupMenu.Append(2, "&Update")
 		popupMenu.Append(3, "&Delete")
-		# popupMenu.Append(4, "&Export spliced image")
-		for opid in [1,2,3]: # ,4]:
+		popupMenu.Append(4, "&Export spliced image")
+		for opid in [1,2,3,4]:
 			wx.EVT_MENU(popupMenu, opid, self.OnImagesMenu)
 
 	def MakeImageItemPopup(self, popupMenu):
@@ -936,6 +933,15 @@ class DataFrame(wx.Panel):
 			self.tree.PopupMenu(popupMenu)
 		return
 
+	def GetSiteSectionSummaries(self, selectedIndex):
+		siteNode = self.GetSiteForNode(selectedIndex)
+		secSummFiles = []
+		ssNodeFound, ssNode = self.FindItem(siteNode, SS_NODE)
+		if ssNodeFound:
+			for ssChild in self.GetChildren(ssNode):
+				secSummFiles.append(self.tree.GetItemText(ssChild, 8))
+		return secSummFiles
+
 	# prepare parameters for ExportCoreData()
 	# selectedIndex: selected node in self.tree
 	# isType: if True, selectedNode is a datatype node e.g. Susceptibility,
@@ -944,11 +950,7 @@ class DataFrame(wx.Panel):
 		siteNode = self.GetSiteForNode(selectedIndex)
 
 		# gather section summaries
-		secSummFiles = []
-		ssNodeFound, ssNode = self.FindItem(siteNode, SS_NODE)
-		if ssNodeFound:
-			for ssChild in self.GetChildren(ssNode):
-				secSummFiles.append(self.tree.GetItemText(ssChild, 8))
+		secSummFiles = self.GetSiteSectionSummaries(selectedIndex)
 
 		# gather enabled affine and splice tables if any
 		affineFile = spliceFile = None
@@ -1012,6 +1014,7 @@ class DataFrame(wx.Panel):
 		if result:
 			self.parent.OnShowMessage("Info", "Successfully exported.", 1)
 
+	# 7/25/2021 BRG TODO: Mimic for spliced image export
 	# sitePath: full path to directory containing files in dataFiles
 	# dataFiles: list of filenames in sitePath to be processed and exported
 	# datatype: name of datatype being exported
@@ -1076,6 +1079,101 @@ class DataFrame(wx.Panel):
 			return False
 		
 		return True
+
+	# sitePath: full path to directory containing files in dataFiles
+	# outputFile: output filename
+	# outputPath: full path to directory where file will be written
+	# secSummFiles: list of SectionSummary files to be used in export
+	# spliceFile: filename of splice interval table
+	def ExportSplicedImage(self, sitePath, outFile, outPath, secSummFiles=None, spliceFile=None):
+		if not spliceFile:
+			pass # bail out!
+
+		# brg 11/30/2021: SectionSummary must have a length column to export images, otherwise no
+		# way to map depth to pixels
+		secsumm = SectionSummary.createWithFiles([os.path.join(sitePath, ssFile) for ssFile in secSummFiles])
+		LEN_COLUMN = "Curated length (m)"
+		if not secsumm.hasColumn(LEN_COLUMN):
+			print("SecSumm must have length column.")
+			return False
+		# affineBuilder = AffineBuilder.createWithAffineFile(os.path.join(sitePath, affineFile), secsumm)
+		if not spliceFile:
+			print("No splice provided, WTF?")
+			return False
+
+		sitDF = tabularImport.readSpliceIntervalTableFile(os.path.join(sitePath, spliceFile))
+		imageDir = os.path.join(sitePath, IMG_DB_DIR)
+		# imageFiles = [f for f in os.listdir(imageDir) if f.endswith('.jpg')]
+		imageDict = {}
+		for f in os.listdir(imageDir):
+			if f.endswith('-A.jpg'):
+				image_key = f.replace('-A.jpg', '')
+				imageDict[image_key] = os.path.join(imageDir, f)
+
+		# imagePaths = [os.path.join(imageDir, f.replace('-A.jpg', '')) for f in os.listdir(imageDir) if f.endswith('.jpg')]
+
+		imagesToSplice = [] # need to handle gaps...these could be added as black images of the appropriate size
+		spliceRows = []
+		for _, row in sitDF.iterrows():
+			hole, core = row['Hole'], row['Core']
+			top_sec, top_sec_depth = int(row['Top Section']), row['Top Offset']
+			bot_sec, bot_sec_depth = int(row['Bottom Section']), row['Bottom Offset']
+			secrows = secsumm.getSectionRows(hole, core)
+			print("Interval hole {} core {} top_sec {}, bot_sec {}".format(hole, core, top_sec, bot_sec))
+			for sr in secrows:
+				if int(sr.section) >= top_sec and int(sr.section) <= bot_sec:
+					secname = sr.fullIdentity()
+					if secname in imageDict:
+						print("Found matching image file {}".format(imageDict[secname]))
+						# determine scaling based on height and curated length
+						img = wx.Image(imageDict[secname])
+						length = sr.row[LEN_COLUMN]
+						scale = img.GetHeight() / length
+						top_pix = 0
+						bot_pix = img.GetHeight() - 1
+						if int(sr.section) not in [top_sec, bot_sec]:
+							imagesToSplice.append(img) # add entire section image
+						else:
+							if int(sr.section) == top_sec: # trim top
+								top_depth_m = top_sec_depth / 100.0 # cm to m
+								top_pix = round(top_depth_m * scale)
+								print("Top depth {}m -> {} top pix".format(top_depth_m, top_pix))
+							if int(sr.section) == bot_sec: # trim bottom
+								bot_depth_m = bot_sec_depth / 100.0
+								bot_pix = round(bot_depth_m * scale)
+								print("Bottom depth {}m -> {} top pix".format(bot_depth_m, bot_pix))
+							trim_rect = wx.Rect(0, top_pix, img.GetWidth(), bot_pix - top_pix)
+							print("Getting rect {} for image {} wide, {} high".format(trim_rect, img.GetWidth(), img.GetHeight()))
+							trim_img = img.GetSubImage(trim_rect)
+							imagesToSplice.append(trim_img)
+
+						# print("Length {}m, height {}pix, scale = {} pix/meter".format(length, img.GetHeight(), scale))
+					else:
+						print("No matching image found for section name {}".format(secname))
+			
+		if len(imagesToSplice) > 0:
+			spliceHeight = sum([i.GetHeight() for i in imagesToSplice])
+			spliceWidth = imagesToSplice[0].GetWidth()
+			spliceImage = wx.EmptyImage(spliceWidth, spliceHeight)
+			r = wx.Rect(0, 0, spliceWidth, spliceHeight)
+			spliceImage.SetRGBRect(r, 255, 0, 0)
+			y_pos = 0
+			for i in imagesToSplice:
+				spliceImage.Paste(i, 0, y_pos)
+				y_pos += i.GetHeight() + 5
+			print("Splice Image is {}px high, comprising {} images".format(spliceImage.GetHeight(), len(imagesToSplice)))
+			spliceImage.SaveFile(os.path.join(outPath, outFile), wx.BITMAP_TYPE_PNG)
+		else:
+			print("No images to splice!")
+			return False
+		
+		return True
+
+	def OnExportSplicedImage(self, selectedIndex):
+		siteName = self.GetSiteNameForNode(selectedIndex)
+		sitePath = os.path.join(self.parent.DBPath, 'db', siteName)
+		secSummFiles = self.GetSiteSectionSummaries(selectedIndex)
+		self.ExportSplicedImage(sitePath, "spliced_image.jpg", "/Users/foobar/Desktop", secSummFiles, "342-U1410.2.splice.table")
 
 	# Return dataframe with reordered columns such that Depth CCSF comes immediately after Depth CSF-A.
 	# df: a pandas DataFrame of affine, or affine+splice applied export data to be reordered
