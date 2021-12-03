@@ -1179,7 +1179,7 @@ class DataFrame(wx.Panel):
 
 	# Return wx.Image comprising images concatenated vertically
 	def _createSpliceImage(self, images):
-		spliceHeight = sum([i.GetHeight() for i in images)
+		spliceHeight = sum([i.GetHeight() for i in images])
 		spliceWidth = images[0].GetWidth()
 		spliceImage = wx.EmptyImage(spliceWidth, spliceHeight)
 		r = wx.Rect(0, 0, spliceWidth, spliceHeight)
