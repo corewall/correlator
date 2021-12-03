@@ -3860,7 +3860,7 @@ class DataCanvas(wxBufferedWindow):
 						print("grab scroll B")
 					elif not self.independentScroll:# or self.spliceWindowOn == 0:
 						self.grabScrollA = 1
-						print("grab scroll A")
+						# print("grab scroll A")
 					self.UpdateDrawing()
 			elif key == "MovableInterface": # dragging splice area vertical scroll thumb?
 				bmp, x, y = data
@@ -3868,7 +3868,7 @@ class DataCanvas(wxBufferedWindow):
 				w, h = bmp.GetWidth(), bmp.GetHeight()
 				reg = wx.Rect(x, y, w, h)
 				if reg.Inside(wx.Point(pos[0], pos[1])):
-					print("grab scroll A MovableInterface")
+					# print("grab scroll A MovableInterface")
 					self.grabScrollA = 1	
 					self.UpdateDrawing()
 			elif key == "MovableSkin" and self.spliceWindowOn == 1:
