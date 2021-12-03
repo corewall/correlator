@@ -1085,34 +1085,50 @@ class DataFrame(wx.Panel):
 	# outputPath: full path to directory where file will be written
 	# secSummFiles: list of SectionSummary files to be used in export
 	# spliceFile: filename of splice interval table
-	def ExportSplicedImage(self, sitePath, outFile, outPath, secSummFiles=None, spliceFile=None):
-		if not spliceFile:
-			pass # bail out!
-
+	def ExportSplicedImage(self, sitePath, outFile, outPath, secSummFiles, spliceFile):
 		# brg 11/30/2021: SectionSummary must have a length column to export images, otherwise no
 		# way to map depth to pixels
 		secsumm = SectionSummary.createWithFiles([os.path.join(sitePath, ssFile) for ssFile in secSummFiles])
 		LEN_COLUMN = "Curated length (m)"
 		if not secsumm.hasColumn(LEN_COLUMN):
-			print("SecSumm must have length column.")
-			return False
-		# affineBuilder = AffineBuilder.createWithAffineFile(os.path.join(sitePath, affineFile), secsumm)
-		if not spliceFile:
-			print("No splice provided, WTF?")
-			return False
+			print("SecSumm must have a '{}' column.".format(LEN_COLUMN))
+			return False'
 
 		sitDF = tabularImport.readSpliceIntervalTableFile(os.path.join(sitePath, spliceFile))
+		imageDict = self._gatherSiteImages(sitePath)
+		imagesToSplice = self._prepareImagesForSplice(imageDict, secsumm, sitDF)
+			
+		if len(imagesToSplice) > 0:
+			spliceImage = self._createSpliceImage(imagesToSplice)
+			print("Splice Image is {}px high, comprising {} images".format(spliceImage.GetHeight(), len(imagesToSplice)))
+			spliceImage.SaveFile(os.path.join(outPath, outFile), wx.BITMAP_TYPE_PNG)
+		else:
+			print("No images to splice!")
+			return False
+		
+		return True
+
+	# Export Spliced Image menu item handler
+	def OnExportSplicedImage(self, selectedIndex):
+		siteName = self.GetSiteNameForNode(selectedIndex)
+		sitePath = os.path.join(self.parent.DBPath, 'db', siteName)
+		secSummFiles = self.GetSiteSectionSummaries(selectedIndex)
+		self.ExportSplicedImage(sitePath, "spliced_image.jpg", "/Users/bgrivna/Desktop", secSummFiles, "342-U1410.2.splice.table")
+
+	# Return dict with key: full section name, value: path to section image
+	# sitePath: path to site data
+	def _gatherSiteImages(self, sitePath):
 		imageDir = os.path.join(sitePath, IMG_DB_DIR)
-		# imageFiles = [f for f in os.listdir(imageDir) if f.endswith('.jpg')]
 		imageDict = {}
 		for f in os.listdir(imageDir):
 			if f.endswith('-A.jpg'):
 				image_key = f.replace('-A.jpg', '')
 				imageDict[image_key] = os.path.join(imageDir, f)
+		return imageDict
 
-		# imagePaths = [os.path.join(imageDir, f.replace('-A.jpg', '')) for f in os.listdir(imageDir) if f.endswith('.jpg')]
-
-		imagesToSplice = [] # need to handle gaps...these could be added as black images of the appropriate size
+	# Return list of wx.Images ready to concatenate into spliced image
+	def _prepareImagesForSplice(self, imageDict, secsumm, sitDF):
+		images = []
 		spliceRows = []
 		for _, row in sitDF.iterrows():
 			hole, core = row['Hole'], row['Core']
@@ -1125,55 +1141,54 @@ class DataFrame(wx.Panel):
 					secname = sr.fullIdentity()
 					if secname in imageDict:
 						print("Found matching image file {}".format(imageDict[secname]))
-						# determine scaling based on height and curated length
-						img = wx.Image(imageDict[secname])
-						length = sr.row[LEN_COLUMN]
-						scale = img.GetHeight() / length
-						top_pix = 0
-						bot_pix = img.GetHeight() - 1
-						if int(sr.section) not in [top_sec, bot_sec]:
-							imagesToSplice.append(img) # add entire section image
-						else:
-							if int(sr.section) == top_sec: # trim top
-								top_depth_m = top_sec_depth / 100.0 # cm to m
-								top_pix = round(top_depth_m * scale)
-								print("Top depth {}m -> {} top pix".format(top_depth_m, top_pix))
-							if int(sr.section) == bot_sec: # trim bottom
-								bot_depth_m = bot_sec_depth / 100.0
-								bot_pix = round(bot_depth_m * scale)
-								print("Bottom depth {}m -> {} top pix".format(bot_depth_m, bot_pix))
-							trim_rect = wx.Rect(0, top_pix, img.GetWidth(), bot_pix - top_pix)
-							print("Getting rect {} for image {} wide, {} high".format(trim_rect, img.GetWidth(), img.GetHeight()))
-							trim_img = img.GetSubImage(trim_rect)
-							imagesToSplice.append(trim_img)
-
-						# print("Length {}m, height {}pix, scale = {} pix/meter".format(length, img.GetHeight(), scale))
+						LEN_COLUMN = "Curated length (m)" # TODO
+						img = self._trimSpliceImage(wx.Image(imageDict[secname]), top_sec, top_sec_depth, bot_sec, bot_sec_depth, int(sr.section), sr.row[LEN_COLUMN])
+						images.append(img)
 					else:
 						print("No matching image found for section name {}".format(secname))
-			
-		if len(imagesToSplice) > 0:
-			spliceHeight = sum([i.GetHeight() for i in imagesToSplice])
-			spliceWidth = imagesToSplice[0].GetWidth()
-			spliceImage = wx.EmptyImage(spliceWidth, spliceHeight)
-			r = wx.Rect(0, 0, spliceWidth, spliceHeight)
-			spliceImage.SetRGBRect(r, 255, 0, 0)
-			y_pos = 0
-			for i in imagesToSplice:
-				spliceImage.Paste(i, 0, y_pos)
-				y_pos += i.GetHeight() + 5
-			print("Splice Image is {}px high, comprising {} images".format(spliceImage.GetHeight(), len(imagesToSplice)))
-			spliceImage.SaveFile(os.path.join(outPath, outFile), wx.BITMAP_TYPE_PNG)
-		else:
-			print("No images to splice!")
-			return False
-		
-		return True
+		return images
 
-	def OnExportSplicedImage(self, selectedIndex):
-		siteName = self.GetSiteNameForNode(selectedIndex)
-		sitePath = os.path.join(self.parent.DBPath, 'db', siteName)
-		secSummFiles = self.GetSiteSectionSummaries(selectedIndex)
-		self.ExportSplicedImage(sitePath, "spliced_image.jpg", "/Users/foobar/Desktop", secSummFiles, "342-U1410.2.splice.table")
+	# Return image trimmed to splice interval.
+	# img: wx.Image to trim
+	# top_sec: top section number of splice interval
+	# top_sec_depth: top section depth in m
+	# bot_sec: bottom section number of splice interval
+	# bot_sec_depth: bottom section depth in m
+	# sec_num: section number of image to be trimmed
+	# sec_length: length of section in m
+	def _trimSpliceImage(self, img, top_sec, top_sec_depth, bot_sec, bot_sec_depth, sec_num, sec_length):
+		# determine scaling based on height and curated length
+		scale = img.GetHeight() / sec_length
+		top_pix = 0
+		bot_pix = img.GetHeight() - 1
+		if sec_num not in [top_sec, bot_sec]:
+			return img
+		else:
+			if sec_num == top_sec: # trim top
+				top_depth_m = top_sec_depth / 100.0 # cm to m
+				top_pix = round(top_depth_m * scale)
+				print("Top depth {}m -> {} top pix".format(top_depth_m, top_pix))
+			if sec_num == bot_sec: # trim bottom
+				bot_depth_m = bot_sec_depth / 100.0
+				bot_pix = round(bot_depth_m * scale)
+				print("Bottom depth {}m -> {} top pix".format(bot_depth_m, bot_pix))
+			trim_rect = wx.Rect(0, top_pix, img.GetWidth(), bot_pix - top_pix)
+			print("Getting rect {} for image {} wide, {} high".format(trim_rect, img.GetWidth(), img.GetHeight()))
+			trim_img = img.GetSubImage(trim_rect)
+			return trim_img
+
+	# Return wx.Image comprising images concatenated vertically
+	def _createSpliceImage(self, images):
+		spliceHeight = sum([i.GetHeight() for i in images)
+		spliceWidth = images[0].GetWidth()
+		spliceImage = wx.EmptyImage(spliceWidth, spliceHeight)
+		r = wx.Rect(0, 0, spliceWidth, spliceHeight)
+		spliceImage.SetRGBRect(r, 255, 0, 0)
+		y_pos = 0
+		for i in images:
+			spliceImage.Paste(i, 0, y_pos)
+			y_pos += i.GetHeight() + 5
+		return spliceImage
 
 	# Return dataframe with reordered columns such that Depth CCSF comes immediately after Depth CSF-A.
 	# df: a pandas DataFrame of affine, or affine+splice applied export data to be reordered
