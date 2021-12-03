@@ -2215,7 +2215,7 @@ class AboutDialog(wx.Dialog):
 		vertSizer.Add((5,5), 0)
 		grid = wx.FlexGridSizer(cols=2, rows=3, hgap=20, vgap=10)
 		grid.Add(wx.HyperlinkCtrl(self, -1, 'National Science Foundation', 'https://www.nsf.gov/'))
-		grid.Add(wx.HyperlinkCtrl(self, -1, 'CSDCO/LacCore (University of Minnesota)', 'https://csdco.umn.edu/'))
+		grid.Add(wx.HyperlinkCtrl(self, -1, 'CSD Facility (University of Minnesota)', 'https://cse.umn.edu/csd'))
 		grid.Add(wx.HyperlinkCtrl(self, -1, 'IODP/JR Science Operator', 'https://iodp.tamu.edu/'))
 		grid.Add(wx.HyperlinkCtrl(self, -1, 'Lamont-Doherty Earth Observatory', 'https://www.ldeo.columbia.edu/'))
 		grid.Add(wx.HyperlinkCtrl(self, -1, 'EVL (University of Illinois)', 'https://www.evl.uic.edu/'))
