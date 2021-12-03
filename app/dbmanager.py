@@ -1092,7 +1092,7 @@ class DataFrame(wx.Panel):
 		LEN_COLUMN = "Curated length (m)"
 		if not secsumm.hasColumn(LEN_COLUMN):
 			print("SecSumm must have a '{}' column.".format(LEN_COLUMN))
-			return False'
+			return False
 
 		sitDF = tabularImport.readSpliceIntervalTableFile(os.path.join(sitePath, spliceFile))
 		imageDict = self._gatherSiteImages(sitePath)
