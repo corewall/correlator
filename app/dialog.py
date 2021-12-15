@@ -588,13 +588,14 @@ class AffineListPanel(wx.Panel):
 		self.SetSizer(sz)
 		
 class SpliceListPanel(wx.Panel):
-	def __init__(self, parent, spliceItems):
+	def __init__(self, parent, spliceItems, none_item=True):
 		wx.Panel.__init__(self, parent, -1)
 		sz = wx.BoxSizer(wx.HORIZONTAL)
 		sz.Add(wx.StaticText(self, -1, "Apply Splice:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
 		self.spliceList = wx.Choice(self, -1)
 		sz.Add(self.spliceList, 1, wx.EXPAND | wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
-		self.spliceList.Append("[None]")
+		if none_item:
+			self.spliceList.Append("[None]")
 		for item in spliceItems:
 			self.spliceList.Append(item)
 		self.SetSizer(sz)
@@ -670,6 +671,53 @@ class ExportSpliceDialog(wx.Dialog):
 			self.EndModal(wx.ID_OK)
 		else:
 			self.EndModal(wx.ID_CANCEL)
+
+
+class ExportSpliceImageDialog(wx.Dialog):
+	def __init__(self, parent, spliceFiles, initialSelection=None):
+		wx.Dialog.__init__(self, parent, -1, "Export Spliced Image", style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER | wx.STAY_ON_TOP)
+
+		panel = wx.Panel(self, -1)
+		psz = wx.BoxSizer(wx.VERTICAL)
+		splicePanel = SpliceListPanel(panel, spliceFiles, none_item=False)
+		self.spliceList = splicePanel.spliceList
+		psz.Add(splicePanel, 0, wx.EXPAND | wx.BOTTOM, 10)
+		self.showSectionLines = wx.CheckBox(panel, -1, "Show Section Boundaries")
+		self.showIntervalLines = wx.CheckBox(panel, -1, "Show Splice Interval Boundaries")
+		self.showSectionNames = wx.CheckBox(panel, -1, "Show Section IDs")
+		psz.Add(self.showSectionLines, 0, wx.BOTTOM, 5)
+		psz.Add(self.showIntervalLines, 0, wx.BOTTOM, 5)
+		psz.Add(self.showSectionNames, 0, wx.BOTTOM, 5)
+		panel.SetSizer(psz)
+
+		sz = wx.BoxSizer(wx.VERTICAL)
+		sz.Add(panel, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+		self.buttonPanel = OkButtonPanel(self, okName="Export")
+		sz.Add(self.buttonPanel, 0, wx.ALIGN_RIGHT | wx.ALIGN_BOTTOM | wx.RIGHT, 10)
+		self.SetSizerAndFit(sz)
+		
+		self.buttonPanel.ok.SetDefault()
+		self.Bind(wx.EVT_BUTTON, self.ButtonPressed, self.buttonPanel.ok)
+		self.Bind(wx.EVT_BUTTON, self.ButtonPressed, self.buttonPanel.cancel)
+		
+		if initialSelection is not None:
+			self.spliceList.SetStringSelection(initialSelection)
+
+	def GetSelectedSplice(self):
+		return self.spliceList.GetStringSelection()
+
+	def GetOptions(self):
+		options = {}
+		options['sectionLines'] = self.showSectionLines.IsChecked()
+		options['intervalLines'] = self.showIntervalLines.IsChecked()
+		options['sectionNames'] = self.showSectionNames.IsChecked()
+		return options
+		
+	def ButtonPressed(self, evt):
+		if evt.GetEventObject() == self.buttonPanel.ok:
+			self.EndModal(wx.ID_OK)
+		else:
+			self.EndModal(wx.ID_CANCEL)			
 
 
 class ExportELDDialog(wx.Dialog):

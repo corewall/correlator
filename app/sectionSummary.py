@@ -167,7 +167,15 @@ class SectionSummary:
         section = df[(df.Site == site) & (df.Hole == hole) & (df.Core == core) & (depth >= df.TopDepth) & (depth <= df.BottomDepth)]
         if not section.empty:
             return section.iloc[0]['Section']
-        return None    
+        return None
+
+    def _findSectionByFullIdentity(self, identity):
+        sectionRow = None
+        for _, row in self.dataframe.iterrows():
+            ssr = SectionSummaryRow.createWithPandasSeries(row)
+            if ssr.fullIdentity() == identity:
+                sectionRow = ssr
+        return sectionRow
     
     def _getSectionValue(self, site, hole, core, section, columnName):
         self.checkStrType([site, hole, section])
