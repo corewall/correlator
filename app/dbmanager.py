@@ -715,7 +715,10 @@ class DataFrame(wx.Panel):
 		popupMenu.Append(1, "Add new &images")
 		popupMenu.Append(2, "&Update")
 		popupMenu.Append(3, "&Delete")
+		# Disable export item if site has no images
+		enable = len(self.GetSiteImages(self.selectedIdx)) > 0
 		popupMenu.Append(4, "&Export spliced image")
+		popupMenu.Enable(4, enable)
 		for opid in [1,2,3,4]:
 			wx.EVT_MENU(popupMenu, opid, self.OnImagesMenu)
 
@@ -933,6 +936,7 @@ class DataFrame(wx.Panel):
 			self.tree.PopupMenu(popupMenu)
 		return
 
+	# Return list of section summary files for the currently selected site
 	def GetSiteSectionSummaries(self, selectedIndex):
 		siteNode = self.GetSiteForNode(selectedIndex)
 		secSummFiles = []
@@ -941,6 +945,26 @@ class DataFrame(wx.Panel):
 			for ssChild in self.GetChildren(ssNode):
 				secSummFiles.append(self.tree.GetItemText(ssChild, 8))
 		return secSummFiles
+
+	def GetSiteSplices(self, selectedIndex):
+		siteNode = self.GetSiteForNode(selectedIndex)
+		secSummFiles = []
+		stNodeFound, stNode = self.FindItem(siteNode, ST_NODE) # Saved Tables node
+		if stNodeFound:
+			for st in self.GetChildren(stNode):
+				filename = self.tree.GetItemText(st, 8)
+				if "splice" in filename: # filter out affine tables
+					secSummFiles.append(filename)
+		return secSummFiles
+
+	def GetSiteImages(self, selectedIndex):
+		siteNode = self.GetSiteForNode(selectedIndex)
+		imageFiles = []
+		imgNodeFound, imgNode = self.FindItem(siteNode, IMG_NODE) # Images node
+		if imgNodeFound:
+			for img in self.GetChildren(imgNode):
+				imageFiles.append(self.tree.GetItemText(img, 8))
+		return imageFiles
 
 	# prepare parameters for ExportCoreData()
 	# selectedIndex: selected node in self.tree
