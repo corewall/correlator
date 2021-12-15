@@ -1177,20 +1177,23 @@ class DataFrame(wx.Panel):
 
 	# Return default pix/m scaling to use for missing images in splice.
 	# Uses height and curated length of first image encountered.
-	def _getDefaultSpliceScaling(self, imageDict, secsumm):
-		scaling = 100.0
+	def _getDefaultSpliceScalingAndWidth(self, imageDict, secsumm):
+		scaling = None
+		width = None
 		for secname, imgpath in imageDict.items():
 			section = secsumm._findSectionByFullIdentity(secname)
 			if section is not None:
-				scaling = wx.Image(imgpath).GetHeight() / section.row[LEN_COLUMN]
+				img = wx.Image(imgpath)
+				scaling = img.GetHeight() / section.row[LEN_COLUMN]
+				width = img.GetWidth()
 				break
-		return scaling
+		return scaling, width
 
 	# Return list of (wx.Image, short section name e.g. A3-5, end of interval bool) tuples in top-to-bottom order
 	def _prepareImagesForSplice(self, imageDict, secsumm, sitDF):
 		images = []
 		spliceRows = []
-		defaultScaling = self._getDefaultSpliceScaling(imageDict, secsumm)
+		defaultScaling, defaultWidth = self._getDefaultSpliceScalingAndWidth(imageDict, secsumm)
 		# print("Default scaling = {}".format(defaultScaling))
 		for _, row in sitDF.iterrows():
 			hole, core = row['Hole'], row['Core']
@@ -1203,13 +1206,22 @@ class DataFrame(wx.Panel):
 					secname = sr.fullIdentity()
 					if secname in imageDict:
 						# print("Found matching image file {}".format(imageDict[secname]))
-						# LEN_COLUMN = "Curated length (m)" # TODO
 						img = self._trimSpliceImage(wx.Image(imageDict[secname]), top_sec, top_sec_depth, bot_sec, bot_sec_depth, int(sr.section), sr.row[LEN_COLUMN])
-						short_secname = "{}{}-{}".format(sr.hole, sr.core, sr.section)
-						images.append((img, short_secname, int(sr.section) == bot_sec))
-					else: # no image file, still include metadata
-						print("No matching image found for section name {}".format(secname))
-						# img = None
+					else: # create blank image to fill the space
+						print("No image file for section name {}, creating empty image...".format(secname))
+						sec_len_m = sr.row[LEN_COLUMN]
+						if int(sr.section) == top_sec:
+							sec_len_m -= (top_sec_depth/100.0)
+							print("Trimming {}cm from top".format(top_sec_depth))
+						if int(sr.section) == bot_sec:
+							diff = (sr.row[LEN_COLUMN] - (bot_sec_depth/100.0))
+							sec_len_m -= diff
+							print("Trimming {}cm from bottom".format(diff * 100.0))
+						height = round(sec_len_m * defaultScaling)
+						img = wx.EmptyImage(defaultWidth, height)
+						img.SetRGBRect(wx.Rect(0, 0, defaultWidth, height), 0, 0, 255)
+					short_secname = "{}{}-{}".format(sr.hole, sr.core, sr.section)
+					images.append((img, short_secname, int(sr.section) == bot_sec))
 		return images
 
 	# Return image trimmed to splice interval.
