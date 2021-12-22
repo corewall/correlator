@@ -12,6 +12,7 @@ rm prefs.py
 rm sectionSummary.py
 rm smooth.py
 rm splice.py
+rm spliceImage.py
 rm tabularImport.py
 #rm tracker.py # disabled
 rm utils.py
@@ -40,6 +41,7 @@ cp prefs.py ../bin/static/
 cp sectionSummary.py ../bin/static/
 cp smooth.py ../bin/static/
 cp splice.py ../bin/static/
+cp spliceImage.py ../bin/static/
 cp tabularImport.py ../bin/static/
 #cp tracker.py ../bin/static/
 cp utils.py ../bin/static/

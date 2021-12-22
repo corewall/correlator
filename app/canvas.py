@@ -849,8 +849,8 @@ class DataCanvas(wxBufferedWindow):
 			assert hole_name is not None
 			if hole_name not in self.HolesWithImages:
 				self.HolesWithImages.append(hole_name)
-		print("Loaded images: {}".format(self.Images))
-		print("Holes with images: {}".format(self.HolesWithImages))
+		# print("Loaded images: {}".format(self.Images))
+		# print("Holes with images: {}".format(self.HolesWithImages))
 
 	def CountImages(self):
 		return len(self.Images)
