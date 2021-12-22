@@ -21,7 +21,7 @@ from importManager import py_correlator
 import dialog
 import tabularImport
 import splice
-from utils import getHoleName
+from utils import getHoleName, makeImageKey
 import xml_handler
 from affine import convert_pre_v3_AffineTable, AffineBuilder, aci, acistr
 from sectionSummary import SectionSummary, SectionSummaryRow
@@ -1170,9 +1170,8 @@ class DataFrame(wx.Panel):
 		imageDir = os.path.join(sitePath, IMG_DB_DIR)
 		imageDict = {}
 		for f in os.listdir(imageDir):
-			if f.endswith('-A.jpg'):
-				image_key = f.replace('-A.jpg', '')
-				imageDict[image_key] = os.path.join(imageDir, f)
+			image_key = makeImageKey(f)
+			imageDict[image_key] = os.path.join(imageDir, f)
 		return imageDict
 
 	# Return default pix/m scaling to use for missing images in splice.

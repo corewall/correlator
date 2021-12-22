@@ -8,6 +8,21 @@ def getHoleName(iodpName):
 		return hole.groups()[0]
 	return None
 
+def trimJPEGExt(s):
+	patt = re.compile("\.(jpg|jpeg|JPG|JPEG)")
+	return patt.sub('',s)
+
+def trimSectionType(s):
+	patt = re.compile("(-A|-W|-WR)")
+	return patt.sub('', s)
+
+# Given an image filename '342-U1410A-1H-3-A.jpg', return string with
+# JPEG extension and section type (-A, -W, -WR) removed.
+def makeImageKey(filename):
+	ik = trimJPEGExt(filename)
+	return trimSectionType(ik)
+
+
 
 # Convenience wrapper for DataCanvas.HoleData list elements with
 # methods to access hole metadata.

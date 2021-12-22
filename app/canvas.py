@@ -23,7 +23,7 @@ from importManager import py_correlator
 import frames
 import splice
 from layout import LayoutManager, ColumnType, ImageDatatypeStr
-from utils import CoreMetadata, HoleMetadata, getHoleName
+from utils import CoreMetadata, HoleMetadata, getHoleName, makeImageKey
 
 
 # brg 4/9/2014: Why are we defining our own wxBufferedWindow when
@@ -843,7 +843,7 @@ class DataCanvas(wxBufferedWindow):
 		self.HolesWithImages = []
 		for f in img_files:
 			img = wx.Image(f)
-			img_key = os.path.basename(f).replace('-A.jpg', '')
+			img_key = makeImageKey(os.path.basename(f))
 			self.Images[img_key] = (img, None) # wx.Image, wx.Bitmap
 			hole_name = getHoleName(img_key)
 			assert hole_name is not None
