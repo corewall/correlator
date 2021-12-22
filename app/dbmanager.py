@@ -1136,24 +1136,28 @@ class DataFrame(wx.Panel):
 
 	# Export Spliced Image menu item handler
 	def OnExportSplicedImage(self, selectedIndex):
-		# get user splice file selection
 		spliceFiles = self.GetSiteSplices(selectedIndex)
 		if len(spliceFiles) == 0:
 			self.parent.OnShowMessage("Error", "Site {} has no splice tables.".format(self.GetSiteNameForNode(selectedIndex)), 1)
 			return
 
+		# get splice to apply, output file and path
 		dlg = dialog.ExportSpliceImageDialog(self, spliceFiles, initialDir=self.parent.Directory)
 		result = dlg.ShowModal()
 		if result != wx.ID_OK:
 			return
 
-		self.parent.Directory = dlg.outpath
+		self.parent.Directory = dlg.outpath # save last-used dir
+	
+		# gather export parameters
 		filename, path = dlg.outfile, dlg.outpath
 		siteName = self.GetSiteNameForNode(selectedIndex)
 		sitePath = os.path.join(self.parent.DBPath, 'db', siteName)
 		secSummFiles = self.GetSiteSectionSummaries(selectedIndex)
 		splice = dlg.GetSelectedSplice()
 		options = dlg.GetOptions()
+
+		# do the export
 		pd = wx.ProgressDialog("Exporting Spliced Image...", "", 100, self, wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
 		pd.Pulse("Exporting Spliced Image...")
 		result, msg = self.ExportSplicedImage(sitePath, filename, path, secSummFiles, splice, options)
