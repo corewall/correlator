@@ -674,7 +674,10 @@ class ExportSpliceDialog(wx.Dialog):
 
 
 class ExportSpliceImageDialog(wx.Dialog):
-	def __init__(self, parent, spliceFiles, initialSelection=None):
+	def __init__(self, parent, spliceFiles, initialDir):
+		self.initialDir = initialDir
+		self.outpath = None
+		self.outfile = None
 		wx.Dialog.__init__(self, parent, -1, "Export Spliced Image", style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER | wx.STAY_ON_TOP)
 
 		panel = wx.Panel(self, -1)
@@ -699,9 +702,6 @@ class ExportSpliceImageDialog(wx.Dialog):
 		self.buttonPanel.ok.SetDefault()
 		self.Bind(wx.EVT_BUTTON, self.ButtonPressed, self.buttonPanel.ok)
 		self.Bind(wx.EVT_BUTTON, self.ButtonPressed, self.buttonPanel.cancel)
-		
-		if initialSelection is not None:
-			self.spliceList.SetStringSelection(initialSelection)
 
 	def GetSelectedSplice(self):
 		return self.spliceList.GetStringSelection()
@@ -715,9 +715,14 @@ class ExportSpliceImageDialog(wx.Dialog):
 		
 	def ButtonPressed(self, evt):
 		if evt.GetEventObject() == self.buttonPanel.ok:
-			self.EndModal(wx.ID_OK)
+			savedlg = wx.FileDialog(self, "Save Spliced Image", self.initialDir, style=wx.SAVE)
+			if savedlg.ShowModal() == wx.ID_OK:
+				self.outpath = savedlg.GetDirectory()
+				self.outfile = savedlg.GetFilename()
+				self.EndModal(wx.ID_OK)
+			return
 		else:
-			self.EndModal(wx.ID_CANCEL)			
+			self.EndModal(wx.ID_CANCEL)
 
 
 class ExportELDDialog(wx.Dialog):

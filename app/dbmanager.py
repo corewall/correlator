@@ -1114,9 +1114,8 @@ class DataFrame(wx.Panel):
 	# indicating whether to draw that item
 	def ExportSplicedImage(self, sitePath, outFile, outPath, secSummFiles, spliceFile, options):
 		# brg 11/30/2021: SectionSummary must have a length column to export images, otherwise no
-		# way to map depth to pixels
+		# way to map depth to pixels.
 		secsumm = SectionSummary.createWithFiles([os.path.join(sitePath, ssFile) for ssFile in secSummFiles])
-		# LEN_COLUMN = "Curated length (m)"
 		if not secsumm.hasColumn(LEN_COLUMN):
 			return False, "Section Summary files must have a '{}' column.".format(LEN_COLUMN)
 
@@ -1126,7 +1125,7 @@ class DataFrame(wx.Panel):
 			
 		if len(imagesToSplice) > 0:
 			spliceImage = self._createSpliceImage(imagesToSplice, options)
-			print("Splice Image is {}px high, comprising {} images".format(spliceImage.GetHeight(), len(imagesToSplice)))
+			# print("Splice Image is {}px high, comprising {} images".format(spliceImage.GetHeight(), len(imagesToSplice)))
 			if not outFile.endswith('.png'):
 				outFile += '.png'
 			spliceImage.SaveFile(os.path.join(outPath, outFile), wx.BITMAP_TYPE_PNG)
@@ -1143,25 +1142,22 @@ class DataFrame(wx.Panel):
 			self.parent.OnShowMessage("Error", "Site {} has no splice tables.".format(self.GetSiteNameForNode(selectedIndex)), 1)
 			return
 
-		dlg = dialog.ExportSpliceImageDialog(self, spliceFiles)
+		dlg = dialog.ExportSpliceImageDialog(self, spliceFiles, initialDir=self.parent.Directory)
 		result = dlg.ShowModal()
 		if result != wx.ID_OK:
 			return
 
-		savedlg = wx.FileDialog(self, "Save Spliced Image", self.parent.Directory, style=wx.SAVE)
-		if savedlg.ShowModal() == wx.ID_OK:
-			path = savedlg.GetDirectory()
-			filename = savedlg.GetFilename()
-			self.parent.Directory = path
-		else:
-			return
-
+		self.parent.Directory = dlg.outpath
+		filename, path = dlg.outfile, dlg.outpath
 		siteName = self.GetSiteNameForNode(selectedIndex)
 		sitePath = os.path.join(self.parent.DBPath, 'db', siteName)
 		secSummFiles = self.GetSiteSectionSummaries(selectedIndex)
 		splice = dlg.GetSelectedSplice()
 		options = dlg.GetOptions()
+		pd = wx.ProgressDialog("Exporting Spliced Image...", "", 100, self, wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
+		pd.Pulse("Exporting Spliced Image...")
 		result, msg = self.ExportSplicedImage(sitePath, filename, path, secSummFiles, splice, options)
+		pd.Destroy()
 		self.parent.OnShowMessage("Success" if result else "Error", msg, 1)
 
 	# Return dict with key: full section name, value: path to section image
