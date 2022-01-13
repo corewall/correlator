@@ -556,6 +556,8 @@ class DataFrame(wx.Panel):
 	# if not present, add newPath to self.imageImportPaths for selected site
 	def _updateImageImportPaths(self, newPath):
 		siteName = self.GetSelectedSiteName()
+		if siteName not in self.imageImportPaths:
+			self.imageImportPaths[siteName] = []
 		if newPath not in self.imageImportPaths[siteName]:
 			print("New import path {}, adding".format(newPath))
 			self.imageImportPaths[siteName].append(newPath)
@@ -4982,7 +4984,7 @@ class DataFrame(wx.Panel):
 			if list[0] == '':
 				continue
 
-			for data_item in list:
+			for data_item in list: # data_item is a Site name string e.g. "342-U1410"
 				found = False
 				for loaded_item in loaded_item_list:
 					if loaded_item == data_item:
