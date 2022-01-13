@@ -3785,11 +3785,11 @@ class CorrelatorApp(wx.App):
 		#	self.frame.IMPORTRepository()
 
 		if problemFlag == True:
-			defaultTempFile = open("./tmp/default.cfg", "r+")
+			defaultTempFile = open(os.path.join(myTempPath, "default.cfg"), "r+")
 			#print "[DEBUG] Configuration file is regenerated."
 			line = defaultTempFile.read()
 			defaultTempFile.close()
-			defaultFile = open("default.cfg", "w+")
+			defaultFile = open(os.path.join(myPath, "default.cfg"), "w+")
 			defaultFile.write(line)
 			defaultFile.close()
 
