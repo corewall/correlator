@@ -185,8 +185,7 @@ class SectionSummary:
 # todo? SectionSummaryRow in which data is just a pandas series with methods to access
 # each item (e.g. site(), coreType())? Child of SectionSummaryRow "interface" class?
 class SectionSummaryRow:
-    def __init__(self, row, exp, site, hole, core, coreType, section, topDepth, bottomDepth):
-        self.row = row # raw Pandas series
+    def __init__(self, exp, site, hole, core, coreType, section, topDepth, bottomDepth, row):
         self.exp = exp
         self.site = site
         self.hole = hole
@@ -195,11 +194,12 @@ class SectionSummaryRow:
         self.section = section
         self.topDepth = topDepth
         self.bottomDepth = bottomDepth
+        self.row = row # raw Pandas series
         
     @classmethod
     def createWithPandasSeries(cls, row):
-        return cls(row, row['Exp'], row['Site'], row['Hole'], row['Core'], row['CoreType'], row['Section'], row['TopDepth'], row['BottomDepth'])
-        
+        return cls(row['Exp'], row['Site'], row['Hole'], row['Core'], row['CoreType'], row['Section'], row['TopDepth'], row['BottomDepth'], row)
+
     def asPandasSeries(self):
         return pandas.Series({'Exp':self.exp, 'Site':self.site, 'Hole':self.hole, 'Core':self.core, 'CoreType':self.coreType,
                               'Section':self.section, 'TopDepth':self.topDepth, 'BottomDepth':self.bottomDepth})
