@@ -3870,6 +3870,10 @@ if __name__ == "__main__":
 		else: 
 			new = True 
 
+	# Copy config files into Documents/Correlator/[version]/tmp.
+	# 1/12/2022 brg: To my surprise, copying files in the app bundle using commands
+	# passed to os.system() works under AppTranslocation on macOS 10.15+. Trying to
+	# access the same files with open() fails.
 	if os.access(myPath+"tmp", os.F_OK) == False:
 		os.mkdir(myPath + "tmp")
 		cmd = "cp ./tmp/*.* " + myPath + "tmp"
