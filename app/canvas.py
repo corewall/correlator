@@ -52,7 +52,7 @@ class wxBufferedWindow(wx.Window):
 		#wx.SplitterWindow.__init__(self, parent, id, pos, size, style)
 
 		self.sideTabSize = 340 
-		self.CLOSEFLAG = 0 
+		self.CLOSEFLAG = 0
 
 		self.WindowUpdate = 0
 		wx.EVT_PAINT(self, self.OnPaint)
@@ -69,7 +69,15 @@ class wxBufferedWindow(wx.Window):
 		pass
 
 	def OnPaint(self, event):
-		# All that is needed here is to draw the buffer to screen
+		# brg 1/17/2022: Adjust canvas size to reflect resized main window if needed. Otherwise,
+		# canvas doesn't always draw to the full available width, particularly on first launch
+		# when the window size is adjusted before the data canvas is displayed.
+		# This isn't an ideal way to fix this, but triggering wxBufferedWindow.OnSize()
+		# from an EVT_SIZE in correlator.py throws errors about self._Buffer not existing.
+		tup = self.GetClientSizeTuple()
+		tabWidth = self.sideTabSize if self.CLOSEFLAG == 0 else 45
+		if (self.Width + tabWidth, self.Height) != tup:
+			self.OnSize(None)
 		dc = wx.PaintDC(self)
 		dc.DrawBitmap(self._Buffer, 0, 0)
 
