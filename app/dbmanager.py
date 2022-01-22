@@ -22,7 +22,7 @@ import dialog
 import tabularImport
 import splice
 import spliceImage as SI
-from utils import getHoleName, makeImageKey
+from utils import getHoleName, makeImageKey, hasJPEGExt
 import xml_handler
 from affine import convert_pre_v3_AffineTable, AffineBuilder, aci, acistr
 from sectionSummary import SectionSummary, SectionSummaryRow
@@ -499,8 +499,8 @@ class DataFrame(wx.Panel):
 	# - importPath: path from which to copy image files
 	# - dbPath: destination database path for image files
 	def _importCoreImages(self, importPath, dbPath):
-		imgFiles = [os.path.join(importPath, f) for f in os.listdir(importPath) if f.endswith('.jpg')]
-		dbFiles = [f for f in os.listdir(dbPath) if f.endswith('.jpg')]
+		imgFiles = [os.path.join(importPath, f) for f in os.listdir(importPath) if hasJPEGExt(f)]
+		dbFiles = [f for f in os.listdir(dbPath) if hasJPEGExt(f)]
 		# print("Copying {} image files into {}".format(len(imgFiles), dbPath))
 		pd = wx.ProgressDialog("Image Import", "", len(imgFiles), self, wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
 		for count, f in enumerate(imgFiles):
@@ -520,7 +520,7 @@ class DataFrame(wx.Panel):
 	def _updateImageNodes(self, dbPath):
 		# count images per hole
 		holeCounts = {}
-		for f in [os.path.join(dbPath, f) for f in os.listdir(dbPath) if f.endswith('.jpg')]:
+		for f in [os.path.join(dbPath, f) for f in os.listdir(dbPath) if hasJPEGExt(f)]:
 			hole = getHoleName(os.path.basename(f))
 			if hole not in holeCounts:
 				holeCounts[hole] = 1
@@ -577,7 +577,7 @@ class DataFrame(wx.Panel):
 	def DeleteCoreImages(self, hole=None):
 		siteName = self.GetSelectedSiteName()
 		dbImgPath = os.path.join(self.parent.DBPath, 'db', siteName, IMG_DB_DIR)
-		imgFiles = [os.path.join(dbImgPath, f) for f in os.listdir(dbImgPath) if f.endswith('.jpg')]
+		imgFiles = [os.path.join(dbImgPath, f) for f in os.listdir(dbImgPath) if hasJPEGExt(f)]
 		if hole is not None:
 			imgFiles = [f for f in imgFiles if getHoleName(os.path.basename(f)) == hole] # ???
 		else: # clear import paths
@@ -4360,7 +4360,7 @@ class DataFrame(wx.Panel):
 		print("Loading imagery from {}".format(core_image_path))
 		if os.path.exists(core_image_path):
 			prog.Pulse("Loading images...")
-			img_files = [os.path.join(core_image_path, f) for f in os.listdir(core_image_path) if f.endswith('.jpg')]
+			img_files = [os.path.join(core_image_path, f) for f in os.listdir(core_image_path) if hasJPEGExt(f)]
 			self.parent.Window.LoadImages(img_files)
 
 		# print summary of what's been loaded

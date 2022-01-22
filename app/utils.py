@@ -8,6 +8,10 @@ def getHoleName(iodpName):
 		return hole.groups()[0]
 	return None
 
+def hasJPEGExt(s):
+	patt = re.compile("\.(jpg|jpeg|JPG|JPEG)")
+	return bool(patt.search(s))
+
 def trimJPEGExt(s):
 	patt = re.compile("\.(jpg|jpeg|JPG|JPEG)")
 	return patt.sub('',s)
