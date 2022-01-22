@@ -91,10 +91,14 @@ def trimSpliceImage(img, top_sec, top_sec_depth, bot_sec, bot_sec_depth, sec_num
 def createSpliceImage(images, options):
     INFO_COL_WIDTH = 200
     spliceHeight = sum([i.GetHeight() for i, _, _ in images])
-    spliceWidth = images[0][0].GetWidth() + INFO_COL_WIDTH
+    spliceWidth = images[0][0].GetWidth()
+    if True in options.values(): # add space for info column if any option was selected
+        spliceWidth += INFO_COL_WIDTH
+
+    # prepare empty image with black background
     spliceImage = wx.EmptyImage(spliceWidth, spliceHeight)
     r = wx.Rect(0, 0, spliceWidth, spliceHeight)
-    spliceImage.SetRGBRect(r, 0, 0, 0) # set background to black
+    spliceImage.SetRGBRect(r, 0, 0, 0)
     y_pos = 0
     for img, secname, interval_end in images:
         if img is not None:
