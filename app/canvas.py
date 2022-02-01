@@ -1769,9 +1769,9 @@ class DataCanvas(wxBufferedWindow):
 		whiteBrush = wx.Brush(wx.WHITE)
 		dc.SetPen(whitePen)
 		dc.SetBrush(whiteBrush)
-		img_wid = self.GetCoreImageDisplayWidth()
+		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
 		startx = self.splicerX + self.layoutManager.plotLeftMargin + img_wid # beginning of splice plot area
-		endx = startx + self.layoutManager.plotLeftMargin + (self.layoutManager.plotWidth * 2) # right end of splice guide area
+		endx = startx + (self.layoutManager.plotWidth * 2)
 		ycoord = self.getSpliceCoord(tie.depth())
 		circlex = startx + (self.layoutManager.plotWidth / 2)
 		namestr = tie.getName()
@@ -1829,14 +1829,14 @@ class DataCanvas(wxBufferedWindow):
 		intervalSelected = (interval == self.parent.spliceManager.getSelected())
 		self.DrawSpliceIntervalPlot(dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed)
 
-		if self.parent.sectionSummary:
+		if self.parent.sectionSummary and self.layoutManager.getShowImages():
 			self.DrawSpliceIntervalImages(dc, interval, startX)
 
 		if intervalSelected:
 			for tie in self.parent.spliceManager.getTies():
 				self.DrawSpliceIntervalTie(dc, tie) 
 
-		img_wid = self.GetCoreImageDisplayWidth()
+		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
 		self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX - img_wid)
 
 	def DrawSpliceIntervalPlot(self, dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed):
@@ -1901,9 +1901,9 @@ class DataCanvas(wxBufferedWindow):
 		dc.DrawText("Datatypes: " + ','.join(self.parent.spliceManager.getDataTypes()), rangeMax, 25)
 
 	def DrawSplice(self, dc, hole, smoothed):
-		# vertical dotted line separating splice from next splice hole (or core to be spliced)
-		img_wid = self.GetCoreImageDisplayWidth()
-		spliceholewidth = self.splicerX + img_wid + self.layoutManager.plotWidth + (self.layoutManager.plotLeftMargin * 2) # splice plot margin, guide margin (may not be needed)
+		# vertical dotted line separating splice from splice guide area
+		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
+		spliceholewidth = self.splicerX + img_wid + self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 		dc.DrawLines(((spliceholewidth, self.startDepthPix - 20), (spliceholewidth, self.Height)))
 		
@@ -1917,17 +1917,16 @@ class DataCanvas(wxBufferedWindow):
 			startX = self.splicerX + self.layoutManager.plotLeftMargin + img_wid
 			clip_y = self.startDepthPix - 20
 			clip_height = self.Height - clip_y
-			clip_rect = wx.Rect(x=startX, y=clip_y, width=self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin, height=clip_height)
 			for si in self.parent.spliceManager.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
 				self.DrawSpliceInterval(dc, si, drawing_start, startX, smoothed)
 			if self.parent.spliceManager.hasSelection():
-				selected_x = startX + self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin
+				selected_x = startX + self.layoutManager.plotWidth
 				# draw debug guides for left and right bounds of selected core plot, immediately to right of splice
 				# dc.SetPen(wx.Pen(wx.RED, 1))
 				# dc.DrawLine(selected_x, clip_y, selected_x, clip_y + clip_height)
 				# dc.DrawLine(selected_x + self.layoutManager.plotWidth, clip_y, selected_x + self.layoutManager.plotWidth, clip_y + clip_height)
 				guide_clip_rect = wx.Rect(x=selected_x, y=clip_y, width=self.layoutManager.plotWidth, height=clip_height)
-				self.DrawSelectedSpliceGuide(dc, self.parent.spliceManager.getSelected(), drawing_start, startX + self.layoutManager.plotWidth, guide_clip_rect)
+				self.DrawSelectedSpliceGuide(dc, self.parent.spliceManager.getSelected(), drawing_start, startX, guide_clip_rect)
 		else: # draw help text
 			ypos = self.getSpliceCoord(self.SPrulerStartDepth)
 			dc.DrawText("Drag a core from the left to start a splice.", self.splicerX + 20, ypos + 20)
@@ -1936,7 +1935,7 @@ class DataCanvas(wxBufferedWindow):
 		
 	def DrawAlternateSpliceInfo(self, dc):
 		coreinfo = self.parent.spliceManager.getAltInfo()
-		img_wid = self.GetCoreImageDisplayWidth()
+		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
 		rangeMax = self.splicerX + img_wid + ((self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin) * 2)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 		dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height)))
@@ -1949,7 +1948,7 @@ class DataCanvas(wxBufferedWindow):
 
 					
 	def DrawAlternateSplice(self, dc, hole, smoothed):
-		img_wid = self.GetCoreImageDisplayWidth()
+		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
 		altSpliceX = self.splicerX + img_wid + ((self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin) * 2)
 		
 		# vertical dotted line separating splice from next splice hole (or core to be spliced)
@@ -1962,19 +1961,19 @@ class DataCanvas(wxBufferedWindow):
 			self._SetSpliceRangeCoef(smoothed)
 			drawing_start = self.SPrulerStartDepth - 5.0
 			for si in self.parent.spliceManager.altSplice.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
-				self.DrawSpliceInterval(dc, si, drawing_start, altSpliceX, smoothed)
+				self.DrawSpliceInterval(dc, si, drawing_start, altSpliceX + img_wid, smoothed)
 
 		self.DrawAlternateSpliceInfo(dc)
 			
 	# draw current interval's core in its entirety to the right of the splice
 	def DrawSelectedSpliceGuide(self, dc, interval, drawing_start, startX, guide_clip_rect):
-		img_wid = self.GetCoreImageDisplayWidth()
+		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
 		screenpoints = []
 		for pt in interval.coreinfo.coredata:
 			if pt[0] >= drawing_start and pt[0] <= self.SPrulerEndDepth:
 				y = self.startDepthPix + (pt[0] - self.SPrulerStartDepth) * self.pixPerMeter
 				spliceholewidth = self.splicerX + self.layoutManager.plotLeftMargin + img_wid + self.layoutManager.plotWidth
-				x = (pt[1] - self.minRange) * self.coefRangeSplice + spliceholewidth + self.layoutManager.plotLeftMargin
+				x = (pt[1] - self.minRange) * self.coefRangeSplice + spliceholewidth
 				screenpoints.append((x,y))
 		if len(screenpoints) >= 1:
 			clip = wx.DCClipper(dc, guide_clip_rect)
@@ -3924,7 +3923,7 @@ class DataCanvas(wxBufferedWindow):
 					return
 
 		# check for click on SpliceIntervalTie - is user starting to drag?
-		img_wid = self.GetCoreImageDisplayWidth()
+		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
 		for siTie in self.parent.spliceManager.getTies():
 			basex = self.splicerX + self.layoutManager.plotLeftMargin + img_wid + (self.layoutManager.plotWidth / 2)
 			basey = self.getSpliceCoord(siTie.depth())
@@ -4583,7 +4582,8 @@ class DataCanvas(wxBufferedWindow):
 			if interval is not None:
 				splicemin, splicemax = self._GetSpliceRange(interval.coreinfo.type)
 				spliceCoef = self._GetSpliceRangeCoef(splicemin, splicemax)
-				plotLeftX = self.splicerX + self.layoutManager.plotLeftMargin + self.GetCoreImageDisplayWidth()
+				img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
+				plotLeftX = self.splicerX + self.layoutManager.plotLeftMargin + img_wid
 				miTuple = (interval.coreinfo, pos[0], pos[1], plotLeftX, pos[0] >= plotLeftX)
 				self.DrawData["MouseInfo"] = [miTuple]
 				got = 1 # must set or DrawData["MouseInfo"] will be cleared

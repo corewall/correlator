@@ -113,7 +113,7 @@ class LayoutManager:
 		self.holesWithImages = [] # holes with imagery
 		self.datatypeOrder = [] # display order of datatypes
 		self.visibleHoles = {} # hole (str):visible (bool)
-		self.visibleDatatypes = {} # datatype (str):visible(bool)
+		self.visibleDatatypes = {} # datatype (str):visible (bool)
 
 	def _reset(self):
 		self.holeColumns = []
@@ -207,6 +207,12 @@ class LayoutManager:
 			if x >= cur_x and x <= right_edge + hc.margin:
 				return right_edge
 		return right_edge if x > right_edge else 0
+
+	def getShowImages(self):
+		if ImageDatatypeStr not in self.visibleDatatypes:
+			return False
+		else:
+			return self.visibleDatatypes[ImageDatatypeStr]
 
 	def _holeHasImages(self, holeName):
 		return holeName in self.holesWithImages
