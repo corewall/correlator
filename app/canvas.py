@@ -878,9 +878,14 @@ class DataCanvas(wxBufferedWindow):
 			self.Images[sectionName] = (img, bmp)
 		return bmp
 
-	# used only for drawing of core images in splice
-	def GetCoreImageDisplayWidth(self):
-		return self.layoutManager.imageWidth if len(self.HolesWithImages) > 0 else 0
+	# Used only for core images in the splice area, which still draws using
+	# old crude approach (vs. the core/composite area, which uses the layout.py
+	# module logic to draw) and thus needs to explicitly ask self.layoutManager
+	# whether images are visible at all.
+	def GetSpliceAreaImageWidth(self):
+		if (len(self.HolesWithImages) > 0 and self.layoutManager.getShowImages()):
+			return self.layoutManager.imageWidth
+		return 0
 
 	# hole: hole name string
 	def HoleHasImages(self, hole):
@@ -1769,7 +1774,7 @@ class DataCanvas(wxBufferedWindow):
 		whiteBrush = wx.Brush(wx.WHITE)
 		dc.SetPen(whitePen)
 		dc.SetBrush(whiteBrush)
-		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
+		img_wid = self.GetSpliceAreaImageWidth()
 		startx = self.splicerX + self.layoutManager.plotLeftMargin + img_wid # beginning of splice plot area
 		endx = startx + (self.layoutManager.plotWidth * 2)
 		ycoord = self.getSpliceCoord(tie.depth())
@@ -1836,7 +1841,7 @@ class DataCanvas(wxBufferedWindow):
 			for tie in self.parent.spliceManager.getTies():
 				self.DrawSpliceIntervalTie(dc, tie) 
 
-		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
+		img_wid = self.GetSpliceAreaImageWidth()
 		self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX - img_wid)
 
 	def DrawSpliceIntervalPlot(self, dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed):
@@ -1902,7 +1907,7 @@ class DataCanvas(wxBufferedWindow):
 
 	def DrawSplice(self, dc, hole, smoothed):
 		# vertical dotted line separating splice from splice guide area
-		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
+		img_wid = self.GetSpliceAreaImageWidth()
 		spliceholewidth = self.splicerX + img_wid + self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 		dc.DrawLines(((spliceholewidth, self.startDepthPix - 20), (spliceholewidth, self.Height)))
@@ -1935,7 +1940,7 @@ class DataCanvas(wxBufferedWindow):
 		
 	def DrawAlternateSpliceInfo(self, dc):
 		coreinfo = self.parent.spliceManager.getAltInfo()
-		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
+		img_wid = self.GetSpliceAreaImageWidth()
 		rangeMax = self.splicerX + img_wid + ((self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin) * 2)
 		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
 		dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height)))
@@ -1948,7 +1953,7 @@ class DataCanvas(wxBufferedWindow):
 
 					
 	def DrawAlternateSplice(self, dc, hole, smoothed):
-		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
+		img_wid = self.GetSpliceAreaImageWidth()
 		altSpliceX = self.splicerX + img_wid + ((self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin) * 2)
 		
 		# vertical dotted line separating splice from next splice hole (or core to be spliced)
@@ -1967,7 +1972,7 @@ class DataCanvas(wxBufferedWindow):
 			
 	# draw current interval's core in its entirety to the right of the splice
 	def DrawSelectedSpliceGuide(self, dc, interval, drawing_start, startX, guide_clip_rect):
-		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
+		img_wid = self.GetSpliceAreaImageWidth()
 		screenpoints = []
 		for pt in interval.coreinfo.coredata:
 			if pt[0] >= drawing_start and pt[0] <= self.SPrulerEndDepth:
@@ -3923,7 +3928,7 @@ class DataCanvas(wxBufferedWindow):
 					return
 
 		# check for click on SpliceIntervalTie - is user starting to drag?
-		img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
+		img_wid = self.GetSpliceAreaImageWidth()
 		for siTie in self.parent.spliceManager.getTies():
 			basex = self.splicerX + self.layoutManager.plotLeftMargin + img_wid + (self.layoutManager.plotWidth / 2)
 			basey = self.getSpliceCoord(siTie.depth())
@@ -4582,7 +4587,7 @@ class DataCanvas(wxBufferedWindow):
 			if interval is not None:
 				splicemin, splicemax = self._GetSpliceRange(interval.coreinfo.type)
 				spliceCoef = self._GetSpliceRangeCoef(splicemin, splicemax)
-				img_wid = self.GetCoreImageDisplayWidth() if self.layoutManager.getShowImages() else 0
+				img_wid = self.GetSpliceAreaImageWidth()
 				plotLeftX = self.splicerX + self.layoutManager.plotLeftMargin + img_wid
 				miTuple = (interval.coreinfo, pos[0], pos[1], plotLeftX, pos[0] >= plotLeftX)
 				self.DrawData["MouseInfo"] = [miTuple]
