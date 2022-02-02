@@ -3268,9 +3268,14 @@ class DataCanvas(wxBufferedWindow):
 			y2 = fixedTie.depth
 			shift = fixedTie.depth - movableTie.depth
 			#print "fixed tie depth = {}, movable tie depth = {}, shift = {}".format()
-			
-			offset = self.parent.compositePanel.GetBestOffset() if actionType == 0 else float(self.parent.compositePanel.GetDepthValue())
+
+			if shift == 0:
+				self.parent.OnShowMessage("Error", "Tie points cannot be at the same depth.", 1)
+				self.selectedTie = -1
+				return
+
 			if actionType == 0: # adjust to reflect best offset
+				offset = self.parent.compositePanel.GetBestOffset()
 				y1 = y1 + offset
 				shift = shift + offset
 
