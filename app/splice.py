@@ -7,7 +7,7 @@ Support for the creation and editing of Splice Interval Tables.
 '''
 
 import unittest
-
+from copy import deepcopy
 
 class Interval:
     def __init__(self, top, bot):
@@ -503,13 +503,39 @@ class SpliceBuilder:
     # brgtodo: validity checks?
     def addInterval(self, interval):
         self.ints.append(interval)
-            
+
     def delete(self, interval):
         deleted = False
         if interval in self.ints:
             self.ints.remove(interval)
             deleted = True
         return deleted
+
+    def addShiftedInterval(self, interval, coreinfo):
+        added = False
+        if self._canAdd(interval):
+            for gap in gaps(self._overs(interval), interval.top, interval.bot):
+                self.ints.append(SpliceInterval(coreinfo, gap.top, gap.bot))
+                self.ints = sorted(self.ints, key=lambda i: i.getTop())
+            added = True
+        else:
+            print "couldn't add interval {}".format(interval)
+        return added
+
+    # Move intervals by distance, trimming to avoid overlaps with
+    # non-shifting intervals if needed.
+    def shiftIntervals(self, intervals, distance):
+        for i in intervals:
+            self.ints.remove(i)
+
+        for i in intervals:
+            shiftedInterval = deepcopy(i)
+            top, bot = shiftedInterval.getTop(), shiftedInterval.getBot()
+            shiftedInterval.setTop(top + distance)
+            shiftedInterval.setBot(bot + distance)
+            shiftedInterval.coreinfo.minDepth += distance
+            shiftedInterval.coreinfo.maxDepth += distance
+            self.addShiftedInterval(shiftedInterval.interval, shiftedInterval.coreinfo)
     
     # are there one or more gaps where part(s) of this interval can be added?
     def _canAdd(self, interval):

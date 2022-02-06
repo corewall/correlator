@@ -3161,7 +3161,7 @@ class AffineController:
 		tieOp = self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
 		if not self.confirmBreaks(tieOp.infoDict['breaks']):
 			return False
-		if not self.removeShiftingCoresFromSplice(tieOp.getCoresToBeMoved()):
+		if not self.handleShiftingCoresInSplice(tieOp.getCoresToBeMoved(), mcdShiftDist):
 			return False
 
 		self.pushState()
@@ -3190,6 +3190,30 @@ class AffineController:
 			if self.parent.OnShowMessage("Splice Intervals Affected", msg, 0) == wx.ID_YES:
 				for interval in intervalsToRemove:
 					self.parent.spliceManager.delete(interval)
+			else:
+				self.parent.Window.ClearCompositeTies()
+				return False
+		return True
+
+	# Find splice intervals with cores in shiftingCores, prompt user for confirmation
+	# and shift splice intervals by distance, trimming to avoid overlaps with non-shifting
+	# intervals.
+	def handleShiftingCoresInSplice(self, shiftingCores, distance):
+		coresInSplice = []
+		intervals = []
+		for sc in shiftingCores:
+			scIntervals = self.parent.spliceManager.findIntervals(sc.hole, sc.core)
+			if len(scIntervals) > 0:
+				coresInSplice.append(sc)
+				intervals += scIntervals
+		if len(intervals) > 0:
+			msg = "This operation affects cores included in the current splice:\n\n"
+			msg += "{}\n\n".format(', '.join(sorted([str(sc) for sc in coresInSplice])))
+			msg += "These cores will be shifted in the splice.\n\n"
+			msg += "Do you want to continue?"
+			if self.parent.OnShowMessage("Splice Intervals Affected", msg, 0) == wx.ID_YES:
+				self.parent.spliceManager.shiftIntervals(intervals, distance)
+				# self.parent.spliceIntervalPanel.UpdateUI()
 			else:
 				self.parent.Window.ClearCompositeTies()
 				return False
@@ -3374,6 +3398,9 @@ class SpliceController:
 				self._updateSelection(self.splice.ints[index])
 		else:
 			self._setErrorMsg("Can't deselect current interval, it has zero length. You may delete.")
+
+	def clearSelected(self):
+		self.selected = None
 
 	def getSelected(self):
 		return self.selected
@@ -3702,6 +3729,12 @@ class SpliceController:
 	def findIntervals(self, hole, core):
 		matches = [i for i in self.splice.ints if i.coreinfo.hole == hole and i.coreinfo.holeCore == core]
 		return matches
+
+	def shiftIntervals(self, intervals, distance):
+		self.splice.shiftIntervals(intervals, distance)
+		self.clearSelected()
+		self.parent.spliceIntervalPanel.UpdateUI()
+		self.setDirty()
 
 
 class CorrelatorApp(wx.App):
