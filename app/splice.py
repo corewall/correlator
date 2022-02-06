@@ -433,7 +433,6 @@ class SpliceBuilder:
 
     def clear(self): # initialize data members
         self.ints = [] # list of SpliceIntervals ordered by top member
-        self.filepath = None
         self.errorMsg = "Init State: No errors here, everything is peachy!"        
     
     def count(self):
