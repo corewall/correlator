@@ -369,18 +369,39 @@ class AffineBuilder:
     # Modify core's existing shift by deltaDistance.
     def adjust(self, core, deltaDistance):
         self.affine.getShift(core).adjust(deltaDistance)
+
+    # The distance of a SET shift is measured from the core's original,
+    # unshifted position. If that core is already shifted, determine
+    # the delta from its current position.
+    def getSETDelta(self, core, distance):
+        delta = distance
+        if self.affine.hasShift(core):
+            delta = distance - self.affine.getShiftDistance(core)
+        return delta
+
+    # Get distance of a SET shift as measured from the core's original,
+    # unshifted position, handling percentage-based shifts if needed.
+    def getSETDistance(self, hole, core, value, isPercent, site, _sectionSummary):
+        if isPercent:
+            coreTop, _ = _sectionSummary.getCoreRange(site, hole, core)
+            distance = (coreTop * value) - coreTop
+        else:
+            distance = value
+        return distance
      
     # Shift one core by a given distance (SET). Rename to avoid conflict with Python set()?
     # core: core to shift
     # distance: distance, in meters, to shift core from its original, unshifted position
-    def set(self, core, distance, dataUsed="", comment=""):
+    def set(self, hole, core, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
         ao = AffineOperation()
-        breaks = self.findBreaksForSET([core])
+        core_id = aci(hole, core)
+        breaks = self.findBreaksForSET([core_id])
         ao.infoDict['breaks'] = breaks
-        ao.shifts.append(SetShift(core, distance, dataUsed, comment))
+        shiftDistance = self.getSETDistance(hole, core, value, isPercent, site, _sectionSummary)
+        ao.shifts.append(SetShift(core_id, shiftDistance, dataUsed, comment))
         for b in breaks:
             childCore = b[1]
-            if childCore != core:
+            if childCore != core_id:
                 ao.implicits.append(childCore)
         return ao
 
@@ -407,11 +428,7 @@ class AffineBuilder:
 
         setCoreList = [c for c in coreList if aci(hole, c) not in tieCores]
         for core in setCoreList:
-            if isPercent:
-                coreTop, _ = _sectionSummary.getCoreRange(site, hole, core)
-                shiftDistance = (coreTop * value) - coreTop
-            else:
-                shiftDistance = value
+            shiftDistance = self.getSETDistance(hole, core, value, isPercent, site, _sectionSummary)
             ao.shifts.append(SetShift(aci(hole, core), shiftDistance, dataUsed, comment))
 
         return ao

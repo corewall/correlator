@@ -3082,13 +3082,15 @@ class AffineController:
 		return bs
 
 	# shift a single untied core with method SET
-	def set(self, hole, core, distance, dataUsed="", comment=""):
-		if self.affine.isTie(aci(hole, core)):
+	def set(self, hole, core, value, isPercent, dataUsed="", comment=""):
+		core_id = aci(hole, core)
+		if self.affine.isTie(core_id):
 			errmsg = "Core {}{} is shifted by a TIE and is part of a chain.\nIt cannot be SET unless that TIE is broken first.".format(hole, core)
 			self.parent.OnShowMessage("Error", errmsg, 1)
 			return
 
-		setOp = self.affine.set(aci(hole, core), distance, dataUsed, comment)
+		site = self.parent.Window.GetHoleSite(hole)
+		setOp = self.affine.set(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
 		if not self.confirmBreaks(setOp.infoDict['breaks']):
 			return
 		if not self.removeShiftingCoresFromSplice(setOp.getCoresToBeMoved()):

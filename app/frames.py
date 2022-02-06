@@ -702,15 +702,15 @@ class CompositePanel():
 		dlg.Centre(wx.CENTER_ON_SCREEN)
 		result = dlg.ShowModal()
 		if result == wx.ID_OK:
+			isRate = dlg.percentRadio.GetValue()
+			value = dlg.outRate if isRate else dlg.outOffset
 			if dlg.coreAndBelow.GetValue(): # SET current core and below
-				isRate = dlg.percentRadio.GetValue()
-				value = dlg.outRate if isRate else dlg.outOffset
 				coreList = dlg.outCoreList
 				self.parent.affineManager.setAll(dlg.outHole, coreList, value, isRate, dlg.outType, dlg.outComment)
 			elif dlg.coreAndChain.GetValue(): # entire chain
 				self.parent.affineManager.setChainRoot(dlg.outHole, dlg.outCore, dlg.outOffset, dlg.outType, dlg.outComment)
 			else: # current core only
-				self.parent.affineManager.set(dlg.outHole, dlg.outCore, dlg.outOffset, dlg.outType, dlg.outComment)
+				self.parent.affineManager.set(dlg.outHole, dlg.outCore, value, isRate, dlg.outType, dlg.outComment)
 
 			self.parent.AffineChange = True
 			#py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)
