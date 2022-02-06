@@ -522,19 +522,20 @@ class SpliceBuilder:
             print "couldn't add interval {}".format(interval)
         return added
 
-    # Move intervals by distance, trimming to avoid overlaps with
-    # non-shifting intervals if needed.
-    def shiftIntervals(self, intervals, distance):
-        for i in intervals:
+	# Shift splice intervals to follow cores undergoing an affine shift.
+    # Shifted intervals will be trimmed to prevent overlap with non-shifting intervals.
+	# - intervalsAndDeltas: list of tuples of form (SpliceInterval to shift, delta of shift)    
+    def shiftIntervals(self, intervalsAndDeltas):
+        for i, _ in intervalsAndDeltas:
             self.ints.remove(i)
 
-        for i in intervals:
+        for i, delta in intervalsAndDeltas:
             shiftedInterval = deepcopy(i)
             top, bot = shiftedInterval.getTop(), shiftedInterval.getBot()
-            shiftedInterval.setTop(top + distance)
-            shiftedInterval.setBot(bot + distance)
-            shiftedInterval.coreinfo.minDepth += distance
-            shiftedInterval.coreinfo.maxDepth += distance
+            shiftedInterval.setTop(top + delta)
+            shiftedInterval.setBot(bot + delta)
+            shiftedInterval.coreinfo.minDepth += delta
+            shiftedInterval.coreinfo.maxDepth += delta
             self.addShiftedInterval(shiftedInterval.interval, shiftedInterval.coreinfo)
     
     # are there one or more gaps where part(s) of this interval can be added?

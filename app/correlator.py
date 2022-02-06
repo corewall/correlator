@@ -3096,7 +3096,8 @@ class AffineController:
 		
 		distance = setOp.shifts[0].distance
 		delta = self.affine.getSETDelta(core_id, distance)
-		if not self.handleShiftingCoresInSplice(setOp.getCoresToBeMoved(), delta):
+		coreAndDelta = [(setOp.shifts[0].core, delta)]
+		if not self.handleShiftingCoresInSplice(coreAndDelta):
 			return
 
 		self.pushState()
@@ -3107,11 +3108,13 @@ class AffineController:
 	# Shift an entire chain by shifting chain root with method SET.
 	# All descendants will remain TIEs.
 	def setChainRoot(self, hole, core, distance, dataUsed="", comment=""):
-		if self.affine.isRoot(aci(hole, core)):
-			setChainOp = self.affine.setChainRoot(aci(hole, core), distance, dataUsed, comment)
+		core_id = aci(hole, core)
+		if self.affine.isRoot(core_id):
+			setChainOp = self.affine.setChainRoot(core_id, distance, dataUsed, comment)
 
 			delta = self.affine.getSETDelta(core_id, distance)
-			if not self.handleShiftingCoresInSplice(setChainOp.getCoresToBeMoved(), delta):
+			coresAndDeltas = [(c, delta) for c in setChainOp.getCoresToBeMoved()]
+			if not self.handleShiftingCoresInSplice(coresAndDeltas):
 				return
 			self.pushState()
 			self.affine.execute(setChainOp)
@@ -3147,7 +3150,11 @@ class AffineController:
 			proceed = self.parent.OnShowMessage("Confirm Breaks", msg, 0) == wx.ID_YES
 
 		if proceed: # warn/confirm about removing shifting cores from splice
-			proceed = self.removeShiftingCoresFromSplice(setAllOp.getCoresToBeMoved())
+			coresAndDeltas = []
+			for shift in setAllOp.shifts:
+				cad = (shift.core, self.affine.getSETDelta(shift.core, shift.distance))
+				coresAndDeltas.append(cad)
+			proceed = self.handleShiftingCoresInSplice(coresAndDeltas)
 
 		if proceed:
 			self.pushState()
@@ -3169,7 +3176,9 @@ class AffineController:
 		tieOp = self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
 		if not self.confirmBreaks(tieOp.infoDict['breaks']):
 			return False
-		if not self.handleShiftingCoresInSplice(tieOp.getCoresToBeMoved(), mcdShiftDist):
+
+		coresAndDeltas = [(c, mcdShiftDist) for c in tieOp.getCoresToBeMoved()]
+		if not self.handleShiftingCoresInSplice(coresAndDeltas):
 			return False
 
 		self.pushState()
@@ -3203,25 +3212,25 @@ class AffineController:
 				return False
 		return True
 
-	# Find splice intervals with cores in shiftingCores, prompt user for confirmation
-	# and shift splice intervals by distance, trimming to avoid overlaps with non-shifting
-	# intervals.
-	def handleShiftingCoresInSplice(self, shiftingCores, distance):
+	# Find splice intervals associated with shifting cores. Prompt user for confirmation
+	# and shift splice intervals along with associated core.
+	# - coresAndDeltas: list of tuples of form (AffineCoreInfo of shifting core, delta of shift)
+	def handleShiftingCoresInSplice(self, coresAndDeltas):
 		coresInSplice = []
-		intervals = []
-		for sc in shiftingCores:
+		intervalsAndDeltas = []
+		for sc, delta in coresAndDeltas:
 			scIntervals = self.parent.spliceManager.findIntervals(sc.hole, sc.core)
 			if len(scIntervals) > 0:
 				coresInSplice.append(sc)
-				intervals += scIntervals
-		if len(intervals) > 0:
+				for sci in scIntervals:
+					intervalsAndDeltas.append((sci, delta))
+		if len(intervalsAndDeltas) > 0:
 			msg = "This operation affects cores included in the current splice:\n\n"
 			msg += "{}\n\n".format(', '.join(sorted([str(sc) for sc in coresInSplice])))
 			msg += "These cores will be shifted in the splice.\n\n"
 			msg += "Do you want to continue?"
 			if self.parent.OnShowMessage("Splice Intervals Affected", msg, 0) == wx.ID_YES:
-				self.parent.spliceManager.shiftIntervals(intervals, distance)
-				# self.parent.spliceIntervalPanel.UpdateUI()
+				self.parent.spliceManager.shiftIntervals(intervalsAndDeltas)
 			else:
 				self.parent.Window.ClearCompositeTies()
 				return False
@@ -3738,8 +3747,10 @@ class SpliceController:
 		matches = [i for i in self.splice.ints if i.coreinfo.hole == hole and i.coreinfo.holeCore == core]
 		return matches
 
-	def shiftIntervals(self, intervals, distance):
-		self.splice.shiftIntervals(intervals, distance)
+	# Shift splice intervals to follow cores undergoing an affine shift.
+	# - intervalsAndDeltas: list of tuples of form (SpliceInterval to shift, delta of shift)
+	def shiftIntervals(self, intervalsAndDeltas):
+		self.splice.shiftIntervals(intervalsAndDeltas)
 		self.clearSelected()
 		self.parent.spliceIntervalPanel.UpdateUI()
 		self.setDirty()
