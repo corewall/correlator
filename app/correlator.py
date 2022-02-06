@@ -3097,6 +3097,12 @@ class AffineController:
 			bs += "{} > {}\n".format(b[0], b[1])
 		return bs
 
+	def _execute(self, affineOperation):
+		self.pushState()
+		self.affine.execute(affineOperation)
+		self.dirty = True
+		self.updateGUI()		
+
 	# shift a single untied core with method SET
 	def set(self, hole, core, value, isPercent, dataUsed="", comment=""):
 		core_id = aci(hole, core)
@@ -3116,10 +3122,7 @@ class AffineController:
 		if not self.handleShiftingCoresInSplice(coreAndDelta):
 			return
 
-		self.pushState()
-		self.affine.execute(setOp)
-		self.dirty = True
-		self.updateGUI()
+		self._execute(setOp)
 
 	# Shift an entire chain by shifting chain root with method SET.
 	# All descendants will remain TIEs.
@@ -3132,10 +3135,7 @@ class AffineController:
 			coresAndDeltas = [(c, delta) for c in setChainOp.getCoresToBeMoved()]
 			if not self.handleShiftingCoresInSplice(coresAndDeltas):
 				return
-			self.pushState()
-			self.affine.execute(setChainOp)
-			self.dirty = True
-			self.updateGUI()
+			self._execute(setChainOp)
 		else:
 			msg = "The selected core, {}{}, is not the root core of a chain.\n" \
 			"The root core must be selected to shift an entire chain.".format(hole, core)
@@ -3173,10 +3173,7 @@ class AffineController:
 			proceed = self.handleShiftingCoresInSplice(coresAndDeltas)
 
 		if proceed:
-			self.pushState()
-			self.affine.execute(setAllOp)
-			self.dirty = True
-			self.updateGUI()
+			self._execute(setAllOp)
 			
 	# fromDepth - MBSF depth of tie point on fromCore
 	# depth - MBSF depth of tie point on core
@@ -3197,10 +3194,7 @@ class AffineController:
 		if not self.handleShiftingCoresInSplice(coresAndDeltas):
 			return False
 
-		self.pushState()
-		self.affine.execute(tieOp)
-		self.dirty = True
-		self.updateGUI()
+		self._execute(tieOp)
 		return True
 
 	# Find splice intervals with cores in shiftingCores, prompt user and remove
@@ -3829,7 +3823,7 @@ class CorrelatorApp(wx.App):
 
 		# If success.txt doesn't contain 'close', it means the previous launch of
 		# Correlator didn't end normally. But reverting the configuration back to
-		# defaults whenever that happens seems wrong...
+		# defaults whenever that happens seems like overkill. TODO?
 		if problemFlag == True:
 			defaultTempFile = open(os.path.join(myTempPath, "default.cfg"), "r+")
 			#print "[DEBUG] Configuration file is regenerated."
