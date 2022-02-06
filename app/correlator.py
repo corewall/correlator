@@ -64,6 +64,22 @@ class MainFrame(wx.Frame):
 
 		self.statusBar = self.CreateStatusBar()
 
+		# experiment with toolbar
+		# self.tb = self.CreateToolBar(style=wx.TB_TEXT)
+		# bmpfoo = wx.Image("hi.bmp", wx.BITMAP_TYPE_BMP).ConvertToBitmap()
+		# can't get help string to show on hover...
+		# self.tb.AddSimpleTool(1, bmpfoo, shortHelpString="Howdy")
+		# self.tb.AddSimpleTool(2, bmpfoo, shortHelpString="Howdy Doody")
+		# btn1 = wx.Button(self.tb, -1, "Howdy")
+		# btn2 = wx.Button(self.tb, -1, "Doody")
+		# self.tb.AddControl(btn1)
+		# self.tb.AddControl(btn2)
+		# self.tb.SetMargins((20, 20))
+		# self.tb.Realize()
+		# self.foobtn = wx.Button(self.tb, -1, "Button!", size=(200,200))
+		# self.tb.AddControl(self.foobtn, "Foo Button")
+		# self.tb.Realize() # must call to display
+
 		self.user = user
 		self.Width = winsize[0]
 		self.Height = winsize[1]
@@ -3811,6 +3827,9 @@ class CorrelatorApp(wx.App):
 		#if self.new == True:
 		#	self.frame.IMPORTRepository()
 
+		# If success.txt doesn't contain 'close', it means the previous launch of
+		# Correlator didn't end normally. But reverting the configuration back to
+		# defaults whenever that happens seems wrong...
 		if problemFlag == True:
 			defaultTempFile = open(os.path.join(myTempPath, "default.cfg"), "r+")
 			#print "[DEBUG] Configuration file is regenerated."

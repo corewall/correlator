@@ -960,6 +960,7 @@ class DataFrame(wx.Panel):
 					secSummFiles.append(filename)
 		return secSummFiles
 
+	# This is really "GetSiteImageDirs" or Items or the like...not actually images!
 	def GetSiteImages(self, selectedIndex):
 		siteNode = self.GetSiteForNode(selectedIndex)
 		imageFiles = []
