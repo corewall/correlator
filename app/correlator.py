@@ -3093,8 +3093,12 @@ class AffineController:
 		setOp = self.affine.set(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
 		if not self.confirmBreaks(setOp.infoDict['breaks']):
 			return
-		if not self.removeShiftingCoresFromSplice(setOp.getCoresToBeMoved()):
+		
+		distance = setOp.shifts[0].distance
+		delta = self.affine.getSETDelta(core_id, distance)
+		if not self.handleShiftingCoresInSplice(setOp.getCoresToBeMoved(), delta):
 			return
+
 		self.pushState()
 		self.affine.execute(setOp)
 		self.dirty = True
@@ -3105,7 +3109,9 @@ class AffineController:
 	def setChainRoot(self, hole, core, distance, dataUsed="", comment=""):
 		if self.affine.isRoot(aci(hole, core)):
 			setChainOp = self.affine.setChainRoot(aci(hole, core), distance, dataUsed, comment)
-			if not self.removeShiftingCoresFromSplice(setChainOp.getCoresToBeMoved()):
+
+			delta = self.affine.getSETDelta(core_id, distance)
+			if not self.handleShiftingCoresInSplice(setChainOp.getCoresToBeMoved(), delta):
 				return
 			self.pushState()
 			self.affine.execute(setChainOp)
