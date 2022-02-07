@@ -3076,9 +3076,13 @@ class AffineController:
 		self.parent.compositePanel.UpdateAffineTable()
 		self.parent.compositePanel.UpdateUndoButton()
 		
-	def pushState(self):
+	def pushState(self, spliceState=None):
 		prevAffine = copy.deepcopy(self.affine)
-		self.parent.undoManager.pushState(prevAffine)
+		if spliceState is None:
+			self.parent.undoManager.pushState(prevAffine)
+		else:
+			stateTuple = (prevAffine, spliceState)
+			self.parent.undoManager.pushState(stateTuple)
 	
 	def isDirty(self):
 		return self.dirty
@@ -3099,8 +3103,8 @@ class AffineController:
 		return bs
 
 	# Perform the specified affineOperation.
-	def _execute(self, affineOperation):
-		self.pushState()
+	def _execute(self, affineOperation, spliceState=None):
+		self.pushState(spliceState)
 		self.affine.execute(affineOperation)
 		self.dirty = True
 		self.updateGUI()		
@@ -3121,10 +3125,16 @@ class AffineController:
 		distance = setOp.shifts[0].distance
 		delta = self.affine.getSETDelta(core_id, distance)
 		coreAndDelta = [(setOp.shifts[0].core, delta)]
-		if not self.handleShiftingCoresInSplice(coreAndDelta):
+		proceed, intervalsAndDeltas = self.confirmShiftCoresInSplice(coreAndDelta)
+		if not proceed:
 			return
 
-		self._execute(setOp)
+		if len(intervalsAndDeltas) > 0:
+			spliceState = copy.deepcopy(self.parent.spliceManager.splice)
+			self.parent.spliceManager.shiftIntervals(intervalsAndDeltas)
+			self._execute(setOp, spliceState)
+		else:
+			self._execute(setOp)
 
 	# Shift an entire chain by shifting chain root with method SET.
 	# All descendants will remain TIEs.
@@ -3135,9 +3145,16 @@ class AffineController:
 
 			delta = self.affine.getSETDelta(core_id, distance)
 			coresAndDeltas = [(c, delta) for c in setChainOp.getCoresToBeMoved()]
-			if not self.handleShiftingCoresInSplice(coresAndDeltas):
+			proceed, intervalsAndDeltas = self.confirmShiftCoresInSplice(coresAndDeltas)
+			if not proceed:
 				return
-			self._execute(setChainOp)
+
+			if len(intervalsAndDeltas) > 0:
+				spliceState = copy.deepcopy(self.parent.spliceManager.splice)
+				self.parent.spliceManager.shiftIntervals(intervalsAndDeltas)
+				self._execute(setChainOp, spliceState)
+			else:
+				self._execute(setChainOp)
 		else:
 			msg = "The selected core, {}{}, is not the root core of a chain.\n" \
 			"The root core must be selected to shift an entire chain.".format(hole, core)
@@ -3167,15 +3184,21 @@ class AffineController:
 			"Do you still want to proceed with this SET?".format(', '.join(chainRootNames), breaksStr)
 			proceed = self.parent.OnShowMessage("Confirm Breaks", msg, 0) == wx.ID_YES
 
-		if proceed: # warn/confirm about removing shifting cores from splice
+		intervalsAndDeltas = []
+		if proceed: # warn/confirm shift of splice intervals to match affine shifts
 			coresAndDeltas = []
 			for shift in setAllOp.shifts:
 				cad = (shift.core, self.affine.getSETDelta(shift.core, shift.distance))
 				coresAndDeltas.append(cad)
-			proceed = self.handleShiftingCoresInSplice(coresAndDeltas)
+			proceed, intervalsAndDeltas = self.confirmShiftCoresInSplice(coresAndDeltas)
 
 		if proceed:
-			self._execute(setAllOp)
+			if len(intervalsAndDeltas) > 0:
+				spliceState = copy.deepcopy(self.parent.spliceManager.splice)
+				self.parent.spliceManager.shiftIntervals(intervalsAndDeltas)
+				self._execute(setAllOp, spliceState)
+			else:
+				self._execute(setAllOp)			
 			
 	# fromDepth - MBSF depth of tie point on fromCore
 	# depth - MBSF depth of tie point on core
@@ -3193,10 +3216,16 @@ class AffineController:
 			return False
 
 		coresAndDeltas = [(c, mcdShiftDist) for c in tieOp.getCoresToBeMoved()]
-		if not self.handleShiftingCoresInSplice(coresAndDeltas):
+		proceed, intervalsAndDeltas = self.confirmShiftCoresInSplice(coresAndDeltas)
+		if not proceed:
 			return False
 
-		self._execute(tieOp)
+		if len(intervalsAndDeltas) > 0:
+			spliceState = copy.deepcopy(self.parent.spliceManager.splice)
+			self.parent.spliceManager.shiftIntervals(intervalsAndDeltas)
+			self._execute(tieOp, spliceState)
+		else:
+			self._execute(tieOp)		
 		return True
 
 	# Find splice intervals with cores in shiftingCores, prompt user and remove
@@ -3224,10 +3253,11 @@ class AffineController:
 				return False
 		return True
 
-	# Find splice intervals associated with shifting cores. Prompt user for confirmation
-	# and shift splice intervals along with associated core.
+	# If there are splice intervals associated with shifting cores in coresAndDeltas,
+	# prompt user to confirm that splice intervals can be shifted to match.
+	# Return a tuple: boolean proceed with operation, list of tuples of form (interval, shift delta)
 	# - coresAndDeltas: list of tuples of form (AffineCoreInfo of shifting core, delta of shift)
-	def handleShiftingCoresInSplice(self, coresAndDeltas):
+	def confirmShiftCoresInSplice(self, coresAndDeltas):
 		coresInSplice = []
 		intervalsAndDeltas = []
 		for sc, delta in coresAndDeltas:
@@ -3236,17 +3266,17 @@ class AffineController:
 				coresInSplice.append(sc)
 				for sci in scIntervals:
 					intervalsAndDeltas.append((sci, delta))
+		proceed = True
 		if len(intervalsAndDeltas) > 0:
 			msg = "This operation affects cores included in the current splice:\n\n"
 			msg += "{}\n\n".format(', '.join(sorted([str(sc) for sc in coresInSplice])))
 			msg += "These cores will be shifted in the splice.\n\n"
 			msg += "Do you want to continue?"
-			if self.parent.OnShowMessage("Splice Intervals Affected", msg, 0) == wx.ID_YES:
-				self.parent.spliceManager.shiftIntervals(intervalsAndDeltas)
-			else:
+			if self.parent.OnShowMessage("Splice Intervals Affected", msg, 0) != wx.ID_YES:
 				self.parent.Window.ClearCompositeTies()
-				return False
-		return True
+				proceed = False
+
+		return proceed, intervalsAndDeltas
 
 	def breakTie(self, coreStr):
 		core = acistr(coreStr)
@@ -3323,8 +3353,19 @@ class AffineController:
 	
 	def undo(self):
 		assert self.canUndo()
-		prevAffineBuilder = self.parent.undoManager.popState()
-		self.affine = prevAffineBuilder
+		undoState = self.parent.undoManager.getState()
+		if isinstance(undoState, tuple):
+			assert len(undoState) == 2
+			assert isinstance(undoState[0], AffineBuilder)
+			assert isinstance(undoState[1], splice.SpliceBuilder)
+			if self.parent.OnShowMessage("Undo Affine and Splice", "Undoing will also revert the splice, continue?", 0) != wx.ID_YES:
+				return
+			self.affine = undoState[0]
+			self.parent.spliceManager.splice = undoState[1]
+		else:
+			assert isinstance(undoState, AffineBuilder)
+			self.affine = undoState
+		self.parent.undoManager.popState()
 		self.dirty = True
 		self.updateGUI()
 
@@ -3786,6 +3827,9 @@ class UndoManager:
 
 	def popState(self):
 		return self.undoStack.pop()
+
+	def getState(self):
+		return self.undoStack[-1]
 
 
 class CorrelatorApp(wx.App):
