@@ -92,6 +92,7 @@ class MainFrame(wx.Frame):
 		self.sectionSummary = None
 		self.affineManager = AffineController(self)
 		self.spliceManager = SpliceController(self)
+		self.undoManager = UndoManager()
 
 		self.RawData = ""
 		self.SmoothData = ""
@@ -1364,6 +1365,7 @@ class MainFrame(wx.Frame):
 		self.affineManager.clear()
 		self.spliceManager.clear()
 		self.spliceIntervalPanel.OnInitUI()
+		self.undoManager.clear()
 		self.eldPanel.OnInitUI()
 		self.autoPanel.OnInitUI(True)
 		self.agePanel.OnInitUI()
@@ -1373,6 +1375,7 @@ class MainFrame(wx.Frame):
 		self.dataFrame.needsReload = False
 		self.affineManager.clear()
 		self.spliceManager.clear()
+		self.undoManager.clear()
 		self.Window.SpliceHole = []
 		self.Window.SpliceData = []
 		self.Window.SpliceSmoothData = []
@@ -3010,14 +3013,12 @@ class AffineController:
 	def __init__(self, parent):
 		self.parent = parent # MainFrame - oy, this dependency!
 		self.affine = AffineBuilder() # AffineBuilder for current affine table
-		self.undoStack = [] # track previous AffineBuilder states for undo
 		self.dirty = False # has affine state changed since last save?
 		self.currentAffineFile = None # most-recently loaded or saved affine file (if any)
 	
 	# remove all shifts, re-init state members
 	def clear(self):
 		self.affine.clear()
-		self.undoStack = []
 		self.dirty = False
 		self.currentAffineFile = None
 		
@@ -3077,7 +3078,7 @@ class AffineController:
 		
 	def pushState(self):
 		prevAffine = copy.deepcopy(self.affine)
-		self.undoStack.append(prevAffine)
+		self.parent.undoManager.pushState(prevAffine)
 	
 	def isDirty(self):
 		return self.dirty
@@ -3097,6 +3098,7 @@ class AffineController:
 			bs += "{} > {}\n".format(b[0], b[1])
 		return bs
 
+	# Perform the specified affineOperation.
 	def _execute(self, affineOperation):
 		self.pushState()
 		self.affine.execute(affineOperation)
@@ -3317,11 +3319,11 @@ class AffineController:
 		return self.affine.isLegalTie(aci(moveCore.hole, moveCore.holeCore), aci(fixedCore.hole, fixedCore.holeCore))
 	
 	def canUndo(self):
-		return len(self.undoStack) > 0
+		return self.parent.undoManager.canUndo()
 	
 	def undo(self):
 		assert self.canUndo()
-		prevAffineBuilder = self.undoStack.pop()
+		prevAffineBuilder = self.parent.undoManager.popState()
 		self.affine = prevAffineBuilder
 		self.dirty = True
 		self.updateGUI()
@@ -3764,6 +3766,26 @@ class SpliceController:
 		self.clearSelected()
 		self.parent.spliceIntervalPanel.UpdateUI()
 		self.setDirty()
+
+
+class UndoManager:
+	def __init__(self):
+		self.undoStack = []
+
+	def clear(self):
+		self.undoStack = []
+
+	def count(self):
+		return len(self.undoStack)
+
+	def canUndo(self):
+		return self.count() > 0
+
+	def pushState(self, state):
+		self.undoStack.append(state)
+
+	def popState(self):
+		return self.undoStack.pop()
 
 
 class CorrelatorApp(wx.App):
