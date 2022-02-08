@@ -675,7 +675,7 @@ class CompositePanel():
 		self.parent.Window.UpdateDrawing() # or tie graphics won't clear until mouseover
 
 	def OnUndoAffineShift(self, evt):
-		self.parent.OnUndoAffineShift()
+		self.parent.OnUndo()
 
 	def OnEvalSettings(self, evt):
 		dlg = dialog.CorrParamsDialog(self.plotNote, self.parent.minDepthStep, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
@@ -806,7 +806,7 @@ class CompositePanel():
 			self.table.SetCellValue(rowIndex, 2, ar[2])
 			
 	def UpdateUndoButton(self):
-		enable = self.parent.affineManager.canUndo()
+		enable = self.parent.undoManager.canUndo()
 		self.undoButton.Enable(enable)
 
 	def UpdateEvalStatus(self):
@@ -1592,6 +1592,7 @@ class SpliceIntervalPanel():
 		self.OnTieButton(botTie)
 		
 	def OnTieButton(self, tie):
+		self.parent.spliceManager.pushState()
 		if tie.isTied():
 			tie.split()
 		else:
@@ -1640,6 +1641,7 @@ class SpliceIntervalPanel():
 				secDepth = float(setDepthDialog.sectionDepth.GetValue())
 				# section summary depths are all MBSF/CSF-A, add MCD/CCSF-A offset for true depth
 				depth = self.parent.sectionSummary.sectionDepthToTotal(site, hole, core, section, secDepth) + mcdOffset
+			self.parent.spliceManager.pushState()
 			tie.move(depth)
 			self.UpdateUI()
 			self.parent.Window.UpdateDrawing()

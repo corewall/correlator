@@ -36,7 +36,7 @@ import frames
 import dbmanager
 import version as vers
 from affine import AffineBuilder, AffineCoreInfo, aci, acistr, isTie, isSet, isImplicit
-import splice
+from splice import SpliceBuilder, SpliceInterval, SpliceIntervalTopTie, SpliceIntervalBotTie
 import tabularImport
 import prefs
 from layout import ImageDatatypeStr
@@ -92,7 +92,7 @@ class MainFrame(wx.Frame):
 		self.sectionSummary = None
 		self.affineManager = AffineController(self)
 		self.spliceManager = SpliceController(self)
-		self.undoManager = UndoManager()
+		self.undoManager = UndoManager(self)
 
 		self.RawData = ""
 		self.SmoothData = ""
@@ -625,8 +625,8 @@ class MainFrame(wx.Frame):
 	def OnAdjustCore(self, opt, type):
 		self.Window.OnAdjustCore(opt, type)
 
-	def OnUndoAffineShift(self):
-		self.affineManager.undo()
+	def OnUndo(self):
+		self.undoManager.undo()
 		self.UpdateData()
 
 	def OnUpdateDepth(self, depth):
@@ -3074,7 +3074,6 @@ class AffineController:
 		
 	def updateGUI(self):
 		self.parent.compositePanel.UpdateAffineTable()
-		self.parent.compositePanel.UpdateUndoButton()
 		
 	def pushState(self, spliceState=None):
 		prevAffine = copy.deepcopy(self.affine)
@@ -3351,21 +3350,9 @@ class AffineController:
 	def canUndo(self):
 		return self.parent.undoManager.canUndo()
 	
-	def undo(self):
-		assert self.canUndo()
-		undoState = self.parent.undoManager.getState()
-		if isinstance(undoState, tuple):
-			assert len(undoState) == 2
-			assert isinstance(undoState[0], AffineBuilder)
-			assert isinstance(undoState[1], splice.SpliceBuilder)
-			if self.parent.OnShowMessage("Undo Affine and Splice", "Undoing will also revert the splice, continue?", 0) != wx.ID_YES:
-				return
-			self.affine = undoState[0]
-			self.parent.spliceManager.splice = undoState[1]
-		else:
-			assert isinstance(undoState, AffineBuilder)
-			self.affine = undoState
-		self.parent.undoManager.popState()
+	def undo(self, state):
+		assert isinstance(state, AffineBuilder)
+		self.affine = state
 		self.dirty = True
 		self.updateGUI()
 
@@ -3374,8 +3361,8 @@ class AffineController:
 class SpliceController:
 	def __init__(self, parent):
 		self.parent = parent # MainFrame
-		self.splice = splice.SpliceBuilder() # SpliceBuilder for current splice
-		self.altSplice = splice.SpliceBuilder() # SpliceBuilder for alternate splice
+		self.splice = SpliceBuilder() # SpliceBuilder for current splice
+		self.altSplice = SpliceBuilder() # SpliceBuilder for alternate splice
 		self.currentSpliceFile = None
 		
 		self.clear() # init selection, file state members
@@ -3409,6 +3396,8 @@ class SpliceController:
 		self.topTie = None # brgtodo: rename to handles since these don't always represent a "TIE"
 		self.botTie = None
 		self.dirty = False # is self.splice in a modified, unsaved state?
+		self.undoState = None
+		self.selectedIntervalState = None # track original interval at start of tie drag
 		self.errorMsg = "All is well at the moment!"
 		
 	def count(self):
@@ -3441,14 +3430,18 @@ class SpliceController:
 		coremin, coremax = self.getCoreRange(coreinfo)
 		coreinfo.minDepth = coremin
 		coreinfo.maxDepth = coremax
+		spliceState = copy.deepcopy(self.splice)
 		if self.splice.add(coreinfo):
+			self.parent.undoManager.pushState(spliceState)
 			self._onAdd()
 			
 	def delete(self, interval):
+		spliceState = copy.deepcopy(self.splice)
 		if self.hasSelection() and interval == self.selected:
 			self.deleteSelected()
 		else:
 			self.splice.delete(interval)
+		self.parent.undoManager.pushState(spliceState)
 		self.setDirty(self.count() > 0) # can't save a splice with zero intervals
 		self._onDelete()
 			
@@ -3479,6 +3472,7 @@ class SpliceController:
 		return self.splice.ints.index(self.selected) if self.hasSelection() else -1
 	
 	def deleteSelected(self):
+		self.pushState()
 		if self.splice.delete(self.selected):
 			self.selected = None
 			self.selectTie(None)
@@ -3488,7 +3482,14 @@ class SpliceController:
 	def selectTie(self, siTie):
 		if siTie in self.getTies():
 			self.selectedTie = siTie
+			self.undoState = copy.deepcopy(self.splice)
+			self.selectedIntervalState = copy.deepcopy(self.selectedTie.interval.interval)
 		elif siTie is None:
+			if self.selectedIntervalState is not None and not self.selectedIntervalState.equals(self.selectedTie.interval.interval):
+				print("Interval bounds changed, saving state in undo!")
+				self.parent.undoManager.pushState(self.undoState)
+				self.undoState = None
+				self.selectedIntervalState = None
 			self.selectedTie = None
 			
 	def getSelectedTie(self):
@@ -3504,8 +3505,8 @@ class SpliceController:
 		if self.hasSelection():
 			intAbove = self.splice.getIntervalAbove(self.selected)
 			intBelow = self.splice.getIntervalBelow(self.selected)
-			self.topTie = splice.SpliceIntervalTopTie(self.selected, intAbove)
-			self.botTie = splice.SpliceIntervalBotTie(self.selected, intBelow)
+			self.topTie = SpliceIntervalTopTie(self.selected, intAbove)
+			self.botTie = SpliceIntervalBotTie(self.selected, intBelow)
 		else:
 			self.topTie = self.botTie = None
 
@@ -3660,7 +3661,7 @@ class SpliceController:
 			
 			print "creating interval for {}: {} - {}".format(coreinfo.getHoleCoreStr(), intervalTop, previousAffBot)
 			# 1/19/2016 brgtodo: catch ValueError (for invalid interval) and skip instead of failing?
-			spliceInterval = splice.SpliceInterval(coreinfo, intervalTop, previousAffBot, comment)
+			spliceInterval = SpliceInterval(coreinfo, intervalTop, previousAffBot, comment)
 			destSplice.addInterval(spliceInterval) # add to ints - should already be sorted properly
 		
 		#self._onAdd(dirty=False) # notify listeners that intervals have been added
@@ -3808,9 +3809,21 @@ class SpliceController:
 		self.parent.spliceIntervalPanel.UpdateUI()
 		self.setDirty()
 
+	def undo(self, state):
+		assert isinstance(state, SpliceBuilder)
+		self.splice = state
+		self.clearSelected()
+		self.parent.spliceIntervalPanel.UpdateUI()
+		self.setDirty()
+
+	def pushState(self):
+		state = copy.deepcopy(self.splice)
+		self.parent.undoManager.pushState(state)
+
 
 class UndoManager:
-	def __init__(self):
+	def __init__(self, parent):
+		self.parent = parent
 		self.undoStack = []
 
 	def clear(self):
@@ -3824,12 +3837,32 @@ class UndoManager:
 
 	def pushState(self, state):
 		self.undoStack.append(state)
+		self.parent.compositePanel.UpdateUndoButton()
 
 	def popState(self):
-		return self.undoStack.pop()
+		state = self.undoStack.pop()
+		self.parent.compositePanel.UpdateUndoButton()
+		return state
 
 	def getState(self):
 		return self.undoStack[-1]
+
+	def undo(self):
+		assert self.canUndo()
+		undoState = self.popState()
+		if isinstance(undoState, tuple):
+			assert len(undoState) == 2
+			assert isinstance(undoState[0], AffineBuilder)
+			assert isinstance(undoState[1], SpliceBuilder)
+			self.parent.affineManager.undo(undoState[0])
+			self.parent.spliceManager.undo(undoState[1])
+		elif isinstance(undoState, AffineBuilder):
+			self.parent.affineManager.undo(undoState)
+		elif isinstance(undoState, SpliceBuilder):
+			self.parent.spliceManager.undo(undoState)
+		else:
+			assert False, "Unexpected type {} on undo stack".format(type(undoState))
+
 
 
 class CorrelatorApp(wx.App):
