@@ -273,6 +273,13 @@ class MainFrame(wx.Frame):
 		self.Bind(wx.EVT_CLOSE, self.OnClose)
 		menuBar.Append(menuFile, "&File")
 
+		menuEdit = wx.Menu()
+		self.undoMenuItem = menuEdit.Append(wx.ID_UNDO, "", "Undo last affine or splice edit")
+		self.undoMenuItem.Enable(False)
+		self.Bind(wx.EVT_MENU, self.OnUndo, self.undoMenuItem)
+
+		menuBar.Append(menuEdit, "&Edit")
+
 		# View 
 		menuView = wx.Menu()
 		self.mitool = menuView.AppendCheckItem(-1, "Show Toolbar", "Show/hide toolbar")
@@ -625,9 +632,13 @@ class MainFrame(wx.Frame):
 	def OnAdjustCore(self, opt, type):
 		self.Window.OnAdjustCore(opt, type)
 
-	def OnUndo(self):
+	def OnUndo(self, evt):
 		self.undoManager.undo()
 		self.UpdateData()
+
+	def UpdateUndoMenuItem(self):
+		enable = self.undoManager.canUndo() and self.Window.IsShown()
+		self.undoMenuItem.Enable(enable)
 
 	def OnUpdateDepth(self, depth):
 		self.compositePanel.OnUpdateDepth(depth)	
@@ -2486,6 +2497,7 @@ class MainFrame(wx.Frame):
 			#self.midata.Check(True)
 			self.topMenu.dbbtn.SetLabel("Go to Display")
 		self.Layout()
+		self.UpdateUndoMenuItem()
 
 	def ShowDisplay(self):
 		if self.dataFrame.needsReload:
@@ -2507,6 +2519,7 @@ class MainFrame(wx.Frame):
 		#self.midata.Check(False)
 		self.topMenu.dbbtn.SetLabel("Go to Data Manager")
 		self.Layout()
+		self.UpdateUndoMenuItem()
 
 	# brg 1/8/2014: move to utils module or the like?
 	""" Convert data type string to integer (and non-empty annotation string if data type is user-defined)"""
@@ -3837,11 +3850,11 @@ class UndoManager:
 
 	def pushState(self, state):
 		self.undoStack.append(state)
-		self.parent.compositePanel.UpdateUndoButton()
+		self.parent.UpdateUndoMenuItem()
 
 	def popState(self):
 		state = self.undoStack.pop()
-		self.parent.compositePanel.UpdateUndoButton()
+		self.parent.UpdateUndoMenuItem()
 		return state
 
 	def getState(self):

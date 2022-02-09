@@ -616,18 +616,6 @@ class CompositePanel():
 		projectPanel.SetSizer(setSizer)
 		vbox.Add(projectPanel, 0, wx.EXPAND)
 
-		# undo panel
-		undoPanel = wx.Panel(self.mainPanel, -1)
-		sizer32 = wx.StaticBoxSizer(wx.StaticBox(undoPanel, -1, 'Undo'), orient=wx.VERTICAL)
-		self.undoButton = wx.Button(undoPanel, -1, "Undo Previous Shift")#, size=undoButtonSize)
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoAffineShift, self.undoButton)
-		self.undoButton.Enable(False)
-		sizer32.Add(self.undoButton, 0, wx.EXPAND)
-
-		undoPanel.SetSizer(sizer32)
-		vbox.Add(undoPanel, 0, wx.EXPAND | wx.BOTTOM, 10)
-		# vbox.Add(wx.StaticText(self.mainPanel, -1, '* Right-click tie for context menu', (5, 5)), 0, wx.BOTTOM, 5)
-
 		self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine (and Splice if one exists)...")
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
 		vbox.Add(self.saveButton, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL | wx.BOTTOM, 2)
@@ -638,7 +626,6 @@ class CompositePanel():
 	def OnInitUI(self):
 		self.adjustButton.Enable(False)
 		self.clearButton.Enable(False)
-		self.undoButton.Enable(False)
 
 	def EnableSETButton(self, enable):
 		self.setButton.Enable(enable)
@@ -673,9 +660,6 @@ class CompositePanel():
 	def OnClearTie(self, evt):
 		self.parent.Window.ClearCompositeTies()
 		self.parent.Window.UpdateDrawing() # or tie graphics won't clear until mouseover
-
-	def OnUndoAffineShift(self, evt):
-		self.parent.OnUndo()
 
 	def OnEvalSettings(self, evt):
 		dlg = dialog.CorrParamsDialog(self.plotNote, self.parent.minDepthStep, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
@@ -804,10 +788,6 @@ class CompositePanel():
 			self.table.SetCellValue(rowIndex, 0, ar[0])
 			self.table.SetCellValue(rowIndex, 1, ar[1])
 			self.table.SetCellValue(rowIndex, 2, ar[2])
-			
-	def UpdateUndoButton(self):
-		enable = self.parent.undoManager.canUndo()
-		self.undoButton.Enable(enable)
 
 	def UpdateEvalStatus(self):
 		roundedDepthStep = int(10000.0 * float(self.parent.depthStep)) / 10000.0
@@ -928,10 +908,6 @@ class SplicePanel():
 		sizer31.Add(self.depth)
 		sizer31_1.Add(sizer31)
 
-		self.undoButton = wx.Button(panel3, -1, "Undo Last", size=(buttonsize, 30))
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnUndoSplice, self.undoButton)
-		self.undoButton.Enable(False)
-		sizer31_1.Add(self.undoButton, 1, wx.TOP, 3)
 		self.clearButton = wx.Button(panel3, -1, "Clear Tie", size=(buttonsize, 30))
 		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnClearTie, self.clearButton)		
 		self.clearButton.Enable(False)
