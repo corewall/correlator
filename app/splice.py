@@ -210,12 +210,20 @@ class TestIntervals(unittest.TestCase):
         self.assertTrue(u5[0].top == 1)
         self.assertTrue(u5[0].bot == 4)
 
-
+nextSpliceIntervalId = 1
 class SpliceInterval:
-    def __init__(self, coreinfo, top, bot, comment=""):
+    def __init__(self, coreinfo, top, bot, comment="", siid=None):
         self.coreinfo = coreinfo # CoreInfo for core used in this interval
         self.interval = Interval(top, bot)
         self.comment = comment
+        # self.siid is a unique integer identifying this SpliceInterval.
+        # Used to track currently selected SpliceInterval in SpliceController.
+        if siid is None:
+            global nextSpliceIntervalId
+            self.siid = nextSpliceIntervalId
+            nextSpliceIntervalId += 1
+        else:
+            self.siid = siid
         
     def valid(self):
         return self.interval.valid()
@@ -432,7 +440,7 @@ class SpliceBuilder:
         self.clear()
 
     def clear(self): # initialize data members
-        self.ints = [] # list of SpliceIntervals ordered by top member
+        self.ints = [] # list of SpliceIntervals ordered by top depth
         self.errorMsg = "Init State: No errors here, everything is peachy!"        
     
     def count(self):
@@ -458,6 +466,14 @@ class SpliceBuilder:
     def getIntervalAtIndex(self, index):
         if index < len(self.ints):
             return self.ints[index]
+
+    def getIntervalById(self, siid):
+        result = None
+        for i in self.ints:
+            if i.siid == siid:
+                result = i
+                break
+        return result
         
     def getDataTypes(self):
         types = set()
@@ -471,15 +487,17 @@ class SpliceBuilder:
     def getErrorMsg(self):
         return self.errorMsg
     
-    def getIntervalAbove(self, interval):
+    def getIntervalAbove(self, siid):
         result = None
+        interval = self.getIntervalById(siid)
         idx = self.ints.index(interval)
         if idx != -1 and idx > 0:
             result = self.ints[idx - 1]
         return result
     
-    def getIntervalBelow(self, interval):
+    def getIntervalBelow(self, siid):
         result = None
+        interval = self.getIntervalById(siid)
         idx = self.ints.index(interval)
         if idx != -1 and idx < len(self.ints) - 1:
             result = self.ints[idx + 1]
@@ -503,27 +521,35 @@ class SpliceBuilder:
     def addInterval(self, interval):
         self.ints.append(interval)
 
-    def delete(self, interval):
+    def delete(self, siid):
         deleted = False
+        interval = self.getIntervalById(siid)
         if interval in self.ints:
             self.ints.remove(interval)
             deleted = True
         return deleted
 
-    def addShiftedInterval(self, interval, coreinfo):
+    # Create new SpliceInterval(s) for a shifting SpliceInterval, retaining its
+    # size, coreinfo, and siid (for the first created SpliceInterval).
+    def addShiftedInterval(self, interval, coreinfo, siid):
         added = False
         if self._canAdd(interval):
-            for gap in gaps(self._overs(interval), interval.top, interval.bot):
-                self.ints.append(SpliceInterval(coreinfo, gap.top, gap.bot))
+            for idx, gap in enumerate(gaps(self._overs(interval), interval.top, interval.bot)):
+                # If multiple SpliceIntervals will result from shifting interval (e.g. when
+                # interval is shifted such that it now encompasses a non-shifting interval),
+                # reuse the existing siid *only* for the first SpliceInterval created! Otherwise
+                # we'll end up with duplicate siids.
+                new_siid = siid if idx == 0 else None
+                self.ints.append(SpliceInterval(coreinfo, gap.top, gap.bot, siid=new_siid))
                 self.ints = sorted(self.ints, key=lambda i: i.getTop())
             added = True
         else:
-            print "couldn't add interval {}".format(interval)
+            print("couldn't add interval {}".format(interval))
         return added
 
 	# Shift splice intervals to follow cores undergoing an affine shift.
     # Shifted intervals will be trimmed to prevent overlap with non-shifting intervals.
-	# - intervalsAndDeltas: list of tuples of form (SpliceInterval to shift, delta of shift)    
+	# - intervalsAndDeltas: list of tuples of form (SpliceInterval to shift, delta of shift)
     def shiftIntervals(self, intervalsAndDeltas):
         for i, _ in intervalsAndDeltas:
             self.ints.remove(i)
@@ -535,7 +561,8 @@ class SpliceBuilder:
             shiftedInterval.setBot(bot + delta)
             shiftedInterval.coreinfo.minDepth += delta
             shiftedInterval.coreinfo.maxDepth += delta
-            self.addShiftedInterval(shiftedInterval.interval, shiftedInterval.coreinfo)
+            self.addShiftedInterval(shiftedInterval.interval, shiftedInterval.coreinfo, shiftedInterval.siid)
+
     
     # are there one or more gaps where part(s) of this interval can be added?
     def _canAdd(self, interval):

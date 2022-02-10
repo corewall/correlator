@@ -1831,7 +1831,7 @@ class DataCanvas(wxBufferedWindow):
 			smoothdata = [pt for pt in smoothdata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()] # trim to interval
 			usScreenPoints = self.GetScreenPoints(smoothdata, drawing_start, startX)
 
-		intervalSelected = (interval == self.parent.spliceManager.getSelected())
+		intervalSelected = (interval == self.parent.spliceManager.getSelectedInterval())
 		self.DrawSpliceIntervalPlot(dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed)
 
 		if self.parent.sectionSummary and self.layoutManager.getShowImages():
@@ -1931,7 +1931,7 @@ class DataCanvas(wxBufferedWindow):
 				# dc.DrawLine(selected_x, clip_y, selected_x, clip_y + clip_height)
 				# dc.DrawLine(selected_x + self.layoutManager.plotWidth, clip_y, selected_x + self.layoutManager.plotWidth, clip_y + clip_height)
 				guide_clip_rect = wx.Rect(x=selected_x, y=clip_y, width=self.layoutManager.plotWidth, height=clip_height)
-				self.DrawSelectedSpliceGuide(dc, self.parent.spliceManager.getSelected(), drawing_start, startX, guide_clip_rect)
+				self.DrawSelectedSpliceGuide(dc, self.parent.spliceManager.getSelectedInterval(), drawing_start, startX, guide_clip_rect)
 		else: # draw help text
 			ypos = self.getSpliceCoord(self.SPrulerStartDepth)
 			dc.DrawText("Drag a core from the left to start a splice.", self.splicerX + 20, ypos + 20)

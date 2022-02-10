@@ -1499,7 +1499,7 @@ class SpliceIntervalPanel():
 		else:
 			self.table.SelectRow(cursel)
 			self.table.MakeCellVisible(cursel, 0) # scroll to row if not visible
-			self.lastInterval = self.parent.spliceManager.getSelected()
+			self.lastInterval = self.parent.spliceManager.getSelectedInterval()
 			self._updateComment(self.lastInterval.comment)
 			
 	# create label for tie/split buttons
@@ -1519,7 +1519,7 @@ class SpliceIntervalPanel():
 		self.saveButton.Enable(hasIntervals)
 		self.altSpliceButton.Enable(hasIntervals)
 		if hasSel:
-			self.delButton.SetLabel("Delete Interval {}".format(self.parent.spliceManager.getSelected().getHoleCoreStr()))
+			self.delButton.SetLabel("Delete Interval {}".format(self.parent.spliceManager.getSelectedInterval().getHoleCoreStr()))
 			
 			topTie = self.parent.spliceManager.topTie
 			enableTop = topTie.canTie() or topTie.isTied()
@@ -1586,7 +1586,7 @@ class SpliceIntervalPanel():
 		# adjust depth range to show selected interval if necessary
 		visibleMin = self.parent.Window.rulerStartDepth
 		visibleMax = self.parent.Window.rulerEndDepth - 2.0
-		intervalTop = self.parent.spliceManager.getSelected()
+		intervalTop = self.parent.spliceManager.getSelectedInterval()
 		if not intervalTop.overlaps(splice.Interval(visibleMin, visibleMax)):
 			self.parent.OnUpdateStartDepth(intervalTop.getTop()) # calls UpdateDrawing()
 		else:
@@ -1596,7 +1596,7 @@ class SpliceIntervalPanel():
 		if event.GetCol() == 0: # do nothing on double-click of ID column
 			return
 		
-		curint = self.parent.spliceManager.getSelected()
+		curint = self.parent.spliceManager.getSelectedInterval()
 		totalDepth = curint.getTop() if event.GetCol() == 1 else curint.getBot()
 		totalDepth = round(totalDepth, 3)
 		site = curint.coreinfo.leg # argh

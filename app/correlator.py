@@ -3391,21 +3391,24 @@ class SpliceController:
 	def _canDeselect(self):
 		result = True
 		if self.hasSelection():
-			result = self.selected.valid()
+			interval = self.splice.getIntervalById(self.selected)
+			result = interval.valid()
 		return result
 	
 	def _updateSelection(self, interval):
-		if (interval != self.selected):
-			self.selected = interval
-			self._updateTies()
-			self._onSelChange()
+		if interval is None:
+			self.selected = None
+		elif (interval.siid != self.selected):
+			self.selected = interval.siid
+		self._updateTies()
+		self._onSelChange()
 			
 	def clear(self):
 		self.splice.clear()
 		self.altSplice.clear()
 		self.currentSpliceFile = None
-		self.selected = None # selected SpliceInterval
-		self.selectedTie = None # selected splice handle
+		self.selected = None # selected SpliceInterval's siid
+		self.selectedTie = None # selected SpliceIntervalTie
 		self.topTie = None # brgtodo: rename to handles since these don't always represent a "TIE"
 		self.botTie = None
 		self.dirty = False # is self.splice in a modified, unsaved state?
@@ -3450,10 +3453,10 @@ class SpliceController:
 			
 	def delete(self, interval):
 		spliceState = copy.deepcopy(self.splice)
-		if self.hasSelection() and interval == self.selected:
+		if self.hasSelection() and interval.siid == self.selected:
 			self.deleteSelected()
 		else:
-			self.splice.delete(interval)
+			self.splice.delete(interval.siid)
 		self.parent.undoManager.pushState(spliceState)
 		self.setDirty(self.count() > 0) # can't save a splice with zero intervals
 		self._onDelete()
@@ -3480,29 +3483,36 @@ class SpliceController:
 
 	def getSelected(self):
 		return self.selected
+
+	def getSelectedInterval(self):
+		return self.splice.getIntervalById(self.selected)
 	
 	def getSelectedIndex(self):
-		return self.splice.ints.index(self.selected) if self.hasSelection() else -1
+		if self.hasSelection():
+			interval = self.splice.getIntervalById(self.selected)
+			return self.splice.ints.index(interval)
+		return -1
 	
 	def deleteSelected(self):
 		self.pushState()
 		if self.splice.delete(self.selected):
 			self.selected = None
-			self.selectTie(None)
+			self.selectedTie = None
 			self.setDirty(self.count() > 0) # can't save a splice with zero intervals
 			self._onSelChange()
 			
+	# Called at the start and end SpliceIntervalTie drags for the selected interval.
 	def selectTie(self, siTie):
 		if siTie in self.getTies():
 			self.selectedTie = siTie
 			self.undoState = copy.deepcopy(self.splice)
 			self.selectedIntervalState = copy.deepcopy(self.selectedTie.interval.interval)
 		elif siTie is None:
+			# if interval bounds changed, save previous state for undo
 			if self.selectedIntervalState is not None and not self.selectedIntervalState.equals(self.selectedTie.interval.interval):
-				print("Interval bounds changed, saving state in undo!")
-				self.parent.undoManager.pushState(self.undoState)
-				self.undoState = None
-				self.selectedIntervalState = None
+					self.parent.undoManager.pushState(self.undoState)
+					self.undoState = None
+					self.selectedIntervalState = None
 			self.selectedTie = None
 			
 	def getSelectedTie(self):
@@ -3518,8 +3528,9 @@ class SpliceController:
 		if self.hasSelection():
 			intAbove = self.splice.getIntervalAbove(self.selected)
 			intBelow = self.splice.getIntervalBelow(self.selected)
-			self.topTie = SpliceIntervalTopTie(self.selected, intAbove)
-			self.botTie = SpliceIntervalBotTie(self.selected, intBelow)
+			interval = self.splice.getIntervalById(self.selected)
+			self.topTie = SpliceIntervalTopTie(interval, intAbove)
+			self.botTie = SpliceIntervalBotTie(interval, intBelow)
 		else:
 			self.topTie = self.botTie = None
 
@@ -3818,14 +3829,17 @@ class SpliceController:
 	# - intervalsAndDeltas: list of tuples of form (SpliceInterval to shift, delta of shift)
 	def shiftIntervals(self, intervalsAndDeltas):
 		self.splice.shiftIntervals(intervalsAndDeltas)
-		self.clearSelected()
+		self._updateTies()
 		self.parent.spliceIntervalPanel.UpdateUI()
 		self.setDirty()
 
 	def undo(self, state):
 		assert isinstance(state, SpliceBuilder)
 		self.splice = state
-		self.clearSelected()
+		if self.splice.getIntervalById(self.selected) is None:
+			# if the selected interval was removed by the undo, clear the selection
+			self.clearSelected()
+		self._updateTies()
 		self.parent.spliceIntervalPanel.UpdateUI()
 		self.setDirty()
 
