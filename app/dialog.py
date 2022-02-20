@@ -1844,6 +1844,7 @@ class ImageCullDialog(wx.Dialog):
 
 
 # Modify datatype display order.
+# Deprecated, replaced by DatatypeVisibilityAndOrderDialog
 class DisplayOrderDialog(wx.Dialog):
 	def __init__(self, parent, displayOrder):
 		wx.Dialog.__init__(self, parent, -1, "Display Order", size=(-1, 400), style=wx.CAPTION | wx.STAY_ON_TOP)
@@ -1909,7 +1910,7 @@ class DisplayOrderDialog(wx.Dialog):
 # - visibleHoles: dict of hole name:visbility pairs {'A':True, 'B':False, ...}
 class HoleVisibilityDialog(wx.Dialog):
 	def __init__(self, parent, visibleHoles):
-		wx.Dialog.__init__(self, parent, -1, "Show holes", size=(-1, 200), style=wx.CAPTION | wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, -1, "Show holes", size=(-1, 200), style=wx.CAPTION | wx.STAY_ON_TOP | wx.RESIZE_BORDER)
 		self.parent = parent
 		self.createGUI(visibleHoles)
 
@@ -1925,14 +1926,20 @@ class HoleVisibilityDialog(wx.Dialog):
 
 		self.Bind(wx.EVT_CHECKLISTBOX, self.HoleItemChecked, self.holeList)
 
-		mainSizer.Add(self.holeList)
+		mainSizer.Add(self.holeList, 1, wx.EXPAND)
 		mainPanel.SetSizer(mainSizer)
 
 		self.cancel = wx.Button(self, wx.ID_CANCEL, "Close")
 		sizer = wx.BoxSizer(wx.VERTICAL)
-		sizer.Add(mainPanel, 1, wx.ALL, 10)
+		sizer.Add(mainPanel, 1, wx.ALL | wx.EXPAND, 10)
 		sizer.Add(self.cancel, 0, wx.ALIGN_CENTER | wx.BOTTOM, 5)
 		self.SetSizerAndFit(sizer)
+
+		# Widen the window slightly, a workaround for this issue with CheckListBox on
+		# certain versions of macOS: https://github.com/wxWidgets/Phoenix/issues/1210
+		cur_size = self.GetSize()
+		cur_size.SetWidth(cur_size.GetWidth() + 1)
+		self.SetSize(cur_size)
 
 	def HoleItemChecked(self, evt):
 		curVisibleHoles = {}
@@ -1947,7 +1954,7 @@ class HoleVisibilityDialog(wx.Dialog):
 # - visibleDatatypes: dict of datatype name:visibility pairs {'NaturalGamma':True, 'WRMSL':False, ...}
 class DatatypeVisibilityAndOrderDialog(wx.Dialog):
 	def __init__(self, parent, displayOrder, visibleDatatypes):
-		wx.Dialog.__init__(self, parent, -1, "Show and Order Data Types", size=(-1, 400), style=wx.CAPTION | wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, -1, "Show and Order Data Types", size=(300, 200), style=wx.CAPTION | wx.STAY_ON_TOP | wx.RESIZE_BORDER)
 		self.parent = parent
 		self.displayOrder = displayOrder
 		self.visibleDatatypes = visibleDatatypes
@@ -1969,25 +1976,31 @@ class DatatypeVisibilityAndOrderDialog(wx.Dialog):
 		# datatype list
 		typeSizer = wx.BoxSizer(wx.VERTICAL)
 		typeSizer.Add(wx.StaticText(mainPanel, -1, "Show data type"), 0)
-		self.typeList = wx.CheckListBox(mainPanel, -1, size=(150,120))
+		self.typeList = wx.CheckListBox(mainPanel, -1, size=(-1,120))
 		self._updateList()
 		self.Bind(wx.EVT_LISTBOX, self.ListSelectionChanged, self.typeList)
-		typeSizer.Add(self.typeList, 1)
+		typeSizer.Add(self.typeList, 1, wx.EXPAND)
 
 		self.Bind(wx.EVT_CHECKLISTBOX, self.ItemChecked, self.typeList)
 
-		mainSizer.Add(typeSizer, 0)
+		mainSizer.Add(typeSizer, 1, wx.EXPAND)
 		mainSizer.Add(upDownSizer, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 10)
 		mainPanel.SetSizer(mainSizer)
 
 		self.cancel = wx.Button(self, wx.ID_CANCEL, "Close")
 		sizer = wx.BoxSizer(wx.VERTICAL)
-		sizer.Add(mainPanel, 1, wx.ALL, 10)
+		sizer.Add(mainPanel, 1, wx.ALL | wx.EXPAND, 10)
 		sizer.Add(self.cancel, 0, wx.ALIGN_CENTER | wx.BOTTOM, 5)
-		self.SetSizerAndFit(sizer)
+		self.SetSizer(sizer)
 
 		if self.typeList.GetCount() > 0:
 			self.typeList.SetSelection(0)
+
+		# Widen the window slightly, a workaround for this issue with CheckListBox on
+		# certain versions of macOS: https://github.com/wxWidgets/Phoenix/issues/1210
+		cur_size = self.GetSize()
+		cur_size.SetWidth(cur_size.GetWidth() + 1)
+		self.SetSize(cur_size)
 
 	def _updateList(self):
 		self.typeList.SetItems(self.displayOrder)
