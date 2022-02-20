@@ -1966,9 +1966,11 @@ class DatatypeVisibilityAndOrderDialog(wx.Dialog):
 
 		# move up/down arrows
 		upDownSizer = wx.BoxSizer(wx.VERTICAL)
-		self.upButton = wx.Button(mainPanel, -1, "Move Up")
+		up_img = wx.Bitmap("icons/arrow-up.png")
+		self.upButton = wx.BitmapButton(mainPanel, -1, up_img)
 		self.Bind(wx.EVT_BUTTON, self.OnUp, self.upButton)
-		self.downButton = wx.Button(mainPanel, -1, "Move Down")
+		down_img = wx.Bitmap("icons/arrow-down.png")
+		self.downButton = wx.BitmapButton(mainPanel, -1, down_img)
 		self.Bind(wx.EVT_BUTTON, self.OnDown, self.downButton)
 		upDownSizer.Add(self.upButton, 0, wx.ALIGN_CENTER | wx.BOTTOM, 5)
 		upDownSizer.Add(self.downButton, 0, wx.ALIGN_CENTER)
