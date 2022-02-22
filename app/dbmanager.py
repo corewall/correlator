@@ -2205,7 +2205,8 @@ class DataFrame(wx.Panel):
 	# brg 9/9/2014: "Export" affine/splice/ELD etc - just copies internal file to selected location 
 	def OnExportSavedTable(self):
 		if self.selectedIdx != None:
-			opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+			defaultFilename = self.tree.GetItemText(self.selectedIdx, 8)
+			opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, defaultFile=defaultFilename, style=wx.SAVE)
 			if opendlg.ShowModal() == wx.ID_OK:
 				path = opendlg.GetDirectory()
 				filename = opendlg.GetFilename()
@@ -2214,51 +2215,18 @@ class DataFrame(wx.Panel):
 
 				selParentItem = self.tree.GetItemParent(self.selectedIdx)
 				siteItem = self.tree.GetItemParent(selParentItem)
-				#title = self.tree.GetItemText(siteItem, 0)
 
 				source = self.parent.DBPath + 'db/' + self.tree.GetItemText(self.selectedIdx, 10) + self.tree.GetItemText(self.selectedIdx, 8)
-				outfile = filename + ".dat"
 
 				selParentTitle = self.tree.GetItemText(selParentItem, 0) 
 				if selParentTitle == "Saved Tables":
 					tableType = self.tree.GetItemText(self.selectedIdx, 1)
+					# for both affine and splice, exporting is just a copy from the database
 					if tableType == "AFFINE":
-						# 1/12/2016 brg: exporting affine is a straight copy, no need to load hole data
-						shutil.copy2(source, path + '/' + filename + ".affine.csv")
+						shutil.copy2(source, path + '/' + filename)
 					elif tableType == "SPLICE":
-						# 12/10/2015 brg: for now, don't pop dialog, just copy existing file - need
-						# to resolve how we'll handle application of affine tables other than the
-						# one used to create a splice.
-						#self.ExportSpliceTable()
-						shutil.copy2(source, path + '/' + filename + ".sit.csv")
-					elif tableType == "ELD":
-						outELDFile = filename + ".eld.table"
-						if not self.ExportELDTable(source, path + '/' + outELDFile, siteItem):
-							return
-				elif selParentItem == "Age Models":
-					tableType = self.tree.GetItemText(self.selectedIdx, 1)
-					if tableType == "AGE/DEPTH":
-						outfile = filename + ".age-depth.table"
-					elif tableType == "AGE":
-						outfile = filename + ".age.model"
-				elif selParentItem == "Image Data":
-					outfile = filename + ".dat"
-				else:
-					temp_title = self.tree.GetItemText(self.selectedIdx, 0)
-					if temp_title == "-Cull Table":
-						outfile = filename + ".cull.table"
+						shutil.copy2(source, path + '/' + filename)
 
-				if selParentTitle != "Saved Tables":
-					if sys.platform == 'win32':
-						workingdir = os.getcwd()
-						# ------------------------
-						os.chdir(self.parent.DBPath + 'db\\' + title)
-						cmd = 'copy ' + self.tree.GetItemText(self.selectedIdx, 8)  + ' \"' + path + '\\' + str(outfile) + '\"'
-						os.system(cmd)
-						os.chdir(workingdir)
-					else:
-						cmd = 'cp \"' +  source  + '\" \"' + path + '/' + outfile + '\"'
-						os.system(cmd)
 				self.parent.OnShowMessage("Information", "Successfully exported", 1)
 
 
