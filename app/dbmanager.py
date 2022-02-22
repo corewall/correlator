@@ -296,8 +296,7 @@ class DataFrame(wx.Panel):
 		elif opId == 15:
 			# IMPORT SPLICE TABLE
 			self.OnIMPORT_TABLE("Splice")
-		elif opId == 16:
-			# EXPORT
+		elif opId == 16: # Export saved affine and splice tables
 			self.OnExportSavedTable()
 		elif opId == 17:
 			# IMPORT ELD TABLE

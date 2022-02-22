@@ -156,7 +156,7 @@ class MainFrame(wx.Frame):
 		self.LOCK = 0
 		self.IDLE = 0
 		self.FOCUS = 1
-		self.Directory = ""
+		self.Directory = "" # last-used directory in open/save dialogs
 		self.DBPath = "-"
 		self.client = None
 
