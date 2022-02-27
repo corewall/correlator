@@ -566,7 +566,7 @@ class DataFrame(wx.Panel):
 
 	def ShowUnmatchedImagesWarning(self, unmatchedImgFiles):
 		msg = "The following images don't have a section summary record in "
-		msg += "Correlator and can therefore not be imported:\n\n"
+		msg += "Correlator and therefore cannot be imported:\n\n"
 		msg += '\n'.join([os.path.basename(f) for f in unmatchedImgFiles[:5]])
 		if len(unmatchedImgFiles) > 5:
 			msg += "\n...and {} additional images.\n".format(len(unmatchedImgFiles) - 5)
