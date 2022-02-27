@@ -31,8 +31,11 @@ class HoldDialog(wx.Frame):
 		wx.StaticText(self, -1, "Waiting for Fine Tune from Corelyzer", (60,30))
 		#self.EndModal(wx.ID_OK)
 
-
-def MessageDialog(parent, title, msg, nobutton, makeNoDefault=False):
+# - customLabels: list of 1 or 2 strings to use instead of "Yes/OK" and "No/Cancel".
+# If nobutton == 0, element 0 replaces "Yes" and element 1 replaces "No".
+# If nobutton == 1, element 0 replaces "OK".
+# If nobutton == 2, element 0 replaces "OK" and element 1 replaces "Cancel".
+def MessageDialog(parent, title, msg, nobutton, makeNoDefault=False, customLabels=None):
 	style = 0
 	if title == "Error":
 		style = wx.ICON_ERROR
@@ -48,7 +51,15 @@ def MessageDialog(parent, title, msg, nobutton, makeNoDefault=False):
 	elif nobutton == 2:
 		style = style | wx.OK | wx.CANCEL
 
-	return wx.MessageDialog(parent, msg, title, style)
+	dlg = wx.MessageDialog(parent, msg, title, style)
+	if customLabels:
+		if nobutton == 0 and len(customLabels) == 2:
+			dlg.SetYesNoLabels(customLabels[0], customLabels[1])
+		elif nobutton == 1 and len(customLabels) == 1:
+			dlg.SetOKLabel(customLabels[0])
+		elif nobutton == 2 and len(customLabels) == 2:
+			dlg.SetOKCancelLabels(customLabels[0], customLabels[1])
+	return dlg
 
 class MessageDialogOLD(wx.Dialog):
 	def __init__(self, parent, title, msg, nobutton):
