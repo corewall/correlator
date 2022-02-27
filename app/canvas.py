@@ -1555,12 +1555,7 @@ class DataCanvas(wxBufferedWindow):
 			self.CreateCoreArea(coreInfo, startX, holeColumn.contentWidth(), topPoint, botPoint)
 			self.coreCount += 1
 
-			# draw color strip indicating affine shift type
-			stripWidth = 3
-			stripColor = self.parent.affineManager.getShiftColor(holeColumn.holeName(), cmd.coreName())
-			dc.SetPen(wx.Pen(stripColor, 1))
-			dc.SetBrush(wx.Brush(stripColor))
-			dc.DrawRectangle(startX-stripWidth, topPoint, stripWidth, botPoint-topPoint)
+			self.DrawAffineShiftStrip(dc, startX, topPoint, botPoint, holeColumn.holeName(), cmd.coreName())
 
 			if cmd.affineOffset() != 0:
 				clippingRegion = wx.Region(0, headerBottom, spliceScrollbarLeft, self.Height - headerBottom)
@@ -1605,6 +1600,15 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawText(str(core.affineOffset()), startX - 40, y)
 			shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole.holeName(), core.coreName())
 			dc.DrawText(shiftTypeStr, startX - 32, y - 12)
+
+	# draw color strip indicating affine shift type
+	def DrawAffineShiftStrip(self, dc, startX, coreTopY, coreBotY, holeName, coreName):
+		stripWidth = 3
+		clip = self.ClipPlot(dc, startX - (stripWidth+1))
+		stripColor = self.parent.affineManager.getShiftColor(holeName, coreName)
+		dc.SetPen(wx.Pen(stripColor, 1))
+		dc.SetBrush(wx.Brush(stripColor))
+		dc.DrawRectangle(startX-stripWidth, coreTopY, stripWidth, coreBotY-coreTopY)
 
 	# Draw arrow indicating a TIE between cores
 	# TODO: Assumes arrows are drawn plot to plot and image to image.
