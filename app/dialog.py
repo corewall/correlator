@@ -36,6 +36,24 @@ class HoldDialog(wx.Frame):
 # If nobutton == 1, element 0 replaces "OK".
 # If nobutton == 2, element 0 replaces "OK" and element 1 replaces "Cancel".
 def MessageDialog(parent, title, msg, nobutton, makeNoDefault=False, customLabels=None):
+	style = _createMessageDialogStyle(title, nobutton, makeNoDefault)
+	dlg = wx.MessageDialog(parent, msg, title, style)
+	if customLabels:
+		_setCustomLabels(dlg, nobutton, customLabels)
+	return dlg
+
+# Argh, RichMessageDialog is not part of wx 2.9.5 on Mac or Win, despite
+# doc claiming it's available in 2.9.2 and beyond. Once we upgrade to
+# wx 4+, the below should work.
+def SuppressableMessageDialog_wx4(parent, title, msg, nobutton, suppressMsg, makeNoDefault=False, customLabels=None):
+	style = _createMessageDialogStyle(title, nobutton, makeNoDefault)
+	dlg = wx.RichMessageDialog(parent, msg, title, style)
+	dlg.ShowCheckBox(suppressMsg)
+	if customLabels:
+		_setCustomLabels(dlg, nobutton, customLabels)
+	return dlg
+
+def _createMessageDialogStyle(title, nobutton, makeNoDefault):
 	style = 0
 	if title == "Error":
 		style = wx.ICON_ERROR
@@ -50,16 +68,17 @@ def MessageDialog(parent, title, msg, nobutton, makeNoDefault=False, customLabel
 		style = style | wx.OK
 	elif nobutton == 2:
 		style = style | wx.OK | wx.CANCEL
+	return style
 
-	dlg = wx.MessageDialog(parent, msg, title, style)
-	if customLabels:
-		if nobutton == 0 and len(customLabels) == 2:
-			dlg.SetYesNoLabels(customLabels[0], customLabels[1])
-		elif nobutton == 1 and len(customLabels) == 1:
-			dlg.SetOKLabel(customLabels[0])
-		elif nobutton == 2 and len(customLabels) == 2:
-			dlg.SetOKCancelLabels(customLabels[0], customLabels[1])
-	return dlg
+def _setCustomLabels(dlg, nobutton, customLabels):
+	if nobutton == 0 and len(customLabels) == 2:
+		dlg.SetYesNoLabels(customLabels[0], customLabels[1])
+	elif nobutton == 1 and len(customLabels) == 1:
+		dlg.SetOKLabel(customLabels[0])
+	elif nobutton == 2 and len(customLabels) == 2:
+		dlg.SetOKCancelLabels(customLabels[0], customLabels[1])
+
+
 
 class MessageDialogOLD(wx.Dialog):
 	def __init__(self, parent, title, msg, nobutton):
