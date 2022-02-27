@@ -1550,10 +1550,17 @@ class DataCanvas(wxBufferedWindow):
 
 			coreInfo = self.CreateCoreInfo(holeColumn, cmd.cmt, coreTop, coreBot, self.coreCount)
 
-			topPoint = self.getCoord(cmd.depthDataPairs()[0][0])
-			botPoint = self.getCoord(cmd.depthDataPairs()[-1][0])
+			topPoint = self.getCoord(coreTop)
+			botPoint = self.getCoord(coreBot)
 			self.CreateCoreArea(coreInfo, startX, holeColumn.contentWidth(), topPoint, botPoint)
 			self.coreCount += 1
+
+			# draw color strip indicating affine shift type
+			stripWidth = 3
+			stripColor = self.parent.affineManager.getShiftColor(holeColumn.holeName(), cmd.coreName())
+			dc.SetPen(wx.Pen(stripColor, 1))
+			dc.SetBrush(wx.Brush(stripColor))
+			dc.DrawRectangle(startX-stripWidth, topPoint, stripWidth, botPoint-topPoint)
 
 			if cmd.affineOffset() != 0:
 				clippingRegion = wx.Region(0, headerBottom, spliceScrollbarLeft, self.Height - headerBottom)
