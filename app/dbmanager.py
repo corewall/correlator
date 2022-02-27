@@ -8,6 +8,7 @@ import platform, shutil
 platform_name = platform.uname()
 
 import pandas
+import imagesize
 
 import wx 
 import wx.gizmos as gizmos
@@ -499,9 +500,26 @@ class DataFrame(wx.Panel):
 	# - dbPath: destination database path for image files
 	def _importCoreImages(self, importPath, dbPath):
 		imgFiles = [os.path.join(importPath, f) for f in os.listdir(importPath) if hasJPEGExt(f)]
-		dbFiles = [f for f in os.listdir(dbPath) if hasJPEGExt(f)]
+
+		# cull images with no matching section in the selected site's Section Summaries
+		unmatchedImgFiles = self.FindUnmatchedImages(imgFiles)
+		if len(unmatchedImgFiles) > 0:
+			imgFiles = [f for f in imgFiles if f not in unmatchedImgFiles]
+			if not self.ShowUnmatchedImagesWarning(unmatchedImgFiles):
+				return
+
+		# if oversized images found, warn and confirm continue
+		if not self.CheckForOversizedImages(imgFiles):
+			return
+
+		if len(imgFiles) == 0: # all selected images were culled
+			msg = "None of the selected images could be imported."
+			self.parent.OnShowMessage("No images to import", msg, 1)
+			return
+
 		# print("Copying {} image files into {}".format(len(imgFiles), dbPath))
 		pd = wx.ProgressDialog("Image Import", "", len(imgFiles), self, wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
+		dbFiles = [f for f in os.listdir(dbPath) if hasJPEGExt(f)] # image files in database
 		for count, f in enumerate(imgFiles):
 			pd.Update(count+1, "Importing {}".format(os.path.basename(f)))
 			fname = os.path.basename(f)
@@ -514,7 +532,46 @@ class DataFrame(wx.Panel):
 			shutil.copy(f, os.path.join(dbPath, fname))
 		self._updateImageImportPaths(importPath)
 		self._updateImageNodes(dbPath)
-		
+
+	def CheckForOversizedImages(self, imgFiles):
+		proceed = True
+		oversized = self._findOversizedImages(imgFiles)
+		if len(oversized) > 0:
+			msg = "{} of the selected images are wider than Correlator's ".format(len(oversized))
+			msg += "maximum display width of 230 pixels, or larger than 1MB. "
+			msg += "This may degrade performance significantly."
+			proceed = self.parent.OnShowMessage("Warning", msg, 0, customLabels=["Continue", "Abort"]) == wx.ID_YES
+		return proceed
+
+	# Return list of images that are wider than 230px (the max width of image display)
+	# or larger than 1MB in size. Both suggest improperly prepared images for Correlator
+	# use, which can cause a major performance hit or worse...importing a large number of
+	# full-size (~2.5MB) images can quickly consume 16GB of RAM!
+	# - imgFiles: list of paths to images
+	def _findOversizedImages(self, imgFiles):
+		toolarge = [i for i in imgFiles if os.path.getsize(i) > 1024 ** 2]
+		toowide = [i for i in imgFiles if imagesize.get(i)[0] > 230]
+		return list(set(toolarge + toowide))
+
+	# Find images whose filename does not correspond to a section in
+	# the current site's Section Summaries.
+	def FindUnmatchedImages(self, imgFiles):
+		sectionSummary = self.LoadSectionSummaryFiles()
+		sectionIds = sectionSummary.getFullIdentities()
+		nonSSImages = []
+		for i in imgFiles:
+			if makeImageKey(os.path.basename(i)) not in sectionIds:
+				nonSSImages.append(i)
+		return nonSSImages
+
+	def ShowUnmatchedImagesWarning(self, unmatchedImgFiles):
+		msg = "The following images don't have a section summary record in "
+		msg += "Correlator and can therefore not be imported:\n\n"
+		msg += '\n'.join([os.path.basename(f) for f in unmatchedImgFiles[:5]])
+		if len(unmatchedImgFiles) > 5:
+			msg += "\n...and {} additional images.\n".format(len(unmatchedImgFiles) - 5)
+		return self.parent.OnShowMessage("Warning", msg, 0, customLabels=["Continue", "Abort"]) == wx.ID_YES
+
 	# Update image item nodes for selected site in self.tree
 	def _updateImageNodes(self, dbPath):
 		# count images per hole

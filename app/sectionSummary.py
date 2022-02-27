@@ -108,6 +108,10 @@ class SectionSummary:
                 rows.append(newRow)
         return sorted(rows, key=lambda x:x.section, cmp=cmp_section)
     
+    def getFullIdentities(self):
+        ssrows = [SectionSummaryRow.createWithPandasSeries(row) for _, row in self.dataframe.iterrows()]
+        return [ssr.fullIdentity() for ssr in ssrows]
+    
     def getCoreTop(self, site, hole, core):
         top, _ = self.getCoreRange(site, hole, core)
         return top
