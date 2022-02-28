@@ -5,6 +5,8 @@
 import platform
 platform_name = platform.uname()
 
+from enum import Enum
+
 import wx
 import wx.grid
 import wx.lib.sheet as sheet
@@ -30,6 +32,13 @@ class HoldDialog(wx.Frame):
 		bmp = wx.StaticBitmap(self, -1, wx.Bitmap('icons/about-32x32.png'), (10, 30))
 		wx.StaticText(self, -1, "Waiting for Fine Tune from Corelyzer", (60,30))
 		#self.EndModal(wx.ID_OK)
+
+
+# Should be interchangeable with MessageDialog 'nobutton'
+class MsgDlgButtons(Enum):
+	YesNo = 0
+	Ok = 1
+	OkCancel = 2
 
 # - customLabels: list of 1 or 2 strings to use instead of "Yes/OK" and "No/Cancel".
 # If nobutton == 0, element 0 replaces "Yes" and element 1 replaces "No".
