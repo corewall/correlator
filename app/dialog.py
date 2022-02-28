@@ -534,12 +534,13 @@ class SaveTableDialog(wx.Dialog):
 			self.EndModal(wx.ID_CANCEL) 
 
 class OkButtonPanel(wx.Panel):
-	def __init__(self, parent, okName="OK", cancelName="Cancel"):
+	def __init__(self, parent, okOnly=False, okName="OK", cancelName="Cancel"):
 		wx.Panel.__init__(self, parent, -1)
 		self.ok = wx.Button(self, wx.ID_OK, okName)
 		self.ok.SetDefault()
-			self.cancel = wx.Button(self, wx.ID_CANCEL, cancelName)
 		sz = wx.BoxSizer(wx.HORIZONTAL)
+		if not okOnly:
+			self.cancel = wx.Button(self, wx.ID_CANCEL, cancelName)
 			sz.Add(self.cancel, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 10)
 		sz.Add(self.ok, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
 		self.SetSizer(sz)
