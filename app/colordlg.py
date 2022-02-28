@@ -11,7 +11,7 @@ class ColorsDialog(wx.Dialog):
         wx.Dialog.__init__(self, parent, -1, "Set Colors", style=wx.DEFAULT_DIALOG_STYLE)
 
         self.defaultColorDict = defaultColorDict
-        self.pickerDict = {}
+        self.pickerDict = {} # color pickers keyed on colorDict keys
         # TODO: Color picker pops behind this dialog if Correlator is deactivated and reactivated, ugh...STAY_ON_TOP
         # may not be what we need here
 
@@ -19,8 +19,8 @@ class ColorsDialog(wx.Dialog):
 
         envPanel = wx.Panel(self, -1)
         envSizer = wx.StaticBoxSizer(wx.StaticBox(envPanel, -1, "Environment"), orient=wx.HORIZONTAL)
-        for idx, key in enumerate(['background', 'foreground', 'imageOverlay']):
-            cp = self.makeColorPicker(envPanel, idx, colorDict[key])
+        for key in ['background', 'foreground', 'imageOverlay']:
+            cp = self.makeColorPicker(envPanel, colorDict[key])
             self.pickerDict[key] = cp
             envSizer.Add(cp, 0, wx.ALIGN_CENTER_VERTICAL)
             envSizer.Add(wx.StaticText(envPanel, -1, colorLabelDict[key]), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 20)
@@ -58,17 +58,17 @@ class ColorsDialog(wx.Dialog):
         self.SetSizerAndFit(dlgSizer)
         self.Center()
 
-    def makeColorPicker(self, parent, cpid, color):
+    def makeColorPicker(self, parent, color):
         # force a reasonable width, otherwise controls are needlessly wide on Windows
         cpsize = (50,-1) if platform_name[0] == "Windows" else wx.DefaultSize 
-        return wx.ColourPickerCtrl(parent, cpid, color, size=cpsize)
+        return wx.ColourPickerCtrl(parent, -1, color, size=cpsize)
 
     # return wx.Panel with a column of color pickers
     def makePickerPanel(self, title, keys):
         panel = wx.Panel(self, -1)
         sizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, title), orient=wx.VERTICAL)
-        for idx, key in enumerate(keys):
-            cp = self.makeColorPicker(panel, idx, colorDict[key])
+        for key in keys:
+            cp = self.makeColorPicker(panel, colorDict[key])
             self.pickerDict[key] = cp
             sz = wx.BoxSizer(wx.HORIZONTAL)
             sz.Add(cp, 0, wx.ALIGN_CENTER_VERTICAL)
