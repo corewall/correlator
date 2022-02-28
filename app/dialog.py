@@ -92,7 +92,7 @@ def _setCustomLabels(dlg, nobutton, customLabels):
 # Hack-job, good enough for the few spots we need a suppressable message dialog.
 # To be replaced with RichMessageDialog when we upgrade to wx 4+.
 class SuppressableMessageDialog(wx.Dialog):
-	def __init__(self, parent, title, msg, buttons, suppressMsg, customLabels=None):
+	def __init__(self, parent, title, msg, buttons, suppressMsg="Don't show this message again", customLabels=None):
 		wx.Dialog.__init__(self, parent, -1, title, size=(350,-1))
 		mainSizer = wx.BoxSizer(wx.VERTICAL)
 		panel = wx.Panel(self, -1)
