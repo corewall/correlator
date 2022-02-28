@@ -1,5 +1,6 @@
 cd ../bin/static
 rm affine.py
+rm colordlg.py
 rm correlator.py
 rm canvas.py
 rm dbmanager.py
@@ -30,6 +31,7 @@ cd ../../app
 
 cp affine.py ../bin/static/
 cp canvas.py ../bin/static/
+cp colordlg.py ../bin/static/
 cp correlator.py ../bin/static/
 cp dbmanager.py ../bin/static/
 cp dialog.py ../bin/static/
