@@ -3241,31 +3241,6 @@ class AffineController:
 			self._execute(tieOp)		
 		return True
 
-	# Find splice intervals with cores in shiftingCores, prompt user and remove
-	# intervals if confirmed.
-	# Return True if user confirmed, or no matching splice intervals were found.
-	# Otherwise return False.
-	def removeShiftingCoresFromSplice(self, shiftingCores):
-		coresInSplice = []
-		intervalsToRemove = []
-		for sc in shiftingCores:
-			intervals = self.parent.spliceManager.findIntervals(sc.hole, sc.core)
-			if len(intervals) > 0:
-				intervalsToRemove += intervals
-				coresInSplice.append(sc)
-		if len(intervalsToRemove) > 0:
-			msg = "This operation affects cores included in the current splice:\n\n"
-			msg += "{}\n\n".format(', '.join(sorted([str(sc) for sc in coresInSplice])))
-			msg += "These cores will be removed from the splice, which cannot be undone.\n\n"
-			msg += "Do you want to continue?"
-			if self.parent.OnShowMessage("Splice Intervals Affected", msg, 0) == wx.ID_YES:
-				for interval in intervalsToRemove:
-					self.parent.spliceManager.delete(interval)
-			else:
-				self.parent.Window.ClearCompositeTies()
-				return False
-		return True
-
 	# If there are splice intervals associated with shifting cores in coresAndDeltas,
 	# prompt user to confirm that splice intervals can be shifted to match.
 	# Return a tuple: boolean proceed with operation, list of tuples of form (interval, shift delta)
