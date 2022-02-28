@@ -51,16 +51,17 @@ def MessageDialog(parent, title, msg, nobutton, makeNoDefault=False, customLabel
 		_setCustomLabels(dlg, nobutton, customLabels)
 	return dlg
 
-# Argh, RichMessageDialog is not part of wx 2.9.5 on Mac or Win, despite
+# Argh! RichMessageDialog is not part of wx 2.9.5 on Mac or Win, despite
 # doc claiming it's available in 2.9.2 and beyond. Once we upgrade to
 # wx 4+, the below should work.
-def SuppressableMessageDialog_wx4(parent, title, msg, nobutton, suppressMsg, makeNoDefault=False, customLabels=None):
-	style = _createMessageDialogStyle(title, nobutton, makeNoDefault)
-	dlg = wx.RichMessageDialog(parent, msg, title, style)
-	dlg.ShowCheckBox(suppressMsg)
-	if customLabels:
-		_setCustomLabels(dlg, nobutton, customLabels)
-	return dlg
+# Use SuppressableMessageDialog class for now.
+# def SuppressableMessageDialog_wx4(parent, title, msg, nobutton, suppressMsg, makeNoDefault=False, customLabels=None):
+# 	style = _createMessageDialogStyle(title, nobutton, makeNoDefault)
+# 	dlg = wx.RichMessageDialog(parent, msg, title, style)
+# 	dlg.ShowCheckBox(suppressMsg)
+# 	if customLabels:
+# 		_setCustomLabels(dlg, nobutton, customLabels)
+# 	return dlg
 
 def _createMessageDialogStyle(title, nobutton, makeNoDefault):
 	style = 0
@@ -87,6 +88,37 @@ def _setCustomLabels(dlg, nobutton, customLabels):
 	elif nobutton == 2 and len(customLabels) == 2:
 		dlg.SetOKCancelLabels(customLabels[0], customLabels[1])
 
+# brg 2/27/2022
+# Hack-job, good enough for the few spots we need a suppressable message dialog.
+# To be replaced with RichMessageDialog when we upgrade to wx 4+.
+class SuppressableMessageDialog(wx.Dialog):
+	def __init__(self, parent, title, msg, buttons, suppressMsg, customLabels=None):
+		wx.Dialog.__init__(self, parent, -1, title, size=(350,-1))
+		mainSizer = wx.BoxSizer(wx.VERTICAL)
+		panel = wx.Panel(self, -1)
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		text = wx.StaticText(panel, -1, msg)
+		sizer.Add(text, 1, wx.ALL, 10)
+		self.box = wx.CheckBox(panel, -1, suppressMsg)
+		sizer.Add(self.box, 0, wx.ALL, 10)
+		if buttons == MsgDlgButtons.OkCancel:
+			if customLabels and len(customLabels) == 2:
+				buttonPanel = OkButtonPanel(panel, okName=customLabels[0], cancelName=customLabels[1])
+			else:
+				buttonPanel = OkButtonPanel(panel)
+		elif buttons == MsgDlgButtons.YesNo:
+			buttonPanel = OkButtonPanel(panel, okName="Yes", cancelName="No")
+		elif buttons == MsgDlgButtons.Ok:
+			buttonPanel = OkButtonPanel(panel, okOnly=True)
+		sizer.Add(buttonPanel, 0, wx.ALL | wx.ALIGN_CENTER, 10)
+		panel.SetSizer(sizer)
+		mainSizer.Add(panel)
+		text.Wrap(350)
+		self.SetSizerAndFit(mainSizer)
+		self.Center()
+
+	def IsCheckBoxChecked(self):
+		return self.box.IsChecked()
 
 
 class MessageDialogOLD(wx.Dialog):
@@ -2356,7 +2388,15 @@ class MockApp(wx.App):
 
 if __name__ == "__main__":
 	app = MockApp()
-	dlg = EditBoxDialog(app.frame, "Please Input Text")
+	# msg = "Fairly long message about some serious stuff"
+	msg = "Exceedingly long message that goes on for a super duper super duper  super duper super duper super duper super duper super duper super duper super duper super duper long time."
+	suppMsg = "Don't show this message again"
+	dlg = SuppressableMessageDialog(app.frame, "Warning", msg, MsgDlgButtons.YesNo, suppMsg, customLabels=["Foo", "Bar"])
 	result = dlg.ShowModal()
-	print "dialog result = {}, text = {}".format(result, dlg.getText())
-	
+	if result == wx.ID_OK:
+		print("OK")
+	elif result == wx.ID_CANCEL:
+		print("Cancel")
+	else:
+		assert False, "WTF?"
+	print("Checkbox checked? {}".format(dlg.IsCheckBoxChecked()))
