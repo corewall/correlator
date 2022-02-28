@@ -15,7 +15,7 @@ import random, sys, os, re, time, ConfigParser, string
 import numpy
 
 import smooth
-from importManager import py_correlator
+
 
 class CoreSheet(sheet.CSheet):
 	def __init__(self, parent, x, y):
@@ -333,65 +333,6 @@ class StratTypeDialog(wx.Dialog):
 			self.EndModal(wx.ID_CANCEL) 
 
 
-class ClearDataDialog(wx.Dialog):
-	def __init__(self, parent, list):
-		wx.Dialog.__init__(self, parent, -1, "Clear Core", size=(290, 370), style= wx.STAY_ON_TOP)
-		self.Center()
-		self.parent = parent
-
-		vbox = wx.BoxSizer(wx.VERTICAL)
-		vbox.Add(wx.StaticText(self, -1, "Select Type to Clear:"), 0, wx.LEFT | wx.TOP, 9)
-		self.fileList = wx.ListBox(self, -1, (0,0), (265,250), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB)	 
-		vbox.Add(self.fileList, 0, wx.LEFT | wx.TOP, 9)
-
-		n = list.GetCount()
-		types = ""
-		for i in range(n):
-			types = list.GetString(i)
-			if types[0:3] == "All":
-				self.fileList.Append(list.GetString(i))
-
-		if self.fileList.GetCount() > 0:	
-			self.fileList.Select(0)
-		self.fileList.SetForegroundColour(wx.BLACK)
-
-		grid4 = wx.FlexGridSizer(1, 2)
-		okBtn = wx.Button(self, wx.ID_OK, "Clear", size=(120, 30))
-		self.Bind(wx.EVT_BUTTON, self.OnClearData, okBtn)
-		grid4.Add(okBtn)
-		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Cancel", size= (120, 30))
-		grid4.Add(cancelBtn, 0, wx.LEFT, 15)
-		vbox.Add(grid4, 0, wx.LEFT | wx.TOP , 15)
-
-		self.SetSizer(vbox)
-		wx.EVT_KEY_UP(self, self.OnCharUp)
-
-		self.ShowModal()
-		self.Destroy()
-
-	def OnCharUp(self,event):
-		keyid = event.GetKeyCode() 
-		if keyid == wx.WXK_RETURN:
-			self.EndModal(wx.ID_OK) 
-		elif keyid == wx.WXK_ESCAPE:
-			self.EndModal(wx.ID_CANCEL) 
-
-	def OnClearData(self, event):
-		ret = 0
-		size = self.fileList.GetCount()
-		for i in range(size):
-			if self.fileList.IsSelected(i) == True:
-				if i == 0: 
-					self.parent.OnNewData(None)
-				elif i == 1 and size == 2:
-					self.parent.OnNewData(None)
-				else:
-					py_correlator.cleanDataType(self.fileList.GetString(i))
-					self.fileList.Delete(i)
-				break	
-
-		self.EndModal(wx.ID_OK) 
-
 
 # constant tracking last-used option (total depth or section depth)
 LAST_USE_TOTAL = True
@@ -597,9 +538,9 @@ class OkButtonPanel(wx.Panel):
 		wx.Panel.__init__(self, parent, -1)
 		self.ok = wx.Button(self, wx.ID_OK, okName)
 		self.ok.SetDefault()
-		self.cancel = wx.Button(self, wx.ID_CANCEL, cancelName)
+			self.cancel = wx.Button(self, wx.ID_CANCEL, cancelName)
 		sz = wx.BoxSizer(wx.HORIZONTAL)
-		sz.Add(self.cancel, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 10)
+			sz.Add(self.cancel, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 10)
 		sz.Add(self.ok, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
 		self.SetSizer(sz)
 
