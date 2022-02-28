@@ -3028,6 +3028,7 @@ class AffineController:
 		self.affine = AffineBuilder() # AffineBuilder for current affine table
 		self.dirty = False # has affine state changed since last save?
 		self.currentAffineFile = None # most-recently loaded or saved affine file (if any)
+		self.showShiftCoresInSpliceWarning = True
 	
 	# remove all shifts, re-init state members
 	def clear(self):
@@ -3279,14 +3280,22 @@ class AffineController:
 				for sci in scIntervals:
 					intervalsAndDeltas.append((sci, delta))
 		proceed = True
-		if len(intervalsAndDeltas) > 0:
-			msg = "This operation affects cores included in the current splice:\n\n"
+		if len(intervalsAndDeltas) > 0 and self.showShiftCoresInSpliceWarning:
+			shiftDirStr = "upwards" if coresAndDeltas[0][1] < 0 else "downwards"
+			msg = "The following splice intervals:\n\n"
 			msg += "{}\n\n".format(', '.join(sorted([str(sc) for sc in coresInSplice])))
-			msg += "These cores will be shifted in the splice.\n\n"
-			msg += "Do you want to continue?"
-			if self.parent.OnShowMessage("Splice Intervals Affected", msg, 0) != wx.ID_YES:
+			msg += "will be shifted {}. This may result in gaps in the splice, and/or ".format(shiftDirStr)
+			msg += "clipping of shifted intervals where they overlap with "
+			msg += "unshifted intervals."
+			dlg = dialog.SuppressableMessageDialog(self.parent, "Warning", msg, dialog.MsgDlgButtons.OkCancel)
+			result = dlg.ShowModal()
+			if result != wx.ID_OK:
 				self.parent.Window.ClearCompositeTies()
 				proceed = False
+			suppress = dlg.IsCheckBoxChecked()
+			dlg.Destroy()
+			if suppress:
+				self.showShiftCoresInSpliceWarning = False
 
 		return proceed, intervalsAndDeltas
 
