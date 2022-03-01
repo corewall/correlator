@@ -1570,12 +1570,6 @@ class MainFrame(wx.Frame):
 			colorStr += str(colorItem[0]) + " " + str(colorItem[1]) + " " + str(colorItem[2]) + " "
 		self.WritePreferenceItem("colors", colorStr, f)
 
-		overlapColorStr = ""
-		for i in range(9): 
-			colorItem = self.Window.overlapcolorList[i].Get()
-			overlapColorStr = overlapColorStr + str(colorItem[0]) + " " + str(colorItem[1]) + " " + str(colorItem[2]) + " "
-		self.WritePreferenceItem("overlapcolors", overlapColorStr, f)
-
 		f.close()
 
 	def OnInitDataUpdate(self, redraw=True):
@@ -2745,17 +2739,6 @@ class MainFrame(wx.Frame):
 					for index, key in enumerate(self.Window.colorDictKeys):
 						color = wx.Colour(int(rgbs[index * 3]), int(rgbs[index * 3 + 1]), int(rgbs[index * 3 + 2]))
 						self.Window.colorDict[key] = color
-
-		if self.config.has_option("applications", "overlapcolors"):
-			conf_str = self.config.get("applications", "overlapcolors") 
-			if len(conf_str) > 0:
-				conf_array = conf_str.split()
-				self.Window.overlapcolorList = []
-				for i in range(9):
-					r = int(conf_array[i*3])
-					g = int(conf_array[i*3+1]) 
-					b = int(conf_array[i*3+2]) 
-					self.Window.overlapcolorList.insert(i, wx.Colour(r, g, b))
 
 		if self.config.has_option("applications", "fontstartdepth"):
 			str_temp = self.config.get("applications", "fontstartdepth")

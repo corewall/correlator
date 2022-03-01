@@ -414,31 +414,25 @@ class DataCanvas(wxBufferedWindow):
 		self.LastMousePos = None
 
 		# Use dictionary so we can name colors - also need a list of names since dictionary is unordered
-		self.colorDictKeys = [ 'mbsf', 'ccsfTie', 'ccsfSet', 'ccsfRel', 'eld', 'smooth', 'splice', 'log', 'mudlineAdjust', \
-								'fixedTie', 'shiftTie', 'paleomag', 'diatom', 'rad', 'foram', \
-								'nano', 'background', 'foreground', 'corrWindow', 'guide', 'imageOverlay' ] 
-		self.colorDict = { 'mbsf': wx.Colour(238, 238, 0), 'ccsfTie': wx.Colour(0, 139, 0), \
-							'ccsfSet': wx.Colour(0, 102, 255), 'ccsfRel': wx.Colour(255, 153, 0), \
-							'eld': wx.Colour(0, 255, 255), 'smooth': wx.Colour(238, 216, 174), \
-							'splice': wx.Colour(30, 144, 255), 'log': wx.Colour(64, 224, 208), \
-							'mudlineAdjust': wx.Colour(0, 255, 0), 'fixedTie': wx.Colour(139, 0, 0), \
-							'shiftTie': wx.Colour(0, 139, 0), 'paleomag': wx.Colour(30, 144, 255), \
-							'diatom': wx.Colour(218, 165, 32), 'rad': wx.Colour(147, 112, 219), \
-							'foram': wx.Colour(84, 139, 84), 'nano': wx.Colour(219, 112, 147), \
-							'background': wx.Colour(0, 0, 0), 'foreground': wx.Colour(255, 255, 255), \
-							'corrWindow': wx.Colour(178, 34, 34), 'guide': wx.Colour(224, 255, 255), \
-							'imageOverlay': wx.Colour(238,238,0) }
+		
+		self.colorDictKeys = ['background', 'foreground', 'imageOverlay',  'mbsf', \
+			'ccsfTie', 'ccsfSet', 'ccsfRel', 'corrWindow', 'splice', 'spliceSel', 'spliceTrace', 'holeA', 'holeB', \
+			'holeC', 'holeD', 'holeE', 'holeF', 'smoothA', 'smoothB', 'smoothC', \
+			'smoothD', 'smoothE', 'smoothF']
+		self.colorDict = {'background':wx.Colour(0,0,0), 'foreground':wx.Colour(255,255,255), 'imageOverlay':wx.Colour(238,238,0), \
+			'mbsf':wx.Colour(238,238,0), 'ccsfTie':wx.Colour(0,139,0), 'ccsfSet':wx.Colour(0,102,255), 'ccsfRel':wx.Colour(255,153,0), \
+			'corrWindow':wx.Colour(178,34,34), 'splice':wx.Colour(30,144,255), 'spliceSel':wx.GREEN, 'spliceTrace':wx.Colour(178,34,34), \
+			'holeA':wx.Colour(234,153,153), 'holeB':wx.Colour(128,215,168), 'holeC':wx.Colour(158,196,247), 'holeD':wx.Colour(255,229,153), \
+			'holeE':wx.Colour(213,166,189), 'holeF':wx.Colour(180,167,214), 'smoothA':wx.Colour(206,40,36), 'smoothB':wx.Colour(0,158,15), \
+			'smoothC':wx.Colour(43,120,228), 'smoothD':wx.Colour(255,157,11), 'smoothE':wx.Colour(255,0,255), 'smoothF':wx.Colour(153,0,255)
+		}
+		self.defaultColorDict = dict(self.colorDict)
 		assert len(self.colorDictKeys) == len(self.colorDict)
-
-		self.overlapcolorList = [ wx.Colour(238, 0, 0), wx.Colour(0, 139, 0), \
-				wx.Colour(0, 255, 255), wx.Colour(238, 216, 174), wx.Colour(30, 144, 255), \
-				wx.Colour(147, 112, 219), wx.Colour(84, 139, 84), wx.Colour(219, 112, 147), \
-				wx.Colour(30, 144, 255)]
 
 		self.compositeX = 35 # start of plotting area (first 35px are ruler)
 		self.splicerX = 695 # start of splice plotting area (after ruler)
 		self.splicerBackX = 695
-		self.tieline_width = 1
+		self.tieline_width = 2
 
 		# obsolete vars, but with refs in obsolete code, leaving to be
 		# removed in a dedicated obsolete code cleanup
@@ -1535,9 +1529,8 @@ class DataCanvas(wxBufferedWindow):
 					# print("Core {}: smooth_id = {}, coresToPlot len = {}".format(cmd.coreName(), smooth_id, len(coresToPlot)))
 
 					for idx, ctp in enumerate(coresToPlot):
-						plotColor = self.colorDict['smooth'] if idx > 0 else None # default color if None
-						if self.showPlotOverlays:
-							plotColor = self._getOverlayColor(holeColumn)
+						useSmoothColor = (smoothType == SmoothingType.Smoothed) or (smoothType == SmoothingType.SmoothedAndUnsmoothed and idx > 0)
+						plotColor = self.getHoleColor(holeColumn.holeName(), useSmoothColor)
 						self.DrawCorePlot(dc, colStartX, holeColumn.holeName(), ctp, plotColor)
 
 					# for now we'll continue to draw section boundaries only on the plot area
@@ -1562,16 +1555,6 @@ class DataCanvas(wxBufferedWindow):
 				self.DrawAffineShiftInfo(dc, startX, coreTop, coreBot, holeColumn, cmd, clippingRegion)
 				arrowStartX = plotStartX if holeColumn.hasPlot() else startX
 				self.PrepareTieShiftArrow(dc, arrowStartX, coreTop, coreBot, holeColumn, cmd)
-
-	# Return wx.Colour for overlay of holeColumns that aren't first alphabetically for their datatype.
-	# If hole is first alphabetically, return None, indicating default color.
-	def _getOverlayColor(self, holeColumn):
-		dtHoles = sorted([hc for hc in self.HoleColumns if hc.datatype() == holeColumn.datatype()], key=lambda hc:hc.holeName())
-		dtIndex = dtHoles.index(holeColumn)
-		if dtIndex > 0:
-			return self.overlapcolorList[(dtIndex - 1) % len(self.overlapcolorList)] # % to avoid overrun in unlikely event of 10+ holes
-		else:
-			return None
 
 	# Show affine shift direction, distance, and type to left of core, centered on core depth interval
 	def DrawAffineShiftInfo(self, dc, startX, coreTopY, coreBotY, hole, core, clippingRegion):
@@ -1773,18 +1756,18 @@ class DataCanvas(wxBufferedWindow):
 		if liney < self.startDepthPix - 20:
 			return # don't bother drawing if line is above top of plot area
 
-		dc.SetPen(wx.Pen(wx.WHITE, 2))
+		dc.SetPen(wx.Pen(self.colorDict['foreground'], 2))
 		dc.DrawLine(startX - 20, liney, startX, liney)
 		
-		dc.SetTextForeground(wx.WHITE)
+		dc.SetTextForeground(self.colorDict['foreground'])
 		coreName = "{}{}".format(interval.coreinfo.hole, interval.coreinfo.holeCore)
 		dc.DrawText(coreName, startX - (dc.GetTextExtent(coreName)[0] + 2), liney - (dc.GetCharHeight() + 2))
 		
 	def DrawSpliceIntervalTie(self, dc, tie):
-		whitePen = wx.Pen(wx.WHITE, 1, style=wx.DOT)
-		whiteBrush = wx.Brush(wx.WHITE)
-		dc.SetPen(whitePen)
-		dc.SetBrush(whiteBrush)
+		fgPen = wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT)
+		fgBrush = wx.Brush(self.colorDict['foreground'])
+		dc.SetPen(fgPen)
+		dc.SetBrush(fgBrush)
 		img_wid = self.GetSpliceAreaImageWidth()
 		startx = self.splicerX + self.layoutManager.plotLeftMargin + img_wid # beginning of splice plot area
 		endx = startx + (self.layoutManager.plotWidth * 2)
@@ -1808,8 +1791,8 @@ class DataCanvas(wxBufferedWindow):
 			dc.DrawLine(startx, ycoord, endx, ycoord)
 			dc.DrawCircle(circlex, ycoord, tie.TIE_CIRCLE_RADIUS)
 			dc.SetTextForeground(self.colorDict['foreground'])
-			dc.SetPen(whitePen)
-			dc.SetBrush(whiteBrush)
+			dc.SetPen(fgPen)
+			dc.SetBrush(fgBrush)
 		else:
 			dc.DrawLine(startx, ycoord, endx, ycoord)
 			dc.DrawCircle(circlex, ycoord, tie.TIE_CIRCLE_RADIUS)
@@ -1860,7 +1843,7 @@ class DataCanvas(wxBufferedWindow):
 		clip = wx.DCClipper(dc, wx.Rect(startX, self.startDepthPix - 20, clip_width, self.Height - (self.startDepthPix - 20)))
 
 		if len(screenPoints) >= 1:
-			dc.SetPen(wx.Pen(wx.GREEN, 2)) if intervalSelected else dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
+			dc.SetPen(wx.Pen(self.colorDict['spliceSel'], 2)) if intervalSelected else dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
 			dc.DrawLines(screenPoints) if (len(screenPoints) > 1) else dc.DrawPoint(screenPoints[0][0], screenPoints[0][1])	
 		else:
 			print "Can't draw {}, it contains 0 points".format(interval.coreinfo.getName())
@@ -1993,7 +1976,7 @@ class DataCanvas(wxBufferedWindow):
 				screenpoints.append((x,y))
 		if len(screenpoints) >= 1:
 			clip = wx.DCClipper(dc, guide_clip_rect)
-			dc.SetPen(wx.Pen(wx.RED, 1))
+			dc.SetPen(wx.Pen(self.colorDict['spliceTrace'], 1))
 			dc.DrawLines(screenpoints) if (len(screenpoints) > 1) else dc.DrawPoint(screenpoints[0][0], screenpoints[0][1])
 
 	# find nearest point in coredata with depth less than searchDepth
@@ -2027,7 +2010,17 @@ class DataCanvas(wxBufferedWindow):
 	def depthIntervalVisible(self, top, bot, rangetop, rangebot):
 		return self.depthVisible(top, rangetop, rangebot) or self.depthVisible(bot, rangetop, rangebot) or (top <= rangetop and bot >= rangebot)
 
-	def DrawCorePlot(self, dc, plotStartX, holeName, core, plotColor=None):
+	# Colors are defined for holes A-F. Reuse colors in the unlikely event of holes beyond F.
+	def getHoleColor(self, holeName, smooth=False):
+		prefix = 'smooth' if smooth else 'hole'
+		if 'A' <= holeName <= 'F':
+			return self.colorDict[prefix + holeName]
+		else: # use hole A color for hole G, B for H, C for I, etc.
+			assert len(holeName) == 1 and holeName > 'F', "Unexpected hole name {}, must be a single capital letter A-Z".format(holeName)
+			wrappedHoleCode = ord('A') + (ord(holeName) - ord('A')) % 6
+			return self.colorDict[prefix + chr(wrappedHoleCode)]
+
+	def DrawCorePlot(self, dc, plotStartX, holeName, core, plotColor):
 		points = []
 		for y, x in core.depthDataPairs():
 			if y <= self.rulerEndDepth:
@@ -2038,11 +2031,7 @@ class DataCanvas(wxBufferedWindow):
 				break
 		
 		# plot points
-		if plotColor is None:
-			coreColor = self.parent.affineManager.getShiftColor(holeName, core.coreName())
-		else:
-			coreColor = plotColor
-		dc.SetPen(wx.Pen(coreColor, 1))
+		dc.SetPen(wx.Pen(plotColor, 1))
 		clip = self.ClipPlot(dc, plotStartX)
 		if self.DiscretePlotMode == 0 and len(points) > 1:
 			dc.DrawLines(points)
@@ -2114,7 +2103,7 @@ class DataCanvas(wxBufferedWindow):
 		# if data_max < self.splicerX: # brg let clipping handle this
 		for r in lines:
 			px, py, x, y, f = r
-			color_key = 'corrWindow' if f == 1 else 'guide'
+			color_key = 'corrWindow' if f == 1 else 'foreground'
 			dc.SetPen(wx.Pen(self.colorDict[color_key], 1))
 			dc.DrawLines(((px, py), (x, y)))
 
@@ -2135,7 +2124,7 @@ class DataCanvas(wxBufferedWindow):
 
 	# Draw dashed rectangle around given bounds
 	def DrawHighlightRect(self, dc, x, y, wid, hit):
-		dc.SetPen(wx.Pen(wx.Colour(192, 192, 192), 1, wx.DOT))
+		dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, wx.DOT))
 		dc.DrawLines(((x, y), (x + wid, y), (x + wid, y + hit), (x, y + hit), (x, y)))
 		# dc.DrawLines(((x - 2, y - 2), (x + wid + 2, y - 2), (x + wid + 2, y + hit + 2), (x - 2, y + hit + 2), (x - 2, y - 2)))
 
@@ -2590,11 +2579,11 @@ class DataCanvas(wxBufferedWindow):
 		fixedTieDepth = 0
 		for compTie in self.TieData: # draw in-progress composite ties (not established TIE arrows)
 			if compTie.fixed == 1:
-				dc.SetBrush(wx.Brush(self.colorDict['fixedTie']))
-				dc.SetPen(wx.Pen(self.colorDict['fixedTie'], 1))
+				dc.SetBrush(wx.Brush(wx.RED))
+				dc.SetPen(wx.Pen(wx.RED, 1))
 			else:
-				dc.SetBrush(wx.Brush(self.colorDict['shiftTie']))
-				dc.SetPen(wx.Pen(self.colorDict['shiftTie'], 1))
+				dc.SetBrush(wx.Brush(wx.GREEN))
+				dc.SetPen(wx.Pen(wx.GREEN, 1))
 
 			y = self.startDepthPix + (compTie.depth - self.rulerStartDepth) * self.pixPerMeter
 			tempx = round(compTie.depth, 3)
@@ -2608,12 +2597,12 @@ class DataCanvas(wxBufferedWindow):
 					x_end = min(x + width, self.splicerX - 65)
 					dc.DrawCircle(x, y, radius)
 					if compTie.fixed == 1: 
-						dc.SetPen(wx.Pen(self.colorDict['fixedTie'], self.tieline_width, style=wx.DOT))
+						dc.SetPen(wx.Pen(wx.RED, self.tieline_width, style=wx.DOT))
 					else:
 						rect_x = x + width - radius
 						if rect_x < self.splicerX - 65:
 							dc.DrawRectangle(x + width - radius, y - radius, self.tieDotSize, self.tieDotSize)
-						dc.SetPen(wx.Pen(self.colorDict['shiftTie'], self.tieline_width, style=wx.DOT))
+						dc.SetPen(wx.Pen(wx.GREEN, self.tieline_width, style=wx.DOT))
 
 					dc.DrawLine(x, y, x_end, y)
 					
@@ -2660,7 +2649,7 @@ class DataCanvas(wxBufferedWindow):
 
 		# draw each overlay
 		for overlayHole in overlayHoles:
-			overlayColor = self._getOverlayColor(overlayHole)
+			overlayColor = self.getHoleColor(overlayHole.holeName())
 			for overlayIndex, cmd in enumerate([CoreMetadata(c) for c in overlayHole.cores()]):
 				coreTop, coreBot = cmd.topDepth(), cmd.botDepth()
 				# only draw overlay cores within visible depth range

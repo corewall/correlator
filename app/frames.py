@@ -24,6 +24,7 @@ from importManager import py_correlator
 from layout import ImageDatatypeStr
 
 import canvas
+from colordlg import ColorsDialog
 import dialog
 from smooth import SmoothParameters
 import splice
@@ -3582,7 +3583,7 @@ class PreferencesPanel():
 		self.parent.Window.shift_range = float(self.tie_shift.GetValue())
 
 	def OnChangeColor(self, event):
-		dlg = dialog.ColorTableDialog(self.parent)
+		dlg = ColorsDialog(self.parent, self.parent.Window.colorDict, self.parent.Window.defaultColorDict)
 		dlg.Centre()
 		dlg.ShowModal()
 		dlg.Destroy()
