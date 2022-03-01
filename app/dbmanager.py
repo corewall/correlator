@@ -68,6 +68,10 @@ class DataFrame(wx.Panel):
 		 # has enabled state of hole data or affine/splice tables changed since last Load?
 		self.needsReload = False
 
+		self.showImportSuccess = True
+		self.showExportSuccess = True
+		self.showUpdateSuccess = True
+
 		self.selectedDataType = ""
 		self.selectedDepthType = ""
 		self.SetBackgroundColour(wx.Colour(255, 255, 255))
@@ -494,7 +498,9 @@ class DataFrame(wx.Panel):
 			if not os.path.exists(dbImgPath):
 				print("{} does not exist, creating".format(dbImgPath))
 				os.mkdir(dbImgPath)
-			self._importCoreImages(imgPath, dbImgPath)
+			importCount = self._importCoreImages(imgPath, dbImgPath)
+			if importCount > 0:
+				self.ShowImportSuccessMsg()
 
 	# - importPath: path from which to copy image files
 	# - dbPath: destination database path for image files
@@ -506,16 +512,16 @@ class DataFrame(wx.Panel):
 		if len(unmatchedImgFiles) > 0:
 			imgFiles = [f for f in imgFiles if f not in unmatchedImgFiles]
 			if not self.ShowUnmatchedImagesWarning(unmatchedImgFiles):
-				return
+				return 0
 
 		# if oversized images found, warn and confirm continue
 		if not self.CheckForOversizedImages(imgFiles):
-			return
+			return 0
 
 		if len(imgFiles) == 0: # all selected images were culled
 			msg = "None of the selected images could be imported."
 			self.parent.OnShowMessage("No images to import", msg, 1)
-			return
+			return 0
 
 		# print("Copying {} image files into {}".format(len(imgFiles), dbPath))
 		pd = wx.ProgressDialog("Image Import", "", len(imgFiles), self, wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
@@ -532,6 +538,7 @@ class DataFrame(wx.Panel):
 			shutil.copy(f, os.path.join(dbPath, fname))
 		self._updateImageImportPaths(importPath)
 		self._updateImageNodes(dbPath)
+		return len(imgFiles)
 
 	def CheckForOversizedImages(self, imgFiles):
 		proceed = True
@@ -621,13 +628,15 @@ class DataFrame(wx.Panel):
 			print("Import path {} is already known".format(newPath))
 
 	# Update imported images with contents of original image import dir(s)
-	def UpdateCoreImages(self):
+	def UpdateCoreImages(self, suppressSuccess=False):
 		siteName = self.GetSelectedSiteName()
 		dbImgPath = os.path.join(self.parent.DBPath, 'db', siteName, IMG_DB_DIR)
 		for path in self.imageImportPaths[siteName]:
 			print("Updating images from path {}".format(path))
 			self._importCoreImages(path, dbImgPath)
 		self._updateImageNodes(dbImgPath)
+		if not suppressSuccess:
+			self.ShowUpdateSuccessMsg()
 
 	# - hole: optional; string; specific hole name for which to delete image files
 	def DeleteCoreImages(self, hole=None):
@@ -680,6 +689,7 @@ class DataFrame(wx.Panel):
 			for path, secsumm in secSummMap.iteritems():
 				self.AddSectionSummary(secsumm, path)
 			self.needsReload = True
+			self.ShowImportSuccessMsg()
 
 	# get name of parent Site (child of Root node) for current selection in self.tree
 	def GetSelectedSiteName(self):
@@ -1096,7 +1106,7 @@ class DataFrame(wx.Panel):
 
 		result = self.ExportCoreData(sitePath, dataFiles, datatype, outputFiles, outputPath, secSummFiles, affineFile, spliceFile)
 		if result:
-			self.parent.OnShowMessage("Info", "Successfully exported.", 1)
+			self.ShowExportSuccessMsg()
 
 	# sitePath: full path to directory containing files in dataFiles
 	# dataFiles: list of filenames in sitePath to be processed and exported
@@ -1190,7 +1200,7 @@ class DataFrame(wx.Panel):
 		else:
 			return False, "No images of sections included in the splice can be found."
 		
-		return True, "Export successful."
+		return True, "Successfully exported spliced image."
 
 	# Export Spliced Image menu item handler
 	def OnExportSplicedImage(self, selectedIndex):
@@ -1218,9 +1228,33 @@ class DataFrame(wx.Panel):
 		# do the export
 		pd = wx.ProgressDialog("Exporting Spliced Image...", "", 100, self, wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
 		pd.Pulse("Exporting Spliced Image...")
-		result, msg = self.ExportSplicedImage(sitePath, filename, path, secSummFiles, splice, options)
+		success, msg = self.ExportSplicedImage(sitePath, filename, path, secSummFiles, splice, options)
 		pd.Destroy()
-		self.parent.OnShowMessage("Success" if result else "Error", msg, 1)
+		if success:
+			self.ShowExportSuccessMsg(msg)
+		else:
+			self.parent.OnShowMessage("Error", msg, 1)
+
+	def ShowExportSuccessMsg(self, msg="Successfully exported."):
+		if self.showExportSuccess:
+			dlg = dialog.SuppressableMessageDialog(self, "Information", msg, dialog.MsgDlgButtons.Ok)
+			dlg.ShowModal()
+			if dlg.IsCheckBoxChecked():
+				self.showExportSuccess = False
+
+	def ShowImportSuccessMsg(self, msg="Successfully imported."):
+		if self.showImportSuccess:
+			dlg = dialog.SuppressableMessageDialog(self, "Information", msg, dialog.MsgDlgButtons.Ok)
+			dlg.ShowModal()
+			if dlg.IsCheckBoxChecked():
+				self.showImportSuccess = False
+
+	def ShowUpdateSuccessMsg(self, msg="Successfully updated."):
+		if self.showUpdateSuccess:
+			dlg = dialog.SuppressableMessageDialog(self, "Information", msg, dialog.MsgDlgButtons.Ok)
+			dlg.ShowModal()
+			if dlg.IsCheckBoxChecked():
+				self.showUpdateSuccess = False
 
 	# Return dict with key: full section name, value: path to section image
 	# sitePath: path to site data
@@ -2283,7 +2317,7 @@ class DataFrame(wx.Panel):
 					elif tableType == "SPLICE":
 						shutil.copy2(source, path + '/' + filename)
 
-				self.parent.OnShowMessage("Information", "Successfully exported", 1)
+				self.ShowExportSuccessMsg()
 
 
 	def EXPORT_REPORT(self):
@@ -5594,7 +5628,7 @@ class DataFrame(wx.Panel):
 		if affine is not None:
 			dbFilePath = self.Add_TABLE("AFFINE", "affine", False, True, affine.name)
 			tabularImport.writeToFile(affine.dataframe, dbFilePath)
-			self.parent.OnShowMessage("Information", "Successfully imported", 1)
+			self.ShowImportSuccessMsg()
 			
 	def ImportAffineTable_pre_v3(self, sourceFilePath):
 		affine = tabularImport.doAffineImport(self.parent, tabularImport.AffineFormat_pre_v3, sourceFilePath)
@@ -5602,14 +5636,14 @@ class DataFrame(wx.Panel):
 			affine.dataframe = convert_pre_v3_AffineTable(affine.dataframe)
 			dbFilePath = self.Add_TABLE("AFFINE", "affine", False, True, affine.name)
 			tabularImport.writeToFile(affine.dataframe, dbFilePath)
-			self.parent.OnShowMessage("Information", "Successfully converted and imported legacy affine table", 1)
+			self.ShowImportSuccessMsg("Successfully converted and imported legacy affine table")
 
 	def ImportSpliceTable(self, sourceFilePath):
 		sit = tabularImport.doSITImport(self.parent, tabularImport.SITFormat, sourceFilePath)
 		if sit is not None:
 			dbFilePath = self.Add_TABLE("SPLICE", "splice", False, True, sit.name)
 			tabularImport.writeToFile(sit.dataframe, dbFilePath)
-			self.parent.OnShowMessage("Information", "Successfully imported", 1)
+			self.ShowImportSuccessMsg()
 	
 	def OnIMPORT_TABLE(self, tableType):
 		if self.DisplayContainsData():
@@ -6432,7 +6466,7 @@ class DataFrame(wx.Panel):
 		siteNode = None
 		filesToUpdate = []
 		if self.IsSiteNode(selectItem):
-			self.UpdateCoreImages()
+			self.UpdateCoreImages(suppressSuccess=True)
 			siteNode = selectItem
 			for dtNode in [node for node in self.GetChildren(selectItem) if self.tree.GetItemText(node, 0) not in STD_SITE_NODES]:
 				for fileNode in self.GetChildren(dtNode):
@@ -6462,7 +6496,7 @@ class DataFrame(wx.Panel):
 				datatype = self.tree.GetItemText(self.tree.GetItemParent(ftu), 0)
 				self.OnUPDATEDATA(ftu, datatype)
 				self.OnUPDATE_DB_FILE(self.tree.GetItemText(siteNode, 0), siteNode)
-			self.parent.OnShowMessage("Information", "Successfully updated", 1)
+			self.ShowUpdateSuccessMsg()
 		return
 			
 
@@ -7356,6 +7390,7 @@ class DataFrame(wx.Panel):
 		self.sideNote.SetSelection(0)
 		self.EditRow = -1
 		self.importbtn.Enable(False)
+		self.ShowImportSuccessMsg()
 
 
 	def OnSELECTCELL(self, event):
