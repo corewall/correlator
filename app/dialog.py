@@ -728,7 +728,10 @@ class ExportSpliceImageDialog(wx.Dialog):
 		
 	def ButtonPressed(self, evt):
 		if evt.GetEventObject() == self.buttonPanel.ok:
-			savedlg = wx.FileDialog(self, "Save Spliced Image", self.initialDir, style=wx.SAVE)
+			spliceFile = self.GetSelectedSplice()
+			dot_idx = spliceFile.rindex('.')
+			filename = spliceFile[:dot_idx] + '.png'
+			savedlg = wx.FileDialog(self, "Save Spliced Image", self.initialDir, defaultFile=filename, style=wx.SAVE)
 			if savedlg.ShowModal() == wx.ID_OK:
 				self.outpath = savedlg.GetDirectory()
 				self.outfile = savedlg.GetFilename()
