@@ -20,7 +20,7 @@ class ColorsDialog(wx.Dialog):
         self.colorDict = colorDict
         self.defaultColorDict = defaultColorDict
         self.colorLabelDict = {'background':'Background', 'foreground':'General labels', 'imageOverlay':'Section numbers on images', \
-            'mbsf':'CSF-A', 'ccsfTie':'CCSF by TIE', 'ccsfSet':'CCSF by SET', 'ccsfRel':'Shifted along untied', \
+            'mbsf':'CSF-A', 'ccsfTie':'CCSF by TIE', 'ccsfSet':'CCSF by SET', 'ccsfRel':'REL: Untied shifted along', \
             'corrWindow':'Shift core trace', 'splice':'Splice', 'spliceSel':'Selected splice interval', 'spliceTrace':'Splice core trace', \
             'holeA':'Hole A', 'holeB':'Hole B', 'holeC':'Hole C', 'holeD':'Hole D', 'holeE':'Hole E', 'holeF':'Hole F', \
             'smoothA':'Smooth A', 'smoothB':'Smooth B', 'smoothC':'Smooth C', 'smoothD':'Smooth D', 'smoothE':'Smooth E', 'smoothF':'Smooth F'}
