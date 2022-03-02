@@ -14,6 +14,7 @@ import wx
 import wx.gizmos as gizmos
 from wx.lib import plot
 import random, sys, os, re, time, ConfigParser, string
+import re
 from datetime import datetime
 import xml.sax
 
@@ -4504,10 +4505,15 @@ class DataFrame(wx.Panel):
 		maxFileNum = 0
 		for child in self.GetChildren(savedTablesNode, test=lambda c:self.tree.GetItemText(c, 1) == tableType):
 			filename = self.tree.GetItemText(child, 8)
-			last = filename.find(".", 0) 
-			start = last + 1
-			last = filename.find(".", start)
-			curFileNum = int(filename[start:last])
+			if filename.endswith(".table"):	# pre-4.0 affine/splice table naming format
+				last = filename.find(".", 0) 
+				start = last + 1
+				last = filename.find(".", start)
+				curFileNum = int(filename[start:last])
+			elif filename.endswith(".csv"):
+				pattern = re.compile(".+_(affine|splice)([0-9]+)\.csv")
+				match = pattern.match(filename)
+				curFileNum = int(match.group(2))
 			if curFileNum > maxFileNum:
 				maxFileNum = curFileNum
 		return maxFileNum + 1
@@ -4566,7 +4572,7 @@ class DataFrame(wx.Panel):
 
 			self.tree.Expand(subroot)
 
-			filename = self.title + '.' + str(newFileNum) + '.' + sub_title + '.table'
+			filename = "{}_{}{}.csv".format(self.title, sub_title, str(newFileNum))
 			self.tree.SetItemText(subroot,  filename, 8)
 			stamp = self._getTimestamp()
 			self.tree.SetItemText(subroot, stamp, 6)
