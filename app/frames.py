@@ -612,7 +612,7 @@ class CompositePanel():
 		projectPanel = wx.Panel(self.mainPanel, -1)
 		setSizer = wx.StaticBoxSizer(wx.StaticBox(projectPanel, -1, "SET Dialog"), orient=wx.VERTICAL)
 		self.setButton = wx.Button(projectPanel, -1, "SET...")
-		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnProject, self.setButton)
+		self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSETButton, self.setButton)
 		setSizer.Add(self.setButton, 1, wx.EXPAND)
 		projectPanel.SetSizer(setSizer)
 		vbox.Add(projectPanel, 0, wx.EXPAND)
@@ -682,7 +682,7 @@ class CompositePanel():
 		shiftType = self.table.GetCellValue(evt.GetRow(), 2) # col 2 is shift type
 		self.breakTieButton.Enable("TIE" in shiftType)
 
-	def OnProject(self, evt):
+	def OnSETButton(self, evt):
 		dlg = dialog.SetDialog(self.parent)
 		dlg.Centre(wx.CENTER_ON_SCREEN)
 		result = dlg.ShowModal()
@@ -695,7 +695,7 @@ class CompositePanel():
 			elif dlg.coreAndChain.GetValue(): # entire chain
 				self.parent.affineManager.setChainRoot(dlg.outHole, dlg.outCore, dlg.outOffset, dlg.outType, dlg.outComment)
 			else: # current core only
-				self.parent.affineManager.set(dlg.outHole, dlg.outCore, value, isRate, dlg.outType, dlg.outComment)
+				self.parent.affineManager.SET(dlg.outHole, dlg.outCore, value, isRate, dlg.outType, dlg.outComment)
 
 			self.parent.AffineChange = True
 			#py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table', 1)

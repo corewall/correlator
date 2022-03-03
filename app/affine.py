@@ -389,10 +389,11 @@ class AffineBuilder:
             distance = value
         return distance
      
-    # Shift one core by a given distance (SET). Rename to avoid conflict with Python set()?
+    # Shift one core by a given distance (SET).
     # core: core to shift
     # distance: distance, in meters, to shift core from its original, unshifted position
-    def set(self, hole, core, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
+    # capitalized method name to avoid confusion with built-in set()
+    def SET(self, hole, core, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
         ao = AffineOperation()
         core_id = aci(hole, core)
         breaks = self.findBreaksForSET([core_id])

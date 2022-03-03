@@ -3106,7 +3106,8 @@ class AffineController:
 		self.updateGUI()		
 
 	# shift a single untied core with method SET
-	def set(self, hole, core, value, isPercent, dataUsed="", comment=""):
+	# capitalized method name to avoid confusion with built-in set()
+	def SET(self, hole, core, value, isPercent, dataUsed="", comment=""):
 		core_id = aci(hole, core)
 		if self.affine.isTie(core_id):
 			errmsg = "Core {}{} is shifted by a TIE and is part of a chain.\nIt cannot be SET unless that TIE is broken first.".format(hole, core)
@@ -3114,7 +3115,7 @@ class AffineController:
 			return
 
 		site = self.parent.Window.GetHoleSite(hole)
-		setOp = self.affine.set(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
+		setOp = self.affine.SET(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
 		if not self.confirmBreaks(setOp.infoDict['breaks']):
 			return
 		
