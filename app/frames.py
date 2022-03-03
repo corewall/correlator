@@ -1551,6 +1551,14 @@ class SpliceIntervalPanel():
 	def OnSelectionChange(self):
 		self._updateButtons()
 		self._updateTableSelection()
+
+	# Used to prevent changing depth to that of topmost interval
+	# when loading a splice.
+	def StifleSelectCellEvent(self, stifle):
+		if stifle:
+			self.gridPanel.Unbind(wx.grid.EVT_GRID_SELECT_CELL)
+		else:
+			self.gridPanel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectRow)
 		
 	def OnAdd(self): # SpliceInterval added
 		self.UpdateUI()
