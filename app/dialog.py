@@ -54,8 +54,8 @@ def MessageDialog(parent, title, msg, nobutton, makeNoDefault=False, customLabel
 # Argh! RichMessageDialog is not part of wx 2.9.5 on Mac or Win, despite
 # doc claiming it's available in 2.9.2 and beyond. Once we upgrade to
 # wx 4+, the below should work.
-# Use SuppressableMessageDialog class for now.
-# def SuppressableMessageDialog_wx4(parent, title, msg, nobutton, suppressMsg, makeNoDefault=False, customLabels=None):
+# Use SuppressibleMessageDialog class for now.
+# def SuppressibleMessageDialog_wx4(parent, title, msg, nobutton, suppressMsg, makeNoDefault=False, customLabels=None):
 # 	style = _createMessageDialogStyle(title, nobutton, makeNoDefault)
 # 	dlg = wx.RichMessageDialog(parent, msg, title, style)
 # 	dlg.ShowCheckBox(suppressMsg)
@@ -89,9 +89,9 @@ def _setCustomLabels(dlg, nobutton, customLabels):
 		dlg.SetOKCancelLabels(customLabels[0], customLabels[1])
 
 # brg 2/27/2022
-# Hack-job, good enough for the few spots we need a suppressable message dialog.
+# Hack-job, good enough for the few spots we need a suppressible message dialog.
 # To be replaced with RichMessageDialog when we upgrade to wx 4+.
-class SuppressableMessageDialog(wx.Dialog):
+class SuppressibleMessageDialog(wx.Dialog):
 	def __init__(self, parent, title, msg, buttons, suppressMsg="Don't show this message again", customLabels=None):
 		wx.Dialog.__init__(self, parent, -1, title, size=(350,-1))
 		mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1967,7 +1967,7 @@ if __name__ == "__main__":
 	# msg = "Fairly long message about some serious stuff"
 	msg = "Exceedingly long message that goes on for a super duper super duper  super duper super duper super duper super duper super duper super duper super duper super duper long time."
 	suppMsg = "Don't show this message again"
-	dlg = SuppressableMessageDialog(app.frame, "Warning", msg, MsgDlgButtons.YesNo, suppMsg, customLabels=["Foo", "Bar"])
+	dlg = SuppressibleMessageDialog(app.frame, "Warning", msg, MsgDlgButtons.YesNo, suppMsg, customLabels=["Foo", "Bar"])
 	result = dlg.ShowModal()
 	if result == wx.ID_OK:
 		print("OK")

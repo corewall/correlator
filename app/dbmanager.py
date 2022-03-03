@@ -1238,21 +1238,21 @@ class DataFrame(wx.Panel):
 
 	def ShowExportSuccessMsg(self, msg="Successfully exported."):
 		if self.showExportSuccess:
-			dlg = dialog.SuppressableMessageDialog(self, "Information", msg, dialog.MsgDlgButtons.Ok)
+			dlg = dialog.SuppressibleMessageDialog(self, "Information", msg, dialog.MsgDlgButtons.Ok)
 			dlg.ShowModal()
 			if dlg.IsCheckBoxChecked():
 				self.showExportSuccess = False
 
 	def ShowImportSuccessMsg(self, msg="Successfully imported."):
 		if self.showImportSuccess:
-			dlg = dialog.SuppressableMessageDialog(self, "Information", msg, dialog.MsgDlgButtons.Ok)
+			dlg = dialog.SuppressibleMessageDialog(self, "Information", msg, dialog.MsgDlgButtons.Ok)
 			dlg.ShowModal()
 			if dlg.IsCheckBoxChecked():
 				self.showImportSuccess = False
 
 	def ShowUpdateSuccessMsg(self, msg="Successfully updated."):
 		if self.showUpdateSuccess:
-			dlg = dialog.SuppressableMessageDialog(self, "Information", msg, dialog.MsgDlgButtons.Ok)
+			dlg = dialog.SuppressibleMessageDialog(self, "Information", msg, dialog.MsgDlgButtons.Ok)
 			dlg.ShowModal()
 			if dlg.IsCheckBoxChecked():
 				self.showUpdateSuccess = False

@@ -158,7 +158,7 @@ class TopMenuFrame(wx.Frame):
 			return
 
 		# We want to encourage users to save affine and splices together in the hopes that for
-		# the most part, the file numbers of comapatible affines and splices will be the same.
+		# the most part, the file numbers of compatible affines and splices will be the same.
 		# Save splice if it's changed, or if there's at least one interval to save, even if
 		# nothing has changed. spliceManager.dirty implies at least one interval - it's set to
 		# False if the only interval in the splice was deleted.

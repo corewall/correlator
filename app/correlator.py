@@ -3245,7 +3245,7 @@ class AffineController:
 			msg += "will be shifted {}. This may result in gaps in the splice, and/or ".format(shiftDirStr)
 			msg += "clipping of shifted intervals where they overlap with "
 			msg += "unshifted intervals."
-			dlg = dialog.SuppressableMessageDialog(self.parent, "Warning", msg, dialog.MsgDlgButtons.OkCancel)
+			dlg = dialog.SuppressibleMessageDialog(self.parent, "Warning", msg, dialog.MsgDlgButtons.OkCancel)
 			result = dlg.ShowModal()
 			if result != wx.ID_OK:
 				self.parent.Window.ClearCompositeTies()
