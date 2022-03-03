@@ -7,6 +7,8 @@ platform_name = platform.uname()
 
 from enum import Enum
 
+import re
+
 import wx
 import wx.grid
 import wx.lib.sheet as sheet
@@ -1060,23 +1062,23 @@ class SetDialog(wx.Dialog):
 		
 		methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Shift by:"), orient=wx.VERTICAL)
 		hsz = wx.BoxSizer(wx.HORIZONTAL)
-		self.percentRadio = wx.RadioButton(self, -1, "Percentage:", style=wx.RB_GROUP)
-		self.percentRadio.SetValue(True)
+		distSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.distRadio = wx.RadioButton(self, -1, "Distance from current offset(s)", style=wx.RB_GROUP)
+		self.distRadio.SetValue(True)
+		self.distField = wx.TextCtrl(self, -1, "0.0", size=(70,-1))
+		distSizer.Add(self.distRadio, 0, wx.RIGHT, 5)
+		distSizer.Add(self.distField)
+		distSizer.Add(wx.StaticText(self, -1, "m"), 0, wx.LEFT, 3)
+		self.percentRadio = wx.RadioButton(self, -1, "Percent of original CSF-A depth(s)")
 		self.percentField = wx.TextCtrl(self, -1, "10.0", size=(70,-1))
-		hsz2 = wx.BoxSizer(wx.HORIZONTAL)
-		hsz2.Add(self.percentRadio, 0, wx.RIGHT, 5)
-		hsz2.Add(self.percentField)
+		pctSizer = wx.BoxSizer(wx.HORIZONTAL)
+		pctSizer.Add(self.percentRadio, 0, wx.RIGHT, 5)
+		pctSizer.Add(self.percentField)
 		self.percentLabel = wx.StaticText(self, -1, "%")
-		hsz2.Add(self.percentLabel, 0, wx.LEFT, 3)
-		hsz3 = wx.BoxSizer(wx.HORIZONTAL)
-		self.fixedRadio = wx.RadioButton(self, -1, "Fixed distance:")
-		self.fixedField = wx.TextCtrl(self, -1, "0.0", size=(70,-1))
-		hsz3.Add(self.fixedRadio, 0, wx.RIGHT, 5)
-		hsz3.Add(self.fixedField)
-		hsz3.Add(wx.StaticText(self, -1, "m"), 0, wx.LEFT, 3)
+		pctSizer.Add(self.percentLabel, 0, wx.LEFT, 3)
 		methodSizer.Add(hsz, 0, wx.EXPAND | wx.BOTTOM, 5)
-		methodSizer.Add(hsz2, 0, wx.BOTTOM, 5)
-		methodSizer.Add(hsz3, 0)
+		methodSizer.Add(distSizer, 0, wx.BOTTOM, 5)
+		methodSizer.Add(pctSizer, 0)
 		
 		self.currentShiftText = wx.StaticText(self, -1, "Current shift:")
 		methodSizer.Add(self.currentShiftText, 0, wx.EXPAND | wx.TOP, 5)
@@ -1110,16 +1112,19 @@ class SetDialog(wx.Dialog):
 		self.Bind(wx.EVT_RADIOBUTTON, self.MethodRadioChanged, self.coreAndChain)
 		self.Bind(wx.EVT_RADIOBUTTON, self.MethodRadioChanged, self.coreOnly)
 		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.percentRadio)
-		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.fixedRadio)
+		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.distRadio)
 		self.Bind(wx.EVT_TEXT, self.UpdateData, self.percentField)
-		self.Bind(wx.EVT_TEXT, self.UpdateData, self.fixedField)
+		self.Bind(wx.EVT_TEXT, self.UpdateData, self.distField)
 
 	def OnApply(self, evt):
-		# gather and validate fixed distance/percentage input
+		# gather and validate distance/percentage input
 		try:
-			self.outOffset = float(self.fixedField.GetValue())
+			# self.distField is a delta from the current affine shift, but SET
+			# logic expects the total shift from its CSF-A (unshifted) depth, thus
+			# we return the sum of the current shift and the value of distField.
+			self.outOffset = self.curCoreShift + float(self.distField.GetValue())
 		except ValueError:
-			self.parent.OnShowMessage("Error", "Invalid fixed distance {}".format(self.fixedField.GetValue()), 1)
+			self.parent.OnShowMessage("Error", "Invalid distance {}".format(self.distField.GetValue()), 1)
 			return
 		try:
 			self.outRate = float(self.percentField.GetValue())/100.0 + 1.0
@@ -1216,7 +1221,8 @@ class SetDialog(wx.Dialog):
 		chainSelected = self.coreAndChain.GetValue()
 		if chainSelected:
 			if self.percentRadio.GetValue():
-				self.fixedRadio.SetValue(True)
+				self.distRadio.SetValue(True)
+			self.UpdateData()
 
 		self.rootCoreChoice.Enable(chainSelected) # only enabled if chain radio is selected
 
@@ -1229,31 +1235,34 @@ class SetDialog(wx.Dialog):
 		self.percentField.Enable(not chainSelected)
 		self.percentLabel.Enable(not chainSelected)
 
-	# Based on selected hole/core pair, update list of affected cores in
-	# self.outCoreList, and udpate current core shift text.
+	# Based on selected hole/core pair or chain root, udpate current core shift text.
+	# For multi-core non-chain root shift, update list of affected cores in self.outCoreList.
 	def UpdateData(self, evt=None):
-		curHole = self.holeChoice.GetStringSelection()
-		coreIndex = self.coreChoice.GetSelection()
-		curCore = self.coreData[curHole][coreIndex]
-		self.curCoreName = curHole + self.coreChoice.GetStringSelection()
+		if self.coreAndChain.GetValue(): # root of TIE chain selected
+			rootCore = self.rootCoreChoice.GetStringSelection()
+			holeCorePattern = re.compile("([A-Z]+)([0-9]+)")
+			match = holeCorePattern.match(rootCore)
+			curHole, coreName = match.group(1), match.group(2)
+			coreIndex = self.coreChoice.FindString(coreName)
+			curCore = self.coreData[curHole][coreIndex]
+			self.curCoreName = rootCore
+		else:
+			curHole = self.holeChoice.GetStringSelection()
+			coreIndex = self.coreChoice.GetSelection()
+			curCore = self.coreData[curHole][coreIndex]
+			self.curCoreName = curHole + self.coreChoice.GetStringSelection()
 		self.curCoreShift = curCore[2] - curCore[1]
 		
-		if coreIndex > 0:
-			self.prevCoreName = curHole + self.coreChoice.GetString(coreIndex)
-		else:
-			self.prevCoreName = None
-			
-		self.outCoreList = []
-		for coreTuple in [ct for ct in self.coreData[curHole] if int(ct[0]) >= int(self.coreChoice.GetStringSelection())]:
-			self.outCoreList.append(coreTuple[0])
+		if self.coreAndBelow.GetValue(): # outCoreList is unused for single-core and chain root SETs
+			self.outCoreList = []
+			for coreTuple in [ct for ct in self.coreData[curHole] if int(ct[0]) >= int(self.coreChoice.GetStringSelection())]:
+				self.outCoreList.append(coreTuple[0])
 
 		self.UpdateCurShiftText()
 	
 	def UpdateCurShiftText(self):
 		if self.curCoreName is not None:
 			self.currentShiftText.SetLabel("Current " + self.curCoreName + " affine shift: " + str(self.curCoreShift))
-		else:
-			self.currentShiftText.SetLabel("Current affine shift: [n/a for All]")
 
 
 class CorrParamsDialog(wx.Dialog):
