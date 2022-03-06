@@ -1975,6 +1975,7 @@ class DataCanvas(wxBufferedWindow):
 				x = (pt[1] - self.minRange) * self.coefRangeSplice + spliceholewidth
 				screenpoints.append((x,y))
 		if len(screenpoints) >= 1:
+			if not self.showOutOfRangeData:
 			clip = wx.DCClipper(dc, guide_clip_rect)
 			dc.SetPen(wx.Pen(self.colorDict['spliceTrace'], 1))
 			dc.DrawLines(screenpoints) if (len(screenpoints) > 1) else dc.DrawPoint(screenpoints[0][0], screenpoints[0][1])
