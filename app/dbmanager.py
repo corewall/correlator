@@ -4456,15 +4456,7 @@ class DataFrame(wx.Panel):
 		self.parent.compositePanel.OnUpdatePlots() # make sure growth rate is updated
 		self.parent.compositePanel.EnableSETButton(True)
 
-		# When a splice is loaded, after interval rows are added to the wx.Grid in
-		# frames.SpliceIntervalPanel, the topmost row is selected. This triggers an event
-		# that causes the Display depth to jump to the top interval's top depth, which
-		# is understandably annoying to users, who want to remain at the last-viewed depth.
-		# Stifling that event handler here is a crude but effective way to resolve this, while
-		# retaining the desired behavior when a user clicks on a row in the interval grid.
-		self.parent.spliceIntervalPanel.StifleSelectCellEvent(True)
 		self.parent.spliceIntervalPanel.UpdateUI()
-		self.parent.spliceIntervalPanel.StifleSelectCellEvent(False)
 
 		self.parent.compositePanel.saveButton.Enable(True)
 		if self.parent.Window.LogData  == []:

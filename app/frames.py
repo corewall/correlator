@@ -1551,14 +1551,6 @@ class SpliceIntervalPanel():
 	def OnSelectionChange(self):
 		self._updateButtons()
 		self._updateTableSelection()
-
-	# Used to prevent changing depth to that of topmost interval
-	# when loading a splice.
-	def StifleSelectCellEvent(self, stifle):
-		if stifle:
-			self.gridPanel.Unbind(wx.grid.EVT_GRID_SELECT_CELL)
-		else:
-			self.gridPanel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectRow)
 		
 	def OnAdd(self): # SpliceInterval added
 		self.UpdateUI()
@@ -1591,20 +1583,19 @@ class SpliceIntervalPanel():
 	def OnSelectRow(self, event):
 		self.parent.spliceManager.selectByIndex(event.GetRow())
 		self.lastInterval = self.parent.spliceManager.getIntervalAtIndex(event.GetRow())
-		
-		# adjust depth range to show selected interval if necessary
-		visibleMin = self.parent.Window.rulerStartDepth
-		visibleMax = self.parent.Window.rulerEndDepth - 2.0
-		intervalTop = self.parent.spliceManager.getSelectedInterval()
-		if not intervalTop.overlaps(splice.Interval(visibleMin, visibleMax)):
-			self.parent.OnUpdateStartDepth(intervalTop.getTop()) # calls UpdateDrawing()
-		else:
-			self.parent.Window.UpdateDrawing()
+		self.parent.Window.UpdateDrawing()	
 			
 	def OnSetDepth(self, event):
-		if event.GetCol() == 0: # do nothing on double-click of ID column
+		if event.GetCol() == 0: # jump to interval depth on double-click of ID column
+			visibleMin = self.parent.Window.rulerStartDepth
+			visibleMax = self.parent.Window.rulerEndDepth - 2.0
+			intervalTop = self.parent.spliceManager.getSelectedInterval()
+			if not intervalTop.overlaps(splice.Interval(visibleMin, visibleMax)):
+				self.parent.OnUpdateStartDepth(intervalTop.getTop())
 			return
 		
+		# Top or Bot depth cell was double-clicked, open SetDepthDialog
+		# for manual editing of selected interval's top or bottom depth.
 		curint = self.parent.spliceManager.getSelectedInterval()
 		totalDepth = curint.getTop() if event.GetCol() == 1 else curint.getBot()
 		totalDepth = round(totalDepth, 3)
