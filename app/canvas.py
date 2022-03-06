@@ -1839,7 +1839,7 @@ class DataCanvas(wxBufferedWindow):
 		self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX - img_wid)
 
 	def DrawSpliceIntervalPlot(self, dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed):
-		clip_width = self.Width - startX if self.showOutOfRangeData else self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin
+		clip_width = self.Width - startX if self.showOutOfRangeData else self.layoutManager.plotWidth
 		clip = wx.DCClipper(dc, wx.Rect(startX, self.startDepthPix - 20, clip_width, self.Height - (self.startDepthPix - 20)))
 
 		if len(screenPoints) >= 1:
