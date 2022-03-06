@@ -351,7 +351,7 @@ class DataCanvas(wxBufferedWindow):
 		self.fg = wx.Colour(255, 255, 255)
 		# 1 = Composite, 2 = Splice, 3 = Sagan
 		self.mode = 1 
-		self.statusStr = "Composite"
+		self.statusStr = ""
 		self.ShowSplice = True
 		self.currentHole = -1
 		self.showMenu = False
@@ -2197,14 +2197,8 @@ class DataCanvas(wxBufferedWindow):
 		# if flag == 2:
 		# 	x = self.Width - 220
 
-		self.statusStr = self.statusStr + "Hole: " + coreInfo.hole + " Core: " + coreInfo.holeCore
 		dc.DrawText("Hole: " + coreInfo.hole + " Core: " + coreInfo.holeCore, x, self.startDepthPix)
 		dc.DrawText("Min: " + str(coreInfo.minData) + " Max: " + str(coreInfo.maxData), x, self.startDepthPix + 20)
-		dc.DrawText("Stretched Ratio: " + str(coreInfo.stretch) + "%", x, self.startDepthPix + 40)
-
-		qualityStr = "Quality: "
-		qualityStr += "Good" if coreInfo.quality == '0' else "Bad"
-		dc.DrawText(qualityStr, x, self.startDepthPix + 60) 
 
 		return (coreInfo.type, coreInfo.hole)
 	
@@ -2239,6 +2233,7 @@ class DataCanvas(wxBufferedWindow):
 					break
 
 		section, offset = self.parent.GetSectionAtDepth(coreInfo.leg, coreInfo.hole, coreInfo.holeCore, datatype, ycoord)
+		self.statusStr = "Hole: " + coreInfo.hole + " Core: " + coreInfo.holeCore
 		self.statusStr += " Section: " + str(section) + " Section offset: " + str(offset) + "cm"
 
 		# Status bar: display depth at current mouse y position and data at x if available
@@ -2380,12 +2375,7 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetTextForeground(wx.BLACK)
 		self.DrawColorLegend(dc)
 
-		if self.mode == 1: 
-			self.statusStr = "Composite mode	 "
-		elif self.mode == 2: 
-			self.statusStr = "Splice mode		 "
-		else:
-			assert false, "Unexpected mode"
+		self.statusStr = ""
 
 		# determine which hole + datatype mouse cursor is over
 		holeName = ""
@@ -4571,7 +4561,7 @@ class DataCanvas(wxBufferedWindow):
 			return
 
 		# draw info for current mouseover core
-		if "CoreArea" in self.DrawData:
+		if "CoreArea" in self.DrawData and self.MousePos[0] < self.splicerX:
 			for area in self.DrawData["CoreArea"]:
 				coreInfo, rect, hole_idx = area
 				if rect.Inside(wx.Point(pos[0], pos[1])):
