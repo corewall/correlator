@@ -1976,7 +1976,7 @@ class DataCanvas(wxBufferedWindow):
 				screenpoints.append((x,y))
 		if len(screenpoints) >= 1:
 			if not self.showOutOfRangeData:
-			clip = wx.DCClipper(dc, guide_clip_rect)
+				clip = wx.DCClipper(dc, guide_clip_rect)
 			dc.SetPen(wx.Pen(self.colorDict['spliceTrace'], 1))
 			dc.DrawLines(screenpoints) if (len(screenpoints) > 1) else dc.DrawPoint(screenpoints[0][0], screenpoints[0][1])
 
@@ -2053,6 +2053,8 @@ class DataCanvas(wxBufferedWindow):
 		else: # clip to plot area
 			clip_x = plotStartX
 			clip_width = min(self.layoutManager.plotWidth + 2, (self.splicerX - 60) - plotStartX)
+			if clip_width < 0:
+				clip_width = 0
 		# wx.DCClipper-based clipping region is destroyed when it goes out of scope
 		return wx.DCClipper(dc, wx.Region(x=clip_x, y=self.startDepthPix - 20, width=clip_width, height=self.Height-(self.startDepthPix-20)))
 
