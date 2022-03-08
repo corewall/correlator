@@ -62,28 +62,13 @@ class MainFrame(wx.Frame):
 		wx.Frame.__init__(self, None, -1, "Correlator " + vers.ShortVersion,
 						 wx.Point(0,100), winsize, style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT)
 
-		self.statusBar = self.CreateStatusBar()
-
-		# experiment with toolbar
-		# self.tb = self.CreateToolBar(style=wx.TB_TEXT)
-		# bmpfoo = wx.Image("hi.bmp", wx.BITMAP_TYPE_BMP).ConvertToBitmap()
-		# can't get help string to show on hover...
-		# self.tb.AddSimpleTool(1, bmpfoo, shortHelpString="Howdy")
-		# self.tb.AddSimpleTool(2, bmpfoo, shortHelpString="Howdy Doody")
-		# btn1 = wx.Button(self.tb, -1, "Howdy")
-		# btn2 = wx.Button(self.tb, -1, "Doody")
-		# self.tb.AddControl(btn1)
-		# self.tb.AddControl(btn2)
-		# self.tb.SetMargins((20, 20))
-		# self.tb.Realize()
-		# self.foobtn = wx.Button(self.tb, -1, "Button!", size=(200,200))
-		# self.tb.AddControl(self.foobtn, "Foo Button")
-		# self.tb.Realize() # must call to display
-
 		self.user = user
 		self.Width = winsize[0]
 		self.Height = winsize[1]
-		#self.Width, self.Height = self.GetClientSizeTuple()
+		self.statusBarHeight = 25
+		self.statusBarText = None # init'd in CorrelatorApp init()
+		self.statusBarPanel = None
+
 		self.scroll = 1 
 		self.half = (self.Width / 2) - 32 
 		# make the menu
@@ -171,6 +156,9 @@ class MainFrame(wx.Frame):
 		self.AgeChange = False 
 		self.TimeChange = False 
 
+	def SetStatusBarText(self, text):
+		self.statusBarText.SetLabel(text)
+
 	def OnIDLE(self, event):
 		if app == None:
 			return
@@ -220,8 +208,6 @@ class MainFrame(wx.Frame):
 		return Prefs.get(prefkey, default)
 
 	def CreateMenu(self):
-		self.statusBar.SetStatusText('Done')
-
 		# File
 		menuFile = wx.Menu()
 		menuBar = wx.MenuBar()
@@ -1503,7 +1489,7 @@ class MainFrame(wx.Frame):
 		else:
 			self.WritePreferenceItem("winy", winPT[1], f)
 
-		width, height = self.GetClientSizeTuple()
+		width, height = self.GetCorrelatorWindowSize()
 		self.WritePreferenceItem("width", width, f)
 		self.WritePreferenceItem("height", height, f)
 
@@ -2558,6 +2544,10 @@ class MainFrame(wx.Frame):
 			result = typeStr
 		return result
 
+	def GetCorrelatorWindowSize(self):
+		w, h = self.GetClientSizeTuple()
+		return w, h - self.statusBarHeight
+
 	def LoadPreferencesAndInitDrawData(self, cfgfile, new_flag):
 		# unused
 # 		self.positions= [ (77,32) , (203,32), (339,32),
@@ -2573,15 +2563,15 @@ class MainFrame(wx.Frame):
 		scroll_start = self.Window.startDepthPix * 0.7
 		#l = []
 
-		#self.Width, self.Height = self.GetClientSizeTuple()
+		#self.Width, self.Height = self.GetCorrelatorWindowSize()
 		if self.config.has_option("applications", "width"):
 			str_temp =  self.config.get("applications", "width")
 			if len(str_temp) > 0:
-				self.Width = int ( str_temp )
+				self.Width = int(str_temp)
 		if self.config.has_option("applications", "height"):
 			str_temp =  self.config.get("applications", "height")
 			if len(str_temp) > 0:
-				self.Height = int ( str_temp )
+				self.Height = int(str_temp)
 		if self.Width <= 0:
 			self.Width = 800
 		if self.Height <= 0:
@@ -3937,10 +3927,36 @@ class CorrelatorApp(wx.App):
 		self.frame.optPanel.OnDepthViewAdjust(None)
 
 		# wait until now so self.frame.dataFrame exists
+
+		# 3/7/2022 TODO: Would love to initialize status bar objects
+		# before the NewDrawing() call just above, but errors get thrown
+		# for reasons I can't comprehend. Seems we shouldn't need to init
+		# anything related to DataCanvas and drawing until app init is
+		# totally completed. So for now, we init here.
+		# Add custom status bar across bottom of main window; we can't
+		# adjust height of native status bar on Mac in order to make it
+		# sufficiently tall to draw a button correctly. Whole point of this
+		# exercise is to dump the floating "Toolbar" window and move the
+		# # Go to Display/Data Manager button somewhere easily accessible.
+		self.frame.statusBarPanel = wx.Panel(self.frame, -1, size=(-1, self.frame.statusBarHeight))
+		psz = wx.BoxSizer(wx.HORIZONTAL)
+		btn = wx.Button(self.frame.statusBarPanel, -1, "Test Button")
+		msg = "Hello! I am a custom status bar! I go on for a {} long time.".format("super duper "*8)
+		self.frame.statusBarText = wx.StaticText(self.frame.statusBarPanel, -1, msg, size=(450,-1))
+		sbFont = self.frame.statusBarText.GetFont()
+		sbFont.SetSymbolicSize(wx.FONTSIZE_SMALL)
+		self.frame.statusBarText.SetFont(sbFont)
+		psz.Add(btn, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
+		psz.Add(self.frame.statusBarText, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
+		self.frame.statusBarPanel.SetSizer(psz)
+		mainSizer = wx.BoxSizer(wx.VERTICAL)
 		sizer = wx.BoxSizer(wx.HORIZONTAL)
 		sizer.Add(self.frame.dataFrame, 1, wx.EXPAND)
 		sizer.Add(self.frame.Window, 1, wx.EXPAND)
-		self.frame.SetSizer(sizer)
+		mainSizer.Add(sizer, 1, wx.EXPAND)
+		mainSizer.Add(self.frame.statusBarPanel, 0)
+
+		self.frame.SetSizer(mainSizer)
 
 		self.frame.Show(True)
 		self.frame.Window.Hide()

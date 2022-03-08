@@ -1073,7 +1073,7 @@ class DataCanvas(wxBufferedWindow):
 		#self.closeFlag = False 
 		#self.sideNote.SetSize((self.sideTabSize,self.Height))
 		#self.sidePanel.SetSize((self.sideTabSize,self.Height))
-		#x, y = self.GetClientSizeTuple()
+		#x, y = self.GetCorrelatorWindowSize()
 		#self.SetSashPosition(x - self.sideTabSize, False)
 
 		self.compPanel.Hide()
@@ -1092,7 +1092,7 @@ class DataCanvas(wxBufferedWindow):
 				self.parent.showCompositePanel = 0 
 				self.parent.showSplicePanel = 0 
 				self.parent.showELDPanel = 0 
-				self.Width, self.Height = self.parent.GetClientSizeTuple()
+				self.Width, self.Height = self.parent.GetCorrelatorWindowSize()
 				self.Width = self.Width - 45 
 				self.sideNote.SetSize((45, self.Height))
 				self.sidePanel.SetPosition((self.Width, 0))
@@ -1105,7 +1105,7 @@ class DataCanvas(wxBufferedWindow):
 				self.UpdateDrawing()
 		else:
 			if self.CLOSEFLAG == 1:
-				self.Width, self.Height = self.parent.GetClientSizeTuple()
+				self.Width, self.Height = self.parent.GetCorrelatorWindowSize()
 				self.Width = self.Width - self.sideTabSize
 				self.sidePanel.SetPosition((self.Width, 0))
 				self.sidePanel.SetSize((self.sideTabSize, self.Height))
@@ -2311,7 +2311,7 @@ class DataCanvas(wxBufferedWindow):
 		# print("------\n")
 
 		if self.WindowUpdate == 1: 
-			self.Width, self.Height = self.parent.GetClientSizeTuple()
+			self.Width, self.Height = self.parent.GetCorrelatorWindowSize()
 			self.SetSize((self.Width, self.Height))
 				
 			self.parent.UpdateSize(self.Width, self.Height)
@@ -2393,7 +2393,10 @@ class DataCanvas(wxBufferedWindow):
 						self.DrawMouseInfo(dc, coreInfo, x, y, startx, overPlot, holeType)
 			if holeType != "":
 				break
-		self.parent.statusBar.SetStatusText(self.statusStr)
+		# TODO: Need this ridiculous check because we insist on drawing
+		# during init, before this wx.StaticText is created.
+		if self.parent.statusBarText is not None:
+			self.parent.statusBarText.SetLabel(self.statusStr)
 
 		self.selectedHoleType = holeType
 
