@@ -68,6 +68,7 @@ class MainFrame(wx.Frame):
 		self.statusBarHeight = 25
 		self.statusBarText = None # init'd in CorrelatorApp init()
 		self.statusBarPanel = None
+		self.swapButton = None
 
 		self.scroll = 1 
 		self.half = (self.Width / 2) - 32 
@@ -132,7 +133,6 @@ class MainFrame(wx.Frame):
 		self.logFileptr = global_logFile
 		self.logName = global_logName
 		self.Window = canvas.DataCanvas(self)
-		self.topMenu = frames.TopMenuFrame(self)
 		self.dataFrame = None
 		self.PrevDataType = "" 
 		self.CurrentDir = ""
@@ -147,7 +147,6 @@ class MainFrame(wx.Frame):
 
 		self.Window.affineBroadcaster.addListener(self.compositePanel.TiePointCountChanged)
 
-		wx.EVT_IDLE(self, self.OnIDLE)
 
 	def INIT_CHANGES(self):
 		self.AffineChange = False 
@@ -159,35 +158,11 @@ class MainFrame(wx.Frame):
 	def SetStatusBarText(self, text):
 		self.statusBarText.SetLabel(text)
 
-	def OnIDLE(self, event):
-		if app == None:
-			return
-
-		if app.IsActive() == True:
-			if self.FOCUS == 0: 
-				if self.mitool.IsChecked() == True:
-					self.topMenu.Show(True)
-					self.topMenu.Iconize(False)
-				self.FOCUS = 1
-
-			if self.IsIconized():
-				if self.IDLE == 0:
-					self.topMenu.Show(False)
-					if platform_name[0] == "Windows":	
-						self.topMenu.Iconize(True)
-					self.IDLE = 1
-			else:
-				if self.IDLE == 1:
-					if self.mitool.IsChecked():
-						self.topMenu.Show(True)
-					if platform_name[0] == "Windows":	
-						self.topMenu.Iconize(False)
-					self.IDLE = 0 
+	def SwapDisplays(self, evt):
+		if self.swapButton.GetLabel() == "Go to Data Manager" :
+			self.ShowDataManager()
 		else:
-			self.topMenu.Show(False)
-			if platform_name[0] == "Windows":	
-				self.topMenu.Iconize(True)
-			self.FOCUS = 0 
+			self.ShowDisplay()
 
 	def CheckAutoELD(self):
 		if (self.autoPanel.selectedNo != -1) and (self.autoPanel.ApplyFlag == 0):
@@ -234,7 +209,7 @@ class MainFrame(wx.Frame):
 		# menuFile.AppendSeparator()
 
 		self.miFileSave = menuFile.Append(wx.ID_SAVE, "", "Save changes")
-		self.Bind(wx.EVT_MENU, self.OnSave, self.miFileSave)
+		self.Bind(wx.EVT_MENU, self.OnSAVE, self.miFileSave)
 
 		menuFile.AppendSeparator()
 
@@ -268,11 +243,6 @@ class MainFrame(wx.Frame):
 
 		# View 
 		menuView = wx.Menu()
-		self.mitool = menuView.AppendCheckItem(-1, "Show Toolbar", "Show/hide toolbar")
-		self.mitool.Check(True)
-		self.Bind(wx.EVT_MENU, self.SHOWToolbar, self.mitool)
-
-		menuView.AppendSeparator()
 		self.miplot = menuView.AppendCheckItem(-1, "Plot Discrete Points", "Plot data as points instead of a line")
 		self.Bind(wx.EVT_MENU, self.SETPlotMode, self.miplot)
 
@@ -326,7 +296,54 @@ class MainFrame(wx.Frame):
 		# bind keystrokes to the frame
 		# self.Bind(wx.EVT_KEY_DOWN, self.OnKeyEvent)
 		return menuBar
+
+	# Save current affine and splice (if any).
+	def OnSAVE(self, event):
+		if self.CurrentDir == '': 
+			self.OnShowMessage("Error", "There is no data loaded.", 1)
+			return
+
+		# We want to encourage users to save affine and splices together in the hopes that for
+		# the most part, the file numbers of compatible affines and splices will be the same.
+		# Save splice if it's changed, or if there's at least one interval to save, even if
+		# nothing has changed. spliceManager.dirty implies at least one interval - it's set to
+		# False if the only interval in the splice was deleted.
+		saveSplice = self.spliceManager.dirty or self.spliceManager.count() > 0
+		enableUpdateExisting = self.affineManager.currentAffineFile is not None and self.spliceManager.currentSpliceFile is not None
+		if not enableUpdateExisting:
+			if saveSplice:
+				msg = "Create new affine and splice files?"
+			else:
+				msg = "Create new affine file?"
+		else:
+			msg = "Create new affine and splice, or update existing files?"
+		dlg = dialog.SaveDialog(self, msg, enableUpdateExisting)
+		ret = dlg.ShowModal()
+		dlg.Destroy()
 	
+		updateExisting = False
+		if ret in [wx.ID_OK, wx.ID_YES]:
+			updateExisting = (ret == wx.ID_OK)
+		else: # canceled
+			return
+
+		# If we add an entry to the Data Manager, there must be a file to save! Don't want to end up
+		# adding an entry and not saving the associated file. Shouldn't be a problem with affines, but
+		# SpliceController will not save an empty splice. saveSplice var should prevent that situation.
+		if updateExisting: # save each as normal
+			affineFile = self.dataFrame.Add_TABLE("AFFINE", "affine", updateExisting, False, "")
+			if saveSplice:
+				spliceFile = self.dataFrame.Add_TABLE("SPLICE", "splice", updateExisting, False, "")
+		else: # Create New - find lowest available table number and use to save affine or both files
+			newFileNum = self.dataFrame.GetNextSavedTableNumber(affine=True, splice=saveSplice)
+			affineFile = self.dataFrame.Add_TABLE("AFFINE", "affine", updateExisting, False, "", newFileNum)
+			if saveSplice:
+				spliceFile = self.dataFrame.Add_TABLE("SPLICE", "splice", updateExisting, False, "", newFileNum)
+
+		self.affineManager.save(affineFile)
+		if saveSplice:
+			self.spliceManager.save(spliceFile)
+
 	def OnPreferences(self, event):
 		dlg = dialog.ApplicationPreferencesDialog(self, Prefs.getAll())
 		if dlg.ShowModal() == wx.ID_OK:
@@ -482,8 +499,6 @@ class MainFrame(wx.Frame):
 			else:
 				break
 
-	def SHOWToolbar(self, event):
-		self.topMenu.Show(self.mitool.IsChecked())
 
 	def SETPlotMode(self, event):
 		if self.miplot.IsChecked() == False:
@@ -792,7 +807,7 @@ class MainFrame(wx.Frame):
 		if self.CurrentDir != '' and self.UnsavedChanges():
 			ret = self.OnShowMessage("About", "Do you want to save changes?", 2)
 			if ret == wx.ID_OK:
-				self.topMenu.OnSAVE(event)
+				self.OnSAVE(event)
 				self.AffineChange = False
 				self.SpliceChange = False
 				self.EldChange = False
@@ -815,7 +830,6 @@ class MainFrame(wx.Frame):
 
 		self.Window.Close(True)
 		self.dataFrame.Close(True)
-		self.topMenu.Close(True)
 		self.Destroy()
 		app.ExitMainLoop()
 
@@ -1454,9 +1468,6 @@ class MainFrame(wx.Frame):
 		if ret == wx.ID_OK:
 			py_correlator.saveCoreData(path)
 
-	def OnSave(self, event):
-		self.topMenu.OnSAVE(event)
-
 	# utility routine to write a single preference key-value pair to file
 	def WritePreferenceItem(self, key, value, file):
 		keyStr = key + ": "
@@ -1543,9 +1554,6 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("tab", self.Window.sideNote.GetSelection(), f)
 		self.WritePreferenceItem("path", self.Directory, f)
 		self.WritePreferenceItem("dbpath", self.DBPath, f)
-
-		winPT = self.topMenu.GetPosition()
-		self.WritePreferenceItem("toolbar", str(winPT[0]) + " " + str(winPT[1]), f)
 
 		self.WritePreferenceItem("shiftrange", self.optPanel.tie_shift.GetValue(), f)
 		self.WritePreferenceItem("leadlag", self.leadLag, f)
@@ -2470,12 +2478,11 @@ class MainFrame(wx.Frame):
 		if self.UnsavedChanges() == True:
 			ret = self.OnShowMessage("About", "Do you want to save?", 0)
 			if ret == wx.ID_YES:
-				self.topMenu.OnSAVE(None) # dummy event
+				self.OnSAVE(None) # dummy event
 		if self.dataFrame.IsShown() == False:
 			self.Window.Hide()
 			self.dataFrame.Show(True)
-			#self.midata.Check(True)
-			self.topMenu.dbbtn.SetLabel("Go to Display")
+			self.swapButton.SetLabel("Go to Display")
 		self.Layout()
 		self.UpdateUndoMenuItem()
 
@@ -2496,8 +2503,7 @@ class MainFrame(wx.Frame):
 		self.Window.OnSize(None)
 
 		self.Window.Show(True)
-		#self.midata.Check(False)
-		self.topMenu.dbbtn.SetLabel("Go to Data Manager")
+		self.swapButton.SetLabel("Go to Data Manager")
 		self.Layout()
 		self.UpdateUndoMenuItem()
 
@@ -2811,18 +2817,6 @@ class MainFrame(wx.Frame):
 				self.Window.DiscretePlotMode = conf_value
 				if conf_value == 1:
 					self.miplot.Check(True)
-			
-		if self.config.has_option("applications", "toolbar"):
-			conf_str = self.config.get("applications", "toolbar")
-			if len(conf_str) > 0:
-				conf_array = conf_str.split()
-				x = int(conf_array[0])
-				y = int(conf_array[1])
-				if x >= display_x:
-					x = 300
-				if y >= display_y:
-					y = 200
-				self.topMenu.SetPosition((x, y))
 			
 		#if self.config.has_option("applications", "startup"):
 		#	conf_str = self.config.get("applications", "startup")
@@ -3930,24 +3924,25 @@ class CorrelatorApp(wx.App):
 
 		# 3/7/2022 TODO: Would love to initialize status bar objects
 		# before the NewDrawing() call just above, but errors get thrown
-		# for reasons I can't comprehend. Seems we shouldn't need to init
+		# for reasons I can't divine. Seems we shouldn't need to init
 		# anything related to DataCanvas and drawing until app init is
-		# totally completed. So for now, we init here.
+		# totally completed. But for now, we do, so init here.
 		# Add custom status bar across bottom of main window; we can't
 		# adjust height of native status bar on Mac in order to make it
 		# sufficiently tall to draw a button correctly. Whole point of this
 		# exercise is to dump the floating "Toolbar" window and move the
-		# # Go to Display/Data Manager button somewhere easily accessible.
+		# Go to Display/Data Manager button somewhere easily accessible.
 		self.frame.statusBarPanel = wx.Panel(self.frame, -1, size=(-1, self.frame.statusBarHeight))
 		psz = wx.BoxSizer(wx.HORIZONTAL)
-		btn = wx.Button(self.frame.statusBarPanel, -1, "Test Button")
+		self.frame.swapButton = wx.Button(self.frame.statusBarPanel, -1, "Go to Display", size=(150,-1))
+		self.frame.Bind(wx.EVT_BUTTON, self.frame.SwapDisplays, self.frame.swapButton)
 		msg = "Hello! I am a custom status bar! I go on for a {} long time.".format("super duper "*8)
 		self.frame.statusBarText = wx.StaticText(self.frame.statusBarPanel, -1, msg, size=(450,-1))
 		sbFont = self.frame.statusBarText.GetFont()
 		sbFont.SetSymbolicSize(wx.FONTSIZE_SMALL)
 		self.frame.statusBarText.SetFont(sbFont)
-		psz.Add(btn, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
-		psz.Add(self.frame.statusBarText, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
+		psz.Add(self.frame.swapButton, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
+		psz.Add(self.frame.statusBarText, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 15)
 		self.frame.statusBarPanel.SetSizer(psz)
 		mainSizer = wx.BoxSizer(wx.VERTICAL)
 		sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -3961,7 +3956,6 @@ class CorrelatorApp(wx.App):
 		self.frame.Show(True)
 		self.frame.Window.Hide()
 		self.frame.dataFrame.Show(True)
-		self.frame.topMenu.Show(True)
 
 		# ensure all data is cleared and all data-dependent Display controls are disabled
 		self.frame.OnNewData(None)

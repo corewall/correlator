@@ -286,7 +286,6 @@ class AffineTiePointEventBroadcaster:
 # 	in the Data Manager. That could be toggled to "Discrete" via a context menu item
 #	that has been removed. AFAICT, the only thing "Discrete" did was draw the plot
 #	in gray instead of yellow...confusingly it did not draw the plot as discrete points.
-#	(One can still do that via the Toolbar "Discrete Points" button.)
 #	At this point, safe to assume continue flag is always True i.e. "Continuous"
 #	except for data from old versions of Correlator.
 

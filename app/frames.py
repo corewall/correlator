@@ -33,213 +33,6 @@ def opj(path):
 	"""Convert paths to the platform-specific separator"""
 	return apply(os.path.join, tuple(path.split('/')))
 
-# The Toolbar.
-class TopMenuFrame(wx.Frame):
-	def __init__(self, parent):
-		wx.Frame.__init__(self, parent, -1, "Tool Bar",
-						 wx.Point(20,100),
-						 style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP | wx.FRAME_TOOL_WINDOW)
-
-		self.parent = parent
-		frameSizer = wx.BoxSizer(wx.VERTICAL)
-
-		# initially use wider string so SetSizerAndFit() below makes frame wide enough.
-		self.dbbtn = wx.Button(self, -1, "Go to Data Manager")
-		self.Bind(wx.EVT_BUTTON, self.OnDB, self.dbbtn)
-		frameSizer.Add(self.dbbtn, 1, wx.EXPAND | wx.BOTTOM, 5)
-
-		savebtn = wx.Button(self, -1, "Save")
-		self.Bind(wx.EVT_BUTTON, self.OnSAVE, savebtn)
-		frameSizer.Add(savebtn, 1, wx.EXPAND | wx.BOTTOM, 5)
-
-		# # self.cntbtn = wx.Button(self, -1, "Connect to Corelyzer")
-		# # self.Bind(wx.EVT_BUTTON, self.OnCONNECT, self.cntbtn)
-		# # vbox.Add(self.cntbtn, 0, wx.EXPAND)
-
-		self.drawingbtn = wx.Button(self, -1, "Discrete Points")
-		frameSizer.Add(self.drawingbtn, 1, wx.EXPAND | wx.BOTTOM, 5)
-		self.Bind(wx.EVT_BUTTON, self.OnDRAWMODE, self.drawingbtn)
-		
-		# self.compositeBtn = wx.Button(self, -1, "Go to Composite")
-		# frameSizer.Add(self.compositeBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
-		# self.Bind(wx.EVT_BUTTON, self.OnComposite, self.compositeBtn)
-		
-		# self.spliceBtn = wx.Button(self, -1, "Go to Splice")
-		# frameSizer.Add(self.spliceBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
-		# self.Bind(wx.EVT_BUTTON, self.OnSplice, self.spliceBtn)
-
-		# self.filterBtn = wx.Button(self, -1, "Go to Filters")
-		# frameSizer.Add(self.filterBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
-		# self.Bind(wx.EVT_BUTTON, self.OnFilter, self.filterBtn)
-		
-		# self.prefsBtn = wx.Button(self, -1, "Go to Display Prefs")
-		# frameSizer.Add(self.prefsBtn, 1, wx.EXPAND | wx.BOTTOM, 5)
-		# self.Bind(wx.EVT_BUTTON, self.OnPrefs, self.prefsBtn)
-
-		exitbtn = wx.Button(self, -1, "Exit Correlator")
-		frameSizer.Add(exitbtn, 1, wx.EXPAND)
-		self.Bind(wx.EVT_BUTTON, self.OnEXIT, exitbtn)
-
-		self.SetSizerAndFit(frameSizer)
-
- 		# Now that we've fit to wider "Go to Data Manager" string,
-		# set dbbtn to correct initial string.
-		self.dbbtn.SetLabel("Go to Display")
-
-		self.SetBackgroundColour(wx.Colour(255, 255, 255))
-		wx.EVT_CLOSE(self, self.OnHide)
-
-		# self.Bind(wx.EVT_ACTIVATE, self.OnActivate, self)
-
-	# trying to get main window to pop when alt-tabbing back to Correlator...only
-	# the TopMenuFrame actually pops in front of other apps' windows...
-	# def OnActivate(self, event):
-	# 	# print("OnActivate! {}".format(event.GetActive()))
-	# 	if event.GetActive() and not self.parent.HasFocus():
-	# 		self.parent.Show()
-	# 		self.parent.Raise()
-	# 		self.parent.SetFocus()
-
-	def OnHide(self, event):
-		self.Show(False)
-		self.parent.mitool.Check(False)
-		self.parent.Window.SetFocusFromKbd()
-
-	# unused
-	# def OnNEW(self, event):
-	# 	if self.parent.CurrentDir != '' :
-	# 		if self.parent.UnsavedChanges() == True :
-	# 			ret = self.parent.OnShowMessage("About", "Do you want to save changes?", 2)		
-	# 			if ret == wx.ID_OK :
-	# 				self.OnSAVE(event)
-	# 	if self.parent.client != None and self.parent.Window.HoleData != [] :
-	# 		#ret = py_correlator.getData(18)
-	# 		#self.parent.ParseSectionSend(ret, "delete_section")
-	# 		self.parent.client.send("delete_all\n")
-
-	# 	self.parent.CurrentDir = ''
-
-	# 	self.parent.compositePanel.saveButton.Enable(False)
-	# 	self.parent.splicePanel.saveButton.Enable(False)
-	# 	self.parent.eldPanel.saveButton.Enable(False)
-	# 	self.parent.autoPanel.saveButton.Enable(False)
-	# 	self.parent.INIT_CHANGES()
-
-	# 	self.parent.OnNewData(None)
-	# 	self.parent.Window.SetFocusFromKbd()
-
-
-	def OnDRAWMODE(self, event):
-		if self.parent.Window.DiscretePlotMode == 0 :
-			self.parent.Window.DiscretePlotMode = 1 
-			self.drawingbtn.SetLabel("Continuous Points")
-		else :
-			self.parent.Window.DiscretePlotMode = 0
-			self.drawingbtn.SetLabel("Discrete Points")
-		if self.parent.dataFrame.IsShown() == False :
-			self.parent.Window.UpdateDrawing()
-
-	# def OnCONNECT(self, event):
-	# 	ret = self.parent.OnCONNECTION(event)
-	# 	if ret == True :
-	# 		self.cntbtn.SetLabel("Close Connection")
-	# 	else :
-	# 		self.cntbtn.SetLabel("Connect to Corelyzer")
-
-	def OnDB(self, event):
-		if self.dbbtn.GetLabel() == "Go to Data Manager" :
-			self.parent.ShowDataManager()
-		else:
-			self.parent.ShowDisplay()
-
-	def OnSAVE(self, event):
-		if self.parent.CurrentDir == '': 
-			self.parent.OnShowMessage("Error", "There is no data loaded.", 1)
-			return
-
-		# We want to encourage users to save affine and splices together in the hopes that for
-		# the most part, the file numbers of compatible affines and splices will be the same.
-		# Save splice if it's changed, or if there's at least one interval to save, even if
-		# nothing has changed. spliceManager.dirty implies at least one interval - it's set to
-		# False if the only interval in the splice was deleted.
-		saveSplice = self.parent.spliceManager.dirty or self.parent.spliceManager.count() > 0
-		enableUpdateExisting = self.parent.affineManager.currentAffineFile is not None and self.parent.spliceManager.currentSpliceFile is not None
-		# enableUpdateExisting = self.parent.affineManager.currentAffineFile is not None or self.parent.spliceManager.currentSpliceFile is not None
-		if not enableUpdateExisting:
-			if saveSplice:
-				msg = "Create new affine and splice files?"
-			else:
-				msg = "Create new affine file?"
-		else:
-			msg = "Create new affine and splice, or update existing files?"
-			#msg = "Save new affine{}, or update existing file{}?".format(" and splice" if saveSplice else "", "s" if saveSplice else "")
-		dlg = dialog.SaveDialog(self.parent, msg, enableUpdateExisting)
-		ret = dlg.ShowModal()
-		dlg.Destroy()
-	
-		updateExisting = False
-		if ret in [wx.ID_OK, wx.ID_YES]:
-			updateExisting = (ret == wx.ID_OK)
-		else: # canceled
-			return
-
-		# If we add an entry to the Data Manager, there must be a file to save! Don't want to end up
-		# adding an entry and not saving the associated file. Shouldn't be a problem with affines, but
-		# SpliceController will not save an empty splice. saveSplice var should prevent that situation.
-		if updateExisting: # save each as normal
-			affineFile = self.parent.dataFrame.Add_TABLE("AFFINE", "affine", updateExisting, False, "")
-			if saveSplice:
-				spliceFile = self.parent.dataFrame.Add_TABLE("SPLICE", "splice", updateExisting, False, "")
-		else: # Create New - find lowest available table number and use to save affine or both files
-			newFileNum = self.parent.dataFrame.GetNextSavedTableNumber(affine=True, splice=saveSplice)
-			affineFile = self.parent.dataFrame.Add_TABLE("AFFINE", "affine", updateExisting, False, "", newFileNum)
-			if saveSplice:
-				spliceFile = self.parent.dataFrame.Add_TABLE("SPLICE", "splice", updateExisting, False, "", newFileNum)
-
-		self.parent.affineManager.save(affineFile)
-		if saveSplice:
-			self.parent.spliceManager.save(spliceFile)
-
-	def OnSPLICE(self, event):
-		if self.parent.Window.ShowSplice == True :
-			self.parent.Window.ShowSplice = False
-		else :
-			self.parent.Window.ShowSplice = True 
-		self.parent.Window.UpdateDrawing()
-		self.parent.Window.SetFocusFromKbd()
-
-	def OnLOG(self, event):
-		if self.parent.Window.ShowLog == True :
-			self.parent.Window.ShowLog = False
-		else :
-			self.parent.Window.ShowLog = True 
-		self.parent.Window.UpdateDrawing()
-		self.parent.Window.SetFocusFromKbd()
-
-	def OnSTRAT(self, event):
-		if self.parent.Window.ShowStrat == True :
-			self.parent.Window.ShowStrat = False
-		else :
-			self.parent.Window.ShowStrat = True 
-		self.parent.Window.UpdateDrawing()
-		self.parent.Window.SetFocusFromKbd()
-
-	# def OnComposite(self, event):
-	# 	self.parent.Window.sideNote.SetSelection(1)
-	
-	# def OnSplice(self, event):
-	# 	self.parent.Window.sideNote.SetSelection(2)
-
-	# def OnFilter(self, event):
-	# 	self.parent.Window.sideNote.SetSelection(3)
-	# 	# self.parent.Window.sideNote.SetSelection(5)
-	
-	# def OnPrefs(self, event):
-	# 	self.parent.Window.sideNote.SetSelection(4)
-	# 	# self.parent.Window.sideNote.SetSelection(6)
-
-	def OnEXIT(self, event):
-		self.parent.OnExitAction(event)
 
 class ProgressFrame(wx.Frame):
 	def __init__(self, parent, max):
@@ -632,7 +425,7 @@ class CompositePanel():
 		self.setButton.Enable(enable)
 		
 	def OnSAVE(self, event):
-		self.parent.topMenu.OnSAVE(event=None)
+		self.parent.OnSAVE(event=None)
 
 	def OnAdjust(self, evt):
 		adjustCoreOnly = (self.applyCore.GetSelection() == 1) # 0 = this core and all below, 1 = this core only
@@ -1387,7 +1180,7 @@ class SpliceIntervalPanel():
 		evalPlotPanel = EvalPlotPanel(self.parent, self.note, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
 		self.note.AddPage(evalPlotPanel, "Evaluation Graph")
 		self.evalPanel = evalPlotPanel
-		
+
 		psz.Add(self.note, 2, wx.EXPAND)
 		self.note.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectNote)
 		self.note.SetSelection(0)
@@ -1451,7 +1244,7 @@ class SpliceIntervalPanel():
 	def OnSelectNote(self, event):
 		newSel = event.GetSelection()
 		self.gridPanel.Hide()
-		self.evalPanel.Hide() 
+		self.evalPanel.Hide()
 		if newSel == 0:
 			self.gridPanel.Show()
 			self.evalPanel.Hide()
