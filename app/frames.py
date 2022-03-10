@@ -1166,22 +1166,39 @@ class SpliceIntervalPanel():
 		self.table.DisableDragRowSize()
 		self.table.EnableEditing(False)
 		self.table.CreateGrid(numRows=0, numCols=3)
-		for colidx, label in enumerate(["Core", "Top (m)", "Bot (m)"]):
+		for colidx, label in enumerate(["Core", "Top (m)", "Bottom (m)"]):
 			self.table.SetColLabelValue(colidx, label)
 		self.table.SetSelectionMode(wx.grid.Grid.SelectRows)
 		gpsz.Add(self.table, 1, wx.EXPAND)
-		gridPanel.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectRow)
-		gridPanel.Bind(wx.grid.EVT_GRID_CELL_LEFT_DCLICK, self.OnSetDepth)
+		self.table.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectRow)
+		self.table.Bind(wx.grid.EVT_GRID_CELL_LEFT_DCLICK, self.OnSetDepth)
 		gridPanel.SetSizer(gpsz)
-		self.note.AddPage(gridPanel, "Splice Intervals")
+		self.note.AddPage(gridPanel, "Intervals")
 		self.gridPanel = gridPanel
+		
+		# gaps table
+		gapsPanel = wx.Panel(self.note, -1)
+		gapSizer = wx.BoxSizer(wx.VERTICAL)
+		self.gapsTable = wx.grid.Grid(gapsPanel, -1)
+		self.gapsTable.SetRowLabelSize(0) # hide row headers
+		self.gapsTable.DisableDragRowSize()
+		self.gapsTable.EnableEditing(False)
+		self.gapsTable.CreateGrid(numRows=0, numCols=2)
+		for colidx, label in enumerate(["Top (m)", "Bottom (m)"]):
+			self.gapsTable.SetColLabelValue(colidx, label)
+		self.gapsTable.SetSelectionMode(wx.grid.Grid.SelectRows)
+		gapSizer.Add(self.gapsTable, 1, wx.EXPAND)
+		self.gapsTable.Bind(wx.grid.EVT_GRID_CELL_LEFT_DCLICK, self.OnDClickGapRow)
+		gapsPanel.SetSizer(gapSizer)
+		self.note.AddPage(gapsPanel, "Gaps")
+		self.gapsPanel = gapsPanel
 		
 		# evaluation graph
 		evalPlotPanel = EvalPlotPanel(self.parent, self.note, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
 		self.note.AddPage(evalPlotPanel, "Evaluation Graph")
 		self.evalPanel = evalPlotPanel
 
-		psz.Add(self.note, 2, wx.EXPAND)
+		psz.Add(self.note, 3, wx.EXPAND)
 		self.note.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectNote)
 		self.note.SetSelection(0)
 		
@@ -1229,6 +1246,21 @@ class SpliceIntervalPanel():
 		vbox.Add(panel, 1, wx.EXPAND)
 		self.mainPanel.SetSizer(vbox)
 		
+	def UpdateGapsTable(self, gaps):
+		rowCount = len(gaps)
+		self._adjustTableRows(self.gapsTable, rowCount)
+		for row, g in enumerate(gaps):
+			self.gapsTable.SetCellValue(row, 0, str(round(g.top, 3)))
+			self.gapsTable.SetCellValue(row, 1, str(round(g.bot, 3)))
+
+	# update all row data and selection
+	def _updateTable(self):
+		rows = self.parent.spliceManager.count()
+		self._adjustTableRows(self.table, rows)
+		for row, si in enumerate(self.parent.spliceManager.getIntervals()):
+			self._makeTableRow(row, si)
+		self._updateTableSelection()			
+
 	def OnAltSplice(self, event):
 		asd = dialog.AltSpliceDialog(self.parent)
 		if asd.ShowModal() == wx.ID_OK:
@@ -1244,17 +1276,26 @@ class SpliceIntervalPanel():
 	def OnSelectNote(self, event):
 		newSel = event.GetSelection()
 		self.gridPanel.Hide()
+		self.gapsPanel.Hide()
 		self.evalPanel.Hide()
 		if newSel == 0:
 			self.gridPanel.Show()
+			self.gapsPanel.Hide()
 			self.evalPanel.Hide()
-		else:
+		elif newSel == 1:
 			self.gridPanel.Hide()
+			self.gapsPanel.Show()
+			self.evalPanel.Hide()
+		elif newSel == 2:
+			self.gridPanel.Hide()
+			self.gapsPanel.Hide()
 			self.evalPanel.Show()
 	
 	def UpdateUI(self):
 		self._updateTable()
 		self._updateButtons()
+		if self.parent.spliceManager is not None:
+			self.parent.spliceManager.findGaps()
 		
 	def OnInitUI(self): # to match other panels' interface
 		self.UpdateUI()
@@ -1265,20 +1306,20 @@ class SpliceIntervalPanel():
 		self.table.SetCellValue(row, 1, str(round(si.getTop(), 3)))
 		self.table.SetCellValue(row, 2, str(round(si.getBot(), 3)))
 		
-	# add/delete rows to match current interval count
-	def _adjustTableRows(self, rows):
-		currows = self.table.GetNumberRows()
+	# add/delete rows in wx.Grid table to match int rows
+	def _adjustTableRows(self, table, rows):
+		currows = table.GetNumberRows()
 		if currows > rows:
 			delcount = currows - rows
-			self.table.DeleteRows(pos=rows, numRows=delcount)
+			table.DeleteRows(pos=rows, numRows=delcount)
 		elif currows < rows:
 			addcount = rows - currows
-			self.table.InsertRows(pos=0, numRows=addcount)
+			table.InsertRows(pos=0, numRows=addcount)
 
 	# update all row data and selection
 	def _updateTable(self):
 		rows = self.parent.spliceManager.count()
-		self._adjustTableRows(rows)
+		self._adjustTableRows(self.table, rows)
 		for row, si in enumerate(self.parent.spliceManager.getIntervals()):
 			self._makeTableRow(row, si)
 		self._updateTableSelection()
@@ -1371,7 +1412,17 @@ class SpliceIntervalPanel():
 		self.parent.Window.UpdateDrawing()
 
 	def OnSave(self, event):
-		self.parent.topMenu.OnSAVE(event=None)
+		self.parent.OnSAVE(event=None)
+
+	def OnDClickGapRow(self, event):
+		print("OnDClickGapRow")
+		visibleMin = self.parent.Window.rulerStartDepth
+		visibleMax = self.parent.Window.rulerEndDepth - 2.0
+		selRow = self.gapsTable.GetSelectedRows()[0]
+		gapTop = float(self.gapsTable.GetCellValue(selRow, 0))
+		gapBot = float(self.gapsTable.GetCellValue(selRow, 1))
+		if not splice.Interval(gapTop, gapBot).overlaps(splice.Interval(visibleMin, visibleMax)):
+			self.parent.OnUpdateStartDepth(gapTop)
 	
 	def OnSelectRow(self, event):
 		self.parent.spliceManager.selectByIndex(event.GetRow())
@@ -1379,6 +1430,7 @@ class SpliceIntervalPanel():
 		self.parent.Window.UpdateDrawing()	
 			
 	def OnSetDepth(self, event):
+		print("onSetDepth")
 		if event.GetCol() == 0: # jump to interval depth on double-click of ID column
 			visibleMin = self.parent.Window.rulerStartDepth
 			visibleMax = self.parent.Window.rulerEndDepth - 2.0

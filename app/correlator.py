@@ -3777,6 +3777,13 @@ class SpliceController:
 		matches = [i for i in self.splice.ints if i.coreinfo.hole == hole and i.coreinfo.holeCore == core]
 		return matches
 
+	# Return list of Intervals corresponding to gaps in the splice.
+	def findGaps(self):
+		# TODO: Have to do these checks to avoid errors on init, see DRAWHELL
+		if self.splice is not None and self.splice.findGaps() is not None:
+			gaps = self.splice.findGaps()
+			self.parent.spliceIntervalPanel.UpdateGapsTable(gaps)
+
 	# Shift splice intervals to follow cores undergoing an affine shift.
 	# - intervalsAndDeltas: list of tuples of form (SpliceInterval to shift, delta of shift)
 	def shiftIntervals(self, intervalsAndDeltas):
@@ -3798,6 +3805,7 @@ class SpliceController:
 	def pushState(self):
 		state = copy.deepcopy(self.splice)
 		self.parent.undoManager.pushState(state)
+		self.findGaps() # check for gaps on any state change
 
 
 class UndoManager:
@@ -3922,11 +3930,21 @@ class CorrelatorApp(wx.App):
 
 		# wait until now so self.frame.dataFrame exists
 
-		# 3/7/2022 TODO: Would love to initialize status bar objects
-		# before the NewDrawing() call just above, but errors get thrown
-		# for reasons I can't divine. Seems we shouldn't need to init
-		# anything related to DataCanvas and drawing until app init is
-		# totally completed. But for now, we do, so init here.
+		# 3/7/2022 DRAWHELL TODO
+		# I would love to create status bar UI objects before the self.frame.NewDrawing()
+		# call just above, but when I do, errors get thrown for reasons I can't divine.
+		#
+		# This problem, dubbed DRAWHELL, forces various workarounds throughout
+		# Correlator code. Most common are safety checks like 'if foo is not None'
+		# where foo is a variable that should never be None post-init.
+		# Next most common is delayed creation of wx UI objects as below...self.frame
+		# has already been set to MainFrame(), but creating wx UI objects with self.frame
+		# as their parent throws errors if one attempts to do so before the NewDrawing() call.
+		#
+		# The theoretical solution is to wait to init anything related to DataCanvas
+		# and drawing until main application initialization is completed...but I've never
+		# had time to try this. Someday...
+
 		# Add custom status bar across bottom of main window; we can't
 		# adjust height of native status bar on Mac in order to make it
 		# sufficiently tall to draw a button correctly. Whole point of this

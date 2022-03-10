@@ -563,6 +563,27 @@ class SpliceBuilder:
             shiftedInterval.coreinfo.maxDepth += delta
             self.addShiftedInterval(shiftedInterval.interval, shiftedInterval.coreinfo, shiftedInterval.siid)
 
+    # Return list of Intervals representing gaps between first
+    # (top) and last (bottom) splice intervals.
+    # Note: When a TIEd interval pair is split, making their relationship APPEND,
+    # we add 0.001 to the top of the lower interval of the pair. We do not
+    # consider such abutting intervals with the APPEND relationship to be a gap,
+    # even though it is technically a 1mm gap.
+    def findGaps(self):
+        if len(self.ints) < 2:
+            return
+        gaps = []
+        for idx in range(len(self.ints) - 1):
+            i1, i2 = self.ints[idx], self.ints[idx+1]
+            # Unfortunately, because of the weirdness of floating-point numbers,
+            # there were cases where the comparison 0.001 < 0.001 returned True.
+            # Depths 0.823 and 0.824 exhibit this problem. numpy.isclose(), the StackOverflow
+            # recommended approach also yielded unexpected results. For now I've given up
+            # and consider a difference >= 0.002 to be a gap. This seems to reliably prevent
+            # finding a gap when an interval TIE is split.
+            if i1.getBot() != i2.getTop() and abs(i1.getBot() - i2.getTop()) >= 0.002:
+                gaps.append(Interval(i1.getBot(), i2.getTop()))
+        return gaps
     
     # are there one or more gaps where part(s) of this interval can be added?
     def _canAdd(self, interval):
