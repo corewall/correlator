@@ -1161,17 +1161,17 @@ class SpliceIntervalPanel():
 		# interval table
 		gridPanel = wx.Panel(self.note, -1)
 		gpsz = wx.BoxSizer(wx.VERTICAL)
-		self.table = wx.grid.Grid(gridPanel, -1)
-		self.table.SetRowLabelSize(0) # hide row headers
-		self.table.DisableDragRowSize()
-		self.table.EnableEditing(False)
-		self.table.CreateGrid(numRows=0, numCols=3)
+		self.intervalTable = wx.grid.Grid(gridPanel, -1)
+		self.intervalTable.SetRowLabelSize(0) # hide row headers
+		self.intervalTable.DisableDragRowSize()
+		self.intervalTable.EnableEditing(False)
+		self.intervalTable.CreateGrid(numRows=0, numCols=3)
 		for colidx, label in enumerate(["Core", "Top (m)", "Bottom (m)"]):
-			self.table.SetColLabelValue(colidx, label)
-		self.table.SetSelectionMode(wx.grid.Grid.SelectRows)
-		gpsz.Add(self.table, 1, wx.EXPAND)
-		self.table.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectRow)
-		self.table.Bind(wx.grid.EVT_GRID_CELL_LEFT_DCLICK, self.OnSetDepth)
+			self.intervalTable.SetColLabelValue(colidx, label)
+		self.intervalTable.SetSelectionMode(wx.grid.Grid.SelectRows)
+		gpsz.Add(self.intervalTable, 1, wx.EXPAND)
+		self.intervalTable.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelectRow)
+		self.intervalTable.Bind(wx.grid.EVT_GRID_CELL_LEFT_DCLICK, self.OnSetDepth)
 		gridPanel.SetSizer(gpsz)
 		self.note.AddPage(gridPanel, "Intervals")
 		self.gridPanel = gridPanel
@@ -1254,12 +1254,12 @@ class SpliceIntervalPanel():
 			self.gapsTable.SetCellValue(row, 1, str(round(g.bot, 3)))
 
 	# update all row data and selection
-	def _updateTable(self):
+	def _updateIntervalTable(self):
 		rows = self.parent.spliceManager.count()
-		self._adjustTableRows(self.table, rows)
+		self._adjustTableRows(self.intervalTable, rows)
 		for row, si in enumerate(self.parent.spliceManager.getIntervals()):
-			self._makeTableRow(row, si)
-		self._updateTableSelection()			
+			self._makeIntervalTableRow(row, si)
+		self._updateIntervalTableSelection()
 
 	def OnAltSplice(self, event):
 		asd = dialog.AltSpliceDialog(self.parent)
@@ -1292,7 +1292,7 @@ class SpliceIntervalPanel():
 			self.evalPanel.Show()
 	
 	def UpdateUI(self):
-		self._updateTable()
+		self._updateIntervalTable()
 		self._updateButtons()
 		if self.parent.spliceManager is not None:
 			self.parent.spliceManager.findGaps()
@@ -1301,10 +1301,10 @@ class SpliceIntervalPanel():
 		self.UpdateUI()
 
 	# add cells for SpliceInterval si at specified row
-	def _makeTableRow(self, row, si):
-		self.table.SetCellValue(row, 0, str(si.coreinfo.getHoleCoreStr()))
-		self.table.SetCellValue(row, 1, str(round(si.getTop(), 3)))
-		self.table.SetCellValue(row, 2, str(round(si.getBot(), 3)))
+	def _makeIntervalTableRow(self, row, si):
+		self.intervalTable.SetCellValue(row, 0, str(si.coreinfo.getHoleCoreStr()))
+		self.intervalTable.SetCellValue(row, 1, str(round(si.getTop(), 3)))
+		self.intervalTable.SetCellValue(row, 2, str(round(si.getBot(), 3)))
 		
 	# add/delete rows in wx.Grid table to match int rows
 	def _adjustTableRows(self, table, rows):
@@ -1317,23 +1317,23 @@ class SpliceIntervalPanel():
 			table.InsertRows(pos=0, numRows=addcount)
 
 	# update all row data and selection
-	def _updateTable(self):
+	def _updateIntervalTable(self):
 		rows = self.parent.spliceManager.count()
-		self._adjustTableRows(self.table, rows)
+		self._adjustTableRows(self.intervalTable, rows)
 		for row, si in enumerate(self.parent.spliceManager.getIntervals()):
-			self._makeTableRow(row, si)
-		self._updateTableSelection()
+			self._makeIntervalTableRow(row, si)
+		self._updateIntervalTableSelection()
 			
 	# update current selection
-	def _updateTableSelection(self):
+	def _updateIntervalTableSelection(self):
 		cursel = self.parent.spliceManager.getSelectedIndex()
 		if cursel == -1:
-			self.table.ClearSelection()
+			self.intervalTable.ClearSelection()
 			self.lastInterval = None
 			self._updateComment("")
 		else:
-			self.table.SelectRow(cursel)
-			self.table.MakeCellVisible(cursel, 0) # scroll to row if not visible
+			self.intervalTable.SelectRow(cursel)
+			self.intervalTable.MakeCellVisible(cursel, 0) # scroll to row if not visible
 			self.lastInterval = self.parent.spliceManager.getSelectedInterval()
 			self._updateComment(self.lastInterval.comment)
 			
@@ -1384,7 +1384,7 @@ class SpliceIntervalPanel():
 	# selected SpliceInterval changed through click, update GUI to reflect
 	def OnSelectionChange(self):
 		self._updateButtons()
-		self._updateTableSelection()
+		self._updateIntervalTableSelection()
 		
 	def OnAdd(self): # SpliceInterval added
 		self.UpdateUI()
