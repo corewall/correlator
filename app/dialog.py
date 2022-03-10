@@ -93,6 +93,8 @@ def _setCustomLabels(dlg, nobutton, customLabels):
 # brg 2/27/2022
 # Hack-job, good enough for the few spots we need a suppressible message dialog.
 # To be replaced with RichMessageDialog when we upgrade to wx 4+.
+# Warning: if buttons=MsgDlgButtons.YesNo, the dialog still returns
+# wx.ID_OK for Yes and wx.ID_CANCEL for no!
 class SuppressibleMessageDialog(wx.Dialog):
 	def __init__(self, parent, title, msg, buttons, suppressMsg="Don't show this message again", customLabels=None):
 		wx.Dialog.__init__(self, parent, -1, title, size=(350,-1))
@@ -565,7 +567,7 @@ class SaveTableDialog(wx.Dialog):
 		if keyid == wx.WXK_RETURN:
 			self.EndModal(wx.ID_OK) 
 		elif keyid == wx.WXK_ESCAPE:
-			self.EndModal(wx.ID_CANCEL) 
+			self.EndModal(wx.ID_CANCEL)
 
 class OkButtonPanel(wx.Panel):
 	def __init__(self, parent, okOnly=False, okName="OK", cancelName="Cancel"):

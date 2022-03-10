@@ -80,6 +80,8 @@ class MainFrame(wx.Frame):
 		self.spliceManager = SpliceController(self)
 		self.undoManager = UndoManager(self)
 
+		self.warnOnSaveWithSpliceGaps = True
+
 		self.RawData = ""
 		self.SmoothData = ""
 		self.CoreStart =0
@@ -297,6 +299,18 @@ class MainFrame(wx.Frame):
 		# self.Bind(wx.EVT_KEY_DOWN, self.OnKeyEvent)
 		return menuBar
 
+	def DoWarnOnSaveWithSpliceGaps(self):
+		proceed = True
+		if self.warnOnSaveWithSpliceGaps and self.spliceManager.hasGaps():
+			msg = "The current splice contains one or more gaps. Continue saving?"
+			dlg = dialog.SuppressibleMessageDialog(self, "Warning", msg, dialog.MsgDlgButtons.YesNo)
+			proceed = dlg.ShowModal() == wx.ID_OK
+			suppress = dlg.IsCheckBoxChecked()
+			dlg.Destroy()
+			if suppress:
+				self.warnOnSaveWithSpliceGaps = False
+		return proceed
+
 	# Save current affine and splice (if any).
 	def OnSAVE(self, event):
 		if self.CurrentDir == '': 
@@ -317,6 +331,9 @@ class MainFrame(wx.Frame):
 				msg = "Create new affine file?"
 		else:
 			msg = "Create new affine and splice, or update existing files?"
+
+		if saveSplice and not self.DoWarnOnSaveWithSpliceGaps():
+			return
 		dlg = dialog.SaveDialog(self, msg, enableUpdateExisting)
 		ret = dlg.ShowModal()
 		dlg.Destroy()
@@ -3783,6 +3800,13 @@ class SpliceController:
 		if self.splice is not None and self.splice.findGaps() is not None:
 			gaps = self.splice.findGaps()
 			self.parent.spliceIntervalPanel.UpdateGapsTable(gaps)
+
+	def hasGaps(self):
+		result = False
+		if self.splice is not None and self.splice.findGaps() is not None:
+			gaps = self.splice.findGaps()
+			result = len(gaps) > 0
+		return result
 
 	# Shift splice intervals to follow cores undergoing an affine shift.
 	# - intervalsAndDeltas: list of tuples of form (SpliceInterval to shift, delta of shift)
