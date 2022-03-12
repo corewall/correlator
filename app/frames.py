@@ -1415,7 +1415,6 @@ class SpliceIntervalPanel():
 		self.parent.OnSAVE(event=None)
 
 	def OnDClickGapRow(self, event):
-		print("OnDClickGapRow")
 		visibleMin = self.parent.Window.rulerStartDepth
 		visibleMax = self.parent.Window.rulerEndDepth - 2.0
 		selRow = self.gapsTable.GetSelectedRows()[0]
@@ -1430,7 +1429,6 @@ class SpliceIntervalPanel():
 		self.parent.Window.UpdateDrawing()	
 			
 	def OnSetDepth(self, event):
-		print("onSetDepth")
 		if event.GetCol() == 0: # jump to interval depth on double-click of ID column
 			visibleMin = self.parent.Window.rulerStartDepth
 			visibleMax = self.parent.Window.rulerEndDepth - 2.0
