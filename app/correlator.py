@@ -1556,6 +1556,9 @@ class MainFrame(wx.Frame):
 		showOutOfRangeData = 1 if self.Window.showOutOfRangeData == True else 0
 		self.WritePreferenceItem("showOutOfRangeData", showOutOfRangeData, f)
 
+		showAffineShiftStrips = 1 if self.Window.showAffineShiftStrips == True else 0
+		self.WritePreferenceItem("showAffineShiftStrips", showAffineShiftStrips, f)
+
 		showColorLegend = 1 if self.Window.showColorLegend == True else 0
 		self.WritePreferenceItem("showColorLegend", showColorLegend, f)
 
@@ -2814,6 +2817,13 @@ class MainFrame(wx.Frame):
 			if len(str_temp) > 0:
 				self.Window.showOutOfRangeData = True if str_temp == '1' else False 
 				self.optPanel.showOutOfRangeData.SetValue(self.Window.showOutOfRangeData)
+
+		if self.config.has_option("applications", "showAffineShiftStrips"):
+			str_temp = self.config.get("applications", 'showAffineShiftStrips')
+			if len(str_temp) > 0:
+				self.Window.showAffineShiftStrips = True if str_temp == '1' else False
+				self.optPanel.showAffineShiftStrips.SetValue(self.Window.showAffineShiftStrips)
+				self.optPanel.UpdateShowColorLegendCheckbox()
 
 		if self.config.has_option("applications", "showColorLegend"):
 			str_temp = self.config.get("applications", 'showColorLegend')

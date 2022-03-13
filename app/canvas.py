@@ -332,8 +332,9 @@ class DataCanvas(wxBufferedWindow):
 		self.showSectionDepths = True
 		self.showCoreInfo = False # show hole, core, min/max, quality, stretch on mouseover - see DrawGraphInfo()
 		self.showOutOfRangeData = False # if True, clip data plots to the width of the hole's plot area
-		self.showColorLegend = True # plot color legend
-		self.showDepthLine = False # draw line at current mouse position depth
+		self.showAffineShiftStrips = True # show color strips to left of plot indicating affine shift type
+		self.showColorLegend = True # draw color legend for affine shift strips
+		self.showDepthLine = False # draw line at mouse depth; click to lock/unlock position
 		self.depthLinePos = None
 		self.showPlotOverlays = False # overlay all plots of the same datatype on the first hole in alphabetical order
 		
@@ -1561,7 +1562,8 @@ class DataCanvas(wxBufferedWindow):
 			self.CreateCoreArea(coreInfo, startX, holeColumn.contentWidth(), topPoint, botPoint)
 			self.coreCount += 1
 
-			self.DrawAffineShiftStrip(dc, startX, topPoint, botPoint, holeColumn.holeName(), cmd.coreName())
+			if self.showAffineShiftStrips:
+				self.DrawAffineShiftStrip(dc, startX, topPoint, botPoint, holeColumn.holeName(), cmd.coreName())
 
 			if cmd.affineOffset() != 0:
 				clippingRegion = wx.Region(0, headerBottom, spliceScrollbarLeft, self.Height - headerBottom)
@@ -2298,7 +2300,7 @@ class DataCanvas(wxBufferedWindow):
 			startX += width
 		
 	def DrawColorLegend(self, dc):
-		if self.showColorLegend:
+		if self.showAffineShiftStrips and self.showColorLegend:
 			paintgap = 50 
 			start = self.Width
 			if self.spliceWindowOn == 1:

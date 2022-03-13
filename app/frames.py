@@ -3478,9 +3478,19 @@ class PreferencesPanel():
 		self.parent.Window.showOutOfRangeData = self.showOutOfRangeData.IsChecked()
 		self.parent.Window.UpdateDrawing()
 
+	def OnShowAffineShiftStrips(self, event):
+		self.parent.Window.showAffineShiftStrips = self.showAffineShiftStrips.IsChecked()
+		self.UpdateShowColorLegendCheckbox()
+		self.parent.Window.UpdateDrawing()
+
 	def OnShowColorLegend(self, event):
 		self.parent.Window.showColorLegend = self.showColorLegend.IsChecked()
 		self.parent.Window.UpdateDrawing()
+
+	# Enable color legend checkbox based on affine shift strips state.
+	# Legend is only drawn when shift strips are drawn.
+	def UpdateShowColorLegendCheckbox(self):
+		self.showColorLegend.Enable(self.showAffineShiftStrips.IsChecked())
 
 	def OnShowDepthLine(self, event):
 		self.parent.Window.showDepthLine = self.showDepthLine.IsChecked()
@@ -3687,8 +3697,10 @@ class PreferencesPanel():
 		self.showCoreInfo = wx.CheckBox(viewPanel, -1, "Show core info on mouseover")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowCoreInfo, self.showCoreInfo)
 		self.showDepthLine = wx.CheckBox(viewPanel, -1, "Show line at current depth")
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowDepthLine, self.showDepthLine)		
-		self.showColorLegend = wx.CheckBox(viewPanel, -1, "Show plot color legend")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowDepthLine, self.showDepthLine)
+		self.showAffineShiftStrips = wx.CheckBox(viewPanel, -1, "Show affine shift color strips")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftStrips, self.showAffineShiftStrips)
+		self.showColorLegend = wx.CheckBox(viewPanel, -1, "Show affine shift color legend")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowColorLegend, self.showColorLegend)
 
 		viewSizer.Add(self.showAffineShiftInfo, 0, wx.BOTTOM, 5)
@@ -3697,6 +3709,7 @@ class PreferencesPanel():
 		viewSizer.Add(self.showCoreInfo, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showDepthLine, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.showAffineShiftStrips, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showColorLegend, 0, wx.BOTTOM, 10)
 
 		# Color Set
