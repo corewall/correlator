@@ -3979,7 +3979,7 @@ class CorrelatorApp(wx.App):
 		self.frame.swapButton = wx.Button(self.frame.statusBarPanel, -1, "Go to Display", size=(150,-1))
 		self.frame.Bind(wx.EVT_BUTTON, self.frame.SwapDisplays, self.frame.swapButton)
 		msg = "Hello! I am a custom status bar! I go on for a {} long time.".format("super duper "*8)
-		self.frame.statusBarText = wx.StaticText(self.frame.statusBarPanel, -1, msg, size=(450,-1))
+		self.frame.statusBarText = wx.StaticText(self.frame.statusBarPanel, -1, msg, size=(550,-1))
 		sbFont = self.frame.statusBarText.GetFont()
 		sbFont.SetSymbolicSize(wx.FONTSIZE_SMALL)
 		self.frame.statusBarText.SetFont(sbFont)
