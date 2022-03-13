@@ -3344,10 +3344,10 @@ class PreferencesPanel():
 		self.visibleDepthInterval = 20.0
 
 	def OnActivateWindow(self, event):
-		if self.showSpliceWindow.IsChecked() == True : 
+		if self.showSpliceWindow.IsChecked(): 
 			self.parent.OnActivateWindow(1)
 			self.parent.misecond.Check(True)
-		else :
+		else:
 			self.parent.OnActivateWindow(0)
 			self.parent.misecond.Check(False)
 
