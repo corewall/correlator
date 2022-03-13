@@ -2138,7 +2138,7 @@ class DataCanvas(wxBufferedWindow):
 
 	# Highlight core on mouseover
 	def DrawHighlight(self, dc, x, top_y, bot_y, pointCount):
-		if not self.HasDragCore() and not self.highlightedCore and pointCount > 1:
+		if not self.HasDragCore() and not self.coreWasHighlighted and pointCount > 1:
 			wid = self.layoutManager.plotWidth + 1
 			# print("core {}{}, test rect={}".format(holeName, core.coreName(), wx.Rect(hx, hy, wid, hit)))
 			if wx.Rect(x, top_y, wid, bot_y - top_y).Contains(self.MousePos):
@@ -2146,7 +2146,7 @@ class DataCanvas(wxBufferedWindow):
 				curPen = dc.GetPen()
 				self.DrawHighlightRect(dc, x, top_y, wid, bot_y - top_y)
 				dc.SetPen(curPen)
-				self.highlightedCore = True # only highlight a single core
+				self.coreWasHighlighted = True # ensure we only highlight a single core per draw cycle
 
 	# Draw dashed rectangle around given bounds
 	def DrawHighlightRect(self, dc, x, y, wid, hit):
@@ -2501,7 +2501,7 @@ class DataCanvas(wxBufferedWindow):
 		self.DrawData["CoreArea"] = [] 
 		self.DrawData["CoreInfo"] = []
 		self.AffineTieArrows = [] # (hole+core, bounding rect) for each TIE arrow
-		self.highlightedCore = False # has a core been highlighted (rect drawn around bounds)?
+		self.coreWasHighlighted = False # has a core already been highlighted in this draw cycle?
 
 		if self.ScrollUpdate == 1: 
 			self.UpdateScroll(1)
