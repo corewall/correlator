@@ -563,7 +563,14 @@ class DataCanvas(wxBufferedWindow):
 		self.CurrentSpliceCore = -1 # index of core to be spliced onto splice
 
 		self.drag = 0
-		self.selectedCore = -1
+		
+		# brg 3/12/2022: index of core mouse cursor is currently over, but also
+		# used when affine TIE fixed/shift lines are active. Commenting
+		# out the three lines where this var is set in affine logic seemed to have
+		# no detrimental effects, but it's way too late in the 4.0 cycle to tinker
+		# with the affine interface and risk introducing bugs. The relevant affine logic
+		# lines are commented with 'SelectedCoreAffine?'. TODO: Revisit post-4.0.
+		self.mouseoverCore = -1
 		self.LogselectedCore = -1 
 		# brgtodo do we need both selectedTie and activeTie? 
 		self.selectedTie = -1 
@@ -747,7 +754,7 @@ class DataCanvas(wxBufferedWindow):
 		self.SpliceCore = []
 		self.UserdefStratData = []
 		self.CurrentSpliceCore = -1
-		self.selectedCore = -1
+		self.mouseoverCore = -1
 		self.LogselectedCore = -1
 		self.selectedTie = -1
 		self.selectedLastTie = -1
@@ -3951,7 +3958,7 @@ class DataCanvas(wxBufferedWindow):
 				for area in self.DrawData["CoreArea"]:
 					coreInfo, rect, hole_idx = area
 					if rect.Inside(wx.Point(pos[0], pos[1])):
-						self.selectedCore = coreInfo.core
+						self.mouseoverCore = coreInfo.core # TODO: SelectedCoreAffine?
 						self.mouseX = pos[0] 
 						self.mouseY = pos[1] 
 						self.currentStartX = rect.GetX()
@@ -4141,8 +4148,8 @@ class DataCanvas(wxBufferedWindow):
 			shiftx = fixedTie.hole - movableTie.hole
 			self.compositeDepth = fixedTie.depth
 
-			self.activeCore = self.selectedCore
-			self.OnUpdateGuideData(self.selectedCore, shiftx, shift)
+			self.activeCore = self.mouseoverCore
+			self.OnUpdateGuideData(self.mouseoverCore, shiftx, shift)
 
 	def GetDataInfo(self, coreindex):
 		coreInfo = self.findCoreInfoByIndex(coreindex)
@@ -4222,7 +4229,7 @@ class DataCanvas(wxBufferedWindow):
 			self.selectedTie = -1
 			self.activeTie = -1
 			self.showMenu = False
-			self.selectedCore = -1
+			self.mouseoverCore = -1
 			self.spliceTie = -1
 			self.logTie = -1
 			self.drag = 0
@@ -4308,13 +4315,13 @@ class DataCanvas(wxBufferedWindow):
 		currentY = pos[1]
 		if self.selectedTie >= 0: 
 			tie = self.TieData[self.selectedTie]
-			if self.selectedCore != tie.core:
+			if self.mouseoverCore != tie.core:
 				return
 
 			tie.screenY = pos[1]
 			tie.depth = self.getDepth(pos[1])
 				
-			self.selectedCore = tie.core
+			self.mouseoverCore = tie.core # TODO: SelectedCoreAffine?
 			self.selectedLastTie = self.selectedTie 
 			self.GuideCore = []	
 			# draw guide 
@@ -4334,8 +4341,8 @@ class DataCanvas(wxBufferedWindow):
 			if len(self.TieData) >= 2: # max two ties
 				return
 			fixed = 1 if len(self.TieData) == 0 else 0
-			print("Creating {} TieData for hole {}, core {}".format("fixed" if fixed == 1 else "movable", self.currentHole, self.selectedCore))
-			newTie = CompositeTie(self.currentHole, self.selectedCore, self.currentStartX, pos[1], fixed, self.getDepth(pos[1]))
+			print("Creating {} TieData for hole {}, core {}".format("fixed" if fixed == 1 else "movable", self.currentHole, self.mouseoverCore))
+			newTie = CompositeTie(self.currentHole, self.mouseoverCore, self.currentStartX, pos[1], fixed, self.getDepth(pos[1]))
 			self.TieData.append(newTie)
 
 			if len(self.TieData) == 1:
@@ -4364,8 +4371,8 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.OnShowMessage("Error", "Core {}{} is upstream in the tie chain.".format(ciB.hole, ciB.holeCore), 1)
 					self.ClearCompositeTies()
 				else:
-					self.activeCore = self.selectedCore
-					self.OnUpdateGuideData(self.selectedCore, shiftx, shift)
+					self.activeCore = self.mouseoverCore
+					self.OnUpdateGuideData(self.mouseoverCore, shiftx, shift)
 					self.parent.OnUpdateDepth(shift)
 					self.parent.TieUpdateSend(ciA.leg, ciA.site, ciA.hole, int(ciA.holeCore), ciB.hole, int(ciB.holeCore), y1, shift)
 					testret = self.EvaluateCorrelation(ciA.type, ciA.hole, int(ciA.holeCore), y2, ciB.type, ciB.hole, int(ciB.holeCore), y1)
@@ -4384,7 +4391,7 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.OnUpdateGraph()
 					self.UpdateAffineTieCount(len(self.TieData))
 
-		self.selectedCore = -1
+		self.mouseoverCore = -1
 		self.spliceTie = -1
 		self.logTie = -1
 		self.drag = 0
@@ -4568,8 +4575,7 @@ class DataCanvas(wxBufferedWindow):
 				coreInfo, rect, hole_idx = area
 				if rect.Inside(wx.Point(pos[0], pos[1])):
 					got = 1
-					self.selectedCore = coreInfo.core
-					# print("(mouseover) selectedCore = {}".format(n))
+					self.mouseoverCore = coreInfo.core
 
 					hc = self.layoutManager.getColumnAtPos(pos[0])
 					overPlot = hc.getColumnTypeAtPos(pos[0]) == ColumnType.Plot
@@ -4608,7 +4614,7 @@ class DataCanvas(wxBufferedWindow):
 		# dragging to adjust movable affine tie
 		if self.selectedTie >= 0:
 			movableTie = self.TieData[self.selectedTie]
-			if self.selectedCore != movableTie.core:
+			if self.mouseoverCore != movableTie.core:
 				return
 
 			fixedTie = self.TieData[self.selectedTie - 1]
@@ -4651,7 +4657,7 @@ class DataCanvas(wxBufferedWindow):
 							self.parent.OnAddGraph(testret, y2, y1)
 				self.parent.OnUpdateGraph()
 
-			self.selectedCore = movableTie.core
+			self.mouseoverCore = movableTie.core # TODO: SelectedCoreAffine?
 			self.GuideCore = []
 			# draw guide
 			self.OnDrawGuide()
@@ -4683,7 +4689,7 @@ class DataCanvas(wxBufferedWindow):
 
 		if got == 0:
 			self.DrawData["MouseInfo"] = []
-			self.selectedCore = -1 
+			self.mouseoverCore = -1 
 
 		self.UpdateDrawing()
 
