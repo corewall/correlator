@@ -2358,6 +2358,8 @@ class DataCanvas(wxBufferedWindow):
 				if self.splicerX <= self.compositeX:
 					self.splicerX = self.Width * 8 / 10 + self.compositeX
 				if self.splicerX > (self.Width - 100):
+					# splicerX gets set to 20 here on first launch...see
+					# 3/12/2022 DRAWHELL comment
 					self.splicerX = self.Width - 100
 			else:
 				self.splicerX = self.Width + 45

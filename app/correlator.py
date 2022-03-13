@@ -857,6 +857,18 @@ class MainFrame(wx.Frame):
 
 	# show/hide splice window
 	def OnActivateWindow(self, event):
+		# brg 3/12/2022: Force a window update in Draw() to avoid a situation
+		# on first launch where the splice window, when activated, draws so
+		# far to the left that the draggable scrollbar that separates composite
+		# and splice areas can't be seen (draws at a negative coordinate). This is because
+		# canvas.splicerX gets init'd to 20 because canvas.Width is very small (120) at
+		# the time. Resizing the main window causes the scrollbar to appear, but
+		# that workaround is not obvious. By forcing a window update, the scrollbar
+		# is still placed far to the left, but at least it's *visible* and can be
+		# dragged to a reasonable position. Likely another symptom of DRAWHELL.
+		self.Window.WindowUpdate = 1
+		self.Window.UpdateDrawing()
+
 		if self.Window.spliceWindowOn == 1:
 			self.Window.spliceWindowOn = 0
 			self.Window.splicerBackX = self.Window.splicerX # save old splicerX
@@ -3968,7 +3980,7 @@ class CorrelatorApp(wx.App):
 		# I would love to create status bar UI objects before the self.frame.NewDrawing()
 		# call just above, but when I do, errors get thrown for reasons I can't divine.
 		#
-		# This problem, dubbed DRAWHELL, forces various workarounds throughout
+		# This problem, which I have dubbed DRAWHELL, forces various workarounds throughout
 		# Correlator code. Most common are safety checks like 'if foo is not None'
 		# where foo is a variable that should never be None post-init.
 		# Next most common is delayed creation of wx UI objects as below...self.frame
