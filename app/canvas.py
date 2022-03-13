@@ -2137,12 +2137,11 @@ class DataCanvas(wxBufferedWindow):
 		self.minRange, self.maxRange, self.coefRange, self.continue_flag = save_range
 
 	# Highlight core on mouseover
+	# TODO: Should be able to use self.mouseoverCore instead of rect.Contains()
 	def DrawHighlight(self, dc, x, top_y, bot_y, pointCount):
 		if not self.HasDragCore() and not self.coreWasHighlighted and pointCount > 1:
 			wid = self.layoutManager.plotWidth + 1
-			# print("core {}{}, test rect={}".format(holeName, core.coreName(), wx.Rect(hx, hy, wid, hit)))
 			if wx.Rect(x, top_y, wid, bot_y - top_y).Contains(self.MousePos):
-				# print("   inside!")
 				curPen = dc.GetPen()
 				self.DrawHighlightRect(dc, x, top_y, wid, bot_y - top_y)
 				dc.SetPen(curPen)
