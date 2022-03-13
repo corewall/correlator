@@ -571,6 +571,12 @@ class DataCanvas(wxBufferedWindow):
 		# with the affine interface and risk introducing bugs. The relevant affine logic
 		# lines are commented with 'SelectedCoreAffine?'. TODO: Revisit post-4.0.
 		self.mouseoverCore = -1
+
+		# When a core is selected, it's drawn with a distinct background for easy
+		# visual identification. Purely visual, no additional function.
+		# Set to the tuple (hole name str, core name str).
+		self.selectedCore = None
+
 		self.LogselectedCore = -1 
 		# brgtodo do we need both selectedTie and activeTie? 
 		self.selectedTie = -1 
@@ -595,6 +601,7 @@ class DataCanvas(wxBufferedWindow):
 		self.minData = -1
 		self.coreCount = 0 
 		self.pressedkeyShift = 0
+		self.commandKeyDown = False
 		self.pressedkeyS = 0
 		self.pressedkeyD = 0
 		self.selectedHoleType = "" 
@@ -2036,10 +2043,20 @@ class DataCanvas(wxBufferedWindow):
 				points.append((x,y))
 			else: # y > self.rulerEndDepth:
 				break
-		
+
+		# clip to avoid draw in splice area
+		clip = self.ClipPlot(dc, plotStartX)
+
+		# higlight background of selected core
+		if self.selectedCore is not None and len(points) > 0:
+			 if self.selectedCore[0] == holeName and self.selectedCore[1] == core.coreName():
+				highlightColor = wx.Colour(0, 0, 128, 64) # 75% transparent medium blue
+				dc.SetPen(wx.Pen(highlightColor, 1))
+				dc.SetBrush(wx.Brush(highlightColor))
+				dc.DrawRectangle(plotStartX, points[0][1], self.layoutManager.plotWidth, points[-1][1] - points[0][1])
+	
 		# plot points
 		dc.SetPen(wx.Pen(plotColor, 1))
-		clip = self.ClipPlot(dc, plotStartX)
 		if self.DiscretePlotMode == 0 and len(points) > 1:
 			dc.DrawLines(points)
 		else:
@@ -3502,6 +3519,8 @@ class DataCanvas(wxBufferedWindow):
 		if keyid == wx.WXK_ALT:
 			self.showGrid = False 
 			self.UpdateDrawing()
+		elif keyid == wx.WXK_COMMAND:
+			self.commandKeyDown = False
 		elif keyid == wx.WXK_SHIFT:
 			self.pressedkeyShift = 0 
 			self.UpdateDrawing()
@@ -3528,6 +3547,14 @@ class DataCanvas(wxBufferedWindow):
 			self.pressedkeyS = 1 
 		elif keyid == wx.WXK_ALT:
 			self.showGrid = True
+		elif keyid == wx.WXK_COMMAND:
+			# brg 3/12/2022: Currently used only to detect command-click
+			# for selecting a core. Initially tried using WXK_CONTROL so
+			# Mac and Windows could be consistent, but Mac interprets
+			# Control-click as a right-click! Unsure how WXK_COMMAND is
+			# used on Windows...is it the Windows key? Only concerned
+			# with mac for initial 4.0 release. TODO
+			self.commandKeyDown = True
 		elif keyid == wx.WXK_SHIFT:
 			self.pressedkeyShift = 1 
 		elif keyid == wx.WXK_DOWN and self.parent.ScrollMax > 0:
@@ -3964,6 +3991,16 @@ class DataCanvas(wxBufferedWindow):
 						self.currentStartX = rect.GetX()
 						self.currentHole = hole_idx 
 						return
+		
+		# Command-click on core to select it, see self.selectedCore notes in __init__.
+		if self.commandKeyDown:
+			for area in self.DrawData["CoreArea"]:
+				coreInfo, rect, hole_idx = area
+				if rect.Inside(wx.Point(pos[0], pos[1])):
+					self.selectedCore = coreInfo.hole, str(coreInfo.holeCore)
+					return
+			self.selectedCore = None
+			return
 
 		# Drag core from composite to splice area to add to splice.
 		# Disable while scrolling or when there are active composite ties.
