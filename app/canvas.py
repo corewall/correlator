@@ -20,6 +20,7 @@ import random, sys, os, re, time, ConfigParser, string, traceback
 
 from importManager import py_correlator
 
+from affine import TieShiftMethod
 import frames
 import splice
 from layout import LayoutManager, ColumnType, ImageDatatypeStr
@@ -3271,15 +3272,15 @@ class DataCanvas(wxBufferedWindow):
 					self.parent.UpdateData()
 					self.parent.UpdateStratData()
 		elif opId == 2 or opId == 3: # adjust this core and all below (2), adjust this core only (3)
-			shiftCoreOnly = (opId == 3)
-			self.OnAdjustCore(shiftCoreOnly)
+			shiftMethod = TieShiftMethod.CoreOnly if opId == 3 else TieShiftMethod.CoreAndRelated
+			self.OnAdjustCore(shiftMethod)
 			return # OnAdjustCore() handles updates below
 
 		self.selectedTie = -1
 		self.drag = 0 
 		self.UpdateDrawing()
 
-	def OnAdjustCore(self, shiftCoreOnly, actionType=1): # tie by default
+	def OnAdjustCore(self, shiftMethod, actionType=1): # tie by default
 		if self.selectedLastTie < 0:
 			self.selectedLastTie = len(self.TieData) - 1
 
@@ -3305,17 +3306,19 @@ class DataCanvas(wxBufferedWindow):
 			ciB = self.findCoreInfoByIndex(fixedTie.core)
 			if ciA is not None and ciB is not None:
 				comment = self.parent.compositePanel.GetComment()
-				proceed = self.parent.affineManager.tie(shiftCoreOnly, ciB.hole, ciB.holeCore, round(y2, 3), ciA.hole, ciA.holeCore, round(y1, 3), ciA.type, comment)
+				proceed = self.parent.affineManager.tie(shiftMethod, ciB.hole, ciB.holeCore, round(y2, 3), ciA.hole, ciA.holeCore, round(y1, 3), ciA.type, comment)
 				if proceed:
 					self.OnDataChange(movableTie.core, shift) # apply shift to self.HoleData
 					self.parent.AffineChange = True
 
-					if shiftCoreOnly:
-						s = "Composite: hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
+					if shiftMethod == TieShiftMethod.CoreOnly:
+						s = "Affine shift (core only): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
+						self.parent.logFileptr.write(s)
+					elif shiftMethod == TieShiftMethod.CoreAndRelated:
+						s = "Affine shift (core and related below): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 						self.parent.logFileptr.write(s)
 					else:
-						s = "Composite(All Below): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
-						self.parent.logFileptr.write(s)
+						assert False, "Haven't hooked up CoreAndAll yet!"
 
 					s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
 					self.parent.logFileptr.write(s)

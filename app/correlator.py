@@ -35,7 +35,7 @@ import dialog
 import frames
 import dbmanager
 import version as vers
-from affine import AffineBuilder, AffineCoreInfo, aci, acistr, isTie, isSet, isImplicit
+from affine import AffineBuilder, AffineCoreInfo, aci, acistr, isTie, isSet, isImplicit, TieShiftMethod
 from splice import SpliceBuilder, SpliceInterval, SpliceIntervalTopTie, SpliceIntervalBotTie
 import tabularImport
 import prefs
@@ -647,8 +647,11 @@ class MainFrame(wx.Frame):
 		self.leadLag = leadLag
 		py_correlator.setEvalGraph(self.depthStep, self.winLength, self.leadLag)
 
-	def OnAdjustCore(self, opt, type):
-		self.Window.OnAdjustCore(opt, type)
+	# Called from CompositePanel "Apply Shift" button. Translate
+	# shiftCoreOnly boolean to TieShiftMethod and pass to self.Window.
+	def OnAdjustCore(self, shiftCoreOnly, type):
+		method = TieShiftMethod.CoreOnly if shiftCoreOnly else TieShiftMethod.CoreAndRelated
+		self.Window.OnAdjustCore(method, type)
 
 	def OnUndo(self, evt):
 		self.undoManager.undo()
@@ -3223,7 +3226,7 @@ class AffineController:
 	# fromDepth - MBSF depth of tie point on fromCore
 	# depth - MBSF depth of tie point on core
 	# Returns True if tie was made, False if not (user didn't confirm breaks)
-	def tie(self, coreOnly, fromHole, fromCore, fromDepth, hole, core, depth, dataUsed="", comment=""):
+	def tie(self, method, fromHole, fromCore, fromDepth, hole, core, depth, dataUsed="", comment=""):
 		fromCoreInfo = aci(fromHole, fromCore)
 		coreInfo = aci(hole, core)
 		# adjust movable core's depth for affine
@@ -3231,7 +3234,7 @@ class AffineController:
 		fromDepth = fromDepth - self.affine.getShift(fromCoreInfo).distance
 		depth = depth - self.affine.getShift(coreInfo).distance
 		
-		tieOp = self.affine.tie(coreOnly, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
+		tieOp = self.affine.tie(method, mcdShiftDist, fromCoreInfo, fromDepth, coreInfo, depth, dataUsed, comment)
 		if not self.confirmBreaks(tieOp.infoDict['breaks']):
 			return False
 
