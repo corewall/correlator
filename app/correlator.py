@@ -649,9 +649,8 @@ class MainFrame(wx.Frame):
 
 	# Called from CompositePanel "Apply Shift" button. Translate
 	# shiftCoreOnly boolean to TieShiftMethod and pass to self.Window.
-	def OnAdjustCore(self, shiftCoreOnly, type):
-		method = TieShiftMethod.CoreOnly if shiftCoreOnly else TieShiftMethod.CoreAndRelated
-		self.Window.OnAdjustCore(method, type)
+	def OnAdjustCore(self, shiftMethod, type):
+		self.Window.OnAdjustCore(shiftMethod, type)
 
 	def OnUndo(self, evt):
 		self.undoManager.undo()
