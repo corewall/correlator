@@ -469,14 +469,15 @@ class AffineBuilder:
         if method == TieShiftMethod.CoreOnly:
             ao.infoDict['breaks'] = self.findBreaks(fromCore, core)
             ao.shifts.append(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
-        elif method == TieShiftMethod.CoreAndRelated:
-            relatedCores = self.gatherRelatedCores(fromCore, core)
+        elif method in [TieShiftMethod.CoreAndRelated, TieShiftMethod.CoreAndAll]:
+            if method == TieShiftMethod.CoreAndRelated:
+                relatedCores = self.gatherRelatedCores(fromCore, core)
+            else:
+                relatedCores = self.gatherAllCoresBelow(fromCore, core)
             ao.infoDict['breaks'] = self.findBreaks(fromCore, core, relatedCores)
             ao.shifts.append(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
             for ci in relatedCores:
                 ao.adjusts.append((ci, mcdShiftDistance))
-        elif method == TieShiftMethod.CoreAndAll:
-            pass
         else:
             assert False, "Unknown TieShiftMethod {}".format(method)
                 
@@ -547,6 +548,64 @@ class AffineBuilder:
                         break
         return relatedCores
 
+    # Gather all cores that will be shifted by "Shift by [shiftCore] and all cores
+    # below" action. Note that the result excludes shiftCore itself.
+    def gatherAllCoresBelow(self, fromCore, shiftCore):
+        print("gatherAllCoresBelow: {} -> {}".format(fromCore, shiftCore))
+        # gather all descendants of shiftCore, if any
+        shiftKids = self.affine.getDescendants(shiftCore)
+        shiftKids.append(shiftCore) # include shiftCore
+
+        # Of shift core and its descendants, find uppermost core in each hole,
+        # of the holes represented by those cores.
+        uppermostCores = self._getUppermostCores(shiftKids)
+
+        # From each hole's uppermost core, search downward. When cores
+        # in separate chains are found, gather all cores in their chains.
+        separateChainCores = []
+        for uhcc in uppermostCores:
+            coresBelow = sorted(self.getCoresBelow(uhcc))
+            for cb in coresBelow:
+                if self.affine.inChain(cb) and cb not in shiftKids:
+                    separateChainCores += self.affine.getChainCores(cb)
+
+        # Now we have a list of *all* chain cores affected by the shift
+        # of shiftCore. Again, find uppermost core in each hole, of the
+        # holes represented by all chain cores.
+        allChainCores = list(set(separateChainCores)) + shiftKids
+        uppermostCores = self._getUppermostCores(allChainCores)
+
+        # Each hole's uppermost core, and every core below it is a related core!
+        # The only exceptions are:
+        # - fromCore, which by definition cannot move
+        # - shiftCore, because it is excluded from the result of this f'n
+        relatedCores = list(uppermostCores)
+        for uc in uppermostCores:
+            relatedCores.append(uc)
+            coresBelow = sorted(self.getCoresBelow(uc))
+            for cb in coresBelow:
+                relatedCores.append(cb)
+
+        print("fromCore: {}, relatedCores: {}".format(fromCore, relatedCores))
+        relatedCores = list(set(relatedCores))
+        if fromCore in relatedCores:
+            relatedCores.remove(fromCore)
+        if shiftCore in relatedCores:
+            relatedCores.remove(shiftCore)
+
+        print("gatherAllCoresBelow: {}".format(relatedCores))
+        return relatedCores
+
+    # return list of uppermost core in each hole in list of cores
+    def _getUppermostCores(self, cores):
+        holes = list(set([core.hole for core in cores]))
+        uppermostCores = []
+        for hole in holes:
+            holeCores = [hcc for hcc in cores if hcc.hole == hole]
+            uppermost = min(holeCores, key=lambda hcc:self._getCoreTop(hcc))
+            uppermostCores.append(uppermost)
+        return uppermostCores
+        
     def _getCoreTop(self, ci):
         return self.sectionSummary.getCoreTop(self.site, ci.hole, ci.core)
     
@@ -905,7 +964,7 @@ class TestAffineUtils(unittest.TestCase):
 
 
 class TestAffineBuilder(unittest.TestCase):
-    def test_chain(self):
+    def test_core_and_related(self):
         secsumm = sectionSummary.SectionSummary.createWithFile("testdata/FOO_SectionSummary.csv")
         builder = AffineBuilder.createWithSectionSummary(secsumm)
         method = TieShiftMethod.CoreAndRelated
@@ -1024,6 +1083,46 @@ class TestAffineBuilder(unittest.TestCase):
         movers = builder.gatherRelatedCores(acistr("C2"), acistr("B1"))
         expectedMovers = acilist(['B2', 'B3', 'B4', 'B5', 'C1'])
         self.assertTrue(sameElements(expectedMovers, movers))
+
+    def test_core_and_all_below(self):
+        secsumm = sectionSummary.SectionSummary.createWithFile("testdata/FOO_SectionSummary.csv")
+        builder = AffineBuilder.createWithSectionSummary(secsumm)
+        method = TieShiftMethod.CoreAndAll
+
+        # no existing ties, tie from A1 > B1 shifts B1 and below
+        movers = builder.gatherAllCoresBelow(acistr("A1"), acistr("B1"))
+        self.assertTrue(sameElements(builder.getCoresBelow(acistr("B1")), movers))
+
+        # Create B1 > A2 tie.
+        builder._tie(method, 0.1, acistr("B1"), 0.9, acistr("A2"), 0.8)
+        # New tie from A1 > B1 shifts A2+, B1+
+        movers = builder.gatherAllCoresBelow(acistr("A1"), acistr("B1"))
+        expectedMovers = acilist(['A2', 'A3', 'A4', 'A5', 'B2', 'B3', 'B4', 'B5'])
+        self.assertTrue(sameElements(expectedMovers, movers))
+
+        ### BEGIN other old tests
+
+        # add tie between B3 and C3
+        # ties: A1 > B1 > A2, B3 > C3
+        movers = builder.gatherAllCoresBelow(acistr("B3"), acistr("C3"))
+        self.assertTrue(sameElements(builder.getCoresBelow(acistr("C3")), movers))
+        builder._tie(method, 0.2, acistr("B3"), 0.3, acistr("C3"), 0.1)
+        
+        # now determine cores shifted by B1 and below
+        movers = builder.gatherAllCoresBelow(acistr("A1"), acistr("B1"))
+        expectedMovers = acilist(['A2', 'A3', 'A4', 'A5', 'B2', 'B3', 'B4', 'B5', 'C3', 'C4', 'C5'])
+        self.assertTrue(sameElements(expectedMovers, movers))
+        
+        # or C1 and below
+        movers = builder.gatherAllCoresBelow(acistr("A1"), acistr("C1"))
+        expectedMovers = acilist(['B3', 'B4', 'B5', 'C2', 'C3', 'C4', 'C5'])
+        self.assertTrue(sameElements(expectedMovers, movers))
+
+        # or C2 and below
+        movers = builder.gatherAllCoresBelow(acistr("A1"), acistr("C2"))
+        expectedMovers = acilist(['B3', 'B4', 'B5', 'C3', 'C4', 'C5'])
+        self.assertTrue(sameElements(expectedMovers, movers))
+
 
     def test_find_breaks(self):
         secsumm = sectionSummary.SectionSummary.createWithFile("testdata/FOO_SectionSummary.csv")
