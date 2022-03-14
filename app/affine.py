@@ -563,16 +563,21 @@ class AffineBuilder:
         # From each hole's uppermost core, search downward. When cores
         # in separate chains are found, gather all cores in their chains.
         separateChainCores = []
+        seenChainRoots = []
         for uhcc in uppermostCores:
             coresBelow = sorted(self.getCoresBelow(uhcc))
             for cb in coresBelow:
                 if self.affine.inChain(cb) and cb not in shiftKids:
-                    separateChainCores += self.affine.getChainCores(cb)
+                    chainRoot = self.affine.getRoot(cb)
+                    if chainRoot not in seenChainRoots: # skip visited chains
+                        separateChainCores += self.affine.getChainCores(cb)
+                        seenChainRoots.append(chainRoot)
+        # assert len(separateChainCores) == len(set(separateChainCores))
 
         # Now we have a list of *all* chain cores affected by the shift
         # of shiftCore. Again, find uppermost core in each hole, of the
         # holes represented by all chain cores.
-        allChainCores = list(set(separateChainCores)) + shiftKids
+        allChainCores = separateChainCores + shiftKids
         uppermostCores = self._getUppermostCores(allChainCores)
 
         # Each hole's uppermost core, and every core below it is a related core!
@@ -587,7 +592,7 @@ class AffineBuilder:
                 relatedCores.append(cb)
 
         print("fromCore: {}, relatedCores: {}".format(fromCore, relatedCores))
-        relatedCores = list(set(relatedCores))
+        relatedCores = list(set(relatedCores)) # remove duplicates
         if fromCore in relatedCores:
             relatedCores.remove(fromCore)
         if shiftCore in relatedCores:
