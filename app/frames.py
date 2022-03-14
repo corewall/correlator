@@ -23,6 +23,7 @@ from wx.lib import plot
 from importManager import py_correlator
 from layout import ImageDatatypeStr
 
+from affine import TieShiftMethod
 import canvas
 from colordlg import ColorsDialog
 import dialog
@@ -366,7 +367,7 @@ class CompositePanel():
 		panel3 = wx.Panel(self.mainPanel, -1)
 
 		sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'TIE Shift Options'), orient=wx.VERTICAL)
-		self.applyCore = wx.Choice(panel3, -1, choices=["This core and all related cores below", "This core only"])
+		self.applyCore = wx.Choice(panel3, -1, choices=["This core and all cores below", "This core and all related cores below", "This core only"])
 		self.applyCore.SetSelection(0)
 		sizer31.Add(self.applyCore, 0, wx.EXPAND | wx.BOTTOM, 5)
 		
@@ -428,8 +429,14 @@ class CompositePanel():
 		self.parent.OnSAVE(event=None)
 
 	def OnAdjust(self, evt):
-		adjustCoreOnly = (self.applyCore.GetSelection() == 1) # 0 = this core and all below, 1 = this core only
-		self.parent.OnAdjustCore(adjustCoreOnly, self.GetActionType())
+		sel = self.applyCore.GetSelection()
+		if sel == 0:
+			shiftMethod = TieShiftMethod.CoreAndAll
+		elif sel == 1:
+			shiftMethod = TieShiftMethod.CoreAndRelated
+		elif sel == 2:
+			shiftMethod = TieShiftMethod.CoreOnly
+		self.parent.OnAdjustCore(shiftMethod, self.GetActionType())
 
 		self.parent.Window.activeTie = -1
 		self.UpdateGrowthPlot()

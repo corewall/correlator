@@ -3239,46 +3239,17 @@ class DataCanvas(wxBufferedWindow):
 		self.showMenu = False
 		if opId == 1: # Clear Tie
 			self.ClearCompositeTies()
-		elif opId == 4: # undo to previous offset
-			self.UndoLastShift()
-			py_correlator.undo(1, "X", 0)
-			self.parent.AffineChange = True
-			py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
-
-			s = "Composite undo previous offset: " + str(datetime.today()) + "\n\n"
-			self.parent.logFileptr.write(s)
-			if self.parent.showReportPanel == 1:
-				self.parent.OnUpdateReport()
-
-			self.parent.UpdateSend()
-			#self.parent.UndoShiftSectionSend()
-			self.parent.UpdateData()
-			self.parent.UpdateStratData()
-		elif opId == 5: # undo to offset of core above
-			if self.selectedTie >= 0:
-				tie = self.TieData[self.selectedTie]
-				coreInfo = self.findCoreInfoByIndex(tie.core)
-
-				if coreInfo != None:
-					py_correlator.undo(2, coreInfo.hole, int(coreInfo.holeCore))
-
-					self.parent.AffineChange = True
-					py_correlator.saveAttributeFile(self.parent.CurrentDir + 'tmp.affine.table'  , 1)
-					self.parent.UpdateSend()
-
-					s = "Composite undo offsets the core above: hole " + coreInfo.hole + " core " + coreInfo.holeCore + ": " + str(datetime.today()) + "\n\n" 
-					self.parent.logFileptr.write(s)
-
-					self.parent.UpdateData()
-					self.parent.UpdateStratData()
-		elif opId == 2 or opId == 3: # adjust this core and all below (2), adjust this core only (3)
-			shiftMethod = TieShiftMethod.CoreOnly if opId == 3 else TieShiftMethod.CoreAndRelated
+			self.selectedTie = -1
+			self.drag = 0 
+			self.UpdateDrawing()			
+		elif opId in [2,3,4]:
+			if opId == 2:
+				shiftMethod = TieShiftMethod.CoreAndAll
+			elif opId == 3:
+				shiftMethod = TieShiftMethod.CoreAndRelated
+			elif opId == 4:
+				shiftMethod = TieShiftMethod.CoreOnly
 			self.OnAdjustCore(shiftMethod)
-			return # OnAdjustCore() handles updates below
-
-		self.selectedTie = -1
-		self.drag = 0 
-		self.UpdateDrawing()
 
 	def OnAdjustCore(self, shiftMethod, actionType=1): # tie by default
 		if self.selectedLastTie < 0:
@@ -3318,7 +3289,8 @@ class DataCanvas(wxBufferedWindow):
 						s = "Affine shift (core and related below): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 						self.parent.logFileptr.write(s)
 					else:
-						assert False, "Haven't hooked up CoreAndAll yet!"
+						s = "Affine shift (core and all below): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
+						self.parent.logFileptr.write(s)
 
 					s = ciA.hole + " " + ciA.holeCore + " " + str(y1) + " tied to " + ciB.hole + " " + ciB.holeCore + " " + str(y2) + "\n\n"
 					self.parent.logFileptr.write(s)
@@ -3816,11 +3788,13 @@ class DataCanvas(wxBufferedWindow):
 				self.showMenu = True
 				popupMenu = wx.Menu()
 				# create Menu
-				if tie.fixed == 0: # movable tie	
-					popupMenu.Append(2, "&Shift this core and all related cores below")
+				if tie.fixed == 0: # movable tie
+					popupMenu.Append(2, "&Shift this core and all below")
 					wx.EVT_MENU(popupMenu, 2, self.OnTieSelectionCb)
-					popupMenu.Append(3, "&Shift this core only")
+					popupMenu.Append(3, "&Shift this core and all related cores below")
 					wx.EVT_MENU(popupMenu, 3, self.OnTieSelectionCb)
+					popupMenu.Append(4, "&Shift this core only")
+					wx.EVT_MENU(popupMenu, 4, self.OnTieSelectionCb)
 
 				popupMenu.Append(1, "&Clear tie point(s)")
 				wx.EVT_MENU(popupMenu, 1, self.OnTieSelectionCb)
