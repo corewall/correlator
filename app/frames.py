@@ -3473,8 +3473,8 @@ class PreferencesPanel():
 		self.parent.Window.showAffineShiftInfo = self.showAffineShiftInfo.IsChecked()
 		self.parent.Window.UpdateDrawing()
 		
-	def OnShowAffineTieArrows(self, event):
-		self.parent.Window.showAffineTieArrows = self.showAffineTieArrows.IsChecked()
+	def OnShowAffineTies(self, event):
+		self.parent.Window.showAffineTies = self.showAffineTies.IsChecked()
 		self.parent.Window.UpdateDrawing()
 
 	def OnShowCoreInfo(self, event):
@@ -3699,8 +3699,8 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowSectionDepths, self.showSectionDepths)
 		self.showAffineShiftInfo = wx.CheckBox(viewPanel, -1, "Show core shift direction and distance")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftInfo, self.showAffineShiftInfo)
-		self.showAffineTieArrows = wx.CheckBox(viewPanel, -1, "Show core tie arrows")
-		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineTieArrows, self.showAffineTieArrows)
+		self.showAffineTies = wx.CheckBox(viewPanel, -1, "Show core ties")
+		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineTies, self.showAffineTies)
 		self.showCoreInfo = wx.CheckBox(viewPanel, -1, "Show core info on mouseover")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowCoreInfo, self.showCoreInfo)
 		self.showDepthLine = wx.CheckBox(viewPanel, -1, "Show line at current depth")
@@ -3711,7 +3711,7 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowColorLegend, self.showColorLegend)
 
 		viewSizer.Add(self.showAffineShiftInfo, 0, wx.BOTTOM, 5)
-		viewSizer.Add(self.showAffineTieArrows, 0, wx.BOTTOM, 5)
+		viewSizer.Add(self.showAffineTies, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showSectionDepths, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showCoreInfo, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)

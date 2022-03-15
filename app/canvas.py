@@ -329,7 +329,7 @@ class DataCanvas(wxBufferedWindow):
 		# but shift arrows still draw correctly without this, even for a new shift. Remove?
 		self.ShiftTieList = []
 		self.showAffineShiftInfo = True  # brgtodo 6/25/2014 grab state from checkbox in frames and dump this var
-		self.showAffineTieArrows = True
+		self.showAffineTies = True
 		self.showSectionDepths = True
 		self.showCoreInfo = False # show hole, core, min/max, quality, stretch on mouseover - see DrawGraphInfo()
 		self.showOutOfRangeData = False # if True, clip data plots to the width of the hole's plot area
