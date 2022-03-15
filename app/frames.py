@@ -3479,7 +3479,9 @@ class PreferencesPanel():
 		self.parent.Window.UpdateDrawing()
 
 	def OnAffineTieStyle(self, event):
-		print("OnAffineTieStyle!")
+		sel = self.affineTieStyle.GetSelection()
+		self.parent.Window.showAffineTieArrows = (sel == 0)
+		self.parent.Window.UpdateDrawing()
 
 	def UpdateAffineTieStyle(self):
 		self.affineTieStyle.Enable(self.showAffineTies.IsChecked())
@@ -3713,7 +3715,7 @@ class PreferencesPanel():
 		self.affineTieStyle = wx.Choice(viewPanel, -1, choices=["arrows", "lines"])
 		self.mainPanel.Bind(wx.EVT_CHOICE, self.OnAffineTieStyle, self.affineTieStyle)
 		tiesSizer.Add(self.showAffineTies, 0, wx.ALIGN_CENTER_VERTICAL)
-		tiesSizer.Add(self.affineTieStyle, 0, wx.ALIGN_CENTER_VERTICAL)
+		tiesSizer.Add(self.affineTieStyle, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 2)
 
 		self.showCoreInfo = wx.CheckBox(viewPanel, -1, "Show core info on mouseover")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowCoreInfo, self.showCoreInfo)

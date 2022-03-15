@@ -330,6 +330,7 @@ class DataCanvas(wxBufferedWindow):
 		self.ShiftTieList = []
 		self.showAffineShiftInfo = True  # brgtodo 6/25/2014 grab state from checkbox in frames and dump this var
 		self.showAffineTies = True
+		self.showAffineTieArrows = True # if False, show lines
 		self.showSectionDepths = True
 		self.showCoreInfo = False # show hole, core, min/max, quality, stretch on mouseover - see DrawGraphInfo()
 		self.showOutOfRangeData = False # if True, clip data plots to the width of the hole's plot area
@@ -1569,8 +1570,9 @@ class DataCanvas(wxBufferedWindow):
 			if cmd.affineOffset() != 0:
 				clippingRegion = wx.Region(0, headerBottom, spliceScrollbarLeft, self.Height - headerBottom)
 				self.DrawAffineShiftInfo(dc, startX, coreTop, coreBot, holeColumn, cmd, clippingRegion)
-				arrowStartX = plotStartX if holeColumn.hasPlot() else startX
-				self.PrepareTieShiftArrow(dc, arrowStartX, coreTop, coreBot, holeColumn, cmd)
+				if self.showAffineTies:
+					arrowStartX = plotStartX if holeColumn.hasPlot() else startX
+					self.PrepareTieShiftArrow(dc, arrowStartX, coreTop, coreBot, holeColumn, cmd)
 
 	# Show affine shift direction, distance, and type to left of core, centered on core depth interval
 	def DrawAffineShiftInfo(self, dc, startX, coreTopY, coreBotY, hole, core, clippingRegion):
@@ -1609,12 +1611,17 @@ class DataCanvas(wxBufferedWindow):
 		dc.SetBrush(wx.Brush(stripColor))
 		dc.DrawRectangle(startX-stripWidth, coreTopY, stripWidth, coreBotY-coreTopY)
 
-	# Draw arrow indicating a TIE between cores
+	# Draw arrow or line indicating a TIE between cores
+	# brg 3/14/2022: Blatantly co-opting TIE arrow code to handle TIE lines because
+	# it's quick and easy. The lines are a temporary v4 workaround for mixed-datatype
+	# TIEs, which aren't preserved in the affine table. We agreed it's too late in v4
+	# cycle to modify the affine table format to track mixed TIEs. We plan to do so in
+	# v5, at which point this hack will be removed.
 	# TODO: Assumes arrows are drawn plot to plot and image to image.
 	# If we allow mixed TIEs between images and data, this will break.
 	def PrepareTieShiftArrow(self, dc, startX, coreTopY, coreBotY, hole, core):
 		shiftTypeStr = self.parent.affineManager.getShiftTypeStr(hole.holeName(), core.coreName())
-		if shiftTypeStr == "TIE" and self.showAffineTieArrows:
+		if shiftTypeStr == "TIE":
 			tieDepth, parentCore = self.parent.affineManager.getTieDepthAndParent(hole.holeName(), core.coreName())
 			holeType = hole.datatype()
 			if not self.layoutManager.isHoleVisible(parentCore.hole, holeType):
@@ -1643,11 +1650,15 @@ class DataCanvas(wxBufferedWindow):
 
 	def _createTieShiftArrowDrawData(self, parentX, childX, y):
 		rx = parentX if parentX < childX else childX
-		arrowRect = wx.Rect(rx, y - 5, abs(childX - parentX), 10)
 		arrowDir = 5 if parentX > childX else -5
 		drawData = {}
-		drawData['arrow'] = ((parentX, y), (childX, y), (childX, y), (childX+arrowDir, y+5), (childX, y), (childX+arrowDir, y-5))
-		drawData['circle'] = (parentX, y)
+		if self.showAffineTieArrows:
+			drawData['arrow'] = ((parentX, y), (childX, y), (childX, y), (childX+arrowDir, y+5), (childX, y), (childX+arrowDir, y-5))
+			drawData['circle'] = (parentX, y)
+			arrowRect = wx.Rect(rx, y - 5, abs(childX - parentX), 10)
+		else: # lines
+			drawData['arrow'] = ((0, y), (self.splicerX - 60, y))
+			arrowRect = wx.Rect(0, y, self.splicerX - 60, 5)
 		return arrowRect, drawData
 
 	def DrawTieShiftArrow(self, dc, arrowRect, drawData):
@@ -1656,10 +1667,12 @@ class DataCanvas(wxBufferedWindow):
 		else:
 			dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
 
-		# circle on parent core, arrow to shifted core
-		circle_x, circle_y = drawData['circle']
-		dc.DrawCircle(circle_x, circle_y, 3) # radius 3
-		dc.DrawLines(drawData['arrow'])
+		if self.showAffineTieArrows: # circle on parent core, arrow to shifted core
+			circle_x, circle_y = drawData['circle']
+			dc.DrawCircle(circle_x, circle_y, 3) # radius 3
+			dc.DrawLines(drawData['arrow'])
+		else: # line across entire composite area
+			dc.DrawLines(drawData['arrow'])
 
 	def DrawTieShiftArrows(self, dc):
 		clip = wx.DCClipper(dc, wx.Region(0, self.startDepthPix - 20, self.splicerX - 60, self.Height - (self.startDepthPix - 20)))

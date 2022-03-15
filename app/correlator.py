@@ -1584,6 +1584,9 @@ class MainFrame(wx.Frame):
 		
 		showAffineTies = 1 if self.Window.showAffineTies == True else 0
 		self.WritePreferenceItem("showAffineTies", showAffineTies, f)
+
+		showAffineTieArrows = 1 if self.Window.showAffineTieArrows == True else 0
+		self.WritePreferenceItem("showAffineTieArrows", showAffineTieArrows, f)
 		
 		self.WritePreferenceItem("tab", self.Window.sideNote.GetSelection(), f)
 		self.WritePreferenceItem("path", self.Directory, f)
@@ -2820,6 +2823,13 @@ class MainFrame(wx.Frame):
 				self.Window.showAffineTies = True if str_temp == '1' else False 
 				self.optPanel.showAffineTies.SetValue(self.Window.showAffineTies)
 				self.optPanel.UpdateAffineTieStyle()
+
+		if self.config.has_option("applications", "showAffineTieArrows"):
+			str_temp = self.config.get("applications", "showAffineTieArrows")
+			if len(str_temp) > 0:
+				self.Window.showAffineTieArrows = True if str_temp == '1' else False 
+				sel = 0 if self.Window.showAffineTieArrows else 1
+				self.optPanel.affineTieStyle.SetSelection(sel)
 
 		if self.config.has_option("applications", "showCoreInfo"):
 			str_temp = self.config.get("applications", "showCoreInfo")
