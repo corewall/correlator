@@ -3475,7 +3475,14 @@ class PreferencesPanel():
 		
 	def OnShowAffineTies(self, event):
 		self.parent.Window.showAffineTies = self.showAffineTies.IsChecked()
+		self.UpdateAffineTieStyle()
 		self.parent.Window.UpdateDrawing()
+
+	def OnAffineTieStyle(self, event):
+		print("OnAffineTieStyle!")
+
+	def UpdateAffineTieStyle(self):
+		self.affineTieStyle.Enable(self.showAffineTies.IsChecked())
 
 	def OnShowCoreInfo(self, event):
 		self.parent.Window.showCoreInfo = self.showCoreInfo.IsChecked()
@@ -3699,8 +3706,15 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowSectionDepths, self.showSectionDepths)
 		self.showAffineShiftInfo = wx.CheckBox(viewPanel, -1, "Show core shift direction and distance")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftInfo, self.showAffineShiftInfo)
-		self.showAffineTies = wx.CheckBox(viewPanel, -1, "Show core ties")
+
+		tiesSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.showAffineTies = wx.CheckBox(viewPanel, -1, "Show core tie")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineTies, self.showAffineTies)
+		self.affineTieStyle = wx.Choice(viewPanel, -1, choices=["arrows", "lines"])
+		self.mainPanel.Bind(wx.EVT_CHOICE, self.OnAffineTieStyle, self.affineTieStyle)
+		tiesSizer.Add(self.showAffineTies, 0, wx.ALIGN_CENTER_VERTICAL)
+		tiesSizer.Add(self.affineTieStyle, 0, wx.ALIGN_CENTER_VERTICAL)
+
 		self.showCoreInfo = wx.CheckBox(viewPanel, -1, "Show core info on mouseover")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowCoreInfo, self.showCoreInfo)
 		self.showDepthLine = wx.CheckBox(viewPanel, -1, "Show line at current depth")
@@ -3711,7 +3725,7 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowColorLegend, self.showColorLegend)
 
 		viewSizer.Add(self.showAffineShiftInfo, 0, wx.BOTTOM, 5)
-		viewSizer.Add(self.showAffineTies, 0, wx.BOTTOM, 5)
+		viewSizer.Add(tiesSizer, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showSectionDepths, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showCoreInfo, 0, wx.BOTTOM, 5)
 		viewSizer.Add(self.showPlotLines, 0, wx.BOTTOM, 5)

@@ -2819,6 +2819,7 @@ class MainFrame(wx.Frame):
 			if len(str_temp) > 0:
 				self.Window.showAffineTies = True if str_temp == '1' else False 
 				self.optPanel.showAffineTies.SetValue(self.Window.showAffineTies)
+				self.optPanel.UpdateAffineTieStyle()
 
 		if self.config.has_option("applications", "showCoreInfo"):
 			str_temp = self.config.get("applications", "showCoreInfo")
