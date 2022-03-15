@@ -3705,9 +3705,9 @@ class PreferencesPanel():
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowCoreInfo, self.showCoreInfo)
 		self.showDepthLine = wx.CheckBox(viewPanel, -1, "Show line at current depth")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowDepthLine, self.showDepthLine)
-		self.showAffineShiftStrips = wx.CheckBox(viewPanel, -1, "Show affine shift color strips")
+		self.showAffineShiftStrips = wx.CheckBox(viewPanel, -1, "Show shift type color strips")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftStrips, self.showAffineShiftStrips)
-		self.showColorLegend = wx.CheckBox(viewPanel, -1, "Show affine shift color legend")
+		self.showColorLegend = wx.CheckBox(viewPanel, -1, "Show shift type color legend")
 		self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowColorLegend, self.showColorLegend)
 
 		viewSizer.Add(self.showAffineShiftInfo, 0, wx.BOTTOM, 5)
