@@ -551,7 +551,7 @@ class AffineBuilder:
     # Gather all cores that will be shifted by "Shift by [shiftCore] and all cores
     # below" action. Note that the result excludes shiftCore itself.
     def gatherAllCoresBelow(self, fromCore, shiftCore):
-        print("gatherAllCoresBelow: {} -> {}".format(fromCore, shiftCore))
+        # print("gatherAllCoresBelow: {} -> {}".format(fromCore, shiftCore))
         # gather all descendants of shiftCore, if any
         shiftKids = self.affine.getDescendants(shiftCore)
         shiftKids.append(shiftCore) # include shiftCore
@@ -591,14 +591,14 @@ class AffineBuilder:
             for cb in coresBelow:
                 relatedCores.append(cb)
 
-        print("fromCore: {}, relatedCores: {}".format(fromCore, relatedCores))
+        # print("fromCore: {}, relatedCores: {}".format(fromCore, relatedCores))
         relatedCores = list(set(relatedCores)) # remove duplicates
         if fromCore in relatedCores:
             relatedCores.remove(fromCore)
         if shiftCore in relatedCores:
             relatedCores.remove(shiftCore)
 
-        print("gatherAllCoresBelow: {}".format(relatedCores))
+        # print("gatherAllCoresBelow: {}".format(relatedCores))
         return relatedCores
 
     # return list of uppermost core in each hole in list of cores
