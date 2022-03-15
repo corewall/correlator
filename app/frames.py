@@ -431,9 +431,9 @@ class CompositePanel():
 	def OnAdjust(self, evt):
 		sel = self.applyCore.GetSelection()
 		if sel == 0:
-			shiftMethod = TieShiftMethod.CoreAndAll
+			shiftMethod = TieShiftMethod.CoreAndAllBelow
 		elif sel == 1:
-			shiftMethod = TieShiftMethod.CoreAndRelated
+			shiftMethod = TieShiftMethod.CoreAndRelatedBelow
 		elif sel == 2:
 			shiftMethod = TieShiftMethod.CoreOnly
 		self.parent.OnAdjustCore(shiftMethod, self.GetActionType())

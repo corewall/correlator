@@ -3244,9 +3244,9 @@ class DataCanvas(wxBufferedWindow):
 			self.UpdateDrawing()			
 		elif opId in [2,3,4]:
 			if opId == 2:
-				shiftMethod = TieShiftMethod.CoreAndAll
+				shiftMethod = TieShiftMethod.CoreAndAllBelow
 			elif opId == 3:
-				shiftMethod = TieShiftMethod.CoreAndRelated
+				shiftMethod = TieShiftMethod.CoreAndRelatedBelow
 			elif opId == 4:
 				shiftMethod = TieShiftMethod.CoreOnly
 			self.OnAdjustCore(shiftMethod)
@@ -3285,7 +3285,7 @@ class DataCanvas(wxBufferedWindow):
 					if shiftMethod == TieShiftMethod.CoreOnly:
 						s = "Affine shift (core only): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 						self.parent.logFileptr.write(s)
-					elif shiftMethod == TieShiftMethod.CoreAndRelated:
+					elif shiftMethod == TieShiftMethod.CoreAndRelatedBelow:
 						s = "Affine shift (core and related below): hole " + ciA.hole + " core " + ciA.holeCore + ": " + str(datetime.today()) + "\n"
 						self.parent.logFileptr.write(s)
 					else:

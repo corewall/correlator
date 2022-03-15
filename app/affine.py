@@ -265,8 +265,8 @@ class AffineTable:
 
 class TieShiftMethod(Enum):
     CoreOnly = 0
-    CoreAndRelated = 1
-    CoreAndAll = 2
+    CoreAndRelatedBelow = 1
+    CoreAndAllBelow = 2
 
 
 # Wraps AffineTable in logic that manages inter-core effects of SET and TIE operations
@@ -469,8 +469,8 @@ class AffineBuilder:
         if method == TieShiftMethod.CoreOnly:
             ao.infoDict['breaks'] = self.findBreaks(fromCore, core)
             ao.shifts.append(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
-        elif method in [TieShiftMethod.CoreAndRelated, TieShiftMethod.CoreAndAll]:
-            if method == TieShiftMethod.CoreAndRelated:
+        elif method in [TieShiftMethod.CoreAndRelatedBelow, TieShiftMethod.CoreAndAllBelow]:
+            if method == TieShiftMethod.CoreAndRelatedBelow:
                 relatedCores = self.gatherRelatedCores(fromCore, core)
             else:
                 relatedCores = self.gatherAllCoresBelow(fromCore, core)
@@ -972,7 +972,7 @@ class TestAffineBuilder(unittest.TestCase):
     def test_core_and_related(self):
         secsumm = sectionSummary.SectionSummary.createWithFile("testdata/FOO_SectionSummary.csv")
         builder = AffineBuilder.createWithSectionSummary(secsumm)
-        method = TieShiftMethod.CoreAndRelated
+        method = TieShiftMethod.CoreAndRelatedBelow
 
         # no existing ties, tie from A1 > B1 shifts B1 and below
         movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
@@ -1092,7 +1092,7 @@ class TestAffineBuilder(unittest.TestCase):
     def test_core_and_all_below(self):
         secsumm = sectionSummary.SectionSummary.createWithFile("testdata/FOO_SectionSummary.csv")
         builder = AffineBuilder.createWithSectionSummary(secsumm)
-        method = TieShiftMethod.CoreAndAll
+        method = TieShiftMethod.CoreAndAllBelow
 
         # no existing ties, tie from A1 > B1 shifts B1 and below
         movers = builder.gatherAllCoresBelow(acistr("A1"), acistr("B1"))
