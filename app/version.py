@@ -1,5 +1,5 @@
 BaseVersion = "4.0"
-VersionSuffix = "b4"
+VersionSuffix = "b5"
 LongVersionSuffix = ""
 
 def GetShortVersion():
