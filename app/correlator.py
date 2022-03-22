@@ -323,14 +323,20 @@ class MainFrame(wx.Frame):
 		# nothing has changed. spliceManager.dirty implies at least one interval - it's set to
 		# False if the only interval in the splice was deleted.
 		saveSplice = self.spliceManager.dirty or self.spliceManager.count() > 0
-		enableUpdateExisting = self.affineManager.currentAffineFile is not None and self.spliceManager.currentSpliceFile is not None
+		enableUpdateExisting = self.affineManager.currentAffineFile is not None
+		if saveSplice and self.spliceManager.currentSpliceFile is None:
+			enableUpdateExisting = False
+
 		if not enableUpdateExisting:
 			if saveSplice:
 				msg = "Create new affine and splice files?"
 			else:
 				msg = "Create new affine file?"
 		else:
-			msg = "Create new affine and splice, or update existing files?"
+			if saveSplice:
+				msg = "Create new affine and splice, or update existing files?"
+			else:
+				msg = "Create new affine, or update existing file?"
 
 		if saveSplice and not self.DoWarnOnSaveWithSpliceGaps():
 			return
