@@ -604,7 +604,6 @@ class DataCanvas(wxBufferedWindow):
 		self.minData = -1
 		self.coreCount = 0 
 		self.pressedkeyShift = 0
-		self.commandKeyDown = False
 		self.pressedkeyS = 0
 		self.pressedkeyD = 0
 		self.selectedHoleType = "" 
@@ -710,6 +709,7 @@ class DataCanvas(wxBufferedWindow):
 		
 		wx.EVT_MOTION(self, self.OnMotion)
 		wx.EVT_LEFT_DOWN(self, self.OnLMouse)
+		wx.EVT_LEFT_DCLICK(self, self.OnDoubleLeftClick)
 		wx.EVT_RIGHT_DOWN(self, self.OnRMouse)
 		wx.EVT_LEFT_UP(self, self.OnMouseUp)
 		wx.EVT_MOUSEWHEEL(self, self.OnMouseWheel)
@@ -3510,8 +3510,6 @@ class DataCanvas(wxBufferedWindow):
 		if keyid == wx.WXK_ALT:
 			self.showGrid = False 
 			self.UpdateDrawing()
-		elif keyid == wx.WXK_COMMAND:
-			self.commandKeyDown = False
 		elif keyid == wx.WXK_SHIFT:
 			self.pressedkeyShift = 0 
 			self.UpdateDrawing()
@@ -3538,14 +3536,6 @@ class DataCanvas(wxBufferedWindow):
 			self.pressedkeyS = 1 
 		elif keyid == wx.WXK_ALT:
 			self.showGrid = True
-		elif keyid == wx.WXK_COMMAND:
-			# brg 3/12/2022: Currently used only to detect command-click
-			# for selecting a core. Initially tried using WXK_CONTROL so
-			# Mac and Windows could be consistent, but Mac interprets
-			# Control-click as a right-click! Unsure how WXK_COMMAND is
-			# used on Windows...is it the Windows key? Only concerned
-			# with mac for initial 4.0 release. TODO
-			self.commandKeyDown = True
 		elif keyid == wx.WXK_SHIFT:
 			self.pressedkeyShift = 1 
 		elif keyid == wx.WXK_DOWN and self.parent.ScrollMax > 0:
@@ -3984,16 +3974,6 @@ class DataCanvas(wxBufferedWindow):
 						self.currentStartX = rect.GetX()
 						self.currentHole = hole_idx 
 						return
-		
-		# Command-click on core to select it, see self.selectedCore notes in __init__.
-		if self.commandKeyDown:
-			for area in self.DrawData["CoreArea"]:
-				coreInfo, rect, hole_idx = area
-				if rect.Inside(wx.Point(pos[0], pos[1])):
-					self.selectedCore = coreInfo.hole, str(coreInfo.holeCore)
-					return
-			self.selectedCore = None
-			return
 
 		# Drag core from composite to splice area to add to splice.
 		# Disable while scrolling or when there are active composite ties.
@@ -4010,7 +3990,16 @@ class DataCanvas(wxBufferedWindow):
 				self.depthLinePos = self.getDepth(pos[1])
 			else:
 				self.depthLinePos = None
-		
+
+	# select double-clicked core
+	def OnDoubleLeftClick(self, event):
+		pos = event.GetPositionTuple()
+		for area in self.DrawData["CoreArea"]:
+			coreInfo, rect, _ = area
+			if rect.Inside(wx.Point(pos[0], pos[1])):
+				self.selectedCore = coreInfo.hole, str(coreInfo.holeCore)
+				return
+		self.selectedCore = None
 
 	def OnDataChange(self, core, shift):
 		coreInfo = self.findCoreInfoByIndex(core)
