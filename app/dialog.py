@@ -1903,41 +1903,68 @@ class AboutDialog(wx.Dialog):
 
 
 class BackgroundPanel(wx.Panel):
-	def __init__(self, parent, background, panel_size):
-		wx.Panel.__init__(self, parent, -1, size=panel_size, style=wx.WANTS_CHARS)
-		img = wx.Image(background, wx.BITMAP_TYPE_ANY)
-		self.buffer = wx.BitmapFromImage(img)
+	def __init__(self, parent, image):
+		wx.Panel.__init__(self, parent, -1, size=(image.GetWidth(), image.GetHeight()), style=wx.WANTS_CHARS)
+		self.buffer = wx.BitmapFromImage(image)
 		dc = wx.BufferedDC(wx.ClientDC(self), self.buffer)
 		self.Bind(wx.EVT_PAINT, self.OnPaint)
+
+	@classmethod
+	def createWithImage(cls, parent, imagefile):
+		image = wx.Image(imagefile, wx.BITMAP_TYPE_ANY)
+		return cls(parent, image)
 
 	def OnPaint(self, evt):
 		dc = wx.BufferedPaintDC(self, self.buffer)
 
+
 class SplashScreen(wx.Dialog):
 	def __init__(self, parent, id, user, version):
-		panel_size = (800, 380) if platform_name[0] != "Windows" else (800, 390) # extra space for JRSO logo on Win
-		wx.Dialog.__init__(self, parent, id, "Correlator " + version, size=panel_size, style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
+		wx.Dialog.__init__(self, parent, id, "Correlator " + version, style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
-		panel = BackgroundPanel(self, 'images/corewall_suite.jpg', panel_size)
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		panel = BackgroundPanel.createWithImage(self, 'images/splashscreen.png')
 
 		self.version = version
-		wx.StaticText(self, -1, 'COMPOSITE AND SPLICE', (60,30))# CORE-LOG INTEGRATION, AGE MODEL', (60, 30))
 
-		wx.StaticText(self, -1, 'User Name: ', (250, 220))
-		self.name = wx.TextCtrl(self, -1, user, (340, 220), size=(150, 25))
+		controlSizer = wx.BoxSizer(wx.HORIZONTAL)
+		usernameText = wx.StaticText(self, -1, 'Username (optional):')
+		self.name = wx.TextCtrl(self, -1, user)
 
-		okBtn = wx.Button(panel, -1, "Start", (500, 213), size=(80, 30))
+		okBtn = wx.Button(self, -1, "Start")
+		okBtn.SetBackgroundColour(wx.GREEN)
+		okBtn.SetDefault()
 		self.Bind(wx.EVT_BUTTON, self.OnSTART, okBtn)
 
 		self.user = user
-		if platform_name[0] == "Windows":
-			cancelBtn = wx.Button(panel, wx.ID_CANCEL, "Cancel", (580, 213), size=(80, 30))
+		cancelBtn = wx.Button(self, wx.ID_CANCEL, "Close")
 
-		aboutBtn = wx.Button(panel, -1, "About", (50, 290), size=(80, 30))
+		aboutBtn = wx.Button(self, -1, "About", size=(60,-1))
 		self.Bind(wx.EVT_BUTTON, self.OnABOUT, aboutBtn)
 
 		wx.EVT_KEY_DOWN(self.name, self.OnPanelChar)
 		panel.Bind(wx.EVT_CHAR, self.OnPanelChar)
+
+		userSizer = wx.BoxSizer(wx.HORIZONTAL)
+		userSizer.Add(usernameText, 0, wx.ALIGN_CENTER_VERTICAL)
+		userSizer.Add(self.name, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+
+		okCloseSizer = wx.BoxSizer(wx.HORIZONTAL)
+		okCloseSizer.Add(okBtn, 1)
+		okCloseSizer.Add(cancelBtn, 1, wx.LEFT, 10)
+
+		aboutSizer = wx.BoxSizer(wx.HORIZONTAL)
+		aboutSizer.AddStretchSpacer()
+		aboutSizer.Add(aboutBtn, 0, wx.ALIGN_RIGHT)
+
+		controlSizer.Add(userSizer, 1)
+		controlSizer.Add(okCloseSizer, 1, wx.ALIGN_CENTER)
+		controlSizer.Add(aboutSizer, 1)
+		
+		sizer.Add(panel, 1, wx.EXPAND)
+		sizer.Add(controlSizer, 0, wx.ALL | wx.EXPAND, 10)
+		self.SetSizerAndFit(sizer)
+
 
 	def OnABOUT(self, event):
 		dlg = AboutDialog(self, self.version)
@@ -1961,6 +1988,7 @@ class SplashScreen(wx.Dialog):
 			self.EndModal(wx.ID_CANCEL)
 		else:
 			event.Skip() # allow unhandled key events to propagate up the chain
+
 			
 class MockApp(wx.App):
 	def __init__(self):
