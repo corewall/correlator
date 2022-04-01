@@ -60,7 +60,7 @@ def opj(path):
 class MainFrame(wx.Frame):
 	def __init__(self, winsize, user):
 		wx.Frame.__init__(self, None, -1, "Correlator " + vers.ShortVersion,
-						 wx.Point(0,100), winsize, style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT)
+						 wx.Point(0,100), winsize, style=wx.DEFAULT_FRAME_STYLE)
 
 		self.user = user
 		self.Width = winsize[0]
