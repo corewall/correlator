@@ -631,6 +631,8 @@ class DataFrame(wx.Panel):
 	# Update imported images with contents of original image import dir(s)
 	def UpdateCoreImages(self, suppressSuccess=False):
 		siteName = self.GetSelectedSiteName()
+		if siteName not in self.imageImportPaths:
+			return # no images have been imported for this site, bail
 		dbImgPath = os.path.join(self.parent.DBPath, 'db', siteName, IMG_DB_DIR)
 		for path in self.imageImportPaths[siteName]:
 			print("Updating images from path {}".format(path))
