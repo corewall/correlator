@@ -3,6 +3,7 @@
 .DS_Store
 *.[ao]
 *.pyc
+*.bak
 *~
 .project
 .pydevproject
@@ -10,6 +11,8 @@ libcore.dylib
 py_correlator.so
 
 # ignored directories
+ve_py3/
+venv_py3*/
 .vscode/
 app/.vscode/
 app/.eggs/
