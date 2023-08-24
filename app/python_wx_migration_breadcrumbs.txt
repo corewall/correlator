@@ -1,0 +1,21 @@
+February 10 2021
+Breadcrumbs on upgrading Correlator from Python 2 to 3 and wxPython 2.9 to 4+ ("Phoenix")
+
+### wxPython ###
+Migration guide here: https://wxpython.org/Phoenix/docs/html/MigrationGuide.html
+
+TreeListCtrl is really HyperTreeList in disguise. Can no longer use the "IsOk()" method.
+Instead, if a TreeListItem returned from e.g. tree.GetFirstChild() is not None, it's valid.
+Otherwise it's not. Need to replace all IsOk() calls.
+
+August 22 2023
+Getting back into this and trying to remember what the heck I was doing.
+The old VE seems to be broken...I still don't understand why this happens, but pip
+is unavailable. Created a new VE that's now Python 3.10 (old one was 3.9). This
+resulted in some new issues related to int vs float in DC.DrawText() etc. 
+
+https://github.com/wxWidgets/Phoenix/issues/2038
+
+Unfortunately it seems that DrawText() itself (and other DrawContext methods) didn't get fixed,
+so we'll have to convert to int manually. Hopefully a million other f'ns won't need the same treatment
+but I have a bad feeling they will.
