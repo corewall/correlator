@@ -101,6 +101,7 @@ class wxBufferedWindow(wx.Window):
         be updated.
 
         """
+        return # this crashes things atm
         # update the buffer
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
