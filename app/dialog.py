@@ -13,7 +13,7 @@ import wx
 import wx.grid
 import wx.lib.sheet as sheet
 from wx.lib import plot
-import random, sys, os, re, time, ConfigParser, string
+import random, sys, os, re, time, string
 import numpy
 
 import smooth

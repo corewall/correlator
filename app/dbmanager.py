@@ -13,7 +13,7 @@ import imagesize
 import wx 
 import wx.gizmos as gizmos
 from wx.lib import plot
-import random, sys, os, re, time, ConfigParser, string
+import random, sys, os, re, time, string
 import re
 from datetime import datetime
 import xml.sax
