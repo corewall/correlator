@@ -22,7 +22,6 @@ elif platform_name[5] == "powerpc":
 import wx
 from wx.lib import plot
 import pandas
-import UniversalAnalytics
 
 import random, sys, re, time, ConfigParser, string, uuid, pickle
 import getpass
