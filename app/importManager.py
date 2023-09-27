@@ -6,18 +6,18 @@ from __future__ import print_function
 import platform
 
 if platform.uname()[0] == "Windows":
-	# 10/16/2013 brg: On Windows, we need both 32- and 64-bit builds and thus must import the
-	# correct flavor of py_correlator.  This seems to be the most reliable way to determine
-	# whether we're running against 32- or 64-bit Python.
-	import sys
-	is64bit = sys.maxsize > 2**32
+    # 10/16/2013 brg: On Windows, we need both 32- and 64-bit builds and thus must import the
+    # correct flavor of py_correlator.  This seems to be the most reliable way to determine
+    # whether we're running against 32- or 64-bit Python.
+    import sys
+    is64bit = sys.maxsize > 2**32
 
-	if is64bit == True:
-		print("Windows 64-bit Python detected, importing py_correlator64")
-		import py_correlator64 as py_correlator
-	else:
-		print("Windows 32-bit Python detected, importing py_correlator (32-bit)")
-		import py_correlator
+    if is64bit == True:
+        print("Windows 64-bit Python detected, importing py_correlator64")
+        import py_correlator64 as py_correlator
+    else:
+        print("Windows 32-bit Python detected, importing py_correlator (32-bit)")
+        import py_correlator
 else:
-	import py_correlator
-	print("OS X detected, importing py_correlator")
+    import py_correlator
+    print("OS X detected, importing py_correlator")
