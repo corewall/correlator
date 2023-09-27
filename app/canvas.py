@@ -82,7 +82,7 @@ class wxBufferedWindow(wx.Window):
         # when the window size is adjusted before the data canvas is displayed.
         # This isn't an ideal way to fix this, but triggering wxBufferedWindow.OnSize()
         # from an EVT_SIZE in correlator.py throws errors about self._Buffer not existing.
-        tup = self.GetClientSizeTuple()
+        tup = self.GetClientSize()
         tabWidth = self.sideTabSize if self.CLOSEFLAG == 0 else 45
         if (self.Width + tabWidth, self.Height) != tup:
             self.OnSize(None)
@@ -92,7 +92,7 @@ class wxBufferedWindow(wx.Window):
     def OnSize(self, event):
         # The Buffer init is done here, to make sure the buffer is always
         # the same size as the Window
-        self.Width, self.Height = self.GetClientSizeTuple()
+        self.Width, self.Height = self.GetClientSize()
                 
         if self.CLOSEFLAG == 1:
             self.Width = self.Width - 45 
@@ -2336,7 +2336,7 @@ class DataCanvas(wxBufferedWindow):
     def Draw(self, dc):
         beginDrawTime = time.clock()
 
-        dc.BeginDrawing()
+        #dc.BeginDrawing()
         dc.SetBackground(wx.Brush(self.colorDict['background']))
         dc.Clear() # make sure you clear the bitmap!
 
@@ -2488,7 +2488,7 @@ class DataCanvas(wxBufferedWindow):
             dc.DrawText(str(crudeFPS) + "fps", 0, 0)
             # print("Draw time = {}s".format(endDrawTime - beginDrawTime))
 
-        dc.EndDrawing()
+        # dc.EndDrawing()
 
     def LayoutHoleColumns(self):
         columnSpaceX = self.compositeX - self.minScrollRange + self.layoutManager.plotLeftMargin

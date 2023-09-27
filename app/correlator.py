@@ -2603,7 +2603,7 @@ class MainFrame(wx.Frame):
         return result
 
     def GetCorrelatorWindowSize(self):
-        w, h = self.GetClientSizeTuple()
+        w, h = self.GetClientSize()
         return w, h - self.statusBarHeight
 
     def LoadPreferencesAndInitDrawData(self, cfgfile, new_flag):
