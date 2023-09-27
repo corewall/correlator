@@ -1577,9 +1577,9 @@ class AutoPanel(object):
             buttonsize = 285
             
         if self.parent.Height > 768 :
-            self.fileList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,95), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)
+            self.fileList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,95), style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)
         else :
-            self.fileList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,65), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)
+            self.fileList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,65), style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)
 
         vbox.Add(self.fileList, 0, wx.BOTTOM, 3)
         self.fileList.SetForegroundColour(wx.BLACK)
@@ -1624,10 +1624,10 @@ class AutoPanel(object):
             buttonsize = 285
             
         if self.parent.Height > 768 :
-            self.resultList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,130), "", style=wx.LB_NEEDED_SB)
+            self.resultList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,130), style=wx.LB_NEEDED_SB)
         else :
             #self.resultList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,100), "", style=wx.LB_NEEDED_SB)
-            self.resultList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,60), "", style=wx.LB_NEEDED_SB)
+            self.resultList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,60), style=wx.LB_NEEDED_SB)
 
         self.mainPanel.Bind(wx.EVT_LISTBOX, self.OnSelectRate, self.resultList)
         vbox.Add(self.resultList, 0, wx.BOTTOM, 3)
@@ -2004,7 +2004,7 @@ class ELDPanel(object):
         buttonsize = 300
         if platform_name[0] == "Windows" :
             buttonsize = 285
-        self.fileList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,105), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB)
+        self.fileList = wx.ListBox(self.mainPanel, -1, (0,0),(buttonsize,105), style=wx.LB_HSCROLL|wx.LB_NEEDED_SB)
         self.mainPanel.Bind(wx.EVT_LISTBOX, self.OnSelectTie, self.fileList)
         vbox.Add(self.fileList, 0, wx.BOTTOM, 3)
 
@@ -2285,7 +2285,7 @@ class AgeDepthPanel(object):
             buttonsize = 285
             
         if self.parent.Height > 768 :
-            self.ageList = wx.ListBox(self.mainPanel, -1, (0, 0), (buttonsize,220), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)	 
+            self.ageList = wx.ListBox(self.mainPanel, -1, (0, 0), (buttonsize,220), style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)	 
             font = self.ageList.GetFont()
             font.SetFamily(wx.FONTFAMILY_ROMAN)
             self.ageList.SetFont(font)
@@ -2293,7 +2293,7 @@ class AgeDepthPanel(object):
 
         else :
             #self.ageList = wx.ListBox(self.mainPanel, -1, (0, 0), (buttonsize,170), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)	 
-            self.ageList = wx.ListBox(self.mainPanel, -1, (0, 0), (buttonsize,120), "", style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)	 
+            self.ageList = wx.ListBox(self.mainPanel, -1, (0, 0), (buttonsize,120), style=wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_EXTENDED)	 
             font = self.ageList.GetFont()
             font.SetFamily(wx.FONTFAMILY_ROMAN)
             self.ageList.SetFont(font)
@@ -3646,7 +3646,7 @@ class PreferencesPanel(object):
         varScalePanel = wx.Panel(self.mainPanel, -1)
         varScaleSizer = wx.StaticBoxSizer(wx.StaticBox(varScalePanel, -1, 'Data range'), orient=wx.VERTICAL)
 
-        self.variableChoice = wx.Choice(varScalePanel, -1, (0,0), (-1,-1), (""))
+        self.variableChoice = wx.Choice(varScalePanel, -1, (0,0), (-1,-1))
         varScalePanel.Bind(wx.EVT_CHOICE, self.SetTYPE, self.variableChoice)
 
         varSizer = wx.BoxSizer(wx.HORIZONTAL)
