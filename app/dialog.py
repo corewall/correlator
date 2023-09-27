@@ -139,7 +139,7 @@ class MessageDialogOLD(wx.Dialog):
         self.Center()
         vbox_top = wx.BoxSizer(wx.VERTICAL)
         panel1 = wx.Panel(self, -1, style = wx.WANTS_CHARS)
-        sizer = wx.FlexGridSizer(1, 2)
+        sizer = wx.FlexGridSizer(1, 2, gap=(0,0))
         if title == "Error": 
             bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/ErrorCircle-32x32.png'))
             sizer.Add(bmp, 0, wx.LEFT | wx.TOP, 9)
@@ -157,7 +157,7 @@ class MessageDialogOLD(wx.Dialog):
             okBtn = wx.Button(self, wx.ID_OK, "OK")
             vbox_top.Add(okBtn, 0, wx.LEFT, 110)
         else:
-            grid = wx.GridSizer(1,2)
+            grid = wx.GridSizer(1,2, gap=(0,0))
             okBtn = wx.Button(self, wx.ID_OK, "OK")
             grid.Add(okBtn)
             cancelBtn = wx.Button(self, wx.ID_CANCEL, "Cancel")
@@ -183,7 +183,7 @@ class Message3Button(wx.Dialog):
         self.Center()
         vbox_top = wx.BoxSizer(wx.VERTICAL)
         panel1 = wx.Panel(self, -1)
-        sizer = wx.FlexGridSizer(1, 2)
+        sizer = wx.FlexGridSizer(1, 2, gap=(0,0))
         bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/help-32x32.png'))
         sizer.Add(bmp, 0, wx.LEFT | wx.TOP, 9)
         sizer.Add(wx.StaticText(panel1, -1, msg), 0, wx.LEFT | wx.TOP | wx.BOTTOM, 15)
@@ -295,7 +295,7 @@ class CustomDataTypeDialog(wx.Dialog):
         self.register = wx.CheckBox(self, -1, 'Add Data Type to List')
         vbox.Add(self.register, 0, wx.ALL, 10)
 
-        grid = wx.GridSizer(1,2)
+        grid = wx.GridSizer(1,2, gap=(0,0))
         # grid.Add(self.register)
         okBtn = wx.Button(self, wx.ID_OK, "OK")
         grid.Add(okBtn)
@@ -324,7 +324,7 @@ class EditBoxDialog(wx.Dialog):
 
         vbox_top.Add(self.txt, 0, wx.LEFT | wx.TOP | wx.BOTTOM, 15)
 
-        grid = wx.GridSizer(1,2)
+        grid = wx.GridSizer(1,2, gap=(0,0))
         okBtn = wx.Button(self, wx.ID_OK, "OK")
         grid.Add(okBtn)
         cancelBtn = wx.Button(self, wx.ID_CANCEL, "Cancel")
@@ -354,7 +354,7 @@ class StratTypeDialog(wx.Dialog):
 
         vbox_top.Add(self.types, 0, wx.LEFT | wx.TOP, 25)
 
-        grid = wx.GridSizer(1,2)
+        grid = wx.GridSizer(1,2, gap=(0,0))
         okBtn = wx.Button(self, wx.ID_OK, "Chnage")
         grid.Add(okBtn, 0, wx.LEFT, 50)
         cancelBtn = wx.Button(self, wx.ID_CANCEL, "Cancel")
@@ -490,7 +490,7 @@ class SaveDialog(wx.Dialog):
         self.Center()
         vbox_top = wx.BoxSizer(wx.VERTICAL)
         panel1 = wx.Panel(self, -1)
-        sizer = wx.FlexGridSizer(1, 2)
+        sizer = wx.FlexGridSizer(1, 2, gap=(0,0))
         bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/help-32x32.png'))
         sizer.Add(bmp, 0, wx.LEFT | wx.TOP, 9)
         sizer.Add(wx.StaticText(panel1, -1, msg), 0, wx.LEFT | wx.TOP | wx.BOTTOM, 15)
@@ -1278,7 +1278,7 @@ class CorrParamsDialog(wx.Dialog):
         self.minDepthStep = minDepthStep
         
         paramPanel = wx.Panel(self, -1)
-        sz = wx.FlexGridSizer(3, 2, hgap=5, vgap=5)
+        sz = wx.FlexGridSizer(3, 2, gap=(5,5))
         sz.Add(wx.StaticText(paramPanel, -1, 'Interpolated Depth Step (m):'), 0, wx.ALIGN_CENTER_VERTICAL)
         self.depthStep = wx.TextCtrl(paramPanel, -1, str(depthStep), size=(70,-1))
         sz.Add(self.depthStep, 1)
@@ -1325,7 +1325,7 @@ class DepthRangeDialog(wx.Dialog):
         
         # min/max edit controls
         ctrlPanel = wx.Panel(self, -1)
-        sz = wx.FlexGridSizer(1, 4, hgap=5)
+        sz = wx.FlexGridSizer(1, 4, gap=(5,0))
         sz.Add(wx.StaticText(ctrlPanel, -1, "min:"), 0, wx.ALIGN_CENTER_VERTICAL)
         self.minField = wx.TextCtrl(ctrlPanel, -1, min, size=(70,-1))
         sz.Add(self.minField, 0)
@@ -1885,7 +1885,7 @@ class AboutDialog(wx.Dialog):
 
         vertSizer.Add(wx.StaticText(self, -1, 'Organizations:'), 0, wx.LEFT, 10)
         vertSizer.Add((5,5), 0)
-        grid = wx.FlexGridSizer(cols=2, rows=3, hgap=20, vgap=10)
+        grid = wx.FlexGridSizer(2, 3, (20,10))
         grid.Add(wx.HyperlinkCtrl(self, -1, 'National Science Foundation', 'https://www.nsf.gov/'))
         grid.Add(wx.HyperlinkCtrl(self, -1, 'CSD Facility (University of Minnesota)', 'https://cse.umn.edu/csd'))
         grid.Add(wx.HyperlinkCtrl(self, -1, 'IODP/JR Science Operator', 'https://iodp.tamu.edu/'))
