@@ -2,6 +2,7 @@
 
 ## For Mac-OSX
 #/usr/bin/env pythonw
+from __future__ import print_function
 import platform
 platform_name = platform.uname()
 

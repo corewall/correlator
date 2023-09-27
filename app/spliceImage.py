@@ -1,3 +1,4 @@
+from __future__ import print_function
 # December 21 2021
 # spliceImage.py
 # Logic related to export of spliced images.

@@ -1,3 +1,4 @@
+from __future__ import print_function
 #_!/usr/bin/env python
 
 ## For Mac-OSX
@@ -909,7 +910,7 @@ class DataCanvas(wxBufferedWindow):
 				result = ci
 				break
 		if result == None:
-			print "Can't find matching coreinfo for index " + str(coreIndex)
+			print("Can't find matching coreinfo for index " + str(coreIndex))
 		return result
 
 	def findCoreInfoByHoleCore(self, hole, core):
@@ -919,7 +920,7 @@ class DataCanvas(wxBufferedWindow):
 				result = ci
 				break
 		if result == None:
-			print "Can't find matching coreinfo for hole " + str(hole) + ", core (hole index) " + str(core)
+			print("Can't find matching coreinfo for hole " + str(hole) + ", core (hole index) " + str(core))
 		return result
 
 	def findCoreInfoByHoleCoreType(self, hole, core, datatype):
@@ -932,7 +933,7 @@ class DataCanvas(wxBufferedWindow):
 				result = ci
 				break
 		if result == None:
-			print "Can't find matching coreinfo for hole " + str(hole) + ", core (hole index) " + str(core) + ", type " + str(datatype)
+			print("Can't find matching coreinfo for hole " + str(hole) + ", core (hole index) " + str(core) + ", type " + str(datatype))
 		return result
 
 	def findCoreInfoByHoleCount(self, holeCount):
@@ -942,7 +943,7 @@ class DataCanvas(wxBufferedWindow):
 				result = ci
 				break
 		if result == None:
-			print "Can't find matching coreinfo for holeCount " + str(holeCount)
+			print("Can't find matching coreinfo for holeCount " + str(holeCount))
 		return result
 	
 	def getCorePointData(self, hole, core, datatype, forceUnsmooth=False):
@@ -988,7 +989,7 @@ class DataCanvas(wxBufferedWindow):
 						result = CoreInfo(0, curHole[0][0], curHole[0][1], curHole[0][7], curCore[0], curCore[3], curCore[4], curCore[10][0][0], curCore[10][-1][0], curCore[6], datatype, curCore[8], 0, curCore[10])
 						break
 		if result == None:
-			print "V2: Can't find matching CoreInfo for hole " + str(hole) + ", core (hole index) " + str(core)
+			print("V2: Can't find matching CoreInfo for hole " + str(hole) + ", core (hole index) " + str(core))
 		return result
 
 	# Given DataCanvas.HoleData list, return dict with elements of form
@@ -1680,7 +1681,7 @@ class DataCanvas(wxBufferedWindow):
 			self.DrawTieShiftArrow(dc, arrowRect, drawData)
 
 	def PrintHoleSummary(self):
-		print "{} holes in self.HoleData".format(len(self.HoleData))
+		print("{} holes in self.HoleData".format(len(self.HoleData)))
 		for h in self.HoleData:
 			hole = h[0] # hole data is added to a silly list where it's the only member, pull it out now
 			# brg 11/18/2015: 
@@ -1689,19 +1690,19 @@ class DataCanvas(wxBufferedWindow):
 			# want to track this in the context of a hole. May be a bug, but I don't think that data is used much if at all.
 			# True hole min/max depths are available in the data returned from C++ side.
 			hi = hole[0]
-			print "hole: {}-{} {} type = {}, contains {} cores".format(hi[1], hi[0], hi[7], hi[2], hi[8])
+			print("hole: {}-{} {} type = {}, contains {} cores".format(hi[1], hi[0], hi[7], hi[2], hi[8]))
 			for core in hole[1:]:
 				ci = self.findCoreInfoByHoleCoreType(hi[7], core[0], hi[2])
-				print ci
-				print core[:10]
+				print(ci)
+				print(core[:10])
 				
 				if self.parent.sectionSummary is not None:
 					if self.parent.sectionSummary.containsCore(hi[0], hi[7], core[0]):
-						print "Found in section summary"
+						print("Found in section summary")
 					else:
-						print "Did NOT find in section summary"
+						print("Did NOT find in section summary")
 								
-			print "##########################################\n\n"
+			print("##########################################\n\n")
 			
 	def GetHoleSite(self, hole):
 		site = None
@@ -1875,14 +1876,14 @@ class DataCanvas(wxBufferedWindow):
 			dc.SetPen(wx.Pen(self.colorDict['spliceSel'], 2)) if intervalSelected else dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
 			dc.DrawLines(screenPoints) if (len(screenPoints) > 1) else dc.DrawPoint(screenPoints[0][0], screenPoints[0][1])	
 		else:
-			print "Can't draw {}, it contains 0 points".format(interval.coreinfo.getName())
+			print("Can't draw {}, it contains 0 points".format(interval.coreinfo.getName()))
 			
 		if drawUnsmoothed:
 			if len(usScreenPoints) >= 1:
 				dc.SetPen(wx.Pen(wx.WHITE, 1)) 
 				dc.DrawLines(usScreenPoints) if (len(usScreenPoints) > 1) else dc.DrawPoint(usScreenPoints[0][0], usScreenPoints[0][1])	
 			else:
-				print "Can't draw unsmoothed {} data over smoothed, it contains 0 points".format(interval.coreinfo.getName())
+				print("Can't draw unsmoothed {} data over smoothed, it contains 0 points".format(interval.coreinfo.getName()))
 
 	def DrawSpliceIntervalImages(self, dc, interval, startX):
 		interval_top_y = self.startDepthPix + (interval.getTop() - self.rulerStartDepth) * self.pixPerMeter
@@ -2013,7 +2014,7 @@ class DataCanvas(wxBufferedWindow):
 	def nearestDataPointAbove(self, coredata, searchDepth):
 		ptsabove = [pt for pt in coredata if pt[0] <= searchDepth]
 		if len(ptsabove) == 0:
-			print "Couldn't find point above in coredata"
+			print("Couldn't find point above in coredata")
 			return coredata[0]
 		return max(ptsabove, key=lambda pt:pt[0])
 	
@@ -2021,7 +2022,7 @@ class DataCanvas(wxBufferedWindow):
 	def nearestDataPointBelow(self, coredata, searchDepth):
 		ptsbelow = [pt for pt in coredata if pt[0] >= searchDepth]
 		if len(ptsbelow) == 0:
-			print "Couldn't find point below in coredata"
+			print("Couldn't find point below in coredata")
 			return coredata[-1]
 		return min(ptsbelow, key=lambda pt:pt[0])
 	
@@ -3051,7 +3052,7 @@ class DataCanvas(wxBufferedWindow):
 
 	def ApplySplice(self, tieIndex):
 		if tieIndex < 0:
-			print "ApplySplice: invalid tie index {}".format(tieIndex)
+			print("ApplySplice: invalid tie index {}".format(tieIndex))
 			return
 
 		spliceTieA = self.SpliceTieData[tieIndex] # tie on core being added to splice
@@ -3425,7 +3426,7 @@ class DataCanvas(wxBufferedWindow):
 			self.parent.ParseSpliceData(ret, True)
 			ret = "" 
 		else:
-			print "No py_correlator splice data"
+			print("No py_correlator splice data")
 
 		self.UpdateDrawing()
 
@@ -4731,7 +4732,7 @@ class DataCanvas(wxBufferedWindow):
 			try: # attempt to parse evalResult into datapoints for eval graph
 				self.parent.OnAddFirstGraph(evalResult, depth, depth)
 			except ValueError:
-				print "Error parsing evalcoef() results, do cores have data at depth {}?".format(depth)
+				print("Error parsing evalcoef() results, do cores have data at depth {}?".format(depth))
 				return
 			
 			if t1 != t2: # if intervals' datatypes differ, plot eval for second type
@@ -4739,7 +4740,7 @@ class DataCanvas(wxBufferedWindow):
 					evalResult = self.EvaluateCorrelation(t2, h1, int(c1), depth, t2, h2, int(c2), depth)
 					self.parent.OnAddGraph(evalResult, depth, depth)
 				except ValueError:
-					print "Error parsing evalcoef() results for mixed datatypes, do cores have data at depth {}?".format(depth)
+					print("Error parsing evalcoef() results for mixed datatypes, do cores have data at depth {}?".format(depth))
 					return
 			
 			self.parent.OnUpdateGraph()

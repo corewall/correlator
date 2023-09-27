@@ -1,5 +1,6 @@
 #!python.exe
 
+from __future__ import print_function
 import copy
 
 import platform
@@ -56,7 +57,7 @@ global_logFile = None
 
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
-	return apply(os.path.join, tuple(path.split('/')))
+	return os.path.join(*tuple(path.split('/')))
 
 class MainFrame(wx.Frame):
 	def __init__(self, winsize, user):
@@ -820,15 +821,15 @@ class MainFrame(wx.Frame):
 			if self.Window.HoleData != []: 
 				try:
 					self.client.send("delete_all\n")
-				except Exception, E:
-					print "[DEBUG] Disconnect to the corelyzer"
+				except Exception as E:
+					print("[DEBUG] Disconnect to the corelyzer")
 			try:
 				self.client.send("quit\n")
-			except Exception, E:
-				print "[DEBUG] Disconnect to the corelyzer"
+			except Exception as E:
+				print("[DEBUG] Disconnect to the corelyzer")
 			self.client.close()
 			self.client = None
-			print "[DEBUG] Close connection to Corelyzer"
+			print("[DEBUG] Close connection to Corelyzer")
 
 		if self.CurrentDir != '' and self.UnsavedChanges():
 			ret = self.OnShowMessage("About", "Do you want to save changes?", 2)
@@ -1235,7 +1236,7 @@ class MainFrame(wx.Frame):
 			#if os.access(path + "/log", os.F_OK) == False:
 			if os.path.exists(path + "/log") == False:
 				#os.mkdir(path + "/log")
-				print "no log dir, trying to create..."
+				print("no log dir, trying to create...")
 				os.makedirs(path + "/log")
 
 			if self.logFileptr != None:
@@ -1401,8 +1402,8 @@ class MainFrame(wx.Frame):
 			if event != None and self.client != None:
 				try:
 					self.client.send("delete_all\n")
-				except Exception, E:
-					print "[DEBUG] Disconnect to the corelyzer"
+				except Exception as E:
+					print("[DEBUG] Disconnect to the corelyzer")
 					self.client.close()
 					self.client = None
 		self.RawData = ""
@@ -1707,7 +1708,7 @@ class MainFrame(wx.Frame):
 
 								active = True
 								self.spliceDepthB = depth
-							except Exception, E:
+							except Exception as E:
 								#print "[DEBUG] Disconnect to the corelyzer"
 								self.client.close()
 								self.client = None
@@ -1718,7 +1719,7 @@ class MainFrame(wx.Frame):
 								self.client.send("split_section\t"+self.leg+"\t"+self.site+"\t"+data[0]+"\t"+data[1]+"\t"+data[2]+"\t"+data[3]+"\t"+data[6]+"\t"+data[7]+"\t"+str(temp_depth)+ "\t" + data[7]+"\n")
 								active = True
 								self.spliceDepthA = depth
-							except Exception, E:
+							except Exception as E:
 								#print "[DEBUG] Disconnect to the corelyzer"
 								self.client.close()
 								self.client = None
@@ -1731,7 +1732,7 @@ class MainFrame(wx.Frame):
 							else:
 								self.client.send("delete_section\t"+self.leg+"\t"+self.site+"\t"+data[0]+"\t"+data[1]+"\t"+data[2]+"\t"+data[3]+"\t"+ data[6] + "\t" + data[7] + "\n")
 								active = True
-						except Exception, E:
+						except Exception as E:
 							#print "[DEBUG] Disconnect to the corelyzer"
 							self.client.close()
 							self.client = None
@@ -1753,7 +1754,7 @@ class MainFrame(wx.Frame):
 								self.client.send("cut_interval_to_new_track\t"+self.leg+"\t"+self.site+"\t"+data[0]+"\t"+data[1]+"\t"+data[2]+"\t"+data[3]+"\t"+ data[6] + "\t" + data[7] + "\tspiliced\n")
 
 								active = True
-							except Exception, E:
+							except Exception as E:
 								#print "[DEBUG] Disconnect to the corelyzer"
 								self.client.close()
 								self.client = None
@@ -1772,7 +1773,7 @@ class MainFrame(wx.Frame):
 							if type == "split":
 								self.client.send("cut_interval_to_new_track\t"+self.leg+"\t"+self.site+"\t"+data[0]+"\t"+data[1]+"\t"+data[2]+"\t"+data[3]+"\t"+ data[6] + "\t" + data[7] + "\tspiliced\n")
 								active = True
-						except Exception, E:
+						except Exception as E:
 							#print "[DEBUG] Disconnect to the corelyzer"
 							self.client.close()
 							self.client = None
@@ -1797,7 +1798,7 @@ class MainFrame(wx.Frame):
 			#print "[DEBUG] send to Corelyzer: " + cmd
 			try:
 				self.client.send(cmd)
-			except Exception, E:
+			except Exception as E:
 				#print "[DEBUG] Disconnect to the corelyzer"
 				self.client.close()
 				self.client = None
@@ -1813,8 +1814,8 @@ class MainFrame(wx.Frame):
 			#print "[DEBUG] send to Corelyzer: "  + str(cmd)
 			try:
 				self.client.send(cmd)
-			except Exception, E:
-				print "[DEBUG] Disconnect to the corelyzer"
+			except Exception as E:
+				print("[DEBUG] Disconnect to the corelyzer")
 				self.client.close()
 				self.client = None
 
@@ -1830,8 +1831,8 @@ class MainFrame(wx.Frame):
 				#print "[DEBUG] send to Corelyzer: " + cmd
 				try:
 					self.client.send(cmd)
-				except Exception, E:
-					print "[DEBUG] Disconnect to the corelyzer"
+				except Exception as E:
+					print("[DEBUG] Disconnect to the corelyzer")
 					self.client.close()
 					self.client = None
 				hold_dlg = dialog.HoldDialog(self)
@@ -1871,8 +1872,8 @@ class MainFrame(wx.Frame):
 
 			try:
 				self.client.send(msg)
-			except Exception, E:
-				print "[DEBUG] Disconnect to the corelyzer"
+			except Exception as E:
+				print("[DEBUG] Disconnect to the corelyzer")
 				self.client.close()
 				self.client = None
 
@@ -3607,7 +3608,7 @@ class SpliceController:
 	def save(self, filepath):
 		# better to create dependencies on SectionSummary and a non-existent "HoleDatabase" class, though
 		# HoleData will do...though we only need it for affine stuff, so possibly an AffineManager?
-		print "Saving splice to {}".format(filepath)
+		print("Saving splice to {}".format(filepath))
 		
 		rows = []
 		
@@ -3632,7 +3633,7 @@ class SpliceController:
 				topDepth = secsumm.getSectionTop(site, hole, core, topSection)
 				topOffset = round((mbsfTop - topDepth) * 100.0, 1) # section depth in cm
 			else:
-				print "Skipping, couldn't find top section at top CSF depth {}".format(mbsfTop)
+				print("Skipping, couldn't find top section at top CSF depth {}".format(mbsfTop))
 				continue
 			
 			mbsfBot = round(si.getBot() - offset, 3)
@@ -3644,7 +3645,7 @@ class SpliceController:
 				botDepth = secsumm.getSectionTop(site, hole, core, botSection)
 				botOffset = round((mbsfBot - botDepth) * 100.0, 1) # section depth in cm
 			else:
-				print "Skipping, couldn't find section at bottom CSF depth {}".format(mbsfBot)
+				print("Skipping, couldn't find section at bottom CSF depth {}".format(mbsfBot))
 				continue
 			
 			coreType = secsumm.getSectionCoreType(site, hole, core, botSection)
@@ -3691,10 +3692,10 @@ class SpliceController:
 			
 			# skip invalid intervals?
 			if intervalTop == previousAffBot:
-				print "{}: top ({}) == bot ({}), interval has length zero, skipping".format(coreinfo.getHoleCoreStr(), intervalTop, previousAffBot)
+				print("{}: top ({}) == bot ({}), interval has length zero, skipping".format(coreinfo.getHoleCoreStr(), intervalTop, previousAffBot))
 				continue
 			
-			print "creating interval for {}: {} - {}".format(coreinfo.getHoleCoreStr(), intervalTop, previousAffBot)
+			print("creating interval for {}: {} - {}".format(coreinfo.getHoleCoreStr(), intervalTop, previousAffBot))
 			# 1/19/2016 brgtodo: catch ValueError (for invalid interval) and skip instead of failing?
 			spliceInterval = SpliceInterval(coreinfo, intervalTop, previousAffBot, comment)
 			destSplice.addInterval(spliceInterval) # add to ints - should already be sorted properly
@@ -3733,7 +3734,7 @@ class SpliceController:
 									'BottomOffset':botOffset, 'Depth':round(p[0], 4), 'Data':p[1], 'RunNo':'-', 'RawDepth':rawDepth, 'Offset':affineOffset})
 					exportRows.append(row)
 				else:
-					print "Couldn't find section in {}{} at depth {}, skipping".format(si.coreinfo.hole, si.coreinfo.holeCore, mbsf)
+					print("Couldn't find section in {}{} at depth {}, skipping".format(si.coreinfo.hole, si.coreinfo.holeCore, mbsf))
 		if len(exportRows) > 0:
 			df = pandas.DataFrame(columns=tabularImport.CoreExportFormat.req)
 			df = df.append(exportRows, ignore_index=True)
@@ -3763,10 +3764,10 @@ class SpliceController:
 			datatype = "Natural Gamma"
 		coreinfo = self.parent.Window.createCoreInfoForHoleCoreType(hole, core, datatype)
 		if coreinfo is None:
-			print "Couldn't find hole {} core {} of type {}".format(hole, core, datatype)
+			print("Couldn't find hole {} core {} of type {}".format(hole, core, datatype))
 			coreinfo = self.parent.Window.findCoreInfoByHoleCore(hole, core)
 			if coreinfo is None:
-				print "Couldn't even find hole {} core {}".format(hole, core)
+				print("Couldn't even find hole {} core {}".format(hole, core))
 				return
 		
 		# affine shift from currently-loaded affine table	

@@ -1,6 +1,7 @@
 '''
 Routines and classes for loading of tabular data and conversion to target formats
 '''
+from __future__ import print_function
 
 import os
 import sys
@@ -274,12 +275,12 @@ def doMultiImport(parent, goalFormat, allowEmptyCells=True):
         for p in paths:
             df = parseFile(parent, p, goalFormat, checkcols=True)
             chLists.append(list(df.columns.values))
-        print "column sets:\n{}".format(chLists)
+        print("column sets:\n{}".format(chLists))
         if not _columnHeadersMatch(chLists):
             errbox(parent, "For multiple file import, all files must have identical column headers in name and order.")
             return
         else:
-            print "1 set found for {}".format(len(chLists))
+            print("1 set found for {}".format(len(chLists)))
             
         importPath = paths[0]
         importDataframe = parseFile(parent, importPath, goalFormat, checkcols=True)
@@ -479,4 +480,4 @@ if __name__ == '__main__':
         app = FooApp()
         doImport(None, SectionSummaryFormat, sys.argv[1])
     else:
-        print "specify a CSV file to load"
+        print("specify a CSV file to load")

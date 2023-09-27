@@ -4,6 +4,7 @@
 #/usr/bin/env pythonw
 
 #from wxPython.wx import *
+from __future__ import print_function
 import platform
 platform_name = platform.uname()
 
@@ -32,7 +33,7 @@ import splice
 
 def opj(path):
 	"""Convert paths to the platform-specific separator"""
-	return apply(os.path.join, tuple(path.split('/')))
+	return os.path.join(*tuple(path.split('/')))
 
 
 class ProgressFrame(wx.Frame):
@@ -100,7 +101,7 @@ class BetterLegendPlotCanvas(plot.PlotCanvas):
 				# brg 9/25/2023: TODO
 				# o.draw(dc, self.printerScale, coord=_Numeric.array([pnt1,pnt2]))
 			else:
-				raise TypeError, "object is neither PolyMarker or PolyLine instance"
+				raise TypeError("object is neither PolyMarker or PolyLine instance")
 			# draw legend txt
 			pnt= (trhc[0]+legendLHS+legendSymExt[0]+5*self._pointSize[0], trhc[1]+s+lineHeight/2.-legendTextExt[1]/2)
 			dc.DrawText(o.getLegend(),pnt[0],pnt[1])
@@ -936,7 +937,7 @@ class SplicePanel():
 				self.appendall = 1 
 
 			if splice_count <= 1 :
-				print "append....at begin", splice_count
+				print("append....at begin", splice_count)
 				py_correlator.append_at_begin()
 
 			self.undoButton.Enable(True)

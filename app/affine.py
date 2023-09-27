@@ -5,6 +5,7 @@ Created on Feb 22, 2017
 
 Support for the creation and editing of Affine Shifts and resulting tables.
 '''
+from __future__ import print_function
 
 import re # to parse combined hole/core strings
 import unittest
@@ -326,10 +327,10 @@ class AffineBuilder:
                 distance = tmpAffine.getShiftDistance(coreAbove)
                 seededShift = ImplicitShift(c, distance, dataUsed="", comment="seeded with section summary")
                 affineShifts.append(seededShift)
-                print "Seeded missing affine shift for {} using core above {}".format(c, coreAbove)
+                print("Seeded missing affine shift for {} using core above {}".format(c, coreAbove))
             else:
                 affineShifts.append(ImplicitShift(c, 0.0, dataUsed="", comment="seeded: no core above, no shift"))
-                print "No core above found to seed affine shift for {}, no shift".format(c)
+                print("No core above found to seed affine shift for {}, no shift".format(c))
         
         affineBuilder.affine = AffineTable.createWithShifts(affineShifts)
         affineBuilder.sectionSummary = secsumm
@@ -779,7 +780,7 @@ def sameElements(list1, list2, report=False):
     union = set().union(list1, list2)
     same = len(union) == len(list1) == len(list2)
     if not same and report:
-        print "sameElements(): no match!\nlist1 = {}\nlist2 = {}".format(list1, list2)
+        print("sameElements(): no match!\nlist1 = {}\nlist2 = {}".format(list1, list2))
     return same
 
 # - searchCore: AffineCoreInfo to find in coreList
