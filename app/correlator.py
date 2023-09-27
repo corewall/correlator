@@ -10,7 +10,7 @@ import traceback
 
 # brg 9/25/2023: PPC is long-dead, but at some point we'll
 # likely need to build an ARM dylib.
-# platform_name = platform.uname()
+platform_name = platform.uname()
 # if platform_name[5] == "i386":
 # 	os.system('sh swap_intel_library')
 # elif platform_name[5] == "powerpc":
