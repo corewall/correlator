@@ -1,0 +1,10 @@
+enum34==1.1.10
+imagesize==1.4.1
+numpy==1.16.6
+pandas==0.24.2
+Pillow==6.2.2
+python-dateutil==2.8.2
+pytz==2023.3.post1
+six==1.16.0
+UNKNOWN==0.0.0
+wxPython==4.1.0
