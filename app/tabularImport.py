@@ -3,6 +3,9 @@ Routines and classes for loading of tabular data and conversion to target format
 '''
 from __future__ import print_function
 
+from builtins import str
+from builtins import range
+from builtins import object
 import os
 import sys
 
@@ -14,18 +17,18 @@ import sectionSummary as ss
 #from sectionSummary import SectionSummary, SectionSummaryFormat
 
 
-class AffineTable:
+class AffineTable(object):
     def __init__(self, name, dataframe):
         self.name = name
         self.dataframe = dataframe
 
-class SpliceIntervalTable:
+class SpliceIntervalTable(object):
     def __init__(self, name, dataframe):
         self.name = name
         self.dataframe = dataframe
 
 """ bridge between imported tabular columns and destination format """ 
-class TabularFormat:
+class TabularFormat(object):
     req = [] # list of required column names
     def __init__(self, name, req):
         self.name = name
@@ -93,7 +96,7 @@ class ImportDialog(wx.Dialog):
 
         # populate required headers based on matches
         goalCols = findFormatColumns(self.dataframe, self.goalFormat)
-        for name, col in goalCols.iteritems():
+        for name, col in goalCols.items():
             if col is not None:
                 self.table.SetColLabelValue(col, name)
         
@@ -376,15 +379,15 @@ def writeToFile(dataframe, filepath):
 """ find column names in dataframe matching those required by format """
 def findFormatColumns(dataframe, goalFormat):
     colmap = dict().fromkeys(goalFormat.req)
-    for key in colmap.keys():
-        if key in dataframe.dtypes.keys():
+    for key in list(colmap.keys()):
+        if key in list(dataframe.dtypes.keys()):
             colmap[key] = dataframe.columns.get_loc(key)
     return colmap
 
 """ returns new dataframe with columns in order specified by colmap """
 def reorderColumns(dataframe, colmap, goalFormat):
     newmap = {}
-    for colName in colmap.keys():
+    for colName in list(colmap.keys()):
         index = colmap[colName]
         if index is not None:
             newmap[colName] = dataframe.icol(index)

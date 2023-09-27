@@ -1,3 +1,4 @@
+from builtins import object
 import re
 
 # Parse hole from full section name. Assumes IODP naming convention.
@@ -30,7 +31,7 @@ def makeImageKey(filename):
 
 # Convenience wrapper for DataCanvas.HoleData list elements with
 # methods to access hole metadata.
-class HoleMetadata:
+class HoleMetadata(object):
 	def __init__(self, holeData):
 		self.holeData = holeData
 		self.hmt = holeData[0][0] # hole metadata tuple
@@ -79,7 +80,7 @@ class HoleMetadata:
 # 8: quality
 # 9: list of section top depths (unreliable)
 # 10: list of depth/data pairs for this core
-class CoreMetadata:
+class CoreMetadata(object):
 	def __init__(self, core_metadata_tuple):
 		self.cmt = core_metadata_tuple
 

@@ -1,8 +1,10 @@
 from __future__ import print_function
+from __future__ import division
 # December 21 2021
 # spliceImage.py
 # Logic related to export of spliced images.
 
+from past.utils import old_div
 import wx
 
 LEN_COLUMN = "Curated length (m)"
@@ -12,11 +14,11 @@ LEN_COLUMN = "Curated length (m)"
 def getDefaultSpliceScalingAndWidth(imageDict, secsumm):
     scaling = None
     width = None
-    for secname, imgpath in imageDict.items():
+    for secname, imgpath in list(imageDict.items()):
         section = secsumm._findSectionByFullIdentity(secname)
         if section is not None:
             img = wx.Image(imgpath)
-            scaling = img.GetHeight() / section.row[LEN_COLUMN]
+            scaling = old_div(img.GetHeight(), section.row[LEN_COLUMN])
             width = img.GetWidth()
             break
     return scaling, width
@@ -66,7 +68,7 @@ def prepareImagesForSplice(imageDict, secsumm, sitDF):
 # sec_length: length of section in m
 def trimSpliceImage(img, top_sec, top_sec_depth, bot_sec, bot_sec_depth, sec_num, sec_length):
     # determine scaling based on height and curated length
-    scale = img.GetHeight() / sec_length
+    scale = old_div(img.GetHeight(), sec_length)
     # print("img height {}pix / Curated Length {}m = {} pix/m".format(img.GetHeight(), sec_length, scale))
     top_pix = 0
     bot_pix = img.GetHeight() - 1
@@ -93,7 +95,7 @@ def createSpliceImage(images, options):
     INFO_COL_WIDTH = 200
     spliceHeight = sum([i.GetHeight() for i, _, _ in images])
     spliceWidth = images[0][0].GetWidth()
-    if True in options.values(): # add space for info column if any option was selected
+    if True in list(options.values()): # add space for info column if any option was selected
         spliceWidth += INFO_COL_WIDTH
 
     # prepare empty image with black background

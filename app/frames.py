@@ -5,6 +5,12 @@
 
 #from wxPython.wx import *
 from __future__ import print_function
+from __future__ import division
+from builtins import chr
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import platform
 platform_name = platform.uname()
 
@@ -103,7 +109,7 @@ class BetterLegendPlotCanvas(plot.PlotCanvas):
 			else:
 				raise TypeError("object is neither PolyMarker or PolyLine instance")
 			# draw legend txt
-			pnt= (trhc[0]+legendLHS+legendSymExt[0]+5*self._pointSize[0], trhc[1]+s+lineHeight/2.-legendTextExt[1]/2)
+			pnt= (trhc[0]+legendLHS+legendSymExt[0]+5*self._pointSize[0], trhc[1]+s+lineHeight/2.-old_div(legendTextExt[1],2))
 			dc.DrawText(o.getLegend(),pnt[0],pnt[1])
 			legendItemsDrawn += 1
 		dc.SetFont(self._getFont(self._fontSizeAxis)) # reset
@@ -113,7 +119,7 @@ class BetterLegendPlotCanvas(plot.PlotCanvas):
 # but indexing into them makes for hard-to-read code. Using a dictionary would get
 # past that issue, but something about a class seems more "correct" to me, probably
 # due to heavy OOP background.
-class HoverData():
+class HoverData(object):
 	def __init__(self, mbsf, mcd, hole, core, growthRate):
 		self.mbsf = mbsf
 		self.mcd = mcd
@@ -271,7 +277,7 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
 		self.maxMbsf = maxMbsf
 
 
-class CompositePanel():
+class CompositePanel(object):
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.parent = parent
@@ -621,7 +627,7 @@ class CompositePanel():
 		
 # Obsolete, replaced by SpliceIntervalPanel but left as-is for now
 # to avoid issues with its tendrils in MainFrame. TODO 3/10/2019
-class SplicePanel():
+class SplicePanel(object):
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.parent = parent
@@ -1148,7 +1154,7 @@ class EvalPlotPanel(wx.Panel):
 		self.polylines = []
 
 
-class SpliceIntervalPanel():
+class SpliceIntervalPanel(object):
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.parent = parent
@@ -1486,7 +1492,7 @@ class SpliceIntervalPanel():
 
 ############## end SpliceIntervalPanel #################################
 
-class AutoPanel():
+class AutoPanel(object):
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.parent = parent
@@ -1730,8 +1736,8 @@ class AutoPanel():
 			depthend = temp		
 		self.squishinterval = float(self.valueA3.GetValue()) 
 		self.depthinterval = float(self.valueB3.GetValue()) 
-		depthrange = int((depthend - depthstart) / self.depthinterval)
-		squishrange = int((squishend - squishstart) / self.squishinterval)
+		depthrange = int(old_div((depthend - depthstart), self.depthinterval))
+		squishrange = int(old_div((squishend - squishstart), self.squishinterval))
 
 		if squishrange == 0 :
 			squishrange = 1
@@ -1945,7 +1951,7 @@ class AutoPanel():
 			self.parent.Window.UpdateDrawing()
 
 
-class ELDPanel():
+class ELDPanel(object):
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.parent = parent
@@ -2116,7 +2122,7 @@ class ELDPanel():
 				py_correlator.setSaganOption(0)
 
 	def UpdateTieInfo(self, info, depth, tieNo):
-		i = tieNo / 2 
+		i = old_div(tieNo, 2) 
 		self.fileList.Delete(i)
 		self.AddTieInfo(info, depth)
 		self.fileList.Select(i)
@@ -2251,7 +2257,7 @@ class ELDPanel():
 		self.polyline_list = []
 
 
-class AgeDepthPanel():
+class AgeDepthPanel(object):
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.parent = parent
@@ -2529,7 +2535,7 @@ class AgeDepthPanel():
 		max = float(self.max_age.GetValue()) 
 		self.parent.Window.minAgeRange = min
 		x = (self.parent.Window.splicerX - 100 - self.parent.Window.compositeX - self.parent.Window.AgeShiftX)
-		self.parent.Window.ageLength = x / (max - min) * 1.0
+		self.parent.Window.ageLength = old_div(x, (max - min)) * 1.0
 		self.parent.Window.maxAgeRange = int(max)
 		#if max > self.parent.Window.maxAgeRange  :
 		#	self.parent.Window.maxAgeRange = int(max)
@@ -2544,7 +2550,7 @@ class AgeDepthPanel():
 		self.max = max
 
 		x = (self.parent.Window.Height - self.parent.Window.startAgeDepth - self.parent.Window.AgeShiftY) * self.parent.Window.ageGap
-		self.parent.Window.ageYLength = x / (max - min) * 1.0
+		self.parent.Window.ageYLength = old_div(x, (max - min)) * 1.0
 		self.slider2.SetValue(1)
 		self.parent.Window.UpdateDrawing()
 
@@ -2745,7 +2751,7 @@ class AgeDepthPanel():
 		min = self.parent.Window.rulerStartAgeDepth
 		max = min + self.max 
 		x = (self.parent.Window.Height - self.parent.Window.startAgeDepth - self.parent.Window.AgeShiftY) * self.parent.Window.ageGap
-		self.parent.Window.ageYLength = idx * x / (max - min) * 1.0
+		self.parent.Window.ageYLength = old_div(idx * x, (max - min)) * 1.0
 		self.parent.Window.UpdateDrawing()
 
 	def OnAgeZoom(self, evt):
@@ -2756,7 +2762,7 @@ class AgeDepthPanel():
 		min = self.parent.Window.minAgeRange 
 		max = self.parent.Window.maxAgeRange 
 		x = (self.parent.Window.splicerX - 100 - self.parent.Window.compositeX - self.parent.Window.AgeShiftX)
-		self.parent.Window.ageLength = idx * x / (max - min) * 1.0
+		self.parent.Window.ageLength = old_div(idx * x, (max - min)) * 1.0
 		self.parent.Window.UpdateDrawing()
 
 	def OnSpliceDepthZoom(self, evt):
@@ -2931,7 +2937,7 @@ class AgeDepthPanel():
 		self.parent.Window.UpdateDrawing()
 		self.parent.TimeChange = True
 
-class FilterPanel():
+class FilterPanel(object):
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.decPanel = None
@@ -3345,7 +3351,7 @@ class FilterPanel():
 		self.parent.Window.UpdateDrawing()
 
 
-class PreferencesPanel():
+class PreferencesPanel(object):
 	def __init__(self, parent, mainPanel):
 		self.mainPanel = mainPanel
 		self.parent = parent

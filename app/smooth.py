@@ -1,6 +1,8 @@
 # Logic related to smoothing filter
 
-class SmoothParameters:
+from builtins import str
+from builtins import object
+class SmoothParameters(object):
 	def __init__(self, width, units, style):
 		self.width = width # integer width of smoothing
 		self.units = units # points (1) or cm (2)

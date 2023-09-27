@@ -4,6 +4,8 @@
 #/usr/bin/env pythonw
 
 from __future__ import print_function
+from builtins import str
+from builtins import range
 import os.path
 import platform, shutil
 platform_name = platform.uname()
@@ -602,7 +604,7 @@ class DataFrame(wx.Panel):
 		if not imgNodeFound:
 			assert False, "No Images node, that's bad."
 		self.tree.DeleteChildren(imgNode)
-		for holeName, count in holeCounts.items(): # create/update db tree items
+		for holeName, count in list(holeCounts.items()): # create/update db tree items
 			imgItem = None
 			for imgChild in self.GetChildren(imgNode):
 				if self.tree.GetItemText(imgChild) == holeName:
@@ -690,7 +692,7 @@ class DataFrame(wx.Panel):
 	def ImportSectionSummary(self):
 		secSummMap = tabularImport.doMultiImport(self, tabularImport.SectionSummaryFormat, allowEmptyCells=False)
 		if len(secSummMap) > 0:
-			for path, secsumm in secSummMap.iteritems():
+			for path, secsumm in secSummMap.items():
 				self.AddSectionSummary(secsumm, path)
 			self.needsReload = True
 			self.ShowImportSuccessMsg()
@@ -4400,7 +4402,7 @@ class DataFrame(wx.Panel):
 					reqDataLoaded, missingData = self.parent.spliceManager.requiredDataIsLoaded(filepath)
 					if not reqDataLoaded:
 						msg = "The following cores are required by the enabled splice and cannot be found.\n\n"
-						for datatype, corelist in missingData.items():
+						for datatype, corelist in list(missingData.items()):
 							msg += "{}: {}\n".format(datatype, ','.join(corelist))
 						msg += "\nData cannot be loaded with this splice enabled."
 						self.parent.OnShowMessage("Error", msg, 1)
@@ -5524,7 +5526,7 @@ class DataFrame(wx.Panel):
 				typeDict = {"GRA":"Bulk Density(GRA)", "VELOCITY_XY":"Pwave", "SUSCEPTIBILITY":"Susceptibility",
 							"REFLECTANCE":"Reflectance", "TOTAL_COUNTS_PER_SEC":"NaturalGamma"}
 				possibleType = colNames[-1].upper()
-				for testStr,typeName in typeDict.items():
+				for testStr,typeName in list(typeDict.items()):
 					if possibleType.find(testStr) != -1:
 						type = typeName
 						break

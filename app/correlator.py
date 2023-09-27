@@ -1,6 +1,13 @@
 #!python.exe
 
 from __future__ import print_function
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import copy
 
 import platform
@@ -26,7 +33,7 @@ import wx
 from wx.lib import plot
 import pandas
 
-import random, sys, re, time, ConfigParser, string, uuid, pickle
+import random, sys, re, time, configparser, string, uuid, pickle
 import getpass
 from datetime import datetime
 
@@ -73,7 +80,7 @@ class MainFrame(wx.Frame):
 		self.swapButton = None
 
 		self.scroll = 1 
-		self.half = (self.Width / 2) - 32 
+		self.half = (old_div(self.Width, 2)) - 32 
 		# make the menu
 		self.SetMenuBar(self.CreateMenu())
 		
@@ -674,7 +681,7 @@ class MainFrame(wx.Frame):
 	# Preferences "Display Interval" changed
 	def OnUpdateDisplayInterval(self, interval, updateScroll=True):
 		x = (self.Window.Height - self.Window.startDepthPix)
-		self.Window.pixPerMeter = x / interval
+		self.Window.pixPerMeter = old_div(x, interval)
 		if updateScroll:
 			self.Window.UpdateScroll(1)
 			self.Window.UpdateScroll(2)
@@ -737,7 +744,7 @@ class MainFrame(wx.Frame):
 		last = 0
 		l = []
 		startx = self.leadLag * -1
-		numleadLag = int(self.leadLag / self.depthStep) * 2 +1
+		numleadLag = int(old_div(self.leadLag, self.depthStep)) * 2 +1
 
 		offset = 0.0
 		win_length = depth2 - self.winLength
@@ -781,7 +788,7 @@ class MainFrame(wx.Frame):
 		last = 0
 		l = []
 		startx = self.leadLag * -1
-		numleadLag = int(self.leadLag / self.depthStep) * 2 +1
+		numleadLag = int(old_div(self.leadLag, self.depthStep)) * 2 +1
 		win_length = depth2 - self.winLength
 
 		max = len(coef) -1
@@ -1263,7 +1270,7 @@ class MainFrame(wx.Frame):
 				self.ParseData(ret, self.Window.LogData)
 				self.Window.minRangeLog = self.min
 				self.Window.maxRangeLog = self.max
-				self.Window.coefRangeLog = self.Window.logHoleWidth / (self.max - self.min)
+				self.Window.coefRangeLog = old_div(self.Window.logHoleWidth, (self.max - self.min))
 				#print "[DEBUG] Log data is updated"
 				self.filterPanel.OnRelease()
 				self.Window.UpdateDrawing()
@@ -1278,7 +1285,7 @@ class MainFrame(wx.Frame):
 				self.ParseData(ret, self.Window.LogSMData)
 				self.Window.minRangeLog = self.min
 				self.Window.maxRangeLog = self.max
-				self.Window.coefRangeLog = self.Window.logHoleWidth / (self.max - self.min)
+				self.Window.coefRangeLog = old_div(self.Window.logHoleWidth, (self.max - self.min))
 				#print "[DEBUG] Log sm data is updated"
 				self.filterPanel.OnRelease()
 				#self.Window.UpdateDrawing()
@@ -1292,7 +1299,7 @@ class MainFrame(wx.Frame):
 			self.filterPanel.OnRelease()
 			self.Window.minRangeLog = self.min
 			self.Window.maxRangeLog = self.max
-			self.Window.coefRangeLog = self.Window.logHoleWidth / (self.max - self.min)
+			self.Window.coefRangeLog = old_div(self.Window.logHoleWidth, (self.max - self.min))
 		self.Window.isLogShifted = flag 
 
 
@@ -1547,7 +1554,7 @@ class MainFrame(wx.Frame):
 		self.WritePreferenceItem("secondscroll", ssvalue, f)
 
 		if (width - self.Window.splicerX) < 10:
-			self.Window.splicerX = width / 2
+			self.Window.splicerX = old_div(width, 2)
 		self.WritePreferenceItem("middlebarposition", self.Window.splicerX, f)
 
 		self.WritePreferenceItem("startdepth", self.Window.rulerStartDepth, f)
@@ -2285,7 +2292,7 @@ class MainFrame(wx.Frame):
 		return 
 		self.Window.maxRange = self.max 
 		if (self.max - self.min) != 0:
-			self.Window.coefRange = self.Window.holeWidth / (self.Window.maxRange - self.Window.minRange)
+			self.Window.coefRange = old_div(self.Window.holeWidth, (self.Window.maxRange - self.Window.minRange))
 
 	def ParseSaganData(self, data):
 		if data != "":
@@ -2608,7 +2615,7 @@ class MainFrame(wx.Frame):
 
 		DrawData = {}
 
-		self.config = ConfigParser.ConfigParser()
+		self.config = configparser.ConfigParser()
 		self.config.read(cfgfile)
 		
 		scroll_start = self.Window.startDepthPix * 0.7
@@ -3049,7 +3056,7 @@ class MainFrame(wx.Frame):
 		return DrawData
 
 
-class AffineController:
+class AffineController(object):
 	def __init__(self, parent):
 		self.parent = parent # MainFrame - oy, this dependency!
 		self.affine = AffineBuilder() # AffineBuilder for current affine table
@@ -3089,7 +3096,7 @@ class AffineController:
 				cumOff = round(curShift.distance, 3)
 				diffOff = 0.0 if previousOffset is None else cumOff - previousOffset
 				try:
-					growthRate = round(ccsf / csf, 3)
+					growthRate = round(old_div(ccsf, csf), 3)
 				except ZeroDivisionError:
 					growthRate = 0.0
 					
@@ -3383,7 +3390,7 @@ class AffineController:
 
 	
 # brgtodo 12/21/2015: still depends on MainFrame 
-class SpliceController:
+class SpliceController(object):
 	def __init__(self, parent):
 		self.parent = parent # MainFrame
 		self.splice = SpliceBuilder() # SpliceBuilder for current splice
@@ -3875,7 +3882,7 @@ class SpliceController:
 		self.findGaps() # check for gaps on any state change
 
 
-class UndoManager:
+class UndoManager(object):
 	def __init__(self, parent):
 		self.parent = parent
 		self.undoStack = []

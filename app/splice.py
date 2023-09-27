@@ -7,10 +7,13 @@ Support for the creation and editing of Splice Interval Tables.
 '''
 from __future__ import print_function
 
+from builtins import str
+from builtins import range
+from builtins import object
 import unittest
 from copy import deepcopy
 
-class Interval:
+class Interval(object):
     def __init__(self, top, bot):
         if top >= bot:
             raise ValueError("Cannot create Interval: top must be < bot")
@@ -212,7 +215,7 @@ class TestIntervals(unittest.TestCase):
         self.assertTrue(u5[0].bot == 4)
 
 nextSpliceIntervalId = 1
-class SpliceInterval:
+class SpliceInterval(object):
     def __init__(self, coreinfo, top, bot, comment="", siid=None):
         self.coreinfo = coreinfo # CoreInfo for core used in this interval
         self.interval = Interval(top, bot)
@@ -300,7 +303,7 @@ def clampTop(spliceInterval, depth, returnMessage=False):
     else:
         return depth
 
-class SpliceIntervalTie():
+class SpliceIntervalTie(object):
     def __init__(self, interval, adjInterval):
         self.interval = interval
         self.adjInterval = adjInterval
@@ -436,7 +439,7 @@ class SpliceIntervalBotTie(SpliceIntervalTie):
         return depth
 
 
-class SpliceBuilder:
+class SpliceBuilder(object):
     def __init__(self):
         self.clear()
 

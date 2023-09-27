@@ -3,6 +3,9 @@
 ## For Mac-OSX
 #/usr/bin/env pythonw
 from __future__ import print_function
+from builtins import chr
+from builtins import str
+from builtins import range
 import platform
 platform_name = platform.uname()
 

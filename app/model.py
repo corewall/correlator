@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import str
+from builtins import object
 import wx
 
 from importManager import py_correlator
@@ -43,7 +45,7 @@ def MakeRangeList(data, name):
 	return [name, min, max, coef, smooth, continuous]
 
 # FileMetadata a better name?
-class TableData:
+class TableData(object):
 	def __init__(self):
 		self.file = ''
 		self.updatedTime = ''
@@ -83,7 +85,7 @@ class HoleData(TableData):
 	def __repr__(self):
 		return "Hole %s: %s %s %s %s %s %s %s %s %s %s" % (self.name, self.dataName, self.depth, self.min, self.max, self.data, str(self.enable), self.file, self.origSource, self.updatedTime, self.byWhom)
 
-class HoleSet:
+class HoleSet(object):
 	def __init__(self, type):
 		self.holes = {} # dict of HoleData objects
 		self.cullTable = None # appears there can only be one of these per HoleSet
@@ -101,7 +103,7 @@ class HoleSet:
 
 	def dump(self):
 		print(self)
-		for hole in self.holes.values():
+		for hole in list(self.holes.values()):
 			print(hole)
 		if self.HasCull():
 			print(self.cullTable)
@@ -134,7 +136,7 @@ class HoleSet:
 	def GetTitleStr(self):
 		return self.type + " - Range: (" + self.min + ", " + self.max + "); " + self.continuous + "; " + "Decimate: " + str(self.decimate) + "; " + "Smoothing: " + self.smooth
 
-class SiteData:
+class SiteData(object):
 	def __init__(self, name):
 		self.name = name
 		self.holeSets = {}
@@ -155,7 +157,7 @@ class SiteData:
 
 	def dump(self):
 		print(self)
-		for hs in self.holeSets.values():
+		for hs in list(self.holeSets.values()):
 			hs.dump()
 		for at in self.affineTables:
 			print(at)
@@ -175,9 +177,9 @@ class SiteData:
 			print(it)
 
 	def SyncToGui(self):
-		for hs in self.holeSets.values():
+		for hs in list(self.holeSets.values()):
 			hs.gui.SyncToGui()
-			for hole in hs.holes.values():
+			for hole in list(hs.holes.values()):
 				hole.gui.SyncToGui()
 		self.affineGui.SyncToGui()
 		self.spliceGui.SyncToGui()
@@ -186,9 +188,9 @@ class SiteData:
 			log.gui.SyncToGui()
 
 	def SyncToData(self):
-		for hs in self.holeSets.values():
+		for hs in list(self.holeSets.values()):
 			hs.gui.SyncToData()
-			for hole in hs.holes.values():
+			for hole in list(hs.holes.values()):
 				hole.gui.SyncToData()
 		self.affineGui.SyncToData()
 		self.spliceGui.SyncToData()
@@ -367,7 +369,7 @@ class DownholeLogTable(TableData):
 		if len(tokens) >= 12:
 			self.smooth = tokens[11]
 
-class DBView:
+class DBView(object):
 	def __init__(self, parent, dataFrame, parentPanel, siteList):
 		self.parent = parent # 1/6/2014 brg: Don't like this naming...app?
 		self.dataFrame = dataFrame # old DB Manager DataFrame
@@ -616,8 +618,8 @@ class DBView:
 		curSite = self.currentSite.GetClientData(siteIndex)
 		curSite.SyncToGui()
 		holesToLoad = []
-		for holeSet in curSite.holeSets.values():
-			for hole in holeSet.holes.values():
+		for holeSet in list(curSite.holeSets.values()):
+			for hole in list(holeSet.holes.values()):
 				if hole.enable:
 					holesToLoad.append(hole)
 		if len(holesToLoad) > 0:
@@ -662,13 +664,13 @@ class DBView:
 	def HandleHoleSetMenu(self, evt, holeSet):
 		holeSet.site.SyncToGui()
 		if evt.GetId() == self.menuIds['Load']:
-			holeList = holeSet.holes.values()
+			holeList = list(holeSet.holes.values())
 			self.LoadHoles(holeList)
 		if evt.GetId() == self.menuIds['Export']:
-			holeList = holeSet.holes.values()
+			holeList = list(holeSet.holes.values())
 			self.ExportHoles(holeList)
 		elif evt.GetId() == self.menuIds['Enable All'] or evt.GetId() == self.menuIds['Disable All']:
-			for hole in holeSet.holes.values():
+			for hole in list(holeSet.holes.values()):
 				hole.gui.enabledCb.SetValue(evt.GetId() == self.menuIds['Enable All'])
 
 	def LoadHoles(self, holeList):
@@ -954,7 +956,7 @@ class DBView:
 			return self.currentSite.GetClientData(siteIndex)
 		return None
 
-class HoleGUI:
+class HoleGUI(object):
 	def __init__(self, hole, panel):
 		self.hole = hole
 		self.enabledCb = wx.CheckBox(panel, -1, "Enabled", size=(80,-1))
@@ -966,7 +968,7 @@ class HoleGUI:
 	def SyncToGui(self):
 		self.hole.enable = self.enabledCb.GetValue()
 
-class HoleSetGUI:
+class HoleSetGUI(object):
 	def __init__(self, holeSet, panel):
 		self.holeSet = holeSet
 		self.actionButton = wx.Button(panel, -1, "Actions...")
@@ -991,7 +993,7 @@ class HoleSetGUI:
 		self.holeSet.continuous = (self.continuousChoice.GetSelection() == 0)
 		self.holeSet.EnableCull(self.cullEnabledCb.GetValue())
 
-class SavedTableGUI:
+class SavedTableGUI(object):
 	def __init__(self, site, name, panel):
 		self.site = site
 		self.name = name # Affine, Splice or ELD
@@ -1039,7 +1041,7 @@ class SavedTableGUI:
 			print("GetTables(): Unexpected saved table type: " + self.name)
 			return []
 
-class LogTableGUI:
+class LogTableGUI(object):
 	def __init__(self, logTable, panel):
 		self.logTable = logTable
 		self.enabledCb = wx.CheckBox(panel, -1, "Enable")

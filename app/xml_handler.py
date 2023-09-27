@@ -1,3 +1,4 @@
+from builtins import str
 import xml.sax.handler
 
 class XMLHandler(xml.sax.handler.ContentHandler):
@@ -45,7 +46,7 @@ class XMLHandler(xml.sax.handler.ContentHandler):
 			elif self.type == "splice table" :
 				self.fout.write("# Site, Hole, Core No, Section Type, Section No, Top, Bottom, Mbsf, Mcd, TIE/APPEND Site, Hole, Core No, Section Type, Section No, Top, Bottom, Mbsf, Mcd\n")
 				affinetable = "None"
-				keys = attributes.keys()
+				keys = list(attributes.keys())
 				for key in keys :
 					if key == "affinefilename" :
 						affinetable =  attributes["affinefilename"]
@@ -86,7 +87,7 @@ class XMLHandler(xml.sax.handler.ContentHandler):
 				self.fout.write(str_line)
 				str_line = "Overall \t" + attributes["applied"] + " \tMudlineOffset \t" + attributes["mudlineoffset"] + " \tStretch/Compress \t" + attributes["stretchrate"] + "\n"
 				self.fout.write(str_line)
-				keys = attributes.keys()
+				keys = list(attributes.keys())
 				affine_flag = False
 				for key in keys :
 					if key == "affinetable" :
@@ -120,7 +121,7 @@ class XMLHandler(xml.sax.handler.ContentHandler):
 				self.parseELD(attributes)
 			elif self.type == "cull table" :
                                 self.core = attributes["id"]
-				keys = attributes.keys()
+				keys = list(attributes.keys())
 				for key in keys :
 					if key == "flag" :
 						str_line = self.leg + " \t" + self.site + " \t" +  self.hole + " \t" + self.core + " \t" + attributes["flag"] + "\n"
@@ -182,7 +183,7 @@ class XMLHandler(xml.sax.handler.ContentHandler):
 				str_line = " \tAPPEND"
 			self.fout.write(str_line)
 
-                        keys = attributes.keys()
+                        keys = list(attributes.keys())
                         id_flag = False
 			for key in keys :
                                 if key == "id" :
@@ -208,7 +209,7 @@ class XMLHandler(xml.sax.handler.ContentHandler):
 	def parseCore(self, attributes):
 		age_flag = False
 		annotation_flag = False
-		keys = attributes.keys()
+		keys = list(attributes.keys())
 		for key in keys :
 			if key == "age" :
 				age_flag = True 

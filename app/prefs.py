@@ -4,13 +4,15 @@ Created on Apr 15, 2015
 @author: bgrivna
 '''
 
+from builtins import str
+from builtins import object
 import logging
 import os
 import pickle
 
 logger = logging.getLogger(__name__)
 
-class Prefs:
+class Prefs(object):
     def __init__(self, prefPath):
         self.prefPath = prefPath
 

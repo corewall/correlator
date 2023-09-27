@@ -1,5 +1,6 @@
 # Logic to control order, grouping, and visibility of hole data columns in main view
 
+from builtins import object
 from enum import Enum
 
 from utils import HoleMetadata
@@ -11,7 +12,7 @@ class ColumnType(Enum):
 
 ImageDatatypeStr = "Image"
 	
-class HoleColumn:
+class HoleColumn(object):
 	def __init__(self, leftX, margin, holeData, smoothData):
 		self.leftX = leftX # x coordinate of left of column
 		self.margin = margin # width of leftmost space where core number and shift type+distance are displayed
@@ -100,7 +101,7 @@ class HoleColumn:
 		return [wid for ct, wid in self._columns]
 
 
-class LayoutManager:
+class LayoutManager(object):
 	def __init__(self):
 		self.groupByDatatype = True # if True group HoleColumns by datatype, else group by hole
 		self.plotWidth = 250
@@ -128,11 +129,11 @@ class LayoutManager:
 				visDict[e] = True
 
 	def updateVisibleHoles(self, vh):
-		for hole in vh.keys():
+		for hole in list(vh.keys()):
 			self.visibleHoles[hole] = vh[hole]
 
 	def updateVisibleDatatypes(self, vd):
-		for datatype in vd.keys():
+		for datatype in list(vd.keys()):
 			self.visibleDatatypes[datatype] = vd[datatype]
 
 	def layout(self, holeData, smoothData, holesWithImages, x, margin):

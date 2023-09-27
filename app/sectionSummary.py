@@ -3,6 +3,8 @@ Routines and classes for loading of tabular data and conversion to target format
 '''
 from __future__ import print_function
 
+from past.builtins import cmp
+from builtins import object
 import os
 import unittest
 
@@ -21,7 +23,7 @@ def cmp_section(sec1, sec2):
     return cmp(int(sec1), int(sec2))
 
 
-class SectionSummary:
+class SectionSummary(object):
     def __init__(self, name, dataframe):
         self.name = name
         self.dataframe = dataframe
@@ -189,7 +191,7 @@ class SectionSummary:
 
 # todo? SectionSummaryRow in which data is just a pandas series with methods to access
 # each item (e.g. site(), coreType())? Child of SectionSummaryRow "interface" class?
-class SectionSummaryRow:
+class SectionSummaryRow(object):
     def __init__(self, exp, site, hole, core, coreType, section, topDepth, bottomDepth, row):
         self.exp = exp
         self.site = site

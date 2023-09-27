@@ -7,6 +7,8 @@ Support for the creation and editing of Affine Shifts and resulting tables.
 '''
 from __future__ import print_function
 
+from builtins import str
+from builtins import object
 import re # to parse combined hole/core strings
 import unittest
 from copy import deepcopy
@@ -22,7 +24,7 @@ class AffineError(Exception):
         self.expression = expression
         self.message = message
 
-class AffineShift:
+class AffineShift(object):
     def __init__(self, core, distance, dataUsed="", comment=""):
         self.core = core # CoreInfo (or AffineCoreInfo) for the shifted core
         self.distance = distance # shift distance (can be 0)
@@ -102,7 +104,7 @@ class UnknownCoreError(AffineError):
 
 # Maintains a collection of AffineShifts, ensuring exactly one shift per AffineCoreId.
 # No enforcement or updating of TIE relationships. 
-class AffineTable:
+class AffineTable(object):
     def __init__(self):
         self.shifts = [] # list of AffineShifts representing the current affine state
         
@@ -273,7 +275,7 @@ class TieShiftMethod(Enum):
 # Wraps AffineTable in logic that manages inter-core effects of SET and TIE operations
 # on a core 'and related cores', maintaining chains where possible and noting where breaks
 # will occur for a given shift.
-class AffineBuilder:
+class AffineBuilder(object):
     def __init__(self):
         self.affine = AffineTable() # AffineTable representing the current affine state
         self.sectionSummary = None
@@ -674,7 +676,7 @@ class AffineBuilder:
     
 
 # Blob of shifts, adjusts, implicits, and other operation-specific data.
-class AffineOperation:
+class AffineOperation(object):
     def __init__(self):
         self.shifts = [] # list of AffineShifts
         self.adjusts = [] # list of (AffineCoreInfo, adjust distance) tuples
@@ -691,7 +693,7 @@ class AffineOperation:
 
 
 # Reference to hole and core for affine shifts
-class AffineCoreInfo:
+class AffineCoreInfo(object):
     def __init__(self, hole, core):
         assert isinstance(hole, str)
         assert isinstance(core, str)

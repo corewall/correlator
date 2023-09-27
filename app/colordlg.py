@@ -97,13 +97,13 @@ class ColorsDialog(wx.Dialog):
     # return colorDict reflecting state of all pickers
     def getColorDict(self):
         colorDict = {}
-        for key, picker in self.pickerDict.items():
+        for key, picker in list(self.pickerDict.items()):
             colorDict[key] = picker.GetColour()
         return colorDict
 
     # set pickers to contents of colorDict
     def installColorDict(self, colorDict):
-        for key, picker in self.pickerDict.items():
+        for key, picker in list(self.pickerDict.items()):
             picker.SetColour(colorDict[key])
 
     # set DataCanvas colorDict to current pickers' colors
