@@ -17,6 +17,7 @@ import wx
 import wx.grid
 import wx.lib.sheet as sheet
 from wx.lib import plot
+from wx.lib.agw.hyperlink import HyperLinkCtrl
 import random, sys, os, re, time, string
 import numpy
 
@@ -1867,7 +1868,7 @@ class AboutDialog(wx.Dialog):
         vertSizer.Add(desc, 0, wx.ALL, 10)
 
         corryUrl = "https://csdco.umn.edu/resources/software/correlator"
-        link = wx.HyperlinkCtrl(self, -1, 'For more detailed information, please visit the Correlator Website', corryUrl)
+        link = HyperLinkCtrl(self, -1, 'For more detailed information, please visit the Correlator Website', URL=corryUrl)
         vertSizer.Add(link, 0, wx.LEFT, 10)
         vertSizer.Add((15,15), 0) # add some vertical space between sections
 
@@ -1886,11 +1887,11 @@ class AboutDialog(wx.Dialog):
         vertSizer.Add(wx.StaticText(self, -1, 'Organizations:'), 0, wx.LEFT, 10)
         vertSizer.Add((5,5), 0)
         grid = wx.FlexGridSizer(2, 3, (20,10))
-        grid.Add(wx.HyperlinkCtrl(self, -1, 'National Science Foundation', 'https://www.nsf.gov/'))
-        grid.Add(wx.HyperlinkCtrl(self, -1, 'CSD Facility (University of Minnesota)', 'https://cse.umn.edu/csd'))
-        grid.Add(wx.HyperlinkCtrl(self, -1, 'IODP/JR Science Operator', 'https://iodp.tamu.edu/'))
-        grid.Add(wx.HyperlinkCtrl(self, -1, 'Lamont-Doherty Earth Observatory', 'https://www.ldeo.columbia.edu/'))
-        grid.Add(wx.HyperlinkCtrl(self, -1, 'EVL (University of Illinois)', 'https://www.evl.uic.edu/'))
+        grid.Add(HyperLinkCtrl(self, -1, 'National Science Foundation', URL='https://www.nsf.gov/'))
+        grid.Add(HyperLinkCtrl(self, -1, 'CSD Facility (University of Minnesota)', URL='https://cse.umn.edu/csd'))
+        grid.Add(HyperLinkCtrl(self, -1, 'IODP/JR Science Operator', URL='https://iodp.tamu.edu/'))
+        grid.Add(HyperLinkCtrl(self, -1, 'Lamont-Doherty Earth Observatory', URL='https://www.ldeo.columbia.edu/'))
+        grid.Add(HyperLinkCtrl(self, -1, 'EVL (University of Illinois)', URL='https://www.evl.uic.edu/'))
         vertSizer.Add(grid, 0, wx.LEFT | wx.RIGHT, 15)
 
         vertSizer.Add((20,20), 0)
