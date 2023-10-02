@@ -493,7 +493,7 @@ class CompositePanel(object):
 
     def OnSETButton(self, evt):
         dlg = dialog.SetDialog(self.parent)
-        dlg.Centre(wx.CENTER_ON_SCREEN)
+        dlg.Centre(wx.BOTH)
         result = dlg.ShowModal()
         if result == wx.ID_OK:
             isRate = dlg.percentRadio.GetValue()

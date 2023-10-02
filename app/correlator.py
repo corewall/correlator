@@ -1059,7 +1059,7 @@ class MainFrame(wx.Frame):
 
     def OnShowMessage(self, type, msg, numButton, makeNoDefault=False, customLabels=None):
         dlg = dialog.MessageDialog(self, type, msg, numButton, makeNoDefault, customLabels)
-        dlg.Centre(wx.CENTER_ON_SCREEN)
+        dlg.Centre(wx.BOTH)
         ret = dlg.ShowModal()
         dlg.Destroy()
         return ret
