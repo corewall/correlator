@@ -1,8 +1,9 @@
-#if defined(WIN32) || defined(WIN64) || defined (linux)
+// #if defined(WIN32) || defined(WIN64) || defined (linux)
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#else 
-#include <Python/Python.h>
-#endif
+// #else 
+// #include <Python/Python.h>
+// #endif
  
 #include <iostream>
 #include <DataManager.h>
@@ -103,13 +104,13 @@ static PyObject* getMcdRate(PyObject *self, PyObject *args);
 static PyObject* getSectionAtDepth(PyObject *self, PyObject *args);
 static PyObject* setDelimiter(PyObject *self, PyObject *args);
 
-#if defined(WIN32) || defined(CORRELATOR_MACOSX)
-PyMODINIT_FUNC initpy_correlator(void);
-#elif defined(WIN64)
-PyMODINIT_FUNC initpy_correlator64(void);
-#else
-#error "WIN32 or WIN64 must be defined"
-#endif
+// #if defined(WIN32) || defined(CORRELATOR_MACOSX)
+// PyMODINIT_FUNC initpy_correlator(void);
+// #elif defined(WIN64)
+// PyMODINIT_FUNC initpy_correlator64(void);
+// #else
+// #error "WIN32 or WIN64 must be defined"
+// #endif
 
 // all the methods callable from Python have to be
 // listed here
@@ -322,19 +323,34 @@ static PyMethodDef PyCoreMethods[] = {
 };
 
 
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "py_correlator",
+    "Correlator C++ module",
+    -1,
+    PyCoreMethods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
 // this function is called when we do import py_correlator from python
 // it let's the python interpreter know about all the functions
 // in this module available for calling
 #if defined(WIN32) || defined(CORRELATOR_MACOSX)
-PyMODINIT_FUNC initpy_correlator(void)
+    // PyModule_Create(&moduledef);
+PyMODINIT_FUNC PyInit_py_correlator(void)
 #elif defined(WIN64)
-PyMODINIT_FUNC initpy_correlator64(void)
+// PyMODINIT_FUNC initpy_correlator64(void)
+PyMODINIT_FUNC PyInit_py_correlator(void)
 #else
 #error "WIN32 or WIN64 must be defined"
 #endif
 {
 #if defined(WIN32) || defined(CORRELATOR_MACOSX)
-	(void) Py_InitModule("py_correlator", PyCoreMethods);
+	// (void) Py_InitModule("py_correlator", PyCoreMethods);
+    return PyModule_Create(&moduledef);
 #elif defined(WIN64)
 	(void) Py_InitModule("py_correlator64", PyCoreMethods);
 #endif
