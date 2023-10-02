@@ -830,7 +830,7 @@ class DBView(object):
         exportDlg = dialog.ExportCoreDialog(self.dataFrame)
         exportDlg.Centre()
         if exportDlg.ShowModal() == wx.ID_OK:
-            fileDlg = wx.FileDialog(self.dataFrame, "Select Directory for Export", self.parent.Directory, style=wx.SAVE)
+            fileDlg = wx.FileDialog(self.dataFrame, "Select Directory for Export", self.parent.Directory, style=wx.FD_SAVE)
             if fileDlg.ShowModal() == wx.ID_OK:
                 self.parent.OnNewData(None)
 

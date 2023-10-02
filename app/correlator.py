@@ -1094,7 +1094,7 @@ class MainFrame(wx.Frame):
             self.UpdateData()
 
     def OnSaveAffineData(self, event):
-        opendlg = wx.FileDialog(self, "Save AFFINE DATA file", self.Directory, "",wildcard = "Affine Table (*.affine.table)|*.affine.table|XML files(*.xml)|*.xml" , style =wx.SAVE)
+        opendlg = wx.FileDialog(self, "Save AFFINE DATA file", self.Directory, "",wildcard = "Affine Table (*.affine.table)|*.affine.table|XML files(*.xml)|*.xml" , style =wx.FD_SAVE)
         ret = opendlg.ShowModal()
         path = opendlg.GetPath()
         filterindex = opendlg.GetFilterIndex()
@@ -1507,7 +1507,7 @@ class MainFrame(wx.Frame):
 
 
     def OnSaveCoreData(self, event):
-        opendlg = wx.FileDialog(self, "Save Core Data file", self.Directory, "","*.*" , style =wx.SAVE)
+        opendlg = wx.FileDialog(self, "Save Core Data file", self.Directory, "","*.*" , style =wx.FD_SAVE)
         ret = opendlg.ShowModal()
         path = opendlg.GetPath()
         opendlg.Destroy()

@@ -493,7 +493,7 @@ class DataFrame(wx.Panel):
         self.selectedIdx = None
 
     def AddCoreImages(self):
-        dlg = wx.DirDialog(self, "Select Image Folder", defaultPath=self.parent.Directory, style=wx.OPEN | wx.MULTIPLE)
+        dlg = wx.DirDialog(self, "Select Image Folder", defaultPath=self.parent.Directory, style=wx.DD_MULTIPLE)
         if dlg.ShowModal() == wx.ID_OK:
             imgPath = dlg.GetPath()
             self.parent.Directory = imgPath
@@ -1427,7 +1427,7 @@ class DataFrame(wx.Panel):
 
     def SAVE_ELD_TO_XML(self, source_path, filename):
         #opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-        opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+        opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.FD_SAVE)
         ret = opendlg.ShowModal()
         #path = opendlg.GetPath()
         path = opendlg.GetDirectory()
@@ -1521,7 +1521,7 @@ class DataFrame(wx.Panel):
 
     def SAVE_CULL_TO_XML(self, source_path, filename):
         #opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-        opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+        opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.FD_SAVE)
         ret = opendlg.ShowModal()
         #path = opendlg.GetPath()
         path = opendlg.GetDirectory()
@@ -1656,7 +1656,7 @@ class DataFrame(wx.Panel):
 
     def SAVE_SERIES_TO_XML(self, source_path, filename, leg, site):
         #opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-        opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+        opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.FD_SAVE)
         ret = opendlg.ShowModal()
         #path = opendlg.GetPath()
         path = opendlg.GetDirectory()
@@ -1699,7 +1699,7 @@ class DataFrame(wx.Panel):
 
     def SAVE_AGE_TO_XML(self, source_path, filename, leg, site):
         #opendlg = wx.DirDialog(self, "Select Directory For Export", self.parent.Directory)
-        opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.SAVE)
+        opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, style=wx.FD_SAVE)
         ret = opendlg.ShowModal()
         #path = opendlg.GetPath()
         path = opendlg.GetDirectory()
@@ -2302,7 +2302,7 @@ class DataFrame(wx.Panel):
     def OnExportSavedTable(self):
         if self.selectedIdx != None:
             defaultFilename = self.tree.GetItemText(self.selectedIdx, 8)
-            opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, defaultFile=defaultFilename, style=wx.SAVE)
+            opendlg = wx.FileDialog(self, "Select Directory For Export", self.parent.Directory, defaultFile=defaultFilename, style=wx.FD_SAVE)
             if opendlg.ShowModal() == wx.ID_OK:
                 path = opendlg.GetDirectory()
                 filename = opendlg.GetFilename()
@@ -6204,7 +6204,7 @@ class DataFrame(wx.Panel):
         self.dataPanel.ClearGrid()
 
         self.importLabel = []
-        opendlg = wx.FileDialog(self, "Select core data files", self.parent.Directory, "", "*.*", style=wx.MULTIPLE)
+        opendlg = wx.FileDialog(self, "Select core data files", self.parent.Directory, "", "*.*", style=wx.FD_MULTIPLE)
         ret = opendlg.ShowModal()
         self.paths = opendlg.GetPaths()
         files = opendlg.GetFilenames()

@@ -408,14 +408,14 @@ def errbox(parent, msg):
 
 def selectFile(parent, goalFormat):
     path = None
-    dlg = wx.FileDialog(parent, "Select {} File".format(goalFormat.name), wildcard="CSV Files (*.csv)|*.csv", style=wx.OPEN)
+    dlg = wx.FileDialog(parent, "Select {} File".format(goalFormat.name), wildcard="CSV Files (*.csv)|*.csv", style=wx.FD_OPEN)
     if dlg.ShowModal() == wx.ID_OK:
         path = dlg.GetPath()
     return path
 
 def selectFiles(parent, goalFormat):
     paths = []
-    dlg = wx.FileDialog(parent, "Select {} Files".format(goalFormat.name), wildcard="CSV Files (*.csv)|*.csv", style=wx.OPEN|wx.MULTIPLE)
+    dlg = wx.FileDialog(parent, "Select {} Files".format(goalFormat.name), wildcard="CSV Files (*.csv)|*.csv", style=wx.FD_OPEN|wx.FD_MULTIPLE)
     if dlg.ShowModal() == wx.ID_OK:
         paths = dlg.GetPaths()
     return paths

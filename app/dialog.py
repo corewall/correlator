@@ -740,7 +740,7 @@ class ExportSpliceImageDialog(wx.Dialog):
             spliceFile = self.GetSelectedSplice()
             dot_idx = spliceFile.rindex('.')
             filename = spliceFile[:dot_idx] + '.png'
-            savedlg = wx.FileDialog(self, "Save Spliced Image", self.initialDir, defaultFile=filename, style=wx.SAVE)
+            savedlg = wx.FileDialog(self, "Save Spliced Image", self.initialDir, defaultFile=filename, style=wx.FD_SAVE)
             if savedlg.ShowModal() == wx.ID_OK:
                 self.outpath = savedlg.GetDirectory()
                 self.outfile = savedlg.GetFilename()
