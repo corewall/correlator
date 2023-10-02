@@ -309,7 +309,7 @@ class CompositePanel(object):
         crFont.SetPointSize(10)
         self.crText.SetFont(crFont)
         crSubPanel.GetSizer().Add(self.crText, 1, wx.ALIGN_CENTER_VERTICAL)
-        crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_CENTER_VERTICAL)
         
         self.crPanel.GetSizer().Add(self.corrPlotCanvas, 1, wx.EXPAND)
         self.crPanel.GetSizer().Add(crSubPanel, 0, wx.EXPAND)
@@ -422,7 +422,7 @@ class CompositePanel(object):
 
         self.saveButton = wx.Button(self.mainPanel, -1, "Save Affine (and Splice if one exists)...")
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
-        vbox.Add(self.saveButton, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL | wx.BOTTOM, 2)
+        vbox.Add(self.saveButton, 0, wx.EXPAND | wx.BOTTOM, 2)
         self.saveButton.Enable(False)
 
         self.mainPanel.SetSizer(vbox)
@@ -663,7 +663,7 @@ class SplicePanel(object):
         crFont.SetPointSize(10)
         self.crText.SetFont(crFont)
         crSubPanel.GetSizer().Add(self.crText, 1, wx.ALIGN_CENTER_VERTICAL)
-        crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_CENTER_VERTICAL)
         
         panel2.GetSizer().Add(self.corrPlotCanvas, 1, wx.EXPAND)
         panel2.GetSizer().Add(crSubPanel, 0, wx.EXPAND)
@@ -772,7 +772,7 @@ class SplicePanel(object):
 
         self.saveButton = wx.Button(self.mainPanel, -1, "Save Splice Table", size =(150, 30))
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
-        vbox.Add(self.saveButton, 0, wx.ALIGN_CENTER_VERTICAL)
+        vbox.Add(self.saveButton, 0)
         self.saveButton.Enable(False)
 
         vbox_top.Add(vbox, 1, wx.LEFT, 5)
@@ -1087,7 +1087,7 @@ class EvalPlotPanel(wx.Panel):
         crFont.SetPointSize(10)
         self.crText.SetFont(crFont)
         psz.Add(self.crText, 1, wx.ALIGN_CENTER_VERTICAL)
-        psz.Add(settingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        psz.Add(settingsBtn, 0, wx.ALIGN_CENTER_VERTICAL)
         paramPanel.SetSizer(psz)
         
         evsz.Add(paramPanel, 0, wx.EXPAND)
@@ -1516,7 +1516,7 @@ class AutoPanel(object):
         # Panel 1
         panel1 = wx.Panel(self.mainPanel, -1)
         sizer1 = wx.StaticBoxSizer(wx.StaticBox(panel1, -1, 'Core-Log Depth Matching Parameters'), orient=wx.VERTICAL)
-        sizer1.Add(wx.StaticText(panel1, -1, 'Stretch/Compress core data between:', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+        sizer1.Add(wx.StaticText(panel1, -1, 'Stretch/Compress core data between:', (5, 5)), 0)
 
         grid1 = wx.FlexGridSizer(2, 4, gap=(0,0))
         self.valueA1 = wx.TextCtrl(panel1, -1, "85.0", size=(60, 25), style=wx.SUNKEN_BORDER )
@@ -1534,7 +1534,7 @@ class AutoPanel(object):
         grid1.Add(wx.StaticText(panel1, -1, '% intervals', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
         sizer1.Add(grid1, 0, wx.TOP, 5)
 
-        sizer1.Add(wx.StaticText(panel1, -1, 'Slide Log up/down between:', (5, 5)), 0, wx.TOP | wx.ALIGN_CENTER_VERTICAL, 9)
+        sizer1.Add(wx.StaticText(panel1, -1, 'Slide Log up/down between:', (5, 5)), 0, wx.TOP, 9)
 
         grid12 = wx.FlexGridSizer(2, 4, gap=(0,0))
         self.valueB1 = wx.TextCtrl(panel1, -1, "-5.1", size =(60, 25), style=wx.SUNKEN_BORDER )
@@ -1570,7 +1570,7 @@ class AutoPanel(object):
         panel1.SetSizer(sizer1)
         vbox.Add(panel1, 0, wx.TOP, 9)
 
-        vbox.Add(wx.StaticText(self.mainPanel, -1, 'Select Hole(s):', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+        vbox.Add(wx.StaticText(self.mainPanel, -1, 'Select Hole(s):', (5, 5)), 0)
         
         buttonsize = 300
         if platform_name[0] == "Windows" :
@@ -1660,7 +1660,7 @@ class AutoPanel(object):
         #vbox.Add(wx.StaticText(self.mainPanel, -1, '*Log data is required.', (5, 5)), 0, wx.BOTTOM, 9)
         self.saveButton = wx.Button(self.mainPanel, -1, "Save ELD Table", size =(150, 30))
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
-        vbox.Add(self.saveButton, 0, wx.ALIGN_CENTER_VERTICAL)
+        vbox.Add(self.saveButton, 0)
         self.saveButton.Enable(False)
 
         vbox.Add(wx.StaticText(self.mainPanel, -1, '* Auto Correlation will stretch/compress', (5, 5)), 0, wx.BOTTOM, 2)
@@ -1992,7 +1992,7 @@ class ELDPanel(object):
         crFont.SetPointSize(10)
         self.crText.SetFont(crFont)
         crSubPanel.GetSizer().Add(self.crText, 1, wx.ALIGN_CENTER_VERTICAL)
-        crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        crSubPanel.GetSizer().Add(crSettingsBtn, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
         
         panel2.GetSizer().Add(self.corrPlotCanvas, 1, wx.EXPAND)
         panel2.GetSizer().Add(crSubPanel, 0, wx.EXPAND)
@@ -2068,7 +2068,7 @@ class ELDPanel(object):
 
         self.saveButton = wx.Button(self.mainPanel, -1, "Save ELD Table", size =(150, 30))
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSAVE, self.saveButton)
-        vbox.Add(self.saveButton, 0, wx.ALIGN_CENTER_VERTICAL)
+        vbox.Add(self.saveButton, 0)
         self.saveButton.Enable(False)
 
         vbox_top.Add(vbox, 1, wx.LEFT, 5)
