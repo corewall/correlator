@@ -109,7 +109,7 @@ class ImportDialog(wx.Dialog):
         
         # fill table
         for c in range(len(self.dataframe.columns)):
-            col = self.dataframe.icol(c)
+            col = self.dataframe.iloc[:, c]
             for r in range(1, rowcount):
                 self.table.SetCellValue(r, c, str(col[r - 1]))
                 self.table.SetReadOnly(r, c)
@@ -390,7 +390,7 @@ def reorderColumns(dataframe, colmap, goalFormat):
     for colName in list(colmap.keys()):
         index = colmap[colName]
         if index is not None:
-            newmap[colName] = dataframe.icol(index)
+            newmap[colName] = dataframe.iloc[:, index]
     df = pandas.DataFrame(newmap, columns=goalFormat.req)
     return df
 
