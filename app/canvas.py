@@ -63,8 +63,8 @@ class wxBufferedWindow(wx.Window):
         self.CLOSEFLAG = 0
 
         self.WindowUpdate = 0
-        wx.EVT_PAINT(self, self.OnPaint)
-        wx.EVT_SIZE(self, self.OnSize)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
 
         # OnSize called to make sure the buffer is initialized.
         # This might result in OnSize getting called twice on some
@@ -714,18 +714,17 @@ class DataCanvas(wxBufferedWindow):
         self.sideNote.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnSelectNote)
         self.sideNote.SetSelection(1)
         
-        wx.EVT_MOTION(self, self.OnMotion)
-        wx.EVT_LEFT_DOWN(self, self.OnLMouse)
-        wx.EVT_LEFT_DCLICK(self, self.OnDoubleLeftClick)
-        wx.EVT_RIGHT_DOWN(self, self.OnRMouse)
-        wx.EVT_LEFT_UP(self, self.OnMouseUp)
-        wx.EVT_MOUSEWHEEL(self, self.OnMouseWheel)
+        self.Bind(wx.EVT_MOTION, self.OnMotion)
+        self.Bind(wx.EVT_LEFT_DOWN, self.OnLMouse)
+        self.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleLeftClick)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.OnRMouse)
+        self.Bind(wx.EVT_LEFT_UP, self.OnMouseUp)
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
 
-        #wx.EVT_KEY_DOWN(self, self.OnChar)
-        wx.EVT_KEY_DOWN(self, self.OnChar)
-        wx.EVT_KEY_DOWN(self.sidePanel, self.OnChar)
-        wx.EVT_KEY_UP(self, self.OnCharUp)
-        wx.EVT_KEY_UP(self.sidePanel, self.OnCharUp)
+        self.Bind(wx.EVT_KEY_DOWN, self.OnChar)
+        self.sidePanel.Bind(wx.EVT_KEY_DOWN, self.OnChar)
+        self.Bind(wx.EVT_KEY_UP, self.OnCharUp)
+        self.sidePanel.Bind(wx.EVT_KEY_UP, self.OnCharUp)
 
     # 5/9/2014 brgtodo: Duplication in this routine and __init__ above
     def OnInit(self):

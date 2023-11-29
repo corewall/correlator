@@ -1947,7 +1947,7 @@ class SplashScreen(wx.Dialog):
         aboutBtn = wx.Button(self, -1, "About", size=(60,-1))
         self.Bind(wx.EVT_BUTTON, self.OnABOUT, aboutBtn)
 
-        wx.EVT_KEY_DOWN(self.name, self.OnPanelChar)
+        self.name.Bind(wx.EVT_KEY_DOWN, self.OnPanelChar)
         panel.Bind(wx.EVT_CHAR, self.OnPanelChar)
 
         userSizer = wx.BoxSizer(wx.HORIZONTAL)

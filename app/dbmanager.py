@@ -167,7 +167,7 @@ class DataFrame(wx.Panel):
         self.initialize = False
 
         self.repCount = 0
-        wx.EVT_CLOSE(self, self.OnHide)
+        self.Bind(wx.EVT_CLOSE, self.OnHide)
 
     def OnHide(self,event):
         self.Show(False)
@@ -784,7 +784,7 @@ class DataFrame(wx.Panel):
     
     def MakeSectionSummaryPopup(self, popupMenu):
         popupMenu.Append(1, "&Import Section Summary File(s)...")
-        wx.EVT_MENU(popupMenu, 1, self.OnSecSummMenu)
+        self.Bind(wx.EVT_MENU, self.OnSecSummMenu)
 
     def MakeImagesPopup(self, popupMenu):
         popupMenu.Append(1, "Add new &images")
@@ -794,12 +794,11 @@ class DataFrame(wx.Panel):
         enable = len(self.GetSiteImages(self.selectedIdx)) > 0
         popupMenu.Append(4, "&Export spliced image")
         popupMenu.Enable(4, enable)
-        for opid in [1,2,3,4]:
-            wx.EVT_MENU(popupMenu, opid, self.OnImagesMenu)
+        self.Bind(wx.EVT_MENU, self.OnImagesMenu)
 
     def MakeImageItemPopup(self, popupMenu):
         popupMenu.Append(1, "&Delete")
-        wx.EVT_MENU(popupMenu, 1, self.OnImageItemMenu)
+        self.Bind(wx.EVT_MENU, self.OnImageItemMenu)
 
     def ConfirmClearDisplayData(self):
         msg = "This operation will clear all data in the Display, including "
@@ -815,199 +814,119 @@ class DataFrame(wx.Panel):
             self.tree.SelectItem(idx) # ensure right-clicked item is selected
             self.selectedIdx = idx
             popupMenu = wx.Menu()
-            str_name = self.tree.GetItemText(self.selectedIdx, 8)
+            str_name = self.tree.GetItemText(self.selectedIdx, 8) # 8 is the "File Output Name" column
             if str_name != "":
                 parentItem = self.tree.GetItemParent(self.selectedIdx)
 
                 if self.tree.GetItemText(parentItem, 0) == "Saved Tables" or self.tree.GetItemText(self.selectedIdx, 0) == "-Cull Table": 
                     popupMenu.Append(2, "&View")
-                    wx.EVT_MENU(popupMenu, 2, self.OnPOPMENU)
-
                     if self.tree.GetItemText(self.selectedIdx, 2) == "Disable":
                         popupMenu.Append(11, "&Enable")
-                        wx.EVT_MENU(popupMenu, 11, self.OnPOPMENU)
                     else:
                         popupMenu.Append(10, "&Disable")
-                        wx.EVT_MENU(popupMenu, 10, self.OnPOPMENU)
 
                     popupMenu.Append(16, "&Export")
-                    wx.EVT_MENU(popupMenu, 16, self.OnPOPMENU)
-
                     popupMenu.Append(6, "&Delete")
-                    wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
-                    #popupMenu.Append(22, "&Export in XML")
-                    #wx.EVT_MENU(popupMenu, 22, self.OnPOPMENU)
-
                 elif self.tree.GetItemText(parentItem, 0) == "Downhole Log Data":
                     popupMenu.Append(2, "&View")
-                    wx.EVT_MENU(popupMenu, 2, self.OnPOPMENU)
-
                     popupMenu.Append(13, "&Edit")
-                    wx.EVT_MENU(popupMenu, 13, self.OnPOPMENU)
-
                     if self.tree.GetItemText(self.selectedIdx, 2) == "Disable":
                         popupMenu.Append(11, "&Enable")
-                        wx.EVT_MENU(popupMenu, 11, self.OnPOPMENU)
                     else:
                         popupMenu.Append(10, "&Disable")
-                        wx.EVT_MENU(popupMenu, 10, self.OnPOPMENU)
-
                     popupMenu.Append(6, "&Delete")
-                    wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
-
                 elif self.tree.GetItemText(parentItem, 0) == "Stratigraphy":
                     popupMenu.Append(2, "&View")
-                    wx.EVT_MENU(popupMenu, 2, self.OnPOPMENU)
-
                     if self.tree.GetItemText(self.selectedIdx, 2) == "Disable":
                         popupMenu.Append(11, "&Enable")
-                        wx.EVT_MENU(popupMenu, 11, self.OnPOPMENU)
                     else:
                         popupMenu.Append(10, "&Disable")
-                        wx.EVT_MENU(popupMenu, 10, self.OnPOPMENU)
-
                     popupMenu.Append(18, "&Edit")
-                    wx.EVT_MENU(popupMenu, 18, self.OnPOPMENU)
-
                     popupMenu.Append(6, "&Delete")
-                    wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
                 elif self.tree.GetItemText(parentItem, 0) == "Age Models":
                     popupMenu.Append(2, "&View")
-                    wx.EVT_MENU(popupMenu, 2, self.OnPOPMENU)
-
                     if self.tree.GetItemText(self.selectedIdx, 2) == "Disable":
                         popupMenu.Append(11, "&Enable")
-                        wx.EVT_MENU(popupMenu, 11, self.OnPOPMENU)
                     else:
                         popupMenu.Append(10, "&Disable")
-                        wx.EVT_MENU(popupMenu, 10, self.OnPOPMENU)
-
                     popupMenu.Append(6, "&Delete")
-                    wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
-
                     popupMenu.Append(16, "&Export")
-                    wx.EVT_MENU(popupMenu, 16, self.OnPOPMENU)
-
                     popupMenu.Append(22, "&Export in XML")
-                    wx.EVT_MENU(popupMenu, 22, self.OnPOPMENU)
-
                 elif self.tree.GetItemText(parentItem, 0) == "Image Data":
                     popupMenu.Append(2, "&View")
-                    wx.EVT_MENU(popupMenu, 2, self.OnPOPMENU)
-
                     popupMenu.Append(6, "&Delete")
-                    wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
-
                     popupMenu.Append(16, "&Export")
-                    wx.EVT_MENU(popupMenu, 16, self.OnPOPMENU)
-                elif self.tree.GetItemText(self.selectedIdx, 0) == "Section Summaries":
-                    self.MakeSectionSummaryPopup(popupMenu)
+                # brg 11/28/2023 because top-level SS node has no File Output Name associated with it
+                # I'm quite sure this block can never be hit.
+                # elif self.tree.GetItemText(self.selectedIdx, 0) == "Section Summaries":
+                    # self.MakeSectionSummaryPopup(popupMenu) # TODO?
                 elif self.tree.GetItemText(parentItem, 0) == "Section Summaries":
                     popupMenu.Append(2, "&View")
-                    wx.EVT_MENU(popupMenu, 2, self.OnPOPMENU)
                     popupMenu.Append(6, "&Delete")
-                    wx.EVT_MENU(popupMenu, 6, self.DeleteSecSummFile)
                 else:
                     popupMenu.Append(2, "&View")
-                    wx.EVT_MENU(popupMenu, 2, self.OnPOPMENU)
-
                     if self.tree.GetItemText(self.selectedIdx, 2) == "Disable":
                         popupMenu.Append(19, "&Enable")
-                        wx.EVT_MENU(popupMenu, 19, self.OnPOPMENU)
                     else:
                         popupMenu.Append(20, "&Disable")
-                        wx.EVT_MENU(popupMenu, 20, self.OnPOPMENU)
-
                     popupMenu.Append(7, "&Update")
-                    wx.EVT_MENU(popupMenu, 7, self.OnPOPMENU)
-
                     popupMenu.Append(23, "&Export")
-                    wx.EVT_MENU(popupMenu, 23, self.OnPOPMENU)
-
                     popupMenu.Append(6, "&Delete")
-                    wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
-
-                    #popupMenu.Append(23, "&Export in XML")
-                    #wx.EVT_MENU(popupMenu, 23, self.OnPOPMENU)
             else:
                 str_name = self.tree.GetItemText(self.selectedIdx, 0)
                 if self.IsRootNode(self.selectedIdx):
                     popupMenu.Append(5, "&Add new data")
-                    wx.EVT_MENU(popupMenu, 5, self.OnPOPMENU)
                 elif str_name == "Session Reports":
                     popupMenu.Append(30, "&Empty")
-                    wx.EVT_MENU(popupMenu, 30, self.OnPOPMENU)
                 elif str_name == "Report":
                     popupMenu.Append(28, "&View")
-                    wx.EVT_MENU(popupMenu, 28, self.OnPOPMENU)
-
                     popupMenu.Append(29, "&Delete")
-                    wx.EVT_MENU(popupMenu, 29, self.OnPOPMENU)
-
                     popupMenu.Append(31, "&Export")
-                    wx.EVT_MENU(popupMenu, 31, self.OnPOPMENU)
                 elif str_name == "Saved Tables":
                     popupMenu.Append(4, "&Import affine table")
-                    wx.EVT_MENU(popupMenu, 4, self.OnPOPMENU)
-
                     popupMenu.Append(15, "&Import splice table")
-                    wx.EVT_MENU(popupMenu, 15, self.OnPOPMENU)
-
-                    # popupMenu.Append(17, "&Import ELD table")
-                    # wx.EVT_MENU(popupMenu, 17, self.OnPOPMENU)
-                    
                     popupMenu.AppendSeparator()
                     popupMenu.Append(66, "&Import legacy affine table")
-                    wx.EVT_MENU(popupMenu, 66, self.OnPOPMENU)
-
-                    #popupMenu.Append(32, "&Import universal cull table")
-                    #wx.EVT_MENU(popupMenu, 32, self.OnPOPMENU)
-
                 elif str_name == "Downhole Log Data":
                     popupMenu.Append(12, "&Import log")
-                    wx.EVT_MENU(popupMenu, 12, self.OnPOPMENU)
                 elif str_name == "Stratigraphy":
                     popupMenu.Append(14, "&Import stratigraphy data")
-                    wx.EVT_MENU(popupMenu, 14, self.OnPOPMENU)
                 elif str_name == "Age Models":
                     popupMenu.Append(24, "&Import age/depth table")
-                    wx.EVT_MENU(popupMenu, 24, self.OnPOPMENU)
-
                     popupMenu.Append(33, "&Import age model")
-                    wx.EVT_MENU(popupMenu, 33, self.OnPOPMENU)
                 elif str_name == "Image Data":
                     popupMenu.Append(21, "&Import image data")
-                    wx.EVT_MENU(popupMenu, 21, self.OnPOPMENU)
                 elif str_name == "Section Summaries":
+                    # brg 11/26/2023: For Section Summaries, Images, and Images children, popup
+                    # menu and return, otherwise EVT_MENU binding at the end of this massive elif
+                    # block will override EVT_MENU binding from e.g. MakeSectionSummaryPopup().
+                    # TODO? rename to ShowSectionSummaryPopup() and do the popup there? Still
+                    # need to ensure we return here.
                     self.MakeSectionSummaryPopup(popupMenu)
+                    self.tree.PopupMenu(popupMenu)
+                    return
                 elif self.tree.GetItemText(self.selectedIdx, 0) == IMG_NODE:
                     self.MakeImagesPopup(popupMenu)
+                    self.tree.PopupMenu(popupMenu)
+                    return
                 elif self.tree.GetItemText(self.tree.GetItemParent(self.selectedIdx), 0) == IMG_NODE:
                     self.MakeImageItemPopup(popupMenu)
+                    self.tree.PopupMenu(popupMenu)
+                    return
                 else:
                     parentItem = self.tree.GetItemParent(self.selectedIdx)
                     if self.IsRootNode(parentItem): # site-level node
                         popupMenu.Append(1, "&Load")
-                        wx.EVT_MENU(popupMenu, 1, self.OnPOPMENU)
                         popupMenu.Append(5, "&Add new data")
-                        wx.EVT_MENU(popupMenu, 5, self.OnPOPMENU)
                         popupMenu.Append(34, "Add new &images")
-                        wx.EVT_MENU(popupMenu, 34, self.OnPOPMENU)
-
                     if not self.IsRootNode(parentItem):
                         popupMenu.Append(19, "&Enable")
-                        wx.EVT_MENU(popupMenu, 19, self.OnPOPMENU)
                         popupMenu.Append(20, "&Disable")
-                        wx.EVT_MENU(popupMenu, 20, self.OnPOPMENU)
                         popupMenu.Append(25, "&Export")
-                        wx.EVT_MENU(popupMenu, 25, self.OnPOPMENU)
-
                     popupMenu.Append(7, "&Update")
-                    wx.EVT_MENU(popupMenu, 7, self.OnPOPMENU)
-
                     popupMenu.Append(6, "&Delete")
-                    wx.EVT_MENU(popupMenu, 6, self.OnPOPMENU)
 
+            self.Bind(wx.EVT_MENU, self.OnPOPMENU)
             self.tree.PopupMenu(popupMenu)
         return
 
@@ -7412,80 +7331,43 @@ class DataFrame(wx.Panel):
         if self.importType == "LOG":
             popupMenu = wx.Menu()
             popupMenu.Append(14, "&Depth")
-            wx.EVT_MENU(popupMenu, 14, self.OnCHANGELABEL)
             popupMenu.Append(1, "&Data")
-            wx.EVT_MENU(popupMenu, 1, self.OnCHANGELABEL)
             popupMenu.Append(13, "&Unselect")
-            wx.EVT_MENU(popupMenu, 13, self.OnCHANGELABEL)
             self.PopupMenu(popupMenu, pos)
         elif self.selectedCol >= 1:
             if self.importType != "LOG":
                 popupMenu = wx.Menu()
                 popupMenu.Append(1, "&Data")
-                wx.EVT_MENU(popupMenu, 1, self.OnCHANGELABEL)
                 popupMenu.Append(2, "&Depth")
-                wx.EVT_MENU(popupMenu, 2, self.OnCHANGELABEL)
                 popupMenu.Append(3, "&?")
-                wx.EVT_MENU(popupMenu, 3, self.OnCHANGELABEL)
                 popupMenu.Append(4, "&Exp")
-                wx.EVT_MENU(popupMenu, 4, self.OnCHANGELABEL)
                 popupMenu.Append(5, "&Site")
-                wx.EVT_MENU(popupMenu, 5, self.OnCHANGELABEL)
                 popupMenu.Append(6, "&Hole")
-                wx.EVT_MENU(popupMenu, 6, self.OnCHANGELABEL)
                 popupMenu.Append(7, "&Core")
-                wx.EVT_MENU(popupMenu, 7, self.OnCHANGELABEL)
                 popupMenu.Append(8, "&CoreType")
-                wx.EVT_MENU(popupMenu, 8, self.OnCHANGELABEL)
                 popupMenu.Append(9, "&Section")
-                wx.EVT_MENU(popupMenu, 9, self.OnCHANGELABEL)
                 popupMenu.Append(10, "&TopOffset")
-                wx.EVT_MENU(popupMenu, 10, self.OnCHANGELABEL)
                 popupMenu.Append(11, "&BottomOffset")
-                wx.EVT_MENU(popupMenu, 11, self.OnCHANGELABEL)
                 popupMenu.Append(12, "&RunNo")
-                wx.EVT_MENU(popupMenu, 12, self.OnCHANGELABEL)
                 
                 if self.dataPanel.GetColLabelValue(self.selectedCol) in ["Leg", "Exp"]:
                     popupMenu.AppendSeparator()
                     popupMenu.Append(101, "&Edit Exp/Leg...")
-                    wx.EVT_MENU(popupMenu, 101, self.OnCHANGENUMBER)
-                    #self.PopupMenu(popupMenu, pos)
                 elif self.dataPanel.GetColLabelValue(self.selectedCol) == "Site":
                     popupMenu.AppendSeparator()
                     popupMenu.Append(102, "&Edit Site...")
-                    wx.EVT_MENU(popupMenu, 102, self.OnCHANGENUMBER)
-                    
-                self.PopupMenu(popupMenu, pos)
 
-#		elif self.selectedCol == 1 and self.importType != "LOG": 
-#			popupMenu = wx.Menu()
-#			popupMenu.Append(1, "&Edit Leg No")
-#			wx.EVT_MENU(popupMenu, 1, self.OnCHANGENUMBER)
-#			self.PopupMenu(popupMenu, pos)
-#		elif self.selectedCol == 2 and self.importType != "LOG": 
-#			popupMenu = wx.Menu()
-#			popupMenu.Append(2, "&Edit Site No")
-#			wx.EVT_MENU(popupMenu, 2, self.OnCHANGENUMBER)
-#			self.PopupMenu(popupMenu, pos)
-        else:
-#			#if self.importbtn.GetLabel() == "Change" or self.importType == "LOG":
-#			if self.importType == "LOG":
-#				return
+                self.Bind(wx.EVT_MENU, self.OnCHANGELABEL)
+                self.PopupMenu(popupMenu, pos)
+        else: # Data Type column header (leftmost) was clicked
             popupMenu = wx.Menu()
             popupMenu.Append(1, "&NaturalGamma")
-            wx.EVT_MENU(popupMenu, 1, self.OnCHANGETYPE)
             popupMenu.Append(2, "&Susceptibility")
-            wx.EVT_MENU(popupMenu, 2, self.OnCHANGETYPE)
             popupMenu.Append(3, "&Reflectance")
-            wx.EVT_MENU(popupMenu, 3, self.OnCHANGETYPE)
             popupMenu.Append(4, "&Bulk Density(GRA)")
-            wx.EVT_MENU(popupMenu, 4, self.OnCHANGETYPE)
             popupMenu.Append(5, "&Pwave")
-            wx.EVT_MENU(popupMenu, 5, self.OnCHANGETYPE)
 
-            #popupMenu.Append(6, "&Other")
-            #wx.EVT_MENU(popupMenu, 6, self.OnCHANGETYPE)
+            popupMenu.Bind(wx.EVT_MENU, self.OnCHANGETYPE)
 
             #----- HYEJUNG
             filename =  self.parent.DBPath + 'tmp/datatypelist.cfg' 
@@ -7502,16 +7384,15 @@ class DataFrame(wx.Panel):
                         line = line[0:type_last]
 
                     popupMenu.Append(idx, "&"+ line)
-                    wx.EVT_MENU(popupMenu, idx, self.OnCHANGETYPE)
                     idx = idx + 1
                 f.close()
             #----- HYEJUNG
             
             popupMenu.Append(7, "&Custom data type...")
-            wx.EVT_MENU(popupMenu, 7, self.OnCHANGETYPE)
+            self.Bind(wx.EVT_MENU, self.OnCHANGETYPE)
             self.PopupMenu(popupMenu, pos)
 
-
+    # Data Type column header clicked, pop menu of available datatypes
     def OnCHANGETYPE(self, event):
         opId = event.GetId()
         datatype = ""
@@ -7612,31 +7493,7 @@ class DataFrame(wx.Panel):
         for i in range(rows):
             self.dataPanel.SetCellValue(i, 0, datatype)
 
-
-    def OnCHANGENUMBER(self, event):
-        opId = event.GetId()
-        col = self.selectedCol
-        flag = False
-        if opId == 1 or opId == 101:
-            dlg = dialog.EditBoxDialog(self, "Leg Number")
-            ret = dlg.ShowModal()
-            if ret == wx.ID_OK:
-                flag = True 
-                num = dlg.txt.GetValue()
-                rows = self.dataPanel.GetNumberRows()
-                for i in range(rows):
-                    self.dataPanel.SetCellValue(i, col, num)
-        elif opId == 2 or opId == 102:
-            dlg = dialog.EditBoxDialog(self, "Site Number")
-            ret = dlg.ShowModal()
-            if ret == wx.ID_OK:
-                flag = True 
-                num = dlg.txt.GetValue()
-                rows = self.dataPanel.GetNumberRows()
-                for i in range(rows):
-                    self.dataPanel.SetCellValue(i, col, num)
-
-
+    # Column header clicked, pop menu of available labels
     def OnCHANGELABEL(self, event):
         opId = event.GetId()
 
@@ -7696,6 +7553,28 @@ class DataFrame(wx.Panel):
             self.dataPanel.SetColLabelValue(self.selectedCol, origin_label)
         elif opId == 14:
             self.dataPanel.SetColLabelValue(self.selectedCol, "Depth")
+
+        elif opId in [101, 102]: # Change Site/Leg/Exp number
+            col = self.selectedCol
+            flag = False
+            if opId == 1 or opId == 101:
+                dlg = dialog.EditBoxDialog(self, "Leg Number")
+                ret = dlg.ShowModal()
+                if ret == wx.ID_OK:
+                    flag = True 
+                    num = dlg.txt.GetValue()
+                    rows = self.dataPanel.GetNumberRows()
+                    for i in range(rows):
+                        self.dataPanel.SetCellValue(i, col, num)
+            elif opId == 2 or opId == 102:
+                dlg = dialog.EditBoxDialog(self, "Site Number")
+                ret = dlg.ShowModal()
+                if ret == wx.ID_OK:
+                    flag = True 
+                    num = dlg.txt.GetValue()
+                    rows = self.dataPanel.GetNumberRows()
+                    for i in range(rows):
+                        self.dataPanel.SetCellValue(i, col, num)            
 
         self.selectedCol = -1
 

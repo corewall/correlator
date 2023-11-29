@@ -127,7 +127,7 @@ class ImportDialog(wx.Dialog):
         for index, mi in enumerate(menuItems):
             menuIndex = index + 1 # start from 1, no zero menu index on Mac
             self.reqMenu.Append(menuIndex, mi)
-            wx.EVT_MENU(self.reqMenu, menuIndex, self.OnReqMenu)
+        self.Bind(wx.EVT_MENU, self.OnReqMenu)
     
     def _updateFileLabel(self):
         self.fileLabel.SetLabel("File: {}".format(self.path))
