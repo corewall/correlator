@@ -14,7 +14,7 @@ import pandas
 import imagesize
 
 import wx 
-import wx.gizmos as gizmos
+import wx.lib.gizmos as gizmos
 from wx.lib import plot
 import random, sys, os, re, time, string
 import re
