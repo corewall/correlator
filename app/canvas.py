@@ -3437,7 +3437,7 @@ class DataCanvas(wxBufferedWindow):
 
     def OnMouseWheel(self, event):
         rot = event.GetWheelRotation() 
-        pos = event.GetPositionTuple()
+        pos = event.GetPosition().Get()
 
         if pos[0] <= self.splicerX or not self.independentScroll:
             if self.parent.ScrollMax > 0:
@@ -3778,7 +3778,7 @@ class DataCanvas(wxBufferedWindow):
         self.parent.affineManager.breakTie(holecore)
 
     def OnRMouse(self, event):
-        pos = event.GetPositionTuple()
+        pos = event.GetPosition().Get()
         self.selectedTie = -1 
 
         dotsize_y = self.tieDotSize + 10
@@ -3808,7 +3808,7 @@ class DataCanvas(wxBufferedWindow):
                 popupMenu.Append(1, "&Clear tie point(s)")
                 wx.EVT_MENU(popupMenu, 1, self.OnTieSelectionCb)
 
-                self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
+                self.parent.PopupMenu(popupMenu, event.GetPosition().Get())
                 return
             count = count + 1
 
@@ -3840,7 +3840,7 @@ class DataCanvas(wxBufferedWindow):
                 if spliceTie.fixed == 0: # move tie
                     popupMenu.Append(2, "&Set")
                     wx.EVT_MENU(popupMenu, 2, self.OnSpliceTieSelectionCb)
-                self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
+                self.parent.PopupMenu(popupMenu, event.GetPosition().Get())
                 return
             count = count + 1
 
@@ -3864,7 +3864,7 @@ class DataCanvas(wxBufferedWindow):
                     if r[3] == 0: # move tie	
                         popupMenu.Append(2, "&Set")
                         wx.EVT_MENU(popupMenu, 2, self.OnLogTieSelectionCb)
-                    self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
+                    self.parent.PopupMenu(popupMenu, event.GetPosition().Get())
                     return
             count = count + 1
 
@@ -3877,12 +3877,12 @@ class DataCanvas(wxBufferedWindow):
                     if self.parent.client != None:
                         popupMenu.Append(3, "&Show it on Corelyzer")
                         wx.EVT_MENU(popupMenu, 3, self.OnSetQTCb)
-                    self.parent.PopupMenu(popupMenu, event.GetPositionTuple())
+                    self.parent.PopupMenu(popupMenu, event.GetPosition().Get())
                     return
                 break # brgtodo 5/1/2014: needed? probably only have one MouseInfo at a time...
 
     def OnLMouse(self, event):
-        pos = event.GetPositionTuple()
+        pos = event.GetPosition().Get()
         for key, data in list(self.DrawData.items()):
             if key == "Interface": # dragging composite area vertical scroll thumb? Or moving comp/splice separating scrollbar?
                 bmp, x, y = data
@@ -3927,7 +3927,7 @@ class DataCanvas(wxBufferedWindow):
 
     def OnMainLMouse(self, event):
         # check left or right
-        pos = event.GetPositionTuple()
+        pos = event.GetPosition().Get()
         self.selectedTie = -1 
         self.activeTie = -1
         self.activeSPTie = -1
@@ -3999,7 +3999,7 @@ class DataCanvas(wxBufferedWindow):
 
     # select double-clicked core
     def OnDoubleLeftClick(self, event):
-        pos = event.GetPositionTuple()
+        pos = event.GetPosition().Get()
         for area in self.DrawData["CoreArea"]:
             coreInfo, rect, _ = area
             if rect.Inside(wx.Point(pos[0], pos[1])):
@@ -4248,7 +4248,7 @@ class DataCanvas(wxBufferedWindow):
 
     def OnMouseUp(self, event):
         self.SetFocusFromKbd()
-        pos = event.GetPositionTuple()
+        pos = event.GetPosition().Get()
 
         if self.showMenu == True:
             self.selectedTie = -1
@@ -4523,7 +4523,7 @@ class DataCanvas(wxBufferedWindow):
 
     # 9/20/2012 brgtodo: duplication
     def OnMotion(self, event):
-        pos = event.GetPositionTuple()
+        pos = event.GetPosition().Get()
 
         if self.grabScrollA == 1:
             self.UpdateScrollA(pos)
@@ -4579,7 +4579,7 @@ class DataCanvas(wxBufferedWindow):
         if self.MousePos is not None:
             self.LastMousePos = self.MousePos
 
-        pos = event.GetPositionTuple()
+        pos = event.GetPosition().Get()
         self.MousePos = pos 
         # if cursor position hasn't actually changed, avoid a needless redraw
         if self.LastMousePos is not None:
