@@ -493,7 +493,9 @@ class DataFrame(wx.Panel):
         self.selectedIdx = None
 
     def AddCoreImages(self):
-        dlg = wx.DirDialog(self, "Select Image Folder", defaultPath=self.parent.Directory, style=wx.DD_MULTIPLE)
+        # 11/29/2023 brg: Unclear why the DD_MULTIPLE style was set here, as it wasn't supported
+        # in the version of wxPython we used for so long. Can hook up if needed. TODO?
+        dlg = wx.DirDialog(self, "Select Image Folder", defaultPath=self.parent.Directory)#, style=wx.DD_MULTIPLE)
         if dlg.ShowModal() == wx.ID_OK:
             imgPath = dlg.GetPath()
             self.parent.Directory = imgPath
