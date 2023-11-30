@@ -3253,7 +3253,7 @@ class DataCanvas(wxBufferedWindow):
         self.parent.UpdateStratData()
 
     def OnTieSelectionCb(self, event):
-        opId = event.GetId() 
+        opId = event.GetId()
         self.activeTie = -1
         self.showMenu = False
         if opId == 1: # Clear Tie
@@ -3796,18 +3796,15 @@ class DataCanvas(wxBufferedWindow):
                 self.selectedTie = count
                 self.showMenu = True
                 popupMenu = wx.Menu()
-                # create Menu
+                popupMenu.Append(1, "&Clear tie point(s)")
                 if tie.fixed == 0: # movable tie
                     popupMenu.Append(2, "&Shift this core and all below")
-                    wx.EVT_MENU(popupMenu, 2, self.OnTieSelectionCb)
                     popupMenu.Append(3, "&Shift this core and all related cores below")
-                    wx.EVT_MENU(popupMenu, 3, self.OnTieSelectionCb)
                     popupMenu.Append(4, "&Shift this core only")
-                    wx.EVT_MENU(popupMenu, 4, self.OnTieSelectionCb)
 
-                popupMenu.Append(1, "&Clear tie point(s)")
-                wx.EVT_MENU(popupMenu, 1, self.OnTieSelectionCb)
-
+                # brg 11/29/2023: A bit odd to bind to the menu itself, but it works, seems
+                # harmless, and self.parent.Bind(...) breaks the main window's menu handling.
+                popupMenu.Bind(wx.EVT_MENU, self.OnTieSelectionCb)
                 self.parent.PopupMenu(popupMenu, event.GetPosition().Get())
                 return
             count = count + 1

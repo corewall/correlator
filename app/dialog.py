@@ -511,7 +511,7 @@ class SaveDialog(wx.Dialog):
 
         self.SetSizer(vbox_top)
         self.GetSizer().Fit(self)
-        wx.EVT_KEY_UP(self, self.OnCharUp)
+        self.Bind(wx.EVT_KEY_UP, self.OnCharUp)
 
     def OnYES(self, event):
         self.EndModal(wx.ID_YES)
