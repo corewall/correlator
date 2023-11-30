@@ -1780,9 +1780,9 @@ class DataCanvas(wxBufferedWindow):
             if dt == "Natural Gamma":
                 dt = "NaturalGamma"
             datamin, datamax = self.GetMINMAX(dt)
-            if datamin < rangemin or rangemin is None:
+            if rangemin is None or datamin < rangemin:
                 rangemin = datamin
-            if datamax > rangemax or rangemax is None:
+            if rangemax is None or datamax > rangemax:
                 rangemax = datamax
         return rangemin, rangemax
         
