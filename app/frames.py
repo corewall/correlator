@@ -142,8 +142,8 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
         
         self.plotMin = 99999.9
 
-        self.SetEnablePointLabel(True)
-        self.SetPointLabelFunc(self.MouseOverPoint)
+        self.enablePointLabel = True
+        self.pointLabelFunc = self.MouseOverPoint
         self.parent.Bind(wx.EVT_MOTION, self.OnMotion)
 
     def OnMotion(self, event):
@@ -295,8 +295,8 @@ class CompositePanel(object):
         self.crPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
         self.corrPlotCanvas = BetterLegendPlotCanvas(self.crPanel)
 
-        self.corrPlotCanvas.SetEnableGrid(True)
-        self.corrPlotCanvas.SetEnableTitle(False)
+        self.corrPlotCanvas.enableGrid = True
+        self.corrPlotCanvas.enableTitle = False
         self.corrPlotCanvas.SetBackgroundColour("White")
         self.corrPlotCanvas.Show(True)
         
@@ -322,10 +322,10 @@ class CompositePanel(object):
 
         self.grText = wx.StaticText(self.grPanel, -1, "Mouse over a point to show data.")
         self.growthPlotCanvas = GrowthRatePlotCanvas(self.grPanel, self.grText)
-        self.growthPlotCanvas.SetEnableGrid(True)
-        self.growthPlotCanvas.SetEnableTitle(False)
-        self.growthPlotCanvas.SetEnableLegend(True)
-        self.growthPlotCanvas.SetFontSizeLegend(10)
+        self.growthPlotCanvas.enableGrid = True
+        self.growthPlotCanvas.enableTitle = False
+        self.growthPlotCanvas.enableLegend = True
+        self.growthPlotCanvas.fontSizeLegend = 10
         self.growthPlotCanvas.SetBackgroundColour('White')
         self.growthPlotCanvas.Show(True)
 
@@ -649,7 +649,7 @@ class SplicePanel(object):
         # parent, id, pos, size, style, name
         self.corrPlotCanvas = plot.PlotCanvas(panel2)
 
-        self.corrPlotCanvas.SetEnableGrid( True )
+        self.corrPlotCanvas.enableGrid = True
         self.corrPlotCanvas.SetBackgroundColour("White")
         #self.corrPlotCanvas.Centre(wxBOTH)
         self.corrPlotCanvas.Show(True)
@@ -1071,8 +1071,8 @@ class EvalPlotPanel(wx.Panel):
     def _setupUI(self):
         # evaluation graph
         self.evalPlot = BetterLegendPlotCanvas(self)#evalPanel)
-        self.evalPlot.SetEnableGrid(True)
-        self.evalPlot.SetEnableTitle(False)
+        self.evalPlot.enableGrid = True
+        self.evalPlot.enableTitle = False
         self.evalPlot.SetBackgroundColour("White")
         self.evalPlot.Show(True)
         evsz = wx.BoxSizer(wx.VERTICAL)
@@ -1968,10 +1968,8 @@ class ELDPanel(object):
         panel2.SetSizer(wx.BoxSizer(wx.VERTICAL))
         self.corrPlotCanvas = plot.PlotCanvas(panel2)
 
-        #self.corrPlotCanvas.SetEnableZoom( True )
-        self.corrPlotCanvas.SetEnableGrid( True )
+        self.corrPlotCanvas.enableGrid = True
         self.corrPlotCanvas.SetBackgroundColour("White")
-        #self.corrPlotCanvas.Centre(wxBOTH)
         self.corrPlotCanvas.Show(True)
 
         xdata = [ (-self.parent.leadLag, 0),( 0, 0), (self.parent.leadLag, 0) ]
