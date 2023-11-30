@@ -419,7 +419,7 @@ class DataCanvas(wxBufferedWindow):
         self.SaganDots = []
         self.ShowAutoPanel = False
         self.ELDapplied = False 
-        self.MousePos = None 
+        self.MousePos = None # tuple (x,y) TODO? change to wx.Point?
         self.LastMousePos = None
 
         # Use dictionary so we can name colors - also need a list of names since dictionary is unordered
@@ -1668,7 +1668,7 @@ class DataCanvas(wxBufferedWindow):
         return arrowRect, drawData
 
     def DrawTieShiftArrow(self, dc, arrowRect, drawData):
-        if self.MousePos and arrowRect.Inside(self.MousePos):
+        if self.MousePos and arrowRect.Contains(wx.Point(self.MousePos[0], self.MousePos[1])):
             dc.SetPen(wx.Pen(wx.GREEN)) # highlight TIE arrow in green on mouseover
         else:
             dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
@@ -3792,7 +3792,7 @@ class DataCanvas(wxBufferedWindow):
             width = holeColumn.contentWidth()
             dotsize_x = self.tieDotSize + width + 10
             reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
-            if reg.Inside(wx.Point(pos[0], pos[1])):
+            if reg.Contains(wx.Point(pos[0], pos[1])):
                 self.selectedTie = count
                 self.showMenu = True
                 popupMenu = wx.Menu()
@@ -3814,7 +3814,7 @@ class DataCanvas(wxBufferedWindow):
 
         # handle right-click on an existing tie arrow
         for holecore, rect, _ in self.AffineTieArrows:
-            if rect.Inside(wx.Point(pos[0], pos[1])):
+            if rect.Contains(wx.Point(pos[0], pos[1])):
                 popupMenu = wx.Menu()
                 popupMenu.Append(2, "Break TIE to {}".format(holecore))
                 wx.EVT_MENU(popupMenu, 2, lambda evt, hc=holecore: self.OnBreakTie(evt, hc))
@@ -3830,7 +3830,7 @@ class DataCanvas(wxBufferedWindow):
                 x += self.holeWidth + 50
             reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
 
-            if reg.Inside(wx.Point(pos[0], pos[1])):
+            if reg.Contains(wx.Point(pos[0], pos[1])):
                 self.SPselectedTie = count
                 popupMenu = wx.Menu()
                 self.showMenu = True
@@ -3854,7 +3854,7 @@ class DataCanvas(wxBufferedWindow):
                     x += self.holeWidth + 50
                 reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
 
-                if reg.Inside(wx.Point(pos[0], pos[1])):
+                if reg.Contains(wx.Point(pos[0], pos[1])):
                     self.LogselectedTie = count
                     self.showMenu = True
                     popupMenu = wx.Menu()
@@ -3889,7 +3889,7 @@ class DataCanvas(wxBufferedWindow):
                 x = self.Width + x
                 w, h = bmp.GetWidth(), bmp.GetHeight()
                 reg = wx.Rect(x, y, w, h)
-                if reg.Inside(wx.Point(pos[0], pos[1])):				 
+                if reg.Contains(wx.Point(pos[0], pos[1])):				 
                     if self.independentScroll and self.spliceWindowOn == 1:
                         self.grabScrollB = 1
                         print("grab scroll B")
@@ -3902,7 +3902,7 @@ class DataCanvas(wxBufferedWindow):
                 x = x + self.splicerX - 40
                 w, h = bmp.GetWidth(), bmp.GetHeight()
                 reg = wx.Rect(x, y, w, h)
-                if reg.Inside(wx.Point(pos[0], pos[1])):
+                if reg.Contains(wx.Point(pos[0], pos[1])):
                     # print("grab scroll A MovableInterface")
                     self.grabScrollA = 1	
                     self.UpdateDrawing()
@@ -3912,7 +3912,7 @@ class DataCanvas(wxBufferedWindow):
                 w, h = bmp.GetWidth(), bmp.GetHeight()
                 w = self.ScrollSize
                 reg = wx.Rect(x, pos[1], w, h)
-                if reg.Inside(wx.Point(pos[0], pos[1])):
+                if reg.Contains(wx.Point(pos[0], pos[1])):
                     print("selectScroll MovableSkin")
                     self.selectScroll = 1
             elif key == "HScroll":
@@ -3920,7 +3920,7 @@ class DataCanvas(wxBufferedWindow):
                 y = self.Height + y
                 w, h = bmp.GetWidth(), bmp.GetHeight()
                 reg = wx.Rect(x, y, w, h)
-                if reg.Inside(wx.Point(pos[0], pos[1])):
+                if reg.Contains(wx.Point(pos[0], pos[1])):
                     print("grab scroll C")			 
                     self.grabScrollC = 1
         self.OnMainLMouse(event)
@@ -3943,7 +3943,7 @@ class DataCanvas(wxBufferedWindow):
             y = self.startDepthPix + (tie.depth - self.rulerStartDepth) * self.pixPerMeter
             dotsize_x = self.tieDotSize + width + 10 # should extend all the way to right square handle
             reg = wx.Rect(x - half, y - half, dotsize_x, dotsize_y)
-            if reg.Inside(wx.Point(pos[0], pos[1])):
+            if reg.Contains(wx.Point(pos[0], pos[1])):
                 if tie.fixed == 0:
                     self.selectedTie = tie_idx
                     if tie_idx == 1:
@@ -3956,7 +3956,7 @@ class DataCanvas(wxBufferedWindow):
             basex = self.splicerX + self.layoutManager.plotLeftMargin + img_wid + (old_div(self.layoutManager.plotWidth, 2))
             basey = self.getSpliceCoord(siTie.depth())
             rect = wx.Rect(basex - 8, basey - 8, 16, 16)
-            if rect.Inside(wx.Point(pos[0], pos[1])):
+            if rect.Contains(wx.Point(pos[0], pos[1])):
                 self.parent.spliceManager.selectTie(siTie)
                 self.UpdateSpliceEvalPlot()
                 return
@@ -3973,7 +3973,7 @@ class DataCanvas(wxBufferedWindow):
             if self.drag == 0:
                 for area in self.DrawData["CoreArea"]:
                     coreInfo, rect, hole_idx = area
-                    if rect.Inside(wx.Point(pos[0], pos[1])):
+                    if rect.Contains(wx.Point(pos[0], pos[1])):
                         self.mouseoverCore = coreInfo.core # TODO: SelectedCoreAffine?
                         self.mouseX = pos[0] 
                         self.mouseY = pos[1] 
@@ -3987,7 +3987,7 @@ class DataCanvas(wxBufferedWindow):
             if pos[0] <= self.splicerX:
                 for area in self.DrawData["CoreArea"]:
                     coreInfo, rect, hole_idx = area
-                    if rect.Inside(wx.Point(pos[0], pos[1])):
+                    if rect.Contains(wx.Point(pos[0], pos[1])):
                         self.dragCore = coreInfo.core
 
         # Toggle between fixed depth line and following mouse cursor
@@ -4002,7 +4002,7 @@ class DataCanvas(wxBufferedWindow):
         pos = event.GetPosition().Get()
         for area in self.DrawData["CoreArea"]:
             coreInfo, rect, _ = area
-            if rect.Inside(wx.Point(pos[0], pos[1])):
+            if rect.Contains(wx.Point(pos[0], pos[1])):
                 self.selectedCore = coreInfo.hole, str(coreInfo.holeCore)
                 return
         self.selectedCore = None
@@ -4598,7 +4598,7 @@ class DataCanvas(wxBufferedWindow):
         if "CoreArea" in self.DrawData and self.MousePos[0] < self.splicerX:
             for area in self.DrawData["CoreArea"]:
                 coreInfo, rect, hole_idx = area
-                if rect.Inside(wx.Point(pos[0], pos[1])):
+                if rect.Contains(wx.Point(pos[0], pos[1])):
                     got = 1
                     self.mouseoverCore = coreInfo.core
 
