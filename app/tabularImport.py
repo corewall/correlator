@@ -240,7 +240,7 @@ class ImportDialog(wx.Dialog):
             
     def OnReqMenu(self, event):
         mi = self.reqMenu.FindItemById(event.GetId())
-        self.table.SetColLabelValue(self.lastCol, mi.GetText())
+        self.table.SetColLabelValue(self.lastCol, mi.GetItemLabelText())
         #print "Source column: {}, item {}".format(self.lastCol, event.GetId())
         self._checkReq()
         
