@@ -5,6 +5,7 @@ from __future__ import print_function
 
 from past.builtins import cmp
 from builtins import object
+from functools import cmp_to_key
 import os
 import unittest
 
@@ -12,8 +13,37 @@ import pandas
 
 import tabularImport
 
+# todo? SectionSummaryRow in which data is just a pandas series with methods to access
+# each item (e.g. site(), coreType())? Child of SectionSummaryRow "interface" class?
+class SectionSummaryRow(object):
+    def __init__(self, exp, site, hole, core, coreType, section, topDepth, bottomDepth, row):
+        self.exp = exp
+        self.site = site
+        self.hole = hole
+        self.core = core
+        self.coreType = coreType
+        self.section = section
+        self.topDepth = topDepth
+        self.bottomDepth = bottomDepth
+        self.row = row # raw Pandas series
+        
+    @classmethod
+    def createWithPandasSeries(cls, row):
+        return cls(row['Exp'], row['Site'], row['Hole'], row['Core'], row['CoreType'], row['Section'], row['TopDepth'], row['BottomDepth'], row)
+
+    def asPandasSeries(self):
+        return pandas.Series({'Exp':self.exp, 'Site':self.site, 'Hole':self.hole, 'Core':self.core, 'CoreType':self.coreType,
+                              'Section':self.section, 'TopDepth':self.topDepth, 'BottomDepth':self.bottomDepth})
+
+    def identity(self):
+        return "{}-{}-{}".format(self.hole, self.core, self.section)
+
+    def fullIdentity(self):
+        return "{}-{}{}-{}{}-{}".format(self.exp, self.site, self.hole, self.core, self.coreType, self.section)
+
+
 # compare section numbers: any integer or 'CC', which is always greatest
-def cmp_section(sec1, sec2):
+def cmp_section(sec1: str, sec2: str):
     if sec1 == sec2:
         return 0
     if sec1 == 'CC':
@@ -21,6 +51,9 @@ def cmp_section(sec1, sec2):
     if sec2 == 'CC':
         return -1
     return cmp(int(sec1), int(sec2))
+
+def cmp_ss_rows(sec1: SectionSummaryRow, sec2: SectionSummaryRow):
+    return cmp_section(sec1.section, sec2.section)
 
 
 class SectionSummary(object):
@@ -109,7 +142,7 @@ class SectionSummary(object):
             if row['Section'] != 'CC':
                 newRow = SectionSummaryRow.createWithPandasSeries(row)
                 rows.append(newRow)
-        return sorted(rows, key=lambda x:x.section, cmp=cmp_section)
+        return sorted(rows, key=cmp_to_key(cmp_ss_rows))
     
     def getFullIdentities(self):
         ssrows = [SectionSummaryRow.createWithPandasSeries(row) for _, row in self.dataframe.iterrows()]
@@ -189,34 +222,6 @@ class SectionSummary(object):
         section = self._findSection(site, hole, core, section)
         return section.iloc[0][columnName]
 
-# todo? SectionSummaryRow in which data is just a pandas series with methods to access
-# each item (e.g. site(), coreType())? Child of SectionSummaryRow "interface" class?
-class SectionSummaryRow(object):
-    def __init__(self, exp, site, hole, core, coreType, section, topDepth, bottomDepth, row):
-        self.exp = exp
-        self.site = site
-        self.hole = hole
-        self.core = core
-        self.coreType = coreType
-        self.section = section
-        self.topDepth = topDepth
-        self.bottomDepth = bottomDepth
-        self.row = row # raw Pandas series
-        
-    @classmethod
-    def createWithPandasSeries(cls, row):
-        return cls(row['Exp'], row['Site'], row['Hole'], row['Core'], row['CoreType'], row['Section'], row['TopDepth'], row['BottomDepth'], row)
-
-    def asPandasSeries(self):
-        return pandas.Series({'Exp':self.exp, 'Site':self.site, 'Hole':self.hole, 'Core':self.core, 'CoreType':self.coreType,
-                              'Section':self.section, 'TopDepth':self.topDepth, 'BottomDepth':self.bottomDepth})
-
-    def identity(self):
-        return "{}-{}-{}".format(self.hole, self.core, self.section)
-
-    def fullIdentity(self):
-        return "{}-{}{}-{}{}-{}".format(self.exp, self.site, self.hole, self.core, self.coreType, self.section)
-    
 
 class TestSectionSummary(unittest.TestCase):
     def test_cmp(self):
@@ -226,7 +231,7 @@ class TestSectionSummary(unittest.TestCase):
         self.assertTrue(cmp_section('CC', 'CC') == 0)
         
         secs = ['2', 'CC', '5', '7', '1']
-        sortedSecs = sorted(secs, cmp=cmp_section)
+        sortedSecs = sorted(secs, key=cmp_to_key(cmp_section))
         self.assertTrue(sortedSecs[0] == '1')
         self.assertTrue(sortedSecs[1] == '2')
         self.assertTrue(sortedSecs[2] == '5')
