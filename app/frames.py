@@ -473,7 +473,7 @@ class CompositePanel(object):
 
     def OnEvalSettings(self, evt):
         dlg = dialog.CorrParamsDialog(self.plotNote, self.parent.minDepthStep, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
-        pos = self.crText.GetScreenPositionTuple()
+        pos = self.crText.GetScreenPosition()
         dlg.SetPosition(pos)
         if dlg.ShowModal() == wx.ID_OK:
             self.parent.OnEvalSetup(dlg.outDepthStep, dlg.outWinLength, dlg.outLeadLag)
@@ -1003,7 +1003,7 @@ class SplicePanel(object):
             self.appendButton.Enable(False)
 
     def OnEvalSettings(self, evt):
-        pos = self.crText.GetScreenPositionTuple()
+        pos = self.crText.GetScreenPosition()
         dlg = dialog.CorrParamsDialog(self.mainPanel, self.parent.minDepthStep, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
         dlg.SetPosition(pos)
         if dlg.ShowModal() == wx.ID_OK:
@@ -1100,7 +1100,7 @@ class EvalPlotPanel(wx.Panel):
         self.OnUpdateDrawing()
 
     def OnEvalSettings(self, evt):
-        pos = self.crText.GetScreenPositionTuple()
+        pos = self.crText.GetScreenPosition()
         dlg = dialog.CorrParamsDialog(self, self.parent.minDepthStep, self.depthStep, self.winLength, self.leadLag)
         dlg.SetPosition(pos)
         if dlg.ShowModal() == wx.ID_OK:
@@ -2203,7 +2203,7 @@ class ELDPanel(object):
         self.parent.Window.ShowAutoPanel = True
     
     def OnEvalSettings(self, evt):
-        pos = self.crText.GetScreenPositionTuple()
+        pos = self.crText.GetScreenPosition()
         dlg = dialog.CorrParamsDialog(self.mainPanel, self.parent.minDepthStep, self.parent.depthStep, self.parent.winLength, self.parent.leadLag)
         dlg.SetPosition(pos)
         if dlg.ShowModal() == wx.ID_OK:
@@ -3100,7 +3100,7 @@ class FilterPanel(object):
 
     def OnCreateCull(self, event):
         dlg = dialog.CullDialog(self.parent, self._curCull())
-        pos = self.cullCreate.GetScreenPositionTuple()
+        pos = self.cullCreate.GetScreenPosition()
         dlg.SetPosition(pos)
         if dlg.ShowModal() != wx.ID_OK:
             return
@@ -3227,7 +3227,7 @@ class FilterPanel(object):
         datatype = self._curType()
         curdec = self._curDecimate()
         decdlg = dialog.DecimateDialog(self.parent, curdec)
-        pos = self.deciCreate.GetScreenPositionTuple()
+        pos = self.deciCreate.GetScreenPosition()
         decdlg.SetPosition(pos)
         if decdlg.ShowModal() != wx.ID_OK:
             return
@@ -3266,7 +3266,7 @@ class FilterPanel(object):
 
     def OnCreateImageCull(self, event):
         icdlg = dialog.ImageCullDialog(self.parent, self.parent.Window.imageCullPct)
-        pos = self.imgCreate.GetScreenPositionTuple()
+        pos = self.imgCreate.GetScreenPosition()
         icdlg.SetPosition(pos)
         if icdlg.ShowModal() != wx.ID_OK:
             return
@@ -3332,7 +3332,7 @@ class FilterPanel(object):
             smdlg = dialog.SmoothDialog(self.parent)
         else:
             smdlg = dialog.SmoothDialog(self.parent, curSmooth.width, curSmooth.units, curSmooth.style)
-        pos = self.smCreate.GetScreenPositionTuple()
+        pos = self.smCreate.GetScreenPosition()
         smdlg.SetPosition(pos)
         if smdlg.ShowModal() == wx.ID_OK:
             datatype = self._curType()
@@ -3532,7 +3532,7 @@ class PreferencesPanel(object):
         lmVisDict = self.parent.Window.layoutManager.visibleHoles
         holeVisDict = {h:lmVisDict[h] for h in self.parent.Window.getLoadedHoles()}
         dlg = dialog.HoleVisibilityDialog(self.parent, holeVisDict)
-        pos = self.holeVisibilityButton.GetScreenPositionTuple()
+        pos = self.holeVisibilityButton.GetScreenPosition()
         dlg.SetPosition(pos)
         dlg.ShowModal()
 
@@ -3541,7 +3541,7 @@ class PreferencesPanel(object):
         lmVisDict = self.parent.Window.layoutManager.visibleDatatypes
         typeVisDict = {dt:lmVisDict[dt] for dt in datatypeOrder}
         dlg = dialog.DatatypeVisibilityAndOrderDialog(self.parent, datatypeOrder, typeVisDict)
-        pos = self.displayOrderButton.GetScreenPositionTuple()
+        pos = self.displayOrderButton.GetScreenPosition()
         dlg.SetPosition(pos)
         dlg.ShowModal()
 
