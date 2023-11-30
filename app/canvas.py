@@ -104,7 +104,7 @@ class wxBufferedWindow(wx.Window):
         # current drawing in it, so it can be used to save the image to
         # a file, or whatever.
         if self.Width > 0 and self.Height > 0:
-            self._Buffer = wx.EmptyBitmap(self.Width, self.Height)
+            self._Buffer = wx.Bitmap(self.Width, self.Height)
             self.UpdateDrawing()
 
     def UpdateDrawing(self):
@@ -1121,7 +1121,7 @@ class DataCanvas(wxBufferedWindow):
                 self.sidePanel.SetSize((45, self.Height))
                 self.UpdateDrawing()
                 self.CLOSEFLAG = 1
-                self._Buffer = wx.EmptyBitmap(self.Width, self.Height)
+                self._Buffer = wx.Bitmap(self.Width, self.Height)
                 if self.spliceWindowOn == 0:
                     self.splicerX = self.Width + 45
                 self.UpdateDrawing()
@@ -1133,7 +1133,7 @@ class DataCanvas(wxBufferedWindow):
                 self.sidePanel.SetSize((self.sideTabSize, self.Height))
                 self.sideNote.SetSize((self.sideTabSize, self.Height))
                 self.CLOSEFLAG = 0 
-                self._Buffer = wx.EmptyBitmap(self.Width, self.Height)
+                self._Buffer = wx.Bitmap(self.Width, self.Height)
                 if self.spliceWindowOn == 0:
                     self.splicerX = self.Width + 45
                 self.UpdateDrawing()
