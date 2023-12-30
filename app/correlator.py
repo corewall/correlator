@@ -3114,8 +3114,7 @@ class AffineController(object):
                 
                 affineRows.append(series)
         if len(affineRows) > 0:
-            df = pandas.DataFrame(columns=tabularImport.AffineFormat.req)
-            df = df.append(affineRows, ignore_index=True)
+            df = pandas.DataFrame.from_records(affineRows)
             tabularImport.writeToFile(df, affineFilePath)
             self.currentAffineFile = affineFilePath
             self.dirty = False
@@ -3671,8 +3670,7 @@ class SpliceController(object):
                                     'Splice Type':spliceType, 'Data Used':si.coreinfo.type, 'Comment':si.comment})
             rows.append(series)			
         if len(rows) > 0:
-            df = pandas.DataFrame(columns=tabularImport.SITFormat.req)
-            df = df.append(rows, ignore_index=True)
+            df = pandas.DataFrame.from_records(rows)
             #print "{}".format(df)
             tabularImport.writeToFile(df, filepath)
             self.currentSpliceFile = filepath
@@ -3743,8 +3741,7 @@ class SpliceController(object):
                 else:
                     print("Couldn't find section in {}{} at depth {}, skipping".format(si.coreinfo.hole, si.coreinfo.holeCore, mbsf))
         if len(exportRows) > 0:
-            df = pandas.DataFrame(columns=tabularImport.CoreExportFormat.req)
-            df = df.append(exportRows, ignore_index=True)
+            df = pandas.DataFrame.from_records(exportRows)
             #print "{}".format(df)
             exportPath = filepath + '/' + fileprefix + '_' + siteexp + '-' + datatype + '.csv'
             tabularImport.writeToFile(df, exportPath)
