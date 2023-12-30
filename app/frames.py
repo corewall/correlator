@@ -3,7 +3,6 @@
 ## For Mac-OSX
 #/usr/bin/env pythonw
 
-#from wxPython.wx import *
 from __future__ import print_function
 from __future__ import division
 from builtins import chr
@@ -14,8 +13,7 @@ from past.utils import old_div
 import platform
 platform_name = platform.uname()
 
-import random, sys, os, re, time, string
-from datetime import datetime
+import os
 import math
 
 import numpy
