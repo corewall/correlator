@@ -18,7 +18,6 @@ import random, sys, os, re, time, string
 from datetime import datetime
 import math
 
-# import numpy.oldnumeric as _Numeric
 import numpy
 import warnings
 warnings.simplefilter('ignore', numpy.RankWarning) # stifle RankWarnings when computing growth rate
@@ -98,14 +97,12 @@ class BetterLegendPlotCanvas(plot.PlotCanvas):
             if isinstance(o,plot.PolyMarker):
                 # draw marker with legend
                 pnt= (trhc[0]+legendLHS+legendSymExt[0]/2., trhc[1]+s+lineHeight/2.)
-                # brg 9/25/2023: TODO
-                # o.draw(dc, self.printerScale, coord=_Numeric.array([pnt]))
+                o.draw(dc, self.printerScale, coord=numpy.array([pnt]))
             elif isinstance(o,plot.PolyLine):
                 # draw line with legend
                 pnt1= (trhc[0]+legendLHS, trhc[1]+s+lineHeight/2.)
                 pnt2= (trhc[0]+legendLHS+legendSymExt[0], trhc[1]+s+lineHeight/2.)
-                # brg 9/25/2023: TODO
-                # o.draw(dc, self.printerScale, coord=_Numeric.array([pnt1,pnt2]))
+                o.draw(dc, self.printerScale, coord=numpy.array([pnt1, pnt2]))
             else:
                 raise TypeError("object is neither PolyMarker or PolyLine instance")
             # draw legend txt
@@ -1070,7 +1067,7 @@ class EvalPlotPanel(wx.Panel):
 
     def _setupUI(self):
         # evaluation graph
-        self.evalPlot = BetterLegendPlotCanvas(self)#evalPanel)
+        self.evalPlot = BetterLegendPlotCanvas(self)
         self.evalPlot.enableGrid = True
         self.evalPlot.enableTitle = False
         self.evalPlot.SetBackgroundColour("White")
