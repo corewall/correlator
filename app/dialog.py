@@ -849,12 +849,12 @@ class ExportCoreDialog(wx.Dialog):
         self.suffix = wx.TextCtrl(opt_panel, -1)
         prefixSizer = wx.BoxSizer(wx.HORIZONTAL)
         prefixSizer.Add(wx.StaticText(opt_panel, -1, "Output File Prefix:"), 0, wx.ALIGN_CENTER_VERTICAL)
-        prefixSizer.Add(self.prefix, 1, wx.EXPAND | wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        prefixSizer.Add(self.prefix, 1, wx.EXPAND | wx.ALL, 5)
         self.Bind(wx.EVT_TEXT, self.UpdateOutputFiles, self.prefix)
         sizer.Add(prefixSizer, 0, wx.EXPAND)
         suffixSizer = wx.BoxSizer(wx.HORIZONTAL)
         suffixSizer.Add(wx.StaticText(opt_panel, -1, "Output File Suffix:"), 0, wx.ALIGN_CENTER_VERTICAL)
-        suffixSizer.Add(self.suffix, 1, wx.EXPAND | wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        suffixSizer.Add(self.suffix, 1, wx.EXPAND | wx.ALL, 5)
         self.Bind(wx.EVT_TEXT, self.UpdateOutputFiles, self.suffix)
         sizer.Add(suffixSizer, 0, wx.EXPAND)
 
@@ -1383,7 +1383,7 @@ class DecimateDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnApply, btnPanel.ok)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(decValPanel, 1, wx.ALL, 10)
-        sizer.Add(btnPanel, 0, wx.ALIGN_CENTER)
+        sizer.Add(btnPanel, 0, wx.ALIGN_CENTER | wx.ALL, 10)
         self.SetSizer(sizer)
         self.Fit()
 
@@ -1720,7 +1720,7 @@ class CullDialog(wx.Dialog):
         cullGTPanel = wx.Panel(self, -1)
         cgtSizer = wx.BoxSizer(wx.HORIZONTAL)
         cgtSizer.Add(wx.StaticText(cullGTPanel, -1, "Cull data values > "), 0)
-        self.cullGT = wx.TextCtrl(cullGTPanel, -1, "")
+        self.cullGT = wx.TextCtrl(cullGTPanel, -1, "", size=(50,-1))
         cgtSizer.Add(self.cullGT, 0)
         cullGTPanel.SetSizer(cgtSizer)
         outlierSizer.Add(cullGTPanel, 0, wx.EXPAND | wx.ALL, 5)
@@ -1728,12 +1728,12 @@ class CullDialog(wx.Dialog):
         cullLTPanel = wx.Panel(self, -1)
         cltSizer = wx.BoxSizer(wx.HORIZONTAL)
         cltSizer.Add(wx.StaticText(cullLTPanel, -1, "Cull data values < "), 0)
-        self.cullLT = wx.TextCtrl(cullLTPanel, -1, "")
+        self.cullLT = wx.TextCtrl(cullLTPanel, -1, "", size=(50,-1))
         cltSizer.Add(self.cullLT, 0)
         cullLTPanel.SetSizer(cltSizer)
         outlierSizer.Add(cullLTPanel, 0, wx.EXPAND | wx.ALL, 5)
 
-        cullSizer.Add(outlierSizer, 0, wx.ALL, 5)
+        cullSizer.Add(outlierSizer, 1, wx.EXPAND | wx.ALL, 5)
 
         btnPanel = OkButtonPanel(self, okName="Apply")
         self.Bind(wx.EVT_BUTTON, self.OnApply, btnPanel.ok)
@@ -1960,7 +1960,7 @@ class SplashScreen(wx.Dialog):
 
         aboutSizer = wx.BoxSizer(wx.HORIZONTAL)
         aboutSizer.AddStretchSpacer()
-        aboutSizer.Add(aboutBtn, 0, wx.ALIGN_RIGHT)
+        aboutSizer.Add(aboutBtn, 0)
 
         controlSizer.Add(userSizer, 1)
         controlSizer.Add(okCloseSizer, 1, wx.ALIGN_CENTER)

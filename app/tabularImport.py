@@ -175,11 +175,11 @@ class ImportDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnImport, self.importButton)
         self.cancelButton = wx.Button(panel, wx.ID_CANCEL, "Cancel")
         bpsz.Add(textpanel, 1, wx.EXPAND)
-        bpsz.Add(self.importButton, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-        bpsz.Add(self.cancelButton, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        bpsz.Add(self.importButton, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        bpsz.Add(self.cancelButton, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         panel.SetSizer(bpsz)
         
-        sz.Add(panel, 0, wx.EXPAND | wx.ALL | wx.ALIGN_RIGHT, 10)
+        sz.Add(panel, 0, wx.EXPAND | wx.ALL, 10)
         
         self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.OnSelectLabel, self.table)
         
