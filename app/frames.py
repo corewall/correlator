@@ -144,7 +144,7 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
         self.parent.Bind(wx.EVT_MOTION, self.OnMotion)
 
     def OnMotion(self, event):
-        if self.GetEnablePointLabel() == True:
+        if self.enablePointLabel:
             dlst = self.GetClosestPoint( self._getXY(event), pointScaled = True)
             if dlst != []:
                 curveNum, legend, pIndex, pointXY, scaledXY, distance = dlst
