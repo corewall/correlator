@@ -3095,6 +3095,7 @@ class AffineController(object):
                 ccsf = round(csf + curShift.distance, 3)
                 cumOff = round(curShift.distance, 3)
                 diffOff = 0.0 if previousOffset is None else cumOff - previousOffset
+                previousOffset = cumOff
                 try:
                     growthRate = round(old_div(ccsf, csf), 3)
                 except ZeroDivisionError:
