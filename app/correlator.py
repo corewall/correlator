@@ -3096,10 +3096,16 @@ class AffineController(object):
                 cumOff = round(curShift.distance, 3)
                 diffOff = 0.0 if previousOffset is None else cumOff - previousOffset
                 previousOffset = cumOff
-                try:
-                    growthRate = round(old_div(ccsf, csf), 3)
-                except ZeroDivisionError:
+                if csf > 0.0:
+                    try:
+                        growthRate = round(old_div(ccsf, csf), 3)
+                    except ZeroDivisionError:
+                        growthRate = 0.0
+                elif csf == 0.0:
                     growthRate = 0.0
+                else:
+                    assert False, f"CSF-A {csf} depths cannot be negative"
+
                     
                 fixedTieCsf = shiftedTieCsf = fixedCore = ""
                 if isTie(curShift):
