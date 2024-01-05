@@ -2057,15 +2057,20 @@ class DataCanvas(wxBufferedWindow):
             return self.colorDict[prefix + chr(wrappedHoleCode)]
 
     def DrawCorePlot(self, dc, plotStartX, holeName, core, plotColor):
-        points = []
+        pointList = []
         for y, x in core.depthDataPairs():
             if y <= self.rulerEndDepth:
                 y = self.startDepthPix + (y - self.rulerStartDepth) * self.pixPerMeter
                 x = (x - self.minRange) * self.coefRange + plotStartX
-                points.append((x,y))
+                pointList.append(numpy.intc(x))
+                pointList.append(numpy.intc(y))
             else: # y > self.rulerEndDepth:
                 break
-
+        
+        # dc.DrawLinesFromBuffer() is significantly faster than dc.DrawLines(),
+        # and requires a numpy array as input.
+        points = numpy.array(pointList)
+        
         # clip to avoid draw in splice area
         clip = self.ClipPlot(dc, plotStartX)
 
@@ -2075,18 +2080,18 @@ class DataCanvas(wxBufferedWindow):
                 highlightColor = wx.Colour(0, 0, 128, 64) # 75% transparent medium blue
                 dc.SetPen(wx.Pen(highlightColor, 1))
                 dc.SetBrush(wx.Brush(highlightColor))
-                dc.DrawRectangle(plotStartX, points[0][1], self.layoutManager.plotWidth, points[-1][1] - points[0][1])
+                dc.DrawRectangle(plotStartX, points[1], self.layoutManager.plotWidth, points[-1] - points[1])
     
         # plot points
         dc.SetPen(wx.Pen(plotColor, 1))
-        if self.DiscretePlotMode == 0 and len(points) > 1:
-            dc.DrawLines(points)
+        if self.DiscretePlotMode == 0 and len(points) > 2:
+            dc.DrawLinesFromBuffer(points)
         else:
-            for pt in points:
+            for pt in list(zip(points[0::2], points[1::2])): # create (x,y) tuples from list of form [x0, y0, x1, y1....]
                 dc.DrawCircle(pt[0], pt[1], self.DiscreteSize)
 
         if len(points) > 0:
-            self.DrawHighlight(dc, plotStartX, points[0][1], points[-1][1], len(points))
+            self.DrawHighlight(dc, plotStartX, points[1], points[-1], len(points))
 
         if self.guideCore == self.coreCount:
             self.DrawGuideCore(dc, plotStartX)
