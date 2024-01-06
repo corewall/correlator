@@ -2122,43 +2122,40 @@ class DataCanvas(wxBufferedWindow):
 
     # Draw guide core (movable core data superimposed on fixed core for comparison)
     def DrawGuideCore(self, dc, plotStartX):
-        i = 0
-        px = 0
-        py = 0
-        data_max = -999
-        lead = self.compositeDepth - self.parent.winLength
-        lag = self.compositeDepth + self.parent.winLength
-
-        # drawing_start = self.rulerStartDepth - 5.0
-
         # save current datatype range
         save_range = (self.minRange, self.maxRange, self.coefRange, self.continue_flag)
         self._getPlotRange(self.GuideCoreDatatype)
 
-        lines = []
-        for data in self.GuideCore:
-            for r in data:
-                y, x = r
-                # if y >= drawing_start and y <= self.rulerEndDepth: # let clipping handle this
-                f = 0
-                if y >= lead and y <= lag: 
-                    f = 1
-                y = self.startDepthPix + (y - self.rulerStartDepth) * self.pixPerMeter
-                x = ((x - self.minRange) * self.coefRange) + plotStartX
-                if i > 0:
-                    lines.append((px, py, x, y, f))
-                px = x
-                py = y
-                i = i + 1
+        lead = self.compositeDepth - self.parent.winLength
+        lag = self.compositeDepth + self.parent.winLength
+        lead_lines = []
+        corr_window_lines = []
+        lag_lines = []
+        for y,x in self.GuideCore:
+            dest = corr_window_lines
+            if y < lead:
+                dest = lead_lines
+            elif y > lag:
+                dest = lag_lines
 
-        # data_max = plotStartX + self.layoutManager.plotWidth / 2.0
-        # draw lines 
-        # if data_max < self.splicerX: # brg let clipping handle this
-        for r in lines:
-            px, py, x, y, f = r
-            color_key = 'corrWindow' if f == 1 else 'foreground'
-            dc.SetPen(wx.Pen(self.colorDict[color_key], 1))
-            dc.DrawLines(((px, py), (x, y)))
+            y = self.startDepthPix + (y - self.rulerStartDepth) * self.pixPerMeter
+            x = ((x - self.minRange) * self.coefRange) + plotStartX
+            dest.append(numpy.intc(x))
+            dest.append(numpy.intc(y))
+
+        if len(corr_window_lines) > 2:
+            dc.SetPen(wx.Pen(self.colorDict['foreground']))
+            if len(lead_lines) > 1:
+                # connect last lead point to first corr_window point
+                lead_lines.append(corr_window_lines[0])
+                lead_lines.append(corr_window_lines[1])
+                dc.DrawLinesFromBuffer(numpy.array(lead_lines))
+            if len(lag_lines) > 1:
+                # connect last corr_window point to first lag point
+                lag_lines = [corr_window_lines[-2], corr_window_lines[-1]] + lag_lines
+                dc.DrawLinesFromBuffer(numpy.array(lag_lines))
+            dc.SetPen(wx.Pen(self.colorDict['corrWindow']))
+            dc.DrawLinesFromBuffer(numpy.array(corr_window_lines))
 
         # restore saved datatype range
         self.minRange, self.maxRange, self.coefRange, self.continue_flag = save_range
@@ -4060,12 +4057,7 @@ class DataCanvas(wxBufferedWindow):
                             for v in valuelist:
                                 x, y = v
                                 x = x + shifty
-
-                                # brgtodo 7/2/2014 idiom of needless nesting
-                                # (why does each tuple need its own list???)
-                                l = []
-                                l.append((x, y))
-                                self.GuideCore.append(l)
+                                self.GuideCore.append((x,y))
                             return
                         count = 1
 
