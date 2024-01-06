@@ -55,11 +55,30 @@ def cmp_section(sec1: str, sec2: str):
 def cmp_ss_rows(sec1: SectionSummaryRow, sec2: SectionSummaryRow):
     return cmp_section(sec1.section, sec2.section)
 
+def get_section_rows(dataframe, hole, core):
+    df = dataframe[(dataframe['Hole'] == hole) & (dataframe['Core'] == core)]
+    rows = []
+    for _, row in df.iterrows():
+        if row['Section'] != 'CC':
+            newRow = SectionSummaryRow.createWithPandasSeries(row)
+            rows.append(newRow)
+    return sorted(rows, key=cmp_to_key(cmp_ss_rows))
+
 
 class SectionSummary(object):
     def __init__(self, name, dataframe):
         self.name = name
         self.dataframe = dataframe
+        
+        # key: hole+core (str), value: list of SectionSummaryRows for that hole+core
+        # sorted by depth. Retrieving these values from the dataframe in getSectionRows()
+        # is quite slow, hobbles drawing when section boundaries are enabled. Caching here
+        # gives a significant speed boost.
+        self.sectionRowsDict = {}
+        for hole in list(set(self.dataframe['Hole'])):
+            for core in list(set(self.dataframe[(self.dataframe['Hole'] == hole) & (self.dataframe['Section'] != "CC")]['Core'])):
+                self.sectionRowsDict[f"{hole}{core}"] = get_section_rows(self.dataframe, hole, core)
+
         
     @classmethod
     def createWithFile(cls, filepath):
@@ -136,13 +155,7 @@ class SectionSummary(object):
     
     # return sorted list of SectionSummaryRows for given hole and core
     def getSectionRows(self, hole, core):
-        df = self.dataframe[(self.dataframe['Hole'] == hole) & (self.dataframe['Core'] == core)]
-        rows = []
-        for index, row in df.iterrows():
-            if row['Section'] != 'CC':
-                newRow = SectionSummaryRow.createWithPandasSeries(row)
-                rows.append(newRow)
-        return sorted(rows, key=cmp_to_key(cmp_ss_rows))
+        return self.sectionRowsDict[f"{hole}{core}"]
     
     def getFullIdentities(self):
         ssrows = [SectionSummaryRow.createWithPandasSeries(row) for _, row in self.dataframe.iterrows()]

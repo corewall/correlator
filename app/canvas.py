@@ -1556,7 +1556,7 @@ class DataCanvas(wxBufferedWindow):
                         self.DrawCorePlot(dc, colStartX, holeColumn.holeName(), ctp, plotColor)
 
                     # for now we'll continue to draw section boundaries only on the plot area
-                    if self.parent.sectionSummary:
+                    if self.parent.sectionSummary and self.showSectionDepths:
                         drawBoundariesFunc(dc, colStartX, width, holeColumn.holeName(), cmd.coreName(), cmd.affineOffset())
                 else:
                     assert false, "Unexpected column type {}".format(column)
