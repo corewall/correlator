@@ -1852,13 +1852,13 @@ class DataCanvas(wxBufferedWindow):
 
         # gather datapoints within interval range for plotting
         intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
-        screenPoints = self.GetScreenPoints(intdata, drawing_start, startX)
+        screenPoints = self.GetScreenPointsBuffer(intdata, drawing_start, startX)
         usScreenPoints = [] # unsmoothed screenpoints 
         drawUnsmoothed = self.GetSmoothType(datatype) == 2 # 2 == draw both Smooth & Unsmooth data
         if drawUnsmoothed:
             smoothdata = self.getCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type, forceUnsmooth=True)
             smoothdata = [pt for pt in smoothdata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()] # trim to interval
-            usScreenPoints = self.GetScreenPoints(smoothdata, drawing_start, startX)
+            usScreenPoints = self.GetScreenPointsBuffer(smoothdata, drawing_start, startX)
 
         intervalSelected = (interval == self.parent.spliceManager.getSelectedInterval())
         self.DrawSpliceIntervalPlot(dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed)
@@ -1879,14 +1879,14 @@ class DataCanvas(wxBufferedWindow):
 
         if len(screenPoints) >= 1:
             dc.SetPen(wx.Pen(self.colorDict['spliceSel'], 2)) if intervalSelected else dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
-            dc.DrawLines(screenPoints) if (len(screenPoints) > 1) else dc.DrawPoint(screenPoints[0][0], screenPoints[0][1])	
+            dc.DrawLinesFromBuffer(screenPoints) if (len(screenPoints) > 1) else dc.DrawPoint(screenPoints[0], screenPoints[1])	
         else:
             print("Can't draw {}, it contains 0 points".format(interval.coreinfo.getName()))
             
         if drawUnsmoothed:
             if len(usScreenPoints) >= 1:
                 dc.SetPen(wx.Pen(wx.WHITE, 1)) 
-                dc.DrawLines(usScreenPoints) if (len(usScreenPoints) > 1) else dc.DrawPoint(usScreenPoints[0][0], usScreenPoints[0][1])	
+                dc.DrawLinesFromBuffer(usScreenPoints) if (len(usScreenPoints) > 1) else dc.DrawPoint(usScreenPoints[0], usScreenPoints[1])
             else:
                 print("Can't draw unsmoothed {} data over smoothed, it contains 0 points".format(interval.coreinfo.getName()))
 
@@ -1924,6 +1924,16 @@ class DataCanvas(wxBufferedWindow):
                 x = (pt[1] - self.minRange) * self.coefRangeSplice + startX
                 screenpoints.append((x,y))
         return screenpoints
+    
+    def GetScreenPointsBuffer(self, dataPoints, drawingStart, startX):
+        screenpoints = []
+        for pt in dataPoints:
+            if pt[0] >= drawingStart and pt[0] <= self.SPrulerEndDepth:
+                y = numpy.intc(self.startDepthPix + (pt[0] - self.SPrulerStartDepth) * self.pixPerMeter)
+                x = numpy.intc((pt[1] - self.minRange) * self.coefRangeSplice + startX)
+                screenpoints.append(x)
+                screenpoints.append(y)
+        return numpy.array(screenpoints)
     
     # draw info header above splice hole column
     def DrawSpliceHeader(self, dc):
@@ -2008,12 +2018,14 @@ class DataCanvas(wxBufferedWindow):
                 y = self.startDepthPix + (pt[0] - self.SPrulerStartDepth) * self.pixPerMeter
                 spliceholewidth = self.splicerX + self.layoutManager.plotLeftMargin + img_wid + self.layoutManager.plotWidth
                 x = (pt[1] - self.minRange) * self.coefRangeSplice + spliceholewidth
-                screenpoints.append((x,y))
+                screenpoints.append(numpy.intc(x))
+                screenpoints.append(numpy.intc(y))
+        screenpoints = numpy.array(screenpoints)
         if len(screenpoints) >= 1:
             if not self.showOutOfRangeData:
                 clip = wx.DCClipper(dc, guide_clip_rect)
             dc.SetPen(wx.Pen(self.colorDict['spliceTrace'], 1))
-            dc.DrawLines(screenpoints) if (len(screenpoints) > 1) else dc.DrawPoint(screenpoints[0][0], screenpoints[0][1])
+            dc.DrawLinesFromBuffer(screenpoints) if (len(screenpoints) > 1) else dc.DrawPoint(screenpoints[0], screenpoints[1])
 
     # find nearest point in coredata with depth less than searchDepth
     def nearestDataPointAbove(self, coredata, searchDepth):
