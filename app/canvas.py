@@ -1559,7 +1559,7 @@ class DataCanvas(wxBufferedWindow):
                     if self.parent.sectionSummary and self.showSectionDepths:
                         drawBoundariesFunc(dc, colStartX, width, holeColumn.holeName(), cmd.coreName(), cmd.affineOffset())
                 else:
-                    assert false, "Unexpected column type {}".format(column)
+                    assert false, f"Unexpected column type {columnType}"
 
                 colStartX += width
 
@@ -2349,7 +2349,6 @@ class DataCanvas(wxBufferedWindow):
     def Draw(self, dc):
         beginDrawTime = time.perf_counter()
 
-        #dc.BeginDrawing()
         dc.SetBackground(wx.Brush(self.colorDict['background']))
         dc.Clear() # make sure you clear the bitmap!
 
@@ -2499,9 +2498,6 @@ class DataCanvas(wxBufferedWindow):
         if self.showFPS:
             crudeFPS = round(1.0 / (endDrawTime - beginDrawTime), 1)
             dc.DrawText(str(crudeFPS) + "fps", 0, 0)
-            # print("Draw time = {}s".format(endDrawTime - beginDrawTime))
-
-        # dc.EndDrawing()
 
     def LayoutHoleColumns(self):
         columnSpaceX = self.compositeX - self.minScrollRange + self.layoutManager.plotLeftMargin
