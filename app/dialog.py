@@ -22,6 +22,7 @@ import random, sys, os, re, time, string
 import numpy
 
 import smooth
+from utils import load_bmp_resource, get_resource_path
 
 
 class CoreSheet(sheet.CSheet):
@@ -36,7 +37,7 @@ class HoldDialog(wx.Frame):
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, -1, "Communication", size=(330, 130), style = wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE |wx.STAY_ON_TOP)
         self.Center()
-        bmp = wx.StaticBitmap(self, -1, wx.Bitmap('icons/about-32x32.png'), (10, 30))
+        bmp = wx.StaticBitmap(self, -1, load_bmp_resource('icons/about-32x32.png'), (10, 30))
         wx.StaticText(self, -1, "Waiting for Fine Tune from Corelyzer", (60,30))
         #self.EndModal(wx.ID_OK)
 
@@ -142,13 +143,13 @@ class MessageDialogOLD(wx.Dialog):
         panel1 = wx.Panel(self, -1, style = wx.WANTS_CHARS)
         sizer = wx.FlexGridSizer(1, 2, gap=(0,0))
         if title == "Error": 
-            bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/ErrorCircle-32x32.png'))
+            bmp = wx.StaticBitmap(panel1, -1, load_bmp_resource('icons/ErrorCircle-32x32.png'))
             sizer.Add(bmp, 0, wx.LEFT | wx.TOP, 9)
         elif title == "Information" or title == "Help":
-            bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/about-32x32.png'))
+            bmp = wx.StaticBitmap(panel1, -1, load_bmp_resource('icons/about-32x32.png'))
             sizer.Add(bmp, 0, wx.LEFT | wx.TOP, 9)
         elif title == "About":
-            bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/help-32x32.png'))
+            bmp = wx.StaticBitmap(panel1, -1, load_bmp_resource('icons/help-32x32.png'))
             sizer.Add(bmp, 0, wx.LEFT | wx.TOP, 9)
         sizer.Add(wx.StaticText(panel1, -1, msg), 0, wx.LEFT | wx.TOP | wx.BOTTOM, 15)
         panel1.SetSizer(sizer)
@@ -185,7 +186,7 @@ class Message3Button(wx.Dialog):
         vbox_top = wx.BoxSizer(wx.VERTICAL)
         panel1 = wx.Panel(self, -1)
         sizer = wx.FlexGridSizer(1, 2, gap=(0,0))
-        bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/help-32x32.png'))
+        bmp = wx.StaticBitmap(panel1, -1, load_bmp_resource('icons/help-32x32.png'))
         sizer.Add(bmp, 0, wx.LEFT | wx.TOP, 9)
         sizer.Add(wx.StaticText(panel1, -1, msg), 0, wx.LEFT | wx.TOP | wx.BOTTOM, 15)
         panel1.SetSizer(sizer)
@@ -492,7 +493,7 @@ class SaveDialog(wx.Dialog):
         vbox_top = wx.BoxSizer(wx.VERTICAL)
         panel1 = wx.Panel(self, -1)
         sizer = wx.FlexGridSizer(1, 2, gap=(0,0))
-        bmp = wx.StaticBitmap(panel1, -1, wx.Bitmap('icons/help-32x32.png'))
+        bmp = wx.StaticBitmap(panel1, -1, load_bmp_resource('icons/help-32x32.png'))
         sizer.Add(bmp, 0, wx.LEFT | wx.TOP, 9)
         sizer.Add(wx.StaticText(panel1, -1, msg), 0, wx.LEFT | wx.TOP | wx.BOTTOM, 15)
         panel1.SetSizer(sizer)
@@ -1571,10 +1572,10 @@ class DatatypeVisibilityAndOrderDialog(wx.Dialog):
 
         # move up/down arrows
         upDownSizer = wx.BoxSizer(wx.VERTICAL)
-        up_img = wx.Bitmap("icons/arrow-up.png")
+        up_img = load_bmp_resource("icons/arrow-up.png")
         self.upButton = wx.BitmapButton(mainPanel, -1, up_img)
         self.Bind(wx.EVT_BUTTON, self.OnUp, self.upButton)
-        down_img = wx.Bitmap("icons/arrow-down.png")
+        down_img = load_bmp_resource("icons/arrow-down.png")
         self.downButton = wx.BitmapButton(mainPanel, -1, down_img)
         self.Bind(wx.EVT_BUTTON, self.OnDown, self.downButton)
         upDownSizer.Add(self.upButton, 0, wx.ALIGN_CENTER | wx.BOTTOM, 5)
@@ -1928,7 +1929,7 @@ class SplashScreen(wx.Dialog):
         wx.Dialog.__init__(self, parent, id, "Correlator " + version, style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        panel = BackgroundPanel.createWithImage(self, 'images/splashscreen.png')
+        panel = BackgroundPanel.createWithImage(self, get_resource_path('images/splashscreen.png'))
 
         self.version = version
 

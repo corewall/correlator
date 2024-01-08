@@ -33,10 +33,7 @@ from colordlg import ColorsDialog
 import dialog
 from smooth import SmoothParameters
 import splice
-
-def opj(path):
-    """Convert paths to the platform-specific separator"""
-    return os.path.join(*tuple(path.split('/')))
+from utils import load_bmp_resource
 
 
 class ProgressFrame(wx.Frame):
@@ -297,7 +294,7 @@ class CompositePanel(object):
         
         crSubPanel = wx.Panel(self.crPanel, -1)
         crSubPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
-        bmp = wx.Bitmap("icons/sprocket.png")
+        bmp = load_bmp_resource("icons/sprocket.png")
         crSettingsBtn = wx.BitmapButton(crSubPanel, -1, bmp)
         self.crText = wx.StaticText(crSubPanel, -1, "Step: 0.135 | Window: 1.0 | Lead/Lag: 1.0")
         crFont = self.crText.GetFont()
@@ -651,7 +648,7 @@ class SplicePanel(object):
         
         crSubPanel = wx.Panel(panel2, -1)
         crSubPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
-        bmp = wx.Bitmap("icons/sprocket.png")
+        bmp = load_bmp_resource("icons/sprocket.png")
         crSettingsBtn = wx.BitmapButton(crSubPanel, -1, bmp)
         self.crText = wx.StaticText(crSubPanel, -1, "Step: 0.135 | Window: 1.0 | Lead/Lag: 1.0")
         crFont = self.crText.GetFont()
@@ -1075,7 +1072,7 @@ class EvalPlotPanel(wx.Panel):
         
         paramPanel = wx.Panel(self, -1)
         psz = wx.BoxSizer(wx.HORIZONTAL)
-        bmp = wx.Bitmap("icons/sprocket.png")
+        bmp = load_bmp_resource("icons/sprocket.png")
         settingsBtn = wx.BitmapButton(paramPanel, -1, bmp)
         self.crText = wx.StaticText(paramPanel, -1, "Step: 0.135 | Window: 1.0 | Lead/Lag: 1.0")
         crFont = self.crText.GetFont()
@@ -1978,7 +1975,7 @@ class ELDPanel(object):
         
         crSubPanel = wx.Panel(panel2, -1)
         crSubPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
-        bmp = wx.Bitmap("icons/sprocket.png")
+        bmp = load_bmp_resource("icons/sprocket.png")
         crSettingsBtn = wx.BitmapButton(crSubPanel, -1, bmp)
         self.crText = wx.StaticText(crSubPanel, -1, "Step: 0.135 | Window: 1.0 | Lead/Lag: 1.0")
         crFont = self.crText.GetFont()

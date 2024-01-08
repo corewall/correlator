@@ -15,6 +15,7 @@ import os
 import socket
 import sys
 import traceback
+from utils import load_image_resource
 
 # brg 9/25/2023: PPC is long-dead, but at some point we'll
 # likely need to build an ARM dylib.
@@ -62,9 +63,6 @@ myTempPath = myPath
 global_logName = "" 
 global_logFile = None 
 
-def opj(path):
-    """Convert paths to the platform-specific separator"""
-    return os.path.join(*tuple(path.split('/')))
 
 class MainFrame(wx.Frame):
     def __init__(self, winsize, user):
@@ -549,6 +547,7 @@ class MainFrame(wx.Frame):
     # def IndependentScrollSelected(self, event):
     # 	self.SetIndependentScroll(self.miIndependentScroll.IsChecked())
 
+    # brg 1/7/2024: unused
     def OnUpdateHelp(self):
         self.Window.helpText.Clear()
         self.Window.helpText.LoadFile("help/help_index.txt")
@@ -3020,30 +3019,30 @@ class MainFrame(wx.Frame):
                 self.optPanel.imageWidthSlider.SetValue(conf_value)
                 self.optPanel.OnChangeImageWidth(None)
 
-        img = wx.Image(opj("images/scrollbutton1.jpg"))
+        img = load_image_resource("images/scrollbutton1.jpg")
         img.Rescale(self.Window.ScrollSize, img.GetHeight())
         bmp = img.ConvertToBitmap()			
         DrawData["Skin"] = (bmp, -self.Window.ScrollSize, scroll_start)
 
-        img = wx.Image(opj("images/vscrollbutton1.jpg"))
+        img =load_image_resource("images/vscrollbutton1.jpg")
         img.Rescale(img.GetWidth(), self.Window.ScrollSize)
         bmp = img.ConvertToBitmap()
         DrawData["HScroll"] = (bmp, self.Window.compositeX, -self.Window.ScrollSize)
 
         self.half = -self.Window.ScrollSize - 5
 
-        img = wx.Image(opj("images/scrollbutton1.jpg"))
+        img = load_image_resource("images/scrollbutton1.jpg")
         img.Rescale(self.Window.ScrollSize, img.GetHeight())
         bmp = img.ConvertToBitmap()
         DrawData["MovableSkin"] = (bmp, self.half, scroll_start)
         
-        img = wx.Image(opj("images/scrollbutton1.jpg"))
+        img = load_image_resource("images/scrollbutton1.jpg")
         img.Rescale(self.Window.ScrollSize, img.GetHeight())
         bmp = img.ConvertToBitmap()
         width = -self.Window.ScrollSize 
         DrawData["Interface"] = (bmp, width, scroll_start)
 
-        img = wx.Image(opj("images/scrollbutton1.jpg"))
+        img = load_image_resource("images/scrollbutton1.jpg")
         img.Rescale(self.Window.ScrollSize, img.GetHeight())
         bmp = img.ConvertToBitmap()		
         DrawData["MovableInterface"] = (bmp, self.half, scroll_start)

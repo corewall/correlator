@@ -1,5 +1,7 @@
 from builtins import object
-import re
+import os, re, sys
+
+from wx import Bitmap, Image
 
 # Parse hole from full section name. Assumes IODP naming convention.
 def getHoleName(iodpName):
@@ -27,7 +29,24 @@ def makeImageKey(filename):
     ik = trimJPEGExt(filename)
     return trimSectionType(ik)
 
+# Return correct path to load resource at relative_path whether running
+# from command-line or in a PyInstaller-bundled application (aka frozen
+# or compiled). Couldn't find another way to access resources within a macOS
+# .app bundle.
+# https://stackoverflow.com/questions/31836104/pyinstaller-and-onefile-how-to-include-an-image-in-the-exe-file
+def get_resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
+def load_image_resource(relative_path):
+    return Image(get_resource_path(relative_path))
+
+def load_bmp_resource(relative_path):
+    return Bitmap(get_resource_path(relative_path))
+    
 
 # Convenience wrapper for DataCanvas.HoleData list elements with
 # methods to access hole metadata.
