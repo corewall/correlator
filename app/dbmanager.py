@@ -33,9 +33,6 @@ from affine import convert_pre_v3_AffineTable, AffineBuilder, aci, acistr
 from sectionSummary import SectionSummary, SectionSummaryRow
 from smooth import SmoothParameters
 
-def opj(path):
-    """Convert paths to the platform-specific separator"""
-    return os.path.join(*tuple(path.split('/')))
 
 
 FormatDict = {"Text":0, "CSV":1, "XML":2}
