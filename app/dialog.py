@@ -616,7 +616,7 @@ class SpliceListPanel(wx.Panel):
         sz = wx.BoxSizer(wx.HORIZONTAL)
         sz.Add(wx.StaticText(self, -1, "Apply Splice:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
         self.spliceList = wx.Choice(self, -1)
-        sz.Add(self.spliceList, 1, wx.EXPAND | wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+        sz.Add(self.spliceList, 1, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
         if none_item:
             self.spliceList.Append("[None]")
         for item in spliceItems:
@@ -701,7 +701,7 @@ class ExportSpliceImageDialog(wx.Dialog):
         self.initialDir = initialDir
         self.outpath = None
         self.outfile = None
-        wx.Dialog.__init__(self, parent, -1, "Export Spliced Image", style= wx.DEFAULT_DIALOG_STYLE |wx.NO_FULL_REPAINT_ON_RESIZE | wx.RESIZE_BORDER | wx.STAY_ON_TOP)
+        wx.Dialog.__init__(self, parent, -1, "Export Spliced Image", style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
 
         panel = wx.Panel(self, -1)
         psz = wx.BoxSizer(wx.VERTICAL)
@@ -719,7 +719,7 @@ class ExportSpliceImageDialog(wx.Dialog):
         sz = wx.BoxSizer(wx.VERTICAL)
         sz.Add(panel, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         self.buttonPanel = OkButtonPanel(self, okName="Export")
-        sz.Add(self.buttonPanel, 0, wx.ALIGN_RIGHT | wx.ALIGN_BOTTOM | wx.RIGHT, 10)
+        sz.Add(self.buttonPanel, 0, wx.ALIGN_RIGHT | wx.RIGHT, 10)
         self.SetSizerAndFit(sz)
         
         self.buttonPanel.ok.SetDefault()
