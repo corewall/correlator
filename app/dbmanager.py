@@ -1092,7 +1092,7 @@ class DataFrame(wx.Panel):
             outname = outputFiles[0]
             tabularImport.writeToFile(spliceDF, os.path.join(outPath, outname))
         else:
-            print("Unexpected export parameters, apply affine = {}, apply splice = {}".format(applyAffine, applySplice))
+            print("Unexpected export parameters, apply affine = {}, apply splice = {}".format(affineFile, spliceFile))
             return False
         
         return True
@@ -7576,9 +7576,3 @@ class DataFrame(wx.Panel):
                         self.dataPanel.SetCellValue(i, col, num)            
 
         self.selectedCol = -1
-
-
-if __name__ == "__main__":
-    ExportCoreData(applyAffine=False, applySplice=False)
-    # ExportCoreData(applyAffine=True, applySplice=False)
-    # ExportCoreData(applyAffine=True, applySplice=True)
