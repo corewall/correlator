@@ -15,7 +15,7 @@ import os
 import socket
 import sys
 import traceback
-from utils import load_image_resource
+from utils import load_image_resource, get_resource_path
 
 # brg 9/25/2023: PPC is long-dead, but at some point we'll
 # likely need to build an ARM dylib.
@@ -4113,13 +4113,15 @@ if __name__ == "__main__":
     # 1/12/2022 brg: To my surprise, copying files in the app bundle using commands
     # passed to os.system() works under AppTranslocation on macOS 10.15+. Trying to
     # access the same files with open() fails.
+    
+    tmp_dir_path = get_resource_path("tmp")
     if os.access(myPath+"tmp", os.F_OK) == False:
         os.mkdir(myPath + "tmp")
-        cmd = "cp ./tmp/*.* " + myPath + "tmp"
+        cmd = f"cp {os.path.join(tmp_dir_path, '*.*')} {os.path.join(myPath, 'tmp')}"
         if platform_name[0] == "Windows":
             cmd = "copy tmp\\*.* \"" + myTempPath + "\""
         os.system(cmd)
-        cmd = "cp " + myTempPath + "/tmp/default.cfg " + myPath
+        cmd = f"cp {os.path.join(myTempPath, 'tmp/default.cfg')} {myPath}"
         if platform_name[0] == "Windows":
             cmd = "copy " + myTempPath + "\\tmp\\default.cfg \"" + myPath + "\""
 
@@ -4132,7 +4134,7 @@ if __name__ == "__main__":
         myTempPath = myPath + "tmp/"
     
     if os.access(myTempPath+"success.txt", os.F_OK) == False:
-        cmd = "cp ./tmp/*.* " + myTempPath
+        cmd = f"cp {os.path.join('tmp', '*.*')} {myTempPath}"
         if platform_name[0] == "Windows":
             cmd = "copy tmp\\*.* \"" + myTempPath + "\""
         os.system(cmd)

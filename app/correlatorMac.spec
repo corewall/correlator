@@ -5,7 +5,7 @@ a = Analysis(
     ['correlator.py'],
     pathex=[],
     binaries=[],
-    datas=[('images/*', 'images'), ('icons/*', 'icons')],
+    datas=[('images/*', 'images'), ('icons/*', 'icons'), ('tmp/*', 'tmp')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
