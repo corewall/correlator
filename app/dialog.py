@@ -1911,7 +1911,7 @@ class AboutDialog(wx.Dialog):
 class BackgroundPanel(wx.Panel):
     def __init__(self, parent, image):
         wx.Panel.__init__(self, parent, -1, size=(image.GetWidth(), image.GetHeight()), style=wx.WANTS_CHARS)
-        self.buffer = wx.BitmapFromImage(image)
+        self.buffer = wx.Bitmap(image)
         dc = wx.BufferedDC(wx.ClientDC(self), self.buffer)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
