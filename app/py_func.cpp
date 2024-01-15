@@ -338,25 +338,8 @@ static struct PyModuleDef moduledef = {
 // this function is called when we do import py_correlator from python
 // it let's the python interpreter know about all the functions
 // in this module available for calling
-#if defined(WIN32) || defined(CORRELATOR_MACOSX)
-    // PyModule_Create(&moduledef);
-PyMODINIT_FUNC PyInit_py_correlator(void)
-#elif defined(WIN64)
-// PyMODINIT_FUNC initpy_correlator64(void)
-PyMODINIT_FUNC PyInit_py_correlator(void)
-#else
-#error "WIN32 or WIN64 must be defined"
-#endif
-{
-#if defined(WIN32) || defined(CORRELATOR_MACOSX)
-	// (void) Py_InitModule("py_correlator", PyCoreMethods);
-    return PyModule_Create(&moduledef);
-#elif defined(WIN64)
-	(void) Py_InitModule("py_correlator64", PyCoreMethods);
-#endif
-	
-	autocorrelator.setCorrelator(&correlator);
-
+PyMODINIT_FUNC PyInit_py_correlator(void) {
+	return PyModule_Create(&moduledef);
 }
 
 // initializes the core object from python
