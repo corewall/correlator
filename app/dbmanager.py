@@ -21,7 +21,7 @@ import re
 from datetime import datetime
 import xml.sax
 
-from importManager import py_correlator
+import py_correlator
 
 import dialog
 import tabularImport

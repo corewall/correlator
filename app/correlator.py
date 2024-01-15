@@ -38,7 +38,7 @@ import random, sys, re, time, configparser, string, uuid, pickle
 import getpass
 from datetime import datetime
 
-from importManager import py_correlator
+import py_correlator
 
 import canvas
 import dialog

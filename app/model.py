@@ -3,7 +3,7 @@ from builtins import str
 from builtins import object
 import wx
 
-from importManager import py_correlator
+import py_correlator
 
 import dialog
 

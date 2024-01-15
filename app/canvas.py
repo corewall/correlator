@@ -25,7 +25,7 @@ import numpy
 from datetime import datetime
 import random, sys, os, re, time, string, traceback
 
-from importManager import py_correlator
+import py_correlator
 
 from affine import TieShiftMethod
 import frames

@@ -24,7 +24,7 @@ import wx
 import wx.grid
 from wx.lib import plot
 
-from importManager import py_correlator
+import py_correlator
 from layout import ImageDatatypeStr
 
 from affine import TieShiftMethod
