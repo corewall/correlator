@@ -5283,6 +5283,8 @@ class DataFrame(wx.Panel):
         for line in f:
             jth = 1 
             modifiedLine = line[0:-1].split()
+            if len(modifiedLine) == 0:
+                continue
             if modifiedLine[0] == 'null':
                 continue
             max = len(modifiedLine)
@@ -6195,6 +6197,8 @@ class DataFrame(wx.Panel):
                 for line in f:
                     jth = 1 
                     modifiedLine = line.split()
+                    if len(modifiedLine) == 0:
+                        continue
                     max = len(modifiedLine)
                     if modifiedLine[0] == "-":
                         continue
@@ -6347,6 +6351,8 @@ class DataFrame(wx.Panel):
         f = open(tempfile+"tmp.core", 'r+')
         for line in f:
             modifiedLine = line[0:-1].split()
+            if len(modifiedLine) == 0:
+                continue
             if modifiedLine[0] == 'null':
                 continue
             max = len(modifiedLine)
@@ -6830,6 +6836,8 @@ class DataFrame(wx.Panel):
             if max > 0:
                 line = line[0:max]
                 modifiedLine = line[0:-1].split()
+                if len(modifiedLine) == 0:
+                    continue
                 if modifiedLine[0] == 'null':
                     continue
                 max  = len(modifiedLine)
@@ -7230,6 +7238,8 @@ class DataFrame(wx.Panel):
             f = open(tempfile+"tmp.core", 'r+')
             for line in f:
                 modifiedLine = line[0:-1].split()
+                if len(modifiedLine) == 0:
+                    continue
                 if modifiedLine[0] == 'null':
                     continue
                 MAX_COLUMN = len(modifiedLine)
@@ -7242,6 +7252,8 @@ class DataFrame(wx.Panel):
             f = open(tempfile+"tmp.core", 'r+')
             for line in f:
                 modifiedLine = line[0:-1].split()
+                if len(modifiedLine) == 0:
+                    continue
                 if modifiedLine[0] == 'null':
                     continue
                 maxColumn = len(modifiedLine)
