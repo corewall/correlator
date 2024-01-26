@@ -336,7 +336,7 @@ def doSITImport(parent, goalFormat, path=None):
 
 # Read tabular data and return pandas DataFrame, relying on pandas defaults.
 def readFile(filepath):
-    srcfile = open(filepath, 'rU')
+    srcfile = open(filepath, 'r')
     dataframe = pandas.read_csv(srcfile, sep=None, skipinitialspace=True, engine='python')
     srcfile.close()
     return dataframe
@@ -353,7 +353,7 @@ def readSpliceIntervalTableFile(filename):
 # option is to ensure whitespace doesn't corrupt constructed hole+core IDs e.g.
 # invalid " A 1" instead of valid "A1".
 def readCorrelatorDataFile(filename, strip=False):
-    datfile = open(filename, 'rU')
+    datfile = open(filename, 'r')
     headers = ["Exp", "Site", "Hole", "Core", "CoreType", "Section", "TopOffset", "BottomOffset", "Depth", "Data", "RunNo"]
     dataframe = pandas.read_csv(datfile, header=None, index_col=False, names=headers, sep=" ", skipinitialspace=True, comment="#", engine='python')
     datfile.close()

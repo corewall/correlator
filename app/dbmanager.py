@@ -6149,7 +6149,7 @@ class DataFrame(wx.Panel):
                     self.handler.closeFile()
                     path = self.parent.Directory + "/.tmp" 
 
-                f = open(path, 'rU')
+                f = open(path, 'r')
                 for line in f:
                     if line[0].capitalize() in ['L', 'E']: # Leg or Exp(edition)
                         header = line
@@ -6175,7 +6175,7 @@ class DataFrame(wx.Panel):
                     path = self.parent.Directory + "/.tmp" 
 
                 if ith == 0:
-                    f = open(path, 'rU')
+                    f = open(path, 'r')
                     for line in f:
                         if line[0].capitalize() in ['L', 'E']:
                             header = line
