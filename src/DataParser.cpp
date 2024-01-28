@@ -4465,51 +4465,60 @@ int WriteAgeCoreHole( char* agefilename, char* filename, Hole* holeptr, int appl
 	return 1;
 }
 
-
-int readline(char* line, FILE* rfptr, int uft_16)
+// brg 1/27/2024 For files with Windows line endings ('\r\n'), this f'n includes
+// the '\r' in the line output parameter, which causes every other line of tmp.core
+// to be the near-empty '\t\r\n'. My fix is commented below, as I don't want to shake
+// the jello at the moment.
+int readline(char* line, FILE* rfptr, int utf_16)
 {
-	int i =0;
-	if(uft_16 == 0) 
+	int i = 0;
+	if (utf_16 == 0) 
 	{
+		// skip leading newlines
 		char temp = fgetc(rfptr);
-		int k =0;
-		while(temp == 10)
+		while (temp == 10)
 		{
 			temp = fgetc(rfptr);
-			k++;
-		} 
+		}
+
+		// read chars and write to line
 		line[i] = temp;
-		while(temp != 13 && temp != EOF && temp != 10)
+		while (temp != 13 && temp != EOF && temp != 10)
 		{
 			i++;
-			if(i >= MAX_LINE) return -1;
+			if (i >= MAX_LINE) return -1;
 			
 			temp = fgetc(rfptr);
-			if(temp == '\t')
+			if (temp == '\t')
 				line[i] = ' ';
-			else 
+			// brg 1/27/2024 This omits 'r' from the end of the line
+			// else if (temp == '\r')
+			// 	break;
+			else
 				line[i] = temp;
+			// brg 1/27/2024 This leaves '\r' at the end of the line
 			if (int(line[i]) == 13)
 			{
 				break;
 			}
 		} 
-		if(line[i] == EOF) return -1;
-	} else 
+		if (line[i] == EOF) return -1;
+	}
+	else 
 	{
 		fgetc(rfptr);fgetc(rfptr);
 		char temp = fgetc(rfptr);
-		while(temp != 13 && temp != EOF)
+		while (temp != 13 && temp != EOF)
 		{
-			if(temp > 0) 
+			if (temp > 0) 
 			{
 				line[i] = temp;
 				i++;
-				if(i >= MAX_LINE) return -1;
+				if (i >= MAX_LINE) return -1;
 			}
 			temp = fgetc(rfptr);
 		} 
-		if(temp == EOF) return -1;	
+		if (temp == EOF) return -1;	
 	}
 	
 	return 1;
@@ -4544,13 +4553,13 @@ int	WriteLog( char* read_filename, char* write_filename, int depth_idx, int data
 		return -1;
 	}
 
-	int uft_16 = 0;
+	int utf_16 = 0;
 	fgets(line, MAX_LINE, rfptr);
 	if((int(line[0]) < 0) || (int(line[1]) < 0))
 	{
-		uft_16 = 1;
+		utf_16 = 1;
 #ifdef DEBUG		
-		cout << "uft_16 mode " << endl;
+		cout << "utf_16 mode " << endl;
 #endif
 	}
 	
@@ -4559,7 +4568,7 @@ int	WriteLog( char* read_filename, char* write_filename, int depth_idx, int data
 	double depth, data;
 	int index,max;
 			
-	while(readline(line, rfptr, uft_16) >= 0)
+	while(readline(line, rfptr, utf_16) >= 0)
 	{
 		if ((line[0] >= 'A' && line[0] <= 'Z') || (line[0] >= 'a' && line[0] <= 'z') || (line[0] == '#'))
 		{
@@ -4643,25 +4652,25 @@ int ChangeFormat(const char* infilename, const char* outfilename)
 	int total_count = 0;
 	memset(line, 0, MAX_LINE);
 
-	int uft_16 = 0;
+	int utf_16 = 0;
 	fgets(line, MAX_LINE, rfptr);
 	if((int(line[0]) < 0) || (int(line[1]) < 0))
 	{
-		uft_16 = 1;
+		utf_16 = 1;
 #ifdef DEBUG		
-		cout << "uft_16 mode " << endl;
+		cout << "utf_16 mode " << endl;
 #endif
 	}
 	
 	fseek(rfptr, 0L, SEEK_SET);
 	memset(line, 0, MAX_LINE);
-	if(readline(line, rfptr, uft_16) < 0) return -1;
+	if(readline(line, rfptr, utf_16) < 0) return -1;
 	
 	while ((line[0] >= 'A' && line[0] <= 'Z') || (line[0] >= 'a' && line[0] <= 'z') || (line[0] == '#') )
 	{
 		//fgets(line, MAX_LINE, rfptr);
 		memset(line, 0, MAX_LINE);
-		if(readline(line, rfptr, uft_16) < 0) return -1;
+		if(readline(line, rfptr, utf_16) < 0) return -1;
 	}
 	//
 	do
@@ -4677,11 +4686,13 @@ int ChangeFormat(const char* infilename, const char* outfilename)
 	int difference = 0;
 	int index = 0;
 	int loop_total = 0;
-	while(readline(line, rfptr, uft_16) >= 0)
+	while(readline(line, rfptr, utf_16) >= 0)
 	{
+		printf("Got line: %s\n", line);
 
 		if ((line[0] >= 'A' && line[0] <= 'Z') || (line[0] >= 'a' && line[0] <= 'z') || (line[0] == '#'))
 		{
+			printf("Header line, continuing\n");
 			token_num = 0;
 			memset(line, 0, MAX_LINE);
 			continue;
@@ -4700,7 +4711,8 @@ int ChangeFormat(const char* infilename, const char* outfilename)
 			difference = 0;
 		loop_total = total_count - difference;	
 		
-		for(int i=0; i < loop_total; i++)
+		printf("Loop total = %d\n", loop_total);
+		for (int i=0; i < loop_total; i++)
 		{
 			/*ret = total_count - 1 - index - difference; 
 			if(ret != i) 
@@ -4715,16 +4727,17 @@ int ChangeFormat(const char* infilename, const char* outfilename)
 			} else 
 				fprintf (wfptr, "%s \t", token);
 			*/
-			fprintf (wfptr, "%s \t", token);
+			printf("Writing token ###%s###\n", token);
+			fprintf(wfptr, "%s \t", token);
 			index = getToken(line, token);
 		}
 		for(int i=0; i < difference; i++)
 		{
-			fprintf (wfptr, "null \t");
+			fprintf(wfptr, "null \t");
 		}
 		
 		token_num = 0;
-		fprintf (wfptr, "\n");	
+		fprintf(wfptr, "\n");	
 		memset(line, 0, MAX_LINE);
 	}
 
