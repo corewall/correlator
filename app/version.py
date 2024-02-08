@@ -1,5 +1,5 @@
 from __future__ import print_function
-BaseVersion = "4.5.1"
+BaseVersion = "4.5.2"
 VersionSuffix = ""
 LongVersionSuffix = ""
 
