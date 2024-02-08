@@ -248,7 +248,7 @@ class GrowthRatePlotCanvas(BetterLegendPlotCanvas):
                     mcdVals.append(topSectionMcd)
 
                     # track point data for use in point labeling on mouseover
-                    if len(mbsfVals) == 1:
+                    if len(mbsfVals) == 1 and mbsfVals[0] == 0.0:
                         growthRate = [1.0, 0.0]
                     else:
                         growthRate = numpy.polyfit(mbsfVals, mcdVals, 1)
