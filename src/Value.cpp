@@ -527,7 +527,7 @@ char Value::getType( void )
 void Value::setSection( char* value )
 {
 	strcpy(m_section, value);
-	m_sectionId = stoi(value);
+	m_sectionId = atoi(value);
 }
 
 char* Value::getSection( void )
