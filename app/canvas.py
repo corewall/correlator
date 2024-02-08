@@ -2662,7 +2662,7 @@ class DataCanvas(wxBufferedWindow):
                     if compTie.fixed == 1: # store fixed depth for shift calc on next go-around
                         fixedTieDepth = round(compTie.depth, 3)
                     else: # movable tie, add shift distance to info str
-                        shiftDist =  fixedTieDepth - round(compTie.depth, 3)
+                        shiftDist =  round(fixedTieDepth - compTie.depth, 3)
                         signChar = '+' if shiftDist > 0 else '' 
                         posStr += ' (' + signChar + str(shiftDist) + ')'
                     dc.DrawText(posStr, x + 10, y + 10)
