@@ -179,6 +179,14 @@ class DataFrame(wx.Panel):
                     self.parent.OnNewData(None)
             self.ImportSectionSummary()
 
+    def OnSecSummItemMenu(self, event):
+        opId = event.GetId()
+        if opId == 1:
+            ssFile = os.path.join(self.parent.DBPath, 'db', self.tree.GetItemText(self.selectedIdx, 10), self.tree.GetItemText(self.selectedIdx, 8))
+            self.ViewDataFile(ssFile)
+        elif opId == 2:
+            self.DeleteSecSummFile()
+
     def DeleteSecSummFile(self, event=None):
         holeStr = self.tree.GetItemText(self.selectedIdx, 0)
         ret = self.parent.OnShowMessage("Confirm Delete", "Are you sure you want to delete the section summary for hole {}?".format(holeStr), 2)
@@ -790,6 +798,11 @@ class DataFrame(wx.Panel):
         popupMenu.Append(1, "&Import Section Summary File(s)...")
         self.Bind(wx.EVT_MENU, self.OnSecSummMenu)
 
+    def MakeSectionSummaryItemPopup(self, popupMenu):
+        popupMenu.Append(1, "&View")
+        popupMenu.Append(2, "&Delete")
+        self.Bind(wx.EVT_MENU, self.OnSecSummItemMenu)
+
     def MakeImagesPopup(self, popupMenu):
         popupMenu.Append(1, "Add new &images")
         popupMenu.Append(2, "&Update")
@@ -860,13 +873,11 @@ class DataFrame(wx.Panel):
                     popupMenu.Append(2, "&View")
                     popupMenu.Append(6, "&Delete")
                     popupMenu.Append(16, "&Export")
-                # brg 11/28/2023 because top-level SS node has no File Output Name associated with it
-                # I'm quite sure this block can never be hit.
-                # elif self.tree.GetItemText(self.selectedIdx, 0) == "Section Summaries":
-                    # self.MakeSectionSummaryPopup(popupMenu) # TODO?
-                elif self.tree.GetItemText(parentItem, 0) == "Section Summaries":
-                    popupMenu.Append(2, "&View")
-                    popupMenu.Append(6, "&Delete")
+                elif self.tree.GetItemText(parentItem, 0) == SS_NODE:
+
+                    self.MakeSectionSummaryItemPopup(popupMenu)
+                    self.tree.PopupMenu(popupMenu)
+                    return
                 else:
                     popupMenu.Append(2, "&View")
                     if self.tree.GetItemText(self.selectedIdx, 2) == "Disable":
@@ -900,13 +911,17 @@ class DataFrame(wx.Panel):
                     popupMenu.Append(33, "&Import age model")
                 elif str_name == "Image Data":
                     popupMenu.Append(21, "&Import image data")
-                elif str_name == "Section Summaries":
+                elif str_name == SS_NODE:
                     # brg 11/26/2023: For Section Summaries, Images, and Images children, popup
                     # menu and return, otherwise EVT_MENU binding at the end of this massive elif
                     # block will override EVT_MENU binding from e.g. MakeSectionSummaryPopup().
                     # TODO? rename to ShowSectionSummaryPopup() and do the popup there? Still
                     # need to ensure we return here.
                     self.MakeSectionSummaryPopup(popupMenu)
+                    self.tree.PopupMenu(popupMenu)
+                    return
+                elif self.tree.GetItemText(self.tree.GetItemParent(self.selectedIdx), 0) == SS_NODE:
+                    self.MakeSectionSummaryItemPopup(popupMenu)
                     self.tree.PopupMenu(popupMenu)
                     return
                 elif self.tree.GetItemText(self.selectedIdx, 0) == IMG_NODE:
