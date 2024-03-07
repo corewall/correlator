@@ -490,6 +490,11 @@ class DataFrame(wx.Panel):
         self.selectedIdx = None
 
     def AddCoreImages(self):
+        if len(self._gatherSectionSummaryFiles(self.GetSelectedSite())) == 0:
+            msg = "A site must have at least one Section Summary before images can be imported."
+            self.parent.OnShowMessage("Error", msg, 1)
+            return
+
         # 11/29/2023 brg: Unclear why the DD_MULTIPLE style was set here, as it wasn't supported
         # in the version of wxPython we used for so long. Can hook up if needed. TODO?
         dlg = wx.DirDialog(self, "Select Image Folder", defaultPath=self.parent.Directory)#, style=wx.DD_MULTIPLE)
@@ -4001,24 +4006,29 @@ class DataFrame(wx.Panel):
         ssRows = sorted(list(sectionDict.values()), key=lambda r:(r.hole, int(r.core), r.section))
         print("Inferred {} section summary rows".format(len(sectionDict)))
         return ssRows
-        
+
+    # Return list of paths to section summary files that are children of
+    # the DB tree node siteItem.
+    def _gatherSectionSummaryFiles(self, siteItem):
+        secSummFiles = []
+        ssListFound, secSummItem = self.FindItem(siteItem, "Section Summaries")
+        if ssListFound:
+            for ssNode in self.GetChildren(secSummItem):
+                ssFilename = self.tree.GetItemText(ssNode, 1)
+                if len(ssFilename) > 0:
+                    siteDir = self.GetSelectedSiteName()
+                    ssFilepath = self.parent.DBPath +'db/' + siteDir + '/' + ssFilename
+                    secSummFiles.append(ssFilepath)
+                    print("Section Summary file [{}] found!".format(ssFilename))
+        return secSummFiles
+
     # Load all Section Summary files for the current site, aggregating them
     # into the returned SectionSummary object.
     def LoadSectionSummaryFiles(self):
         sectionSummary = None
         siteItem = self.GetSelectedSite()
         if siteItem is not None:
-            secSummFiles = []
-            ssListFound, secSummItem = self.FindItem(siteItem, "Section Summaries")
-            ssLoaded = False
-            if ssListFound:
-                for ssNode in self.GetChildren(secSummItem):
-                    ssFilename = self.tree.GetItemText(ssNode, 1)
-                    if len(ssFilename) > 0:
-                        siteDir = self.GetSelectedSiteName()
-                        ssFilepath = self.parent.DBPath +'db/' + siteDir + '/' + ssFilename
-                        secSummFiles.append(ssFilepath)
-                        print("Section Summary file [{}] found!".format(ssFilename))
+            secSummFiles = self._gatherSectionSummaryFiles(siteItem)
             if len(secSummFiles) > 0:
                 sectionSummary = SectionSummary.createWithFiles(secSummFiles)
         return sectionSummary
