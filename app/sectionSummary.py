@@ -103,7 +103,7 @@ class SectionSummary(object):
     @classmethod
     def createWithPandasRows(cls, rows):
         dataframe = pandas.DataFrame(columns=tabularImport.SectionSummaryFormat.req)
-        dataframe = dataframe.append(rows, ignore_index=True)
+        dataframe = pandas.DataFrame.from_records(rows)
         stringColumns = ['Core', 'Section']
         tabularImport.forceStringDatatype(stringColumns, dataframe)
         return cls(os.path.basename("inferred section summary"), dataframe)
