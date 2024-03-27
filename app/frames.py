@@ -585,14 +585,22 @@ class CompositePanel(object):
         
     def UpdateAffineTable(self):
         affineRows = self.parent.affineManager.getAffineRowsForUI()
-        
-        if len(affineRows) > self.table.GetNumberRows():
+        tableRowCount = self.table.GetNumberRows()
+
+        if len(affineRows) > tableRowCount:
             self.table.InsertRows(pos=0, numRows=len(affineRows))
+        elif len(affineRows) < tableRowCount:
+            self.table.DeleteRows(pos=0, numRows=tableRowCount - len(affineRows))
         
         for rowIndex, ar in enumerate(affineRows):
             self.table.SetCellValue(rowIndex, 0, ar[0])
             self.table.SetCellValue(rowIndex, 1, ar[1])
             self.table.SetCellValue(rowIndex, 2, ar[2])
+
+    def ClearAffineTable(self):
+        if self.table.GetNumberRows() > 0:
+            self.table.ClearGrid()
+            self.table.DeleteRows(pos=0, numRows=self.table.GetNumberRows())
 
     def UpdateEvalStatus(self):
         roundedDepthStep = int(10000.0 * float(self.parent.depthStep)) / 10000.0

@@ -3068,6 +3068,7 @@ class AffineController(object):
         self.affine.clear()
         self.dirty = False
         self.currentAffineFile = None
+        self.parent.compositePanel.ClearAffineTable()
         
     def load(self, filepath):
         if filepath is not None:
