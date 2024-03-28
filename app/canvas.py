@@ -1877,16 +1877,28 @@ class DataCanvas(wxBufferedWindow):
         clip_width = self.Width - startX if self.showOutOfRangeData else self.layoutManager.plotWidth
         clip = wx.DCClipper(dc, wx.Rect(startX, self.startDepthPix - 20, clip_width, self.Height - (self.startDepthPix - 20)))
 
-        if len(screenPoints) >= 1:
-            dc.SetPen(wx.Pen(self.colorDict['spliceSel'], 2)) if intervalSelected else dc.SetPen(wx.Pen(self.colorDict['splice'], 1))
-            dc.DrawLinesFromBuffer(screenPoints) if (len(screenPoints) > 1) else dc.DrawPoint(screenPoints[0], screenPoints[1])	
+        if len(screenPoints) >= 2:
+            color = self.colorDict['spliceSel'] if intervalSelected else self.colorDict['splice']
+            lineWidth = 2 if intervalSelected else 1
+            dc.SetPen(wx.Pen(color, lineWidth))
+            if len(screenPoints) >= 4:
+                dc.DrawLinesFromBuffer(screenPoints)
+            elif len(screenPoints) >= 2:
+                dc.SetBrush(wx.Brush(color))
+                dc.DrawCircle(screenPoints[0], screenPoints[1], radius=2)
+            else:
+                pass # nothing to draw
         else:
             print("Can't draw {}, it contains 0 points".format(interval.coreinfo.getName()))
             
         if drawUnsmoothed:
-            if len(usScreenPoints) >= 1:
-                dc.SetPen(wx.Pen(wx.WHITE, 1)) 
-                dc.DrawLinesFromBuffer(usScreenPoints) if (len(usScreenPoints) > 1) else dc.DrawPoint(usScreenPoints[0], usScreenPoints[1])
+            if len(usScreenPoints) >= 2:
+                dc.SetPen(wx.Pen(wx.WHITE, 1))
+                if len(usScreenPoints) >= 4:
+                    dc.DrawLinesFromBuffer(usScreenPoints)
+                else:
+                    dc.SetBrush(wx.Brush(wx.WHITE))
+                    dc.DrawCircle(usScreenPoints[0], usScreenPoints[1], radius=2)
             else:
                 print("Can't draw unsmoothed {} data over smoothed, it contains 0 points".format(interval.coreinfo.getName()))
 
@@ -2021,11 +2033,15 @@ class DataCanvas(wxBufferedWindow):
                 screenpoints.append(numpy.intc(x))
                 screenpoints.append(numpy.intc(y))
         screenpoints = numpy.array(screenpoints)
-        if len(screenpoints) >= 1:
+        if len(screenpoints) >= 2:
             if not self.showOutOfRangeData:
                 clip = wx.DCClipper(dc, guide_clip_rect)
             dc.SetPen(wx.Pen(self.colorDict['spliceTrace'], 1))
-            dc.DrawLinesFromBuffer(screenpoints) if (len(screenpoints) > 1) else dc.DrawPoint(screenpoints[0], screenpoints[1])
+            if len(screenpoints) >= 4:
+                dc.DrawLinesFromBuffer(screenpoints)
+            else:
+                dc.SetBrush(wx.Brush(self.colorDict['spliceTrace']))
+                dc.DrawCircle(screenpoints[0], screenpoints[1], radius=2)
 
     # find nearest point in coredata with depth less than searchDepth
     def nearestDataPointAbove(self, coredata, searchDepth):
@@ -2096,7 +2112,7 @@ class DataCanvas(wxBufferedWindow):
     
         # plot points
         dc.SetPen(wx.Pen(plotColor, 1))
-        if self.DiscretePlotMode == 0 and len(points) > 2:
+        if self.DiscretePlotMode == 0 and len(points) >= 4:
             dc.DrawLinesFromBuffer(points)
         else:
             for pt in list(zip(points[0::2], points[1::2])): # create (x,y) tuples from list of form [x0, y0, x1, y1....]
@@ -2140,34 +2156,35 @@ class DataCanvas(wxBufferedWindow):
 
         lead = self.compositeDepth - self.parent.winLength
         lag = self.compositeDepth + self.parent.winLength
-        lead_lines = []
-        corr_window_lines = []
-        lag_lines = []
+        lead_coords = []
+        corr_window_coords = []
+        lag_coords = []
         for y,x in self.GuideCore:
-            dest = corr_window_lines
+            dest = corr_window_coords
             if y < lead:
-                dest = lead_lines
+                dest = lead_coords
             elif y > lag:
-                dest = lag_lines
+                dest = lag_coords
 
             y = self.startDepthPix + (y - self.rulerStartDepth) * self.pixPerMeter
             x = ((x - self.minRange) * self.coefRange) + plotStartX
             dest.append(numpy.intc(x))
             dest.append(numpy.intc(y))
 
-        if len(corr_window_lines) > 2:
+        if len(corr_window_coords) >= 2:
             dc.SetPen(wx.Pen(self.colorDict['foreground']))
-            if len(lead_lines) > 1:
+            if len(lead_coords) >= 2:
                 # connect last lead point to first corr_window point
-                lead_lines.append(corr_window_lines[0])
-                lead_lines.append(corr_window_lines[1])
-                dc.DrawLinesFromBuffer(numpy.array(lead_lines))
-            if len(lag_lines) > 1:
+                lead_coords.append(corr_window_coords[0])
+                lead_coords.append(corr_window_coords[1])
+                dc.DrawLinesFromBuffer(numpy.array(lead_coords))
+            if len(lag_coords) >= 2:
                 # connect last corr_window point to first lag point
-                lag_lines = [corr_window_lines[-2], corr_window_lines[-1]] + lag_lines
-                dc.DrawLinesFromBuffer(numpy.array(lag_lines))
-            dc.SetPen(wx.Pen(self.colorDict['corrWindow']))
-            dc.DrawLinesFromBuffer(numpy.array(corr_window_lines))
+                lag_coords = [corr_window_coords[-2], corr_window_coords[-1]] + lag_coords
+                dc.DrawLinesFromBuffer(numpy.array(lag_coords))
+            if len(corr_window_coords) >= 4: # need four coordinates to draw a line
+                dc.SetPen(wx.Pen(self.colorDict['corrWindow']))
+                dc.DrawLinesFromBuffer(numpy.array(corr_window_coords))
 
         # restore saved datatype range
         self.minRange, self.maxRange, self.coefRange, self.continue_flag = save_range
