@@ -460,7 +460,7 @@ class AffineBuilder(object):
         return ao
 
     # Shift core(s) based on a tie between two cores.
-    # coreOnly: if True, shift core only, else shift core and all related
+    # method: TieShiftMethod
     # mcdShiftDistance: distance between tie points in MCD space
     # fromCore, fromDepth: core and MBSF depth of tie on fixed core
     # core, depth: core and MBSF depth of tie on core to be shifted
