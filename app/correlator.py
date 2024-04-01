@@ -55,9 +55,9 @@ app = None
 Prefs = None
 User_Dir = os.path.expanduser("~")
 
-myPath = os.path.join(User_Dir, "Documents", "Correlator", vers.BaseVersion)
+myPath = User_Dir + "/Documents/Correlator/" + vers.BaseVersion + "/"
 if platform_name[0] == "Windows":
-    os.path.join(User_Dir, "Correlator", vers.BaseVersion)
+	myPath =  User_Dir + "\\Correlator\\" + vers.BaseVersion + "\\"
 myTempPath = myPath
 
 global_logName = "" 
