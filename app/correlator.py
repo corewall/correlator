@@ -55,9 +55,9 @@ app = None
 Prefs = None
 User_Dir = os.path.expanduser("~")
 
-myPath = User_Dir  + "/Documents/Correlator/" + vers.BaseVersion + "/"
+myPath = os.path.join(User_Dir, "Documents", "Correlator", vers.BaseVersion)
 if platform_name[0] == "Windows":
-    myPath =  User_Dir  + "\\Correlator\\" + vers.BaseVersion + "\\"
+    os.path.join(User_Dir, "Correlator", vers.BaseVersion)
 myTempPath = myPath
 
 global_logName = "" 
@@ -3962,7 +3962,7 @@ class CorrelatorApp(wx.App):
         winy = 600
 
         problemFlag = False 
-        checklogFile = open(myTempPath + "success.txt", "r")
+        checklogFile = open(os.path.join(myTempPath, "success.txt"), "r")
         line = checklogFile.readline()
         if len(line) == 0: 
             problemFlag = True
@@ -3997,7 +3997,7 @@ class CorrelatorApp(wx.App):
             defaultFile.write(line)
             defaultFile.close()
 
-        startlogFile = open(myTempPath + "success.txt", "w+")
+        startlogFile = open(os.path.join(myTempPath, "success.txt"), "w+")
         startlogFile.write("start\n")
         startlogFile.close()
 
@@ -4074,13 +4074,6 @@ def reportUnhandledException(exc_type, exc_value, exc_traceback):
 sys.excepthook = reportUnhandledException
 
 if __name__ == "__main__":
-
-    new = False
-
-    tempstamp = str(datetime.today())
-    last = tempstamp.find(" ", 0)
-    stamp = tempstamp[0:last] + "-"  
-    
     # create ~/.correlator dir if none exists
     configDir = os.path.join(User_Dir, ".correlator")
     if not os.access(configDir, os.F_OK):
@@ -4094,35 +4087,39 @@ if __name__ == "__main__":
     if not Prefs.contains("checkForSpliceCores"):
         Prefs.set("checkForSpliceCores", True)
 
+    firstLaunch = False # first launch of Correlator on client machine?
     if platform_name[0] == "Windows":
-        if os.access(User_Dir  + "\\Correlator\\", os.F_OK) == False:
-            os.mkdir(User_Dir  + "\\Correlator\\")
-            new = True
+        winCorrelatorPath = os.path.join(User_Dir, "Correlator")
+        if os.access(winCorrelatorPath, os.F_OK) == False:
+            os.mkdir(winCorrelatorPath)
+            firstLaunch = True
     else:
-        if os.access(User_Dir  + "/Documents/Correlator/", os.F_OK) == False:
-            os.mkdir(User_Dir  + "/Documents/Correlator/")
-            new = True
+        macCorrelatorPath = os.path.join(User_Dir, "Documents", "Correlator")
+        if os.access(macCorrelatorPath, os.F_OK) == False:
+            os.mkdir(macCorrelatorPath)
+            firstLaunch = True
 
     if os.access(myPath, os.F_OK) == False:
         os.mkdir(myPath)
-        if new == True:
-            new = False
+        if firstLaunch == True:
+            firstLaunch = False
         else: 
-            new = True 
+            firstLaunch = True 
 
     # Copy config files into Documents/Correlator/[version]/tmp.
     # 1/12/2022 brg: To my surprise, copying files in the app bundle using commands
     # passed to os.system() works under AppTranslocation on macOS 10.15+. Trying to
     # access the same files with open() fails.
     
-    tmp_dir_path = get_resource_path("tmp")
-    if os.access(myPath+"tmp", os.F_OK) == False:
-        os.mkdir(myPath + "tmp")
-        cmd = f"cp {os.path.join(tmp_dir_path, '*.*')} {os.path.join(myPath, 'tmp')}"
+    src_tmp_path = get_resource_path("tmp")
+    dst_tmp_path = os.path.join(myPath, "tmp")
+    if os.access(dst_tmp_path, os.F_OK) == False:
+        os.mkdir(dst_tmp_path)
+        cmd = f"cp {os.path.join(src_tmp_path, '*.*')} {dst_tmp_path}"
         if platform_name[0] == "Windows":
             cmd = "copy tmp\\*.* \"" + myTempPath + "\""
         os.system(cmd)
-        cmd = f"cp {os.path.join(myTempPath, 'tmp/default.cfg')} {myPath}"
+        cmd = f"cp {os.path.join(myTempPath, 'tmp', 'default.cfg')} {myPath}"
         if platform_name[0] == "Windows":
             cmd = "copy " + myTempPath + "\\tmp\\default.cfg \"" + myPath + "\""
 
@@ -4132,33 +4129,34 @@ if __name__ == "__main__":
     if platform_name[0] == "Windows":
         myTempPath = myPath + "tmp\\"
     else:
-        myTempPath = myPath + "tmp/"
+        myTempPath = os.path.join(myPath, "tmp")
     
-    if os.access(myTempPath+"success.txt", os.F_OK) == False:
+    if os.access(os.path.join(myTempPath, "success.txt"), os.F_OK) == False:
         cmd = f"cp {os.path.join('tmp', '*.*')} {myTempPath}"
         if platform_name[0] == "Windows":
             cmd = "copy tmp\\*.* \"" + myTempPath + "\""
         os.system(cmd)
 
-    if os.access(myPath + '/log/', os.F_OK) == False:
-        os.mkdir(myPath + '/log/')
+    logDirPath = os.path.join(myPath, "log")
+    if os.access(logDirPath, os.F_OK) == False:
+        os.mkdir(logDirPath)
 
-#	tempstamp = str(datetime.today())
-#	last = tempstamp.find(" ", 0)
-#	stamp = tempstamp[0:last] + "-"
-
-    start = last+ 1 
+    # get timestamp string for logfile name
+    tempstamp = str(datetime.today())
+    last = tempstamp.find(" ", 0)
+    stamp = tempstamp[0:last] + "-"  
+    start = last+ 1
     last = tempstamp.find(":", start)
     stamp += tempstamp[start:last] + "-"
     start = last+ 1 
     last = tempstamp.find(":", last+1)
     stamp += tempstamp[start:last]
 
-    global_logName = "log/" + getpass.getuser() + "." + stamp + ".txt"
+    global_logName = os.path.join("log", f"{getpass.getuser()}.{stamp}.txt")
     if platform_name[0] == "Windows":
         global_logName= "log\\" + getpass.getuser() + "." + stamp + ".txt"
 
-    global_logFile = open(myPath + global_logName, "a+")
+    global_logFile = open(os.path.join(myPath, global_logName), "a+")
     global_logFile.write("Start of Session:\n")
     s = "BY " + getpass.getuser()  + "\n"
     global_logFile.write(s)
@@ -4166,13 +4164,13 @@ if __name__ == "__main__":
     global_logFile.write(s)
 
     ret = py_correlator.initialize("../DATA/current-test")
-    app = CorrelatorApp(new)
+    app = CorrelatorApp(firstLaunch)
     app.MainLoop()
     win_size = app.frame.Width, app.frame.Height
 
     py_correlator.finalize()
 
-    startlogFile = open(myPath + "/tmp/success.txt", "w+")
+    startlogFile = open(os.path.join(myPath, "tmp", "success.txt"), "w+")
     startlogFile.write("close\n")
     s = str(win_size[0]) + "\n"
     startlogFile.write(s)
