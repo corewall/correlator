@@ -4126,7 +4126,7 @@ if __name__ == "__main__":
         #print "[DEBUG] " + cmd
         os.system(cmd)
 
-        myTempPath = dst_tmp_path
+    myTempPath = dst_tmp_path
     
     if os.access(os.path.join(myTempPath, "success.txt"), os.F_OK) == False:
         cmd = f"cp {os.path.join('tmp', '*.*')} {myTempPath}"
