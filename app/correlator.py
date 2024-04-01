@@ -4117,24 +4117,21 @@ if __name__ == "__main__":
         os.mkdir(dst_tmp_path)
         cmd = f"cp {os.path.join(src_tmp_path, '*.*')} {dst_tmp_path}"
         if platform_name[0] == "Windows":
-            cmd = "copy tmp\\*.* \"" + myTempPath + "\""
+            cmd = f"copy {os.path.join(src_tmp_path, '*.*')} \"{dst_tmp_path}\""
         os.system(cmd)
-        cmd = f"cp {os.path.join(myTempPath, 'tmp', 'default.cfg')} {myPath}"
+        cmd = f"cp {os.path.join(dst_tmp_path, 'default.cfg')} {myPath}"
         if platform_name[0] == "Windows":
-            cmd = "copy " + myTempPath + "\\tmp\\default.cfg \"" + myPath + "\""
+            cmd = f"copy {os.path.join(dst_tmp_path, 'default.cfg')} \"{myPath}\""
 
         #print "[DEBUG] " + cmd
         os.system(cmd)
 
-    if platform_name[0] == "Windows":
-        myTempPath = myPath + "tmp\\"
-    else:
-        myTempPath = os.path.join(myPath, "tmp")
+        myTempPath = dst_tmp_path
     
     if os.access(os.path.join(myTempPath, "success.txt"), os.F_OK) == False:
         cmd = f"cp {os.path.join('tmp', '*.*')} {myTempPath}"
         if platform_name[0] == "Windows":
-            cmd = "copy tmp\\*.* \"" + myTempPath + "\""
+            cmd = f"copy {os.path.join('tmp', '*.*')} \"{myTempPath}\""
         os.system(cmd)
 
     logDirPath = os.path.join(myPath, "log")
@@ -4153,8 +4150,6 @@ if __name__ == "__main__":
     stamp += tempstamp[start:last]
 
     global_logName = os.path.join("log", f"{getpass.getuser()}.{stamp}.txt")
-    if platform_name[0] == "Windows":
-        global_logName= "log\\" + getpass.getuser() + "." + stamp + ".txt"
 
     global_logFile = open(os.path.join(myPath, global_logName), "a+")
     global_logFile.write("Start of Session:\n")
