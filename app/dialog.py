@@ -876,7 +876,7 @@ class ExportCoreDialog(wx.Dialog):
         vbox.Add(outputPanel, 0, wx.EXPAND | wx.ALL, 10)
 
         btnPanel = wx.Panel(self, -1)
-        okBtn = wx.Button(btnPanel, wx.ID_OK, "Export")
+        okBtn = wx.Button(btnPanel, wx.ID_OK, "Save")
         cancelBtn = wx.Button(btnPanel, wx.ID_CANCEL, "Cancel")
         bsz = wx.BoxSizer(wx.HORIZONTAL)
         bsz.Add(okBtn, 1, wx.ALIGN_CENTER_VERTICAL, 5)
