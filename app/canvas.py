@@ -633,6 +633,12 @@ class DataCanvas(wxBufferedWindow):
         self.sideNote = wx.Notebook(self.sidePanel, -1, style=wx.NB_RIGHT | wx.NB_MULTILINE)
         self.sideNote.SetBackgroundColour(wx.Colour(255, 255, 255))
 
+        # Sep 3 2024: Without a sizer for the parent Panel, Notebook tabs are
+        # partially cut off on the right side on Macs in wxPython 4.
+        sidePanelSizer = wx.BoxSizer()
+        self.sidePanel.SetSizer(sidePanelSizer)
+        sidePanelSizer.Add(self.sideNote, 0, wx.EXPAND)
+
         self.closePanel = wx.Panel(self.sideNote, -1, (0, 50), (45, 500), style=wx.NO_BORDER)
 
         self.compPanel = wx.Panel(self.sideNote, -1, (0, 50), (300, 500), style=wx.NO_BORDER)
