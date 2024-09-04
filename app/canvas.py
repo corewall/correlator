@@ -2594,7 +2594,7 @@ class DataCanvas(wxBufferedWindow):
 
          # If no data is loaded, show help text.
         if len(self.HoleData) == 0 and len(self.SmoothData) == 0:
-            msg = "No Data has been loaded. In Data Manager, right-click on a Site, data type, or data file and choose Load."
+            msg = "No Data has been loaded. In Data Manager, right-click on a Site and select Load."
             dc.DrawText(msg, self.compositeX + 10, self.getCoord(self.rulerStartDepth))
 
         # TODO: clean up, own method
