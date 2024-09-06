@@ -1077,7 +1077,7 @@ class SetDialog(wx.Dialog):
         distSizer.Add(self.distRadio, 0, wx.RIGHT, 5)
         distSizer.Add(self.distField)
         distSizer.Add(wx.StaticText(self, -1, "m"), 0, wx.LEFT, 3)
-        self.percentRadio = wx.RadioButton(self, -1, "Percent of original CSF-A depth(s)")
+        self.percentRadio = wx.RadioButton(self, -1, "Percentage of current CCSF depth(s)")
         self.percentField = wx.TextCtrl(self, -1, "10.0", size=(70,-1))
         pctSizer = wx.BoxSizer(wx.HORIZONTAL)
         pctSizer.Add(self.percentRadio, 0, wx.RIGHT, 5)

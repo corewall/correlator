@@ -391,10 +391,18 @@ class AffineBuilder(object):
 
     # Get distance of a SET shift as measured from the core's original,
     # unshifted position, handling percentage-based shifts if needed.
+    # NEW: 
+    # If isPercent is True, return distance of a SET shift as measured from
+    # the core's CCSF depth.
+    # If not, return distance of a SET as measured from core's original CSF-A depth.
+    # TODO: This dichotomy is gross and should be resolved, but for now we're
+    # just Making Things Work.
     def getSETDistance(self, hole, core, value, isPercent, site, _sectionSummary):
         if isPercent:
-            coreTop, _ = _sectionSummary.getCoreRange(site, hole, core)
-            distance = (coreTop * value) - coreTop
+            csf_a_top, _ = _sectionSummary.getCoreRange(site, hole, core)
+            shift_dist = self.affine.getShiftDistance(aci(hole, core))
+            ccsf_top = csf_a_top + shift_dist
+            distance = (ccsf_top * value) - csf_a_top
         else:
             distance = value
         return distance
