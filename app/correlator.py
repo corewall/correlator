@@ -3177,7 +3177,7 @@ class AffineController(object):
             return
         
         distance = setOp.shifts[0].distance
-        delta = self.affine.getSETDelta(core_id, distance)
+        delta = self.affine.getShiftDelta(core_id, distance)
         coreAndDelta = [(setOp.shifts[0].core, delta)]
         proceed, intervalsAndDeltas = self.confirmShiftCoresInSplice(coreAndDelta)
         if not proceed:
@@ -3197,7 +3197,7 @@ class AffineController(object):
         if self.affine.isRoot(core_id):
             setChainOp = self.affine.setChainRoot(core_id, distance, dataUsed, comment)
 
-            delta = self.affine.getSETDelta(core_id, distance)
+            delta = self.affine.getShiftDelta(core_id, distance)
             coresAndDeltas = [(c, delta) for c in setChainOp.getCoresToBeMoved()]
             proceed, intervalsAndDeltas = self.confirmShiftCoresInSplice(coresAndDeltas)
             if not proceed:
@@ -3242,7 +3242,7 @@ class AffineController(object):
         if proceed: # warn/confirm shift of splice intervals to match affine shifts
             coresAndDeltas = []
             for shift in setAllOp.shifts:
-                cad = (shift.core, self.affine.getSETDelta(shift.core, shift.distance))
+                cad = (shift.core, self.affine.getShiftDelta(shift.core, shift.distance))
                 coresAndDeltas.append(cad)
             proceed, intervalsAndDeltas = self.confirmShiftCoresInSplice(coresAndDeltas)
 

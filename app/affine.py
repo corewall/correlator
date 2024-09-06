@@ -380,13 +380,14 @@ class AffineBuilder(object):
     def adjust(self, core, deltaDistance):
         self.affine.getShift(core).adjust(deltaDistance)
 
-    # The distance of a SET shift is measured from the core's original,
-    # unshifted position. If that core is already shifted, determine
-    # the delta from its current position.
-    def getSETDelta(self, core, distance):
-        delta = distance
+    # Return the difference between a core's current affine shift and
+    # new_shift_distance.
+    # core: AffineCoreInfo
+    # new_shift_distance: proposed shift distance
+    def getShiftDelta(self, core, new_shift_distance):
+        delta = new_shift_distance
         if self.affine.hasShift(core):
-            delta = distance - self.affine.getShiftDistance(core)
+            delta = new_shift_distance - self.affine.getShiftDistance(core)
         return delta
 
     # Get distance of a SET shift as measured from the core's original,
