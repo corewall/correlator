@@ -397,7 +397,7 @@ class AffineBuilder(object):
     # If not, return distance of a SET as measured from core's original CSF-A depth.
     # TODO: This dichotomy is gross and should be resolved, but for now we're
     # just Making Things Work.
-    def getSETDistance(self, hole, core, value, isPercent, site, _sectionSummary):
+    def _getSETDistance(self, hole, core, value, isPercent, site, _sectionSummary):
         if isPercent:
             csf_a_top, _ = _sectionSummary.getCoreRange(site, hole, core)
             shift_dist = self.affine.getShiftDistance(aci(hole, core))
@@ -416,7 +416,7 @@ class AffineBuilder(object):
         core_id = aci(hole, core)
         breaks = self.findBreaksForSET([core_id])
         ao.infoDict['breaks'] = breaks
-        shiftDistance = self.getSETDistance(hole, core, value, isPercent, site, _sectionSummary)
+        shiftDistance = self._getSETDistance(hole, core, value, isPercent, site, _sectionSummary)
         ao.shifts.append(SetShift(core_id, shiftDistance, dataUsed, comment))
         for b in breaks:
             childCore = b[1]
@@ -447,7 +447,7 @@ class AffineBuilder(object):
 
         setCoreList = [c for c in coreList if aci(hole, c) not in tieCores]
         for core in setCoreList:
-            shiftDistance = self.getSETDistance(hole, core, value, isPercent, site, _sectionSummary)
+            shiftDistance = self._getSETDistance(hole, core, value, isPercent, site, _sectionSummary)
             ao.shifts.append(SetShift(aci(hole, core), shiftDistance, dataUsed, comment))
 
         return ao
