@@ -3252,7 +3252,7 @@ class AffineController(object):
                 self.parent.spliceManager.shiftIntervals(intervalsAndDeltas)
                 self._execute(setAllOp, spliceState)
             else:
-                self._execute(setAllOp)			
+                self._execute(setAllOp)
             
     # fromDepth - MBSF depth of tie point on fromCore
     # depth - MBSF depth of tie point on core

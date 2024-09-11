@@ -509,8 +509,11 @@ class AffineBuilder(object):
             for ci in relatedCores:
                 ao.adjusts.append((ci, mcdShiftDistance))
         elif method == TieShiftMethod.TiedAndDeeperInHoles:
-            self.gatherTiedAndDeeperInHoles(fromCore, core)
-            ao.infoDict['breaks'] = []
+            ao.shifts.append(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
+            ao.infoDict['breaks'] = [] # TODO: Can't assume no breaks will occur
+            relatedCores = self.gatherTiedAndDeeperInHoles(fromCore, core)
+            for ci in relatedCores:
+                ao.adjusts.append((ci, mcdShiftDistance))
         elif method == TieShiftMethod.TiedAndDeeperInChain:
             pass
         else:
@@ -580,25 +583,25 @@ class AffineBuilder(object):
             else:
                 tadihCores += [core for core in self.affine.getChainCores(shiftCore) if core != shiftCore]
             shiftCoreChainRoot = self.affine.getRoot(shiftCore).core
-            print(f"Cores in shiftCore {shiftCore} chain: {tadihCores} (excluding shiftCore)")
+            # print(f"Cores in shiftCore {shiftCore} chain: {tadihCores} (excluding shiftCore)")
 
         # Get all cores in chains with root CCSF deeper than shiftCore.
         # Omit shiftCore's chain cores (if any), those cores are already gathered.
         # If fromCore is part of a chain, nothing in that chain can shift.
         shiftCoreCCSF = self.getCCSFDepth(shiftCore)
-        otherChainRoots = [root for root in self.getChainRoots() if root != shiftCoreChainRoot]
+        otherChainRoots = [root for root in self.getChainRoots() if shiftCoreChainRoot is None or root != shiftCoreChainRoot]
         for root in otherChainRoots:
             if fromCore in self.affine.getChainCores(root):
-                print(f"Fixed core {fromCore} is part of chain with root {root}, skipping chain")
+                # print(f"Fixed core {fromCore} is part of chain with root {root}, skipping chain")
                 continue
-            print(f"Chain root {root}: CCSF depth = {self.getCCSFDepth(root)}")
+            # print(f"Chain root {root}: CCSF depth = {self.getCCSFDepth(root)}")
             if self.getCCSFDepth(root) > shiftCoreCCSF:
-                print(f"  Deeper than {shiftCore}, shifting chain")
+                # print(f"  Deeper than {shiftCore}, shifting chain")
                 tadihCores += self.affine.getChainCores(root)
 
         # get all non-chain cores
         nonChainCores = [shift.core for shift in self.affine.getAllShifts() if not self.affine.inChain(shift.core)]
-        print(f"Non-chain cores: {sorted(nonChainCores)}")
+        # print(f"Non-chain cores: {sorted(nonChainCores)}")
 
         # of non-chain cores, get those with CCSF deeper than shiftCore
         deeperCores = []
@@ -606,13 +609,14 @@ class AffineBuilder(object):
             if self.getCCSFDepth(core) > shiftCoreCCSF:
                 deeperCores.append(core)
             else:
-                print(f"  non-chain {core} has CCSF {self.getCCSFDepth(core)} <= {shiftCoreCCSF}, omitting")
+                pass
+                # print(f"  non-chain {core} has CCSF {self.getCCSFDepth(core)} <= {shiftCoreCCSF}, omitting")
         # deeperCores = [core for core in nonChainCores if self.getCCSFDepth(core) > shiftCoreCCSF]
-        print(f"Non-chain cores with CCSF deeper than shiftCore: {sorted(deeperCores)}")
+        # print(f"Non-chain cores with CCSF deeper than shiftCore: {sorted(deeperCores)}")
 
         tadihCores += deeperCores
 
-        print(f"gatherTiedAndDeeperInHoles: fromCore = {fromCore}, shiftCore = {shiftCore}:\n{sorted(tadihCores)}")
+        # print(f"gatherTiedAndDeeperInHoles: fromCore = {fromCore}, shiftCore = {shiftCore}:\n{sorted(tadihCores)}")
         return tadihCores
 
     # 9/9/2024 new approach #2
@@ -1152,6 +1156,9 @@ class TestNewAffineScopes(unittest.TestCase):
         movers = builder.gatherTiedAndDeeperInHoles(acistr("C1"), acistr("A1"))
         expectedMovers = acilist(['A2', 'A3', 'B1', 'B2', 'B3', 'C3', 'D2', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
+
+        # Test 10: Shift D1 from A1.
+        # Existing C1 > D1 tie must be broken.
 
     # Peter's new scopes and rules Fall 2024, Correlator 4.5.5
     def test_tied_and_deeper_this_chain(self):
