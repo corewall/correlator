@@ -510,8 +510,8 @@ class AffineBuilder(object):
                 ao.adjusts.append((ci, mcdShiftDistance))
         elif method == TieShiftMethod.TiedAndDeeperInHoles:
             ao.shifts.append(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
-            ao.infoDict['breaks'] = [] # TODO: Can't assume no breaks will occur
             relatedCores = self.gatherTiedAndDeeperInHoles(fromCore, core)
+            ao.infoDict['breaks'] = self.findBreaks(fromCore, core, relatedCores)
             for ci in relatedCores:
                 ao.adjusts.append((ci, mcdShiftDistance))
         elif method == TieShiftMethod.TiedAndDeeperInChain:
