@@ -515,7 +515,11 @@ class AffineBuilder(object):
             for ci in relatedCores:
                 ao.adjusts.append((ci, mcdShiftDistance))
         elif method == TieShiftMethod.TiedAndDeeperInChain:
-            pass
+            ao.shifts.append(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
+            ao.infoDict['breaks'] = [] # TODO: Can't assume no breaks will occur
+            relatedCores = self.gatherTiedAndDeeperInChain(fromCore, core)
+            for ci in relatedCores:
+                ao.adjusts.append((ci, mcdShiftDistance))
         else:
             assert False, "Unknown TieShiftMethod {}".format(method)
                 
@@ -626,7 +630,28 @@ class AffineBuilder(object):
 
     # 9/9/2024 new approach #2
     def gatherTiedAndDeeperInChain(self, fromCore, shiftCore):
-        pass
+        tadicCores = []
+
+        # get all cores in shiftCore chain
+        # TODO: near-duplicate of gatherTiedAndDeeperInHoles logic but don't need to consider shiftCoreChainRoot
+        # shiftCoreChainRoot = None
+        if self.affine.inChain(shiftCore):
+            chainCores = self.affine.getChainCores(shiftCore)
+            if fromCore in chainCores:
+                # fromCore cannot shift, only shift the descendants of shiftCore in this chain
+                tadicCores += [core for core in self.affine.getDescendants(shiftCore)]
+            else:
+                tadicCores += [core for core in self.affine.getChainCores(shiftCore) if core != shiftCore]
+            # shiftCoreChainRoot = self.affine.getRoot(shiftCore).core
+            # print(f"Cores in shiftCore {shiftCore} chain: {tadihCores} (excluding shiftCore)")
+
+        # get uppermost cores for each hole in shiftCore chain, including shiftCore
+        uppermostCores = self._getUppermostCores(tadicCores + [shiftCore])
+        for core in uppermostCores:
+            coresBelow = [cb for cb in self.getCoresBelow(core) if not self.affine.inChain(cb)]
+            tadicCores += coresBelow
+
+        return tadicCores
 
 
     # Gather all cores that will be shifted by "Shift by [shiftCore] and related
