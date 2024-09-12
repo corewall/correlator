@@ -567,7 +567,7 @@ class AffineBuilder(object):
         return self.findBreaks(AffineCoreInfo.createBogus(), None, movingCores)
     
     # 9/9/2024 new approach #1
-    # All cores in the SHIFT core chain (if any).
+    # All downstream cores in the SHIFT core chain (if any).
     # All other chain cores (all holes) if the CCSF of the chain ROOT is deeper than CCSF of the SHIFT core.
     # All non-chain cores (all holes) if their CCSF is deeper than CCSF of the SHIFT core.
     def gatherTiedAndDeeperInHoles(self, fromCore, shiftCore):
@@ -580,6 +580,11 @@ class AffineBuilder(object):
             if fromCore in chainCores:
                 # fromCore cannot shift, only shift the descendants of shiftCore in this chain
                 tadihCores += [core for core in self.affine.getDescendants(shiftCore)]
+            elif self.affine.getParent(shiftCore):
+                # if shiftCore is already tied from a different core, that core cannot shift,
+                # only shiftCore and descendants should move...?
+                if self.affine.getParent(shiftCore).core != fromCore:
+                    tadihCores += [core for core in self.affine.getDescendants(shiftCore)]
             else:
                 tadihCores += [core for core in self.affine.getChainCores(shiftCore) if core != shiftCore]
             shiftCoreChainRoot = self.affine.getRoot(shiftCore).core
@@ -606,13 +611,13 @@ class AffineBuilder(object):
         # of non-chain cores, get those with CCSF deeper than shiftCore
         deeperCores = []
         for core in nonChainCores:
+            if core == fromCore: # fromCore cannot move!
+                continue
             if self.getCCSFDepth(core) > shiftCoreCCSF:
                 deeperCores.append(core)
             else:
-                pass
                 # print(f"  non-chain {core} has CCSF {self.getCCSFDepth(core)} <= {shiftCoreCCSF}, omitting")
-        # deeperCores = [core for core in nonChainCores if self.getCCSFDepth(core) > shiftCoreCCSF]
-        # print(f"Non-chain cores with CCSF deeper than shiftCore: {sorted(deeperCores)}")
+                pass
 
         tadihCores += deeperCores
 
@@ -1085,14 +1090,22 @@ class TestNewAffineScopes(unittest.TestCase):
         # Bump C1 down from 0m to 0.1m.
         builder._set("C", "1", 0.1, isPercent=False, site="1", _sectionSummary=secsumm)
 
+        # Test 0: Shift A1 from C1.
+        # This should shift All A and B cores, C2, C3, D2, D3.
+        # C1 is the fixed/REF core. D1 (0m) is not below A1 (0m).
+        movers = builder.gatherTiedAndDeeperInHoles(acistr("C1"), acistr("A1"))
+        expectedMovers = acilist(['A2', 'A3', 'B1', 'B2', 'B3', 'C2', 'C3', 'D2', 'D3'])
+        print(f"Test 0 movers: {sorted(movers)}")
+        self.assertTrue(sameElements(expectedMovers, movers))        
+
         # Tie C1 > D1. D1 now has CCSF 0.5m
         builder._tieOmitDepths(TieShiftMethod.CoreOnly, 0.5, acistr("C1"), acistr("D1"))
         
         # Tie D1 > C2. C2 now has CCSF 1.2m.
         builder._tieOmitDepths(TieShiftMethod.CoreOnly, 0.2, acistr("D1"), acistr("C2"))
 
-        for core in [acistr("A1"), acistr("B1"), acistr("C1"), acistr("D1"), acistr("C2")]:
-            print(f"Core {core} has CCSF depth {builder.getCCSFDepth(core)}m")
+        # for core in [acistr("A1"), acistr("B1"), acistr("C1"), acistr("D1"), acistr("C2")]:
+            # print(f"Core {core} has CCSF depth {builder.getCCSFDepth(core)}m")
 
         # CCSF depths: A1 0m, B1 0.2m, C1 0.1m, C2 1.2m, D1 0.5m.
         # Tie chains: A1 > B1; C1 > D1 > C2.
@@ -1100,16 +1113,15 @@ class TestNewAffineScopes(unittest.TestCase):
         # Test 1: Shift A1 from fixed E1. Every A-D core should move.
         # Note: shiftCore is omitted from gatherTiedAndDeeperInHoles() return list
         movers = builder.gatherTiedAndDeeperInHoles(acistr("E1"), acistr("A1"))
-
         expectedMovers = acilist(['A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3', 'D1', 'D2', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # Test 2: Shift B1 from fixed E1.
-        # All A and B cores should move. C3, D2 and D3 should move.
-        # Chain C1 > D1 > C2 should not move because root C1's CCSF is above B1's CCSF
-        # E1 should not move, its CCSF is above B1's.
+        # This breaks A1 > B1 tie. A1 will not move.
+        # Chain C1 > D1 > C2 will not move because root C1's CCSF is above B1's CCSF.
+        # A2, A3, B2, B3, C3, D2, D3 have CCSF below B1's CCSF, they will move.
         movers = builder.gatherTiedAndDeeperInHoles(acistr("E1"), acistr("B1"))
-        expectedMovers = acilist(['A1', 'A2', 'A3', 'B2', 'B3', 'C3', 'D2', 'D3'])
+        expectedMovers = acilist(['A2', 'A3', 'B2', 'B3', 'C3', 'D2', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # Test 3: Shift C1 from fixed E1.
@@ -1120,16 +1132,19 @@ class TestNewAffineScopes(unittest.TestCase):
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # Test 4: Shift D1 from fixed E1.
-        # Same results as Test 3 (but add C1 and omit shiftCore D1 from expectedMovers)
+        # This breaks C1 > D1 tie. C1 will not move.
+        # C2 is downstream of D1, it will move.
+        # A2, A3, B2, B3, C3, D2, D3 have CCSF below D1's CCSF, they will move.
         movers = builder.gatherTiedAndDeeperInHoles(acistr("E1"), acistr("D1"))
-        expectedMovers = acilist(['A2', 'A3', 'B2', 'B3', 'C1', 'C2', 'C3', 'D2', 'D3'])
+        expectedMovers = acilist(['A2', 'A3', 'B2', 'B3', 'C2', 'C3', 'D2', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # Test 5: Shift C2 from fixed E1.
-        # A3, B3, C1 > D1 > C2 chain, C3 and D3 (deeper) should move.
-        # D2 does not, its CCSF < shiftCore CCSF.
+        # This breaks D1 > C2 tie. Remnant chain C1 > D1 will not move.
+        # A1, A2, B1, B2, D2 have CCSF at or above C2's CCSF, they will not move.
+        # A3, B3, C3, D3 have CCSF below C2's CCSF, they will move.
         movers = builder.gatherTiedAndDeeperInHoles(acistr("E1"), acistr("C2"))
-        expectedMovers = acilist(['A3', 'B3', 'C1', 'C3', 'D1', 'D3'])
+        expectedMovers = acilist(['A3', 'B3', 'C3', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # Test 6: Re-tie B1 from A1.
@@ -1159,6 +1174,9 @@ class TestNewAffineScopes(unittest.TestCase):
 
         # Test 10: Shift D1 from A1.
         # Existing C1 > D1 tie must be broken.
+        movers = builder.gatherTiedAndDeeperInHoles(acistr("A1"), acistr("D1"))
+        expectedMovers = acilist(['A2', 'A3', 'B2', 'B3', 'C2', 'C3', 'D2', 'D3'])
+        self.assertTrue(sameElements(expectedMovers, movers))
 
     # Peter's new scopes and rules Fall 2024, Correlator 4.5.5
     def test_tied_and_deeper_this_chain(self):
