@@ -1044,15 +1044,15 @@ class TestAffineUtils(unittest.TestCase):
         newaff = convert_pre_v3_AffineTable(oldaff)
     
     def test_acistr(self):
-        aci1 = acistr("A1")
+        aci1 = acistr('A1')
         self.assertTrue(aci1.hole == 'A')
         self.assertTrue(aci1.core == '1')
-        aci2 = acistr("B309")
+        aci2 = acistr('B309')
         self.assertTrue(aci2.hole == 'B')
         self.assertTrue(aci2.core == '309')
         
         # physically ridiculous but logically valid case (after hole Z, next is AA, so AZ == 52nd hole)
-        aci3 = acistr("AZ69743")
+        aci3 = acistr('AZ69743')
         self.assertTrue(aci3.hole == 'AZ')
         self.assertTrue(aci3.core == '69743')
         
@@ -1060,16 +1060,16 @@ class TestAffineUtils(unittest.TestCase):
         self.assertRaises(InvalidHoleCoreStringError, acistr, "1F")
         
     def test_aci_sort(self):
-        a1 = acistr("A1")
-        a2 = acistr("A2")
-        a10 = acistr("A10")
-        b1 = acistr("B1")
-        b2 = acistr("B2")
-        aa1 = acistr("AA1")
-        ab1 = acistr("AB1")
-        ab10 = acistr("AB10")
-        ab11 = acistr("AB11")
-        bb1 = acistr("BB1")
+        a1 = acistr('A1')
+        a2 = acistr('A2')
+        a10 = acistr('A10')
+        b1 = acistr('B1')
+        b2 = acistr('B2')
+        aa1 = acistr('AA1')
+        ab1 = acistr('AB1')
+        ab10 = acistr('AB10')
+        ab11 = acistr('AB11')
+        bb1 = acistr('BB1')
         self.assertFalse(a1 < a1)
         self.assertTrue(a1 < a2)
         self.assertTrue(a1 < a10)
@@ -1091,9 +1091,9 @@ class TestAffineUtils(unittest.TestCase):
     # todo: move handy list routines to their own module along with this test
     def test_same_elements(self):
         self.assertTrue(sameElements([], []))
-        list1 = [acistr("A1"), acistr("A2"), acistr("A3"), acistr("B3")]
-        list2 = [acistr("B3"), acistr("A3"), acistr("A1"), acistr("A2")] # reordered elts of list1
-        list3 = [acistr("B3"), acistr("A3"), acistr("A1"), acistr("A4")] # A4 is oddball
+        list1 = [acistr('A1'), acistr('A2'), acistr('A3'), acistr('B3')]
+        list2 = [acistr('B3'), acistr('A3'), acistr('A1'), acistr('A2')] # reordered elts of list1
+        list3 = [acistr('B3'), acistr('A3'), acistr('A1'), acistr('A4')] # A4 is oddball
         self.assertTrue(sameElements(list1, list2))
         self.assertFalse(sameElements(list1, list3))
         self.assertFalse(sameElements(list2, list3))
@@ -1102,15 +1102,15 @@ class TestAffineUtils(unittest.TestCase):
         bogusCore = AffineCoreInfo.createBogus()
         self.assertTrue(bogusCore == AffineCoreInfo.createBogus())
 
+# New TIE shift scopes and rules Fall 2024, Correlator 4.5.5+
 class TestNewAffineScopes(unittest.TestCase):
-    # Peter's new scopes and rules Fall 2024, Correlator 4.5.5
     def test_tied_and_deeper_all_holes(self):
-        secsumm = sectionSummary.SectionSummary.createWithFile("testdata/Sep2024_SectionSummary.csv") # Holes A-D, Cores 1-3 in each
+        secsumm = sectionSummary.SectionSummary.createWithFile("testdata/Sep2024_SectionSummary.csv") # Holes A-D cores 1-3, plus E1.
         builder = AffineBuilder.createWithSectionSummary(secsumm)
 
         # Do some setup.
         # Tie A1 > B1, B1 now has CCSF 0.2m
-        builder._tieOmitDepths(TieShiftMethod.CoreOnly, 0.2, acistr("A1"), acistr("B1"))
+        builder._tieOmitDepths(TieShiftMethod.CoreOnly, 0.2, acistr('A1'), acistr('B1'))
 
         # Bump C1 down from 0m to 0.1m.
         builder._set("C", "1", 0.1, isPercent=False, site="1", _sectionSummary=secsumm)
@@ -1118,26 +1118,26 @@ class TestNewAffineScopes(unittest.TestCase):
         # Test 0: Shift A1 from C1.
         # This should shift All A and B cores, C2, C3, D2, D3.
         # C1 is the fixed/REF core. D1 (0m) is not below A1 (0m).
-        movers = builder.gatherTiedAndDeeperInHoles(acistr("C1"), acistr("A1"))
+        movers = builder.gatherTiedAndDeeperInHoles(acistr('C1'), acistr('A1'))
         expectedMovers = acilist(['A2', 'A3', 'B1', 'B2', 'B3', 'C2', 'C3', 'D2', 'D3'])
-        print(f"Test 0 movers: {sorted(movers)}")
         self.assertTrue(sameElements(expectedMovers, movers))        
 
         # Tie C1 > D1. D1 now has CCSF 0.5m
-        builder._tieOmitDepths(TieShiftMethod.CoreOnly, 0.5, acistr("C1"), acistr("D1"))
+        builder._tieOmitDepths(TieShiftMethod.CoreOnly, 0.5, acistr('C1'), acistr('D1'))
         
         # Tie D1 > C2. C2 now has CCSF 1.2m.
-        builder._tieOmitDepths(TieShiftMethod.CoreOnly, 0.2, acistr("D1"), acistr("C2"))
+        builder._tieOmitDepths(TieShiftMethod.CoreOnly, 0.2, acistr('D1'), acistr('C2'))
 
-        # for core in [acistr("A1"), acistr("B1"), acistr("C1"), acistr("D1"), acistr("C2")]:
+        # for core in [acistr('A1'), acistr('B1'), acistr('C1'), acistr('D1'), acistr('C2')]:
             # print(f"Core {core} has CCSF depth {builder.getCCSFDepth(core)}m")
 
+        # Now our depths and chains look like this:
         # CCSF depths: A1 0m, B1 0.2m, C1 0.1m, C2 1.2m, D1 0.5m.
         # Tie chains: A1 > B1; C1 > D1 > C2.
 
         # Test 1: Shift A1 from fixed E1. Every A-D core should move.
         # Note: shiftCore is omitted from gatherTiedAndDeeperInHoles() return list
-        movers = builder.gatherTiedAndDeeperInHoles(acistr("E1"), acistr("A1"))
+        movers = builder.gatherTiedAndDeeperInHoles(acistr('E1'), acistr('A1'))
         expectedMovers = acilist(['A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3', 'D1', 'D2', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
@@ -1145,14 +1145,14 @@ class TestNewAffineScopes(unittest.TestCase):
         # This breaks A1 > B1 tie. A1 will not move.
         # Chain C1 > D1 > C2 will not move because root C1's CCSF is above B1's CCSF.
         # A2, A3, B2, B3, C3, D2, D3 have CCSF below B1's CCSF, they will move.
-        movers = builder.gatherTiedAndDeeperInHoles(acistr("E1"), acistr("B1"))
+        movers = builder.gatherTiedAndDeeperInHoles(acistr('E1'), acistr('B1'))
         expectedMovers = acilist(['A2', 'A3', 'B2', 'B3', 'C3', 'D2', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # Test 3: Shift C1 from fixed E1.
         # A2, A3, B2, B3, all C and D cores should move.
         # Chain A1 > B1 should not move because root A1's CCSF is above C1's CCSF
-        movers = builder.gatherTiedAndDeeperInHoles(acistr("E1"), acistr("C1"))
+        movers = builder.gatherTiedAndDeeperInHoles(acistr('E1'), acistr('C1'))
         expectedMovers = acilist(['A2', 'A3', 'B2', 'B3', 'C2', 'C3', 'D1', 'D2', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
@@ -1160,7 +1160,7 @@ class TestNewAffineScopes(unittest.TestCase):
         # This breaks C1 > D1 tie. C1 will not move.
         # C2 is downstream of D1, it will move.
         # A2, A3, B2, B3, C3, D2, D3 have CCSF below D1's CCSF, they will move.
-        movers = builder.gatherTiedAndDeeperInHoles(acistr("E1"), acistr("D1"))
+        movers = builder.gatherTiedAndDeeperInHoles(acistr('E1'), acistr('D1'))
         expectedMovers = acilist(['A2', 'A3', 'B2', 'B3', 'C2', 'C3', 'D2', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
@@ -1168,42 +1168,41 @@ class TestNewAffineScopes(unittest.TestCase):
         # This breaks D1 > C2 tie. Remnant chain C1 > D1 will not move.
         # A1, A2, B1, B2, D2 have CCSF at or above C2's CCSF, they will not move.
         # A3, B3, C3, D3 have CCSF below C2's CCSF, they will move.
-        movers = builder.gatherTiedAndDeeperInHoles(acistr("E1"), acistr("C2"))
+        movers = builder.gatherTiedAndDeeperInHoles(acistr('E1'), acistr('C2'))
         expectedMovers = acilist(['A3', 'B3', 'C3', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # Test 6: Re-tie B1 from A1.
         # Almost the same as Test 2, but now fixed core A1 cannot move.
-        movers = builder.gatherTiedAndDeeperInHoles(acistr("A1"), acistr("B1"))
+        movers = builder.gatherTiedAndDeeperInHoles(acistr('A1'), acistr('B1'))
         expectedMovers = acilist(['A2', 'A3', 'B2', 'B3', 'C3', 'D2', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # Test 7: Re-tie C2 from D1.
         # A3, B3, C3, D3 should move.
-        movers = builder.gatherTiedAndDeeperInHoles(acistr("D1"), acistr("C2"))
+        movers = builder.gatherTiedAndDeeperInHoles(acistr('D1'), acistr('C2'))
         expectedMovers = acilist(['A3', 'B3', 'C3', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # Test 8: Shift C1 from B1.
         # A2, A3, B2, B3, all C and D should move.
-        movers = builder.gatherTiedAndDeeperInHoles(acistr("B1"), acistr("C1"))
+        movers = builder.gatherTiedAndDeeperInHoles(acistr('B1'), acistr('C1'))
         expectedMovers = acilist(['A2', 'A3', 'B2', 'B3', 'C2', 'C3', 'D1', 'D2', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # Test 9: Shift A1 from C1.
         # C1 chain will want to shift (deeper root than A1) but it cannot because
         # C1 is fixed. Thus no C1 chain cores (C1 > D1 > C2) will move. Everything else should.
-        movers = builder.gatherTiedAndDeeperInHoles(acistr("C1"), acistr("A1"))
+        movers = builder.gatherTiedAndDeeperInHoles(acistr('C1'), acistr('A1'))
         expectedMovers = acilist(['A2', 'A3', 'B1', 'B2', 'B3', 'C3', 'D2', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # Test 10: Shift D1 from A1.
         # Existing C1 > D1 tie must be broken.
-        movers = builder.gatherTiedAndDeeperInHoles(acistr("A1"), acistr("D1"))
+        movers = builder.gatherTiedAndDeeperInHoles(acistr('A1'), acistr('D1'))
         expectedMovers = acilist(['A2', 'A3', 'B2', 'B3', 'C2', 'C3', 'D2', 'D3'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
-    # Peter's new scopes and rules Fall 2024, Correlator 4.5.5
     def test_tied_and_deeper_this_chain(self):
         pass
 
@@ -1215,46 +1214,46 @@ class TestAffineBuilder(unittest.TestCase):
         method = TieShiftMethod.CoreAndRelatedBelow
 
         # no existing ties, tie from A1 > B1 shifts B1 and below
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
-        self.assertTrue(sameElements(builder.getCoresBelow(acistr("B1")), movers))
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
+        self.assertTrue(sameElements(builder.getCoresBelow(acistr('B1')), movers))
 
         # B1 > A2 tie exists. New tie from A1 > B1 shifts A2+, B1+
-        builder._tie(method, 0.1, acistr("B1"), 0.9, acistr("A2"), 0.8)
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
+        builder._tie(method, 0.1, acistr('B1'), 0.9, acistr('A2'), 0.8)
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
         expectedMovers = acilist(['A2', 'A3', 'A4', 'A5', 'B2', 'B3', 'B4', 'B5'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         ### BEGIN other old tests
 
         # add tie between B3 and C3
-        movers = builder.gatherRelatedCores(acistr("B3"), acistr("C3"))
-        self.assertTrue(sameElements(builder.getCoresBelow(acistr("C3")), movers))
-        builder._tie(method, 0.2, acistr("B3"), 0.3, acistr("C3"), 0.1)
+        movers = builder.gatherRelatedCores(acistr('B3'), acistr('C3'))
+        self.assertTrue(sameElements(builder.getCoresBelow(acistr('C3')), movers))
+        builder._tie(method, 0.2, acistr('B3'), 0.3, acistr('C3'), 0.1)
         
         # now shift B1 and below
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
         expectedMovers = acilist(['A2', 'A3', 'A4', 'A5', 'B2'])
         self.assertTrue(sameElements(expectedMovers, movers))
         
         # or C1 and below
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("C1"))
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('C1'))
         expectedMovers = acilist(['C2'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # or C2 and below
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("C2"))
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('C2'))
         expectedMovers = []
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # reset: ties A1 > B1, B1 > C1, B2 > A3, A3 > B3
         builder.reset()
-        builder._tie(method, 0.2, acistr("A1"), 0.3, acistr("B1"), 0.1) # push B down 0.2
-        builder._tie(method, 0.2, acistr("B1"), 0.1, acistr("C1"), 0.1) # push C down 0.2
-        builder._tie(method, 0.2, acistr("B2"), 2.0, acistr("A3"), 2.0) # push A3 down 0.2
-        builder._tie(method, 0.2, acistr("A3"), 2.4, acistr("B3"), 2.2) # push B3 down 0.2 for total shift of 0.4
+        builder._tie(method, 0.2, acistr('A1'), 0.3, acistr('B1'), 0.1) # push B down 0.2
+        builder._tie(method, 0.2, acistr('B1'), 0.1, acistr('C1'), 0.1) # push C down 0.2
+        builder._tie(method, 0.2, acistr('B2'), 2.0, acistr('A3'), 2.0) # push A3 down 0.2
+        builder._tie(method, 0.2, acistr('A3'), 2.4, acistr('B3'), 2.2) # push B3 down 0.2 for total shift of 0.4
 
         # now shift B1
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
         #print movers
         expectedMovers = acilist(['C1', 'C2', 'C3', 'C4', 'C5'])
         self.assertTrue(sameElements(expectedMovers, movers, True))
@@ -1262,18 +1261,18 @@ class TestAffineBuilder(unittest.TestCase):
         # reset, tie B2 > C2 instead of B1 > C1 as above, resulting in three chains:
         # A1 > B1, B2 > C2, B2 > A3 > B3
         builder.reset()
-        builder._tie(method, 0.2, acistr("A1"), 0.3, acistr("B1"), 0.1) # push B1+ down 0.2
-        builder._tie(method, 0.2, acistr("B2"), 1.1, acistr("C2"), 1.1) # push C2+ down 0.2
-        builder._tie(method, 0.2, acistr("B2"), 2.0, acistr("A3"), 2.0) # push A3+ down 0.2
-        builder._tie(method, 0.2, acistr("A3"), 2.4, acistr("B3"), 2.2) # push B3+ down 0.2 for total shift of 0.4
+        builder._tie(method, 0.2, acistr('A1'), 0.3, acistr('B1'), 0.1) # push B1+ down 0.2
+        builder._tie(method, 0.2, acistr('B2'), 1.1, acistr('C2'), 1.1) # push C2+ down 0.2
+        builder._tie(method, 0.2, acistr('B2'), 2.0, acistr('A3'), 2.0) # push A3+ down 0.2
+        builder._tie(method, 0.2, acistr('A3'), 2.4, acistr('B3'), 2.2) # push B3+ down 0.2 for total shift of 0.4
         
         # again, shift B1 - now nothing should move
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
         expectedMovers = acilist([])
         self.assertTrue(sameElements(expectedMovers, movers))
         
         # shift B2 - should move B2+, A3+, C2+
-        movers = builder.gatherRelatedCores(acistr("A2"), acistr("B2"))
+        movers = builder.gatherRelatedCores(acistr('A2'), acistr('B2'))
         expectedMovers = acilist(['A3', 'A4', 'A5', 'B3', 'B4', 'B5', 'C2', 'C3', 'C4', 'C5'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
@@ -1283,16 +1282,16 @@ class TestAffineBuilder(unittest.TestCase):
         # B2 > A2 tie exists. New tie from A1 > B1 shifts only B1 because
         # B2 > A2 is a separate chain.
         builder.reset()
-        builder._tie(method, 0.1, acistr("B2"), 0.9, acistr("A2"), 0.8) # wrong depths
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
+        builder._tie(method, 0.1, acistr('B2'), 0.9, acistr('A2'), 0.8) # wrong depths
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
         self.assertTrue(sameElements([], movers))
 
         # B3 > A3 tie exists. New tie from A1 > B1 shifts only B2 because
         # it's non-chain, but doesn't shift A3+ and B3+ due to the distinct
         # B3 > A3 chain.
         builder.reset()
-        builder._tie(method, 0.1, acistr("B3"), 0.9, acistr("A3"), 0.8)
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
+        builder._tie(method, 0.1, acistr('B3'), 0.9, acistr('A3'), 0.8)
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
         expectedMovers = acilist(['B2'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
@@ -1301,9 +1300,9 @@ class TestAffineBuilder(unittest.TestCase):
         # below moving B1, but doesn't shift A2+ and C2+  due to distinct
         # C2 > A2 chain.
         builder.reset()
-        builder._tie(method, 0.1, acistr("B1"), 0.9, acistr("C1"), 0.8)
-        builder._tie(method, 0.1, acistr("C2"), 0.9, acistr("A2"), 0.8)
-        movers = builder.gatherRelatedCores(acistr("A1"), acistr("B1"))
+        builder._tie(method, 0.1, acistr('B1'), 0.9, acistr('C1'), 0.8)
+        builder._tie(method, 0.1, acistr('C2'), 0.9, acistr('A2'), 0.8)
+        movers = builder.gatherRelatedCores(acistr('A1'), acistr('B1'))
         expectedMovers = acilist(['B2', 'B3', 'B4', 'B5', 'C1'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
@@ -1324,8 +1323,8 @@ class TestAffineBuilder(unittest.TestCase):
         # New tie from C2 > B1 shifts B1 and C1, but *cannot* shift C2
         # or anything below it since it's the fixed core.
         builder.reset()
-        builder._tie(method, 0.1, acistr("B1"), 0.9, acistr("C1"), 0.8)
-        movers = builder.gatherRelatedCores(acistr("C2"), acistr("B1"))
+        builder._tie(method, 0.1, acistr('B1'), 0.9, acistr('C1'), 0.8)
+        movers = builder.gatherRelatedCores(acistr('C2'), acistr('B1'))
         expectedMovers = acilist(['B2', 'B3', 'B4', 'B5', 'C1'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
@@ -1335,13 +1334,13 @@ class TestAffineBuilder(unittest.TestCase):
         method = TieShiftMethod.CoreAndAllBelow
 
         # no existing ties, tie from A1 > B1 shifts B1 and below
-        movers = builder.gatherAllCoresBelow(acistr("A1"), acistr("B1"))
-        self.assertTrue(sameElements(builder.getCoresBelow(acistr("B1")), movers))
+        movers = builder.gatherAllCoresBelow(acistr('A1'), acistr('B1'))
+        self.assertTrue(sameElements(builder.getCoresBelow(acistr('B1')), movers))
 
         # Create B1 > A2 tie.
-        builder._tie(method, 0.1, acistr("B1"), 0.9, acistr("A2"), 0.8)
+        builder._tie(method, 0.1, acistr('B1'), 0.9, acistr('A2'), 0.8)
         # New tie from A1 > B1 shifts A2+, B1+
-        movers = builder.gatherAllCoresBelow(acistr("A1"), acistr("B1"))
+        movers = builder.gatherAllCoresBelow(acistr('A1'), acistr('B1'))
         expectedMovers = acilist(['A2', 'A3', 'A4', 'A5', 'B2', 'B3', 'B4', 'B5'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
@@ -1349,22 +1348,22 @@ class TestAffineBuilder(unittest.TestCase):
 
         # add tie between B3 and C3
         # ties: A1 > B1 > A2, B3 > C3
-        movers = builder.gatherAllCoresBelow(acistr("B3"), acistr("C3"))
-        self.assertTrue(sameElements(builder.getCoresBelow(acistr("C3")), movers))
-        builder._tie(method, 0.2, acistr("B3"), 0.3, acistr("C3"), 0.1)
+        movers = builder.gatherAllCoresBelow(acistr('B3'), acistr('C3'))
+        self.assertTrue(sameElements(builder.getCoresBelow(acistr('C3')), movers))
+        builder._tie(method, 0.2, acistr('B3'), 0.3, acistr('C3'), 0.1)
         
         # now determine cores shifted by B1 and below
-        movers = builder.gatherAllCoresBelow(acistr("A1"), acistr("B1"))
+        movers = builder.gatherAllCoresBelow(acistr('A1'), acistr('B1'))
         expectedMovers = acilist(['A2', 'A3', 'A4', 'A5', 'B2', 'B3', 'B4', 'B5', 'C3', 'C4', 'C5'])
         self.assertTrue(sameElements(expectedMovers, movers))
         
         # or C1 and below
-        movers = builder.gatherAllCoresBelow(acistr("A1"), acistr("C1"))
+        movers = builder.gatherAllCoresBelow(acistr('A1'), acistr('C1'))
         expectedMovers = acilist(['B3', 'B4', 'B5', 'C2', 'C3', 'C4', 'C5'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
         # or C2 and below
-        movers = builder.gatherAllCoresBelow(acistr("A1"), acistr("C2"))
+        movers = builder.gatherAllCoresBelow(acistr('A1'), acistr('C2'))
         expectedMovers = acilist(['B3', 'B4', 'B5', 'C3', 'C4', 'C5'])
         self.assertTrue(sameElements(expectedMovers, movers))
 
@@ -1374,7 +1373,7 @@ class TestAffineBuilder(unittest.TestCase):
         builder = AffineBuilder.createWithSectionSummary(secsumm)
         method = TieShiftMethod.CoreOnly
 
-        a1, a2, b1, b2, c1, c2 = acistr("A1"), acistr("A2"), acistr("B1"), acistr("B2"), acistr("C1"), acistr("C2")
+        a1, a2, b1, b2, c1, c2 = acistr('A1'), acistr('A2'), acistr('B1'), acistr('B2'), acistr('C1'), acistr('C2')
 
         # no existing ties, nothing should break
         breaks = builder.findBreaksForSET([a1, a2, b1, b2, c1, c2])
@@ -1400,7 +1399,6 @@ class TestAffineBuilder(unittest.TestCase):
    
 
 if __name__ == "__main__":
-    # for testcase in [TestAffineUtils, TestAffineTable, TestAffineBuilder]:
-    for testcase in [TestNewAffineScopes]:
+    for testcase in [TestAffineUtils, TestAffineTable, TestAffineBuilder, TestNewAffineScopes]:
         suite = unittest.TestLoader().loadTestsFromTestCase(testcase)
         unittest.TextTestRunner(verbosity=2).run(suite)
