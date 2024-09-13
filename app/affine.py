@@ -1081,7 +1081,7 @@ class TestAffineUtils(unittest.TestCase):
         self.assertTrue(ab10 < ab11)
         self.assertTrue(ab10 < bb1)
     
-    def test_mci_eq(self):
+    def test_aci_eq(self):
         c1 = aci('A', '1')
         c1dup = aci('A', '1')
         self.assertTrue(c1 == c1dup)
