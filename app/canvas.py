@@ -3835,11 +3835,11 @@ class DataCanvas(wxBufferedWindow):
                 popupMenu = wx.Menu()
                 popupMenu.Append(1, "&Clear tie point(s)")
                 if tie.fixed == 0: # movable tie
+                    popupMenu.Append(5, "&Shift this core or chain, all deeper chains and deeper cores in all holes")
+                    popupMenu.Append(6, "&Shift this core or chain, and all cores below this core or chain")
                     popupMenu.Append(2, "&Shift this core and all below")
                     popupMenu.Append(3, "&Shift this core and all related cores below")
                     popupMenu.Append(4, "&Shift this core only")
-                    popupMenu.Append(5, "&Shift tied and deeper in all holes")
-                    popupMenu.Append(6, "&Shift tied and deeper in this chain")
 
                 # brg 11/29/2023: A bit odd to bind to the menu itself, but it works, seems
                 # harmless, and self.parent.Bind(...) breaks the main window's menu handling.
