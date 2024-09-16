@@ -479,6 +479,15 @@ class AffineBuilder(object):
                 ao.adjusts.append((ci, deltaDistance))
         return ao
     
+    def _setShiftTieChain(self, setOperation, root, value, isPercent, site, _sectionSummary, dataUsed, comment):
+        rootShiftDistance = self._getSETDistance(root.hole, root.core, value, isPercent, site, _sectionSummary)
+        rootShiftDelta = self.getShiftDelta(root, rootShiftDistance)
+        setOperation.shifts.append(SetShift(root, rootShiftDistance, dataUsed, comment))
+        # maintain existing ties by adjusting descendants by the difference between
+        # chain root's current shift and new shift distances
+        for cc in self.affine.getDescendants(root):
+            setOperation.adjusts.append((cc, rootShiftDelta))
+    
     # Shift all deeper cores and chains in all holes.
     # All individual cores with a top depth CCSF deeper than the top depth CCSF
     # of the SET core in all holes.
@@ -487,14 +496,20 @@ class AffineBuilder(object):
     def setDeeperAndChainsInHoles(self, hole, core, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
         selectedCore = aci(hole, core)
         selectedCoreCCSF = self.getCCSFDepth(selectedCore)
-        # TODO: handle selected non-ROOT chain core
-        # if self.affine.inChain(selectedCore):
-        #     pass
-
-        # shift for selected core
         ao = AffineOperation()
-        shiftDistance = self._getSETDistance(selectedCore.hole, selectedCore.core, value, isPercent, site, _sectionSummary)
-        ao.shifts.append(SetShift(selectedCore, shiftDistance, dataUsed, comment))
+
+        selectedCoreChainRoot = None
+        if self.affine.inChain(selectedCore):
+            if self.isRoot(selectedCore):
+                selectedCoreChainRoot = selectedCore
+                self._setShiftTieChain(ao, selectedCore, value, isPercent, site, _sectionSummary, dataUsed, comment)
+            else:
+                selectedCoreChainRoot = self.affine.getRoot(selectedCore).core
+                ao.infoDict['chainBreak'] = selectedCore
+                self._setShiftTieChain(ao, selectedCore, value, isPercent, site, _sectionSummary, dataUsed, comment)
+        else:
+            shiftDistance = self._getSETDistance(selectedCore.hole, selectedCore.core, value, isPercent, site, _sectionSummary)
+            ao.shifts.append(SetShift(selectedCore, shiftDistance, dataUsed, comment))
 
         # gather deeper non-chain cores
         nonChainCores = [shift.core for shift in self.affine.getAllShifts() if not self.affine.inChain(shift.core)]
@@ -504,16 +519,12 @@ class AffineBuilder(object):
                 ao.shifts.append(SetShift(ncc, shiftDistance, dataUsed, comment))
 
         # gather deeper chain ROOT cores and their descendants
-        chainRoots = [root for root in self.getChainRoots()] # TODO: omit selectedCore if it's a chain ROOT
+        chainRoots = [root for root in self.getChainRoots()]
         for root in chainRoots:
+            if selectedCoreChainRoot and root == selectedCoreChainRoot:
+                continue
             if self.getCCSFDepth(root) > selectedCoreCCSF:
-                rootShiftDistance = self._getSETDistance(root.hole, root.core, value, isPercent, site, _sectionSummary)
-                rootShiftDelta = self.getShiftDelta(root, rootShiftDistance)
-                ao.shifts.append(SetShift(root, rootShiftDistance, dataUsed, comment))
-                # maintain existing ties by adjusting descendants by the difference between
-                # chain root's current shift and new shift distances
-                for cc in self.affine.getDescendants(root):
-                    ao.adjusts.append((cc, rootShiftDelta))
+                self._setShiftTieChain(ao, root, value, isPercent, site, _sectionSummary, dataUsed, comment)
 
         return ao
 
@@ -525,14 +536,20 @@ class AffineBuilder(object):
     def setDeeperAndChainsInThisHole(self, hole, core, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
         selectedCore = aci(hole, core)
         selectedCoreCCSF = self.getCCSFDepth(selectedCore)
-        # TODO: handle selected non-ROOT chain core
-        # if self.affine.inChain(selectedCore):
-        #     pass
-
-        # shift for selected core
         ao = AffineOperation()
-        shiftDistance = self._getSETDistance(selectedCore.hole, selectedCore.core, value, isPercent, site, _sectionSummary)
-        ao.shifts.append(SetShift(selectedCore, shiftDistance, dataUsed, comment))
+
+        selectedCoreChainRoot = None
+        if self.affine.inChain(selectedCore):
+            if self.isRoot(selectedCore):
+                selectedCoreChainRoot = selectedCore
+                self._setShiftTieChain(ao, selectedCore, value, isPercent, site, _sectionSummary, dataUsed, comment)
+            else:
+                selectedCoreChainRoot = self.affine.getRoot(selectedCore).core
+                ao.infoDict['chainBreak'] = selectedCore
+                self._setShiftTieChain(ao, selectedCore, value, isPercent, site, _sectionSummary, dataUsed, comment)
+        else:
+            shiftDistance = self._getSETDistance(selectedCore.hole, selectedCore.core, value, isPercent, site, _sectionSummary)
+            ao.shifts.append(SetShift(selectedCore, shiftDistance, dataUsed, comment))
 
         # gather deeper non-chain cores in this hole
         nonChainCores = [shift.core for shift in self.affine.getAllShifts() if not self.affine.inChain(shift.core)]
@@ -542,16 +559,12 @@ class AffineBuilder(object):
                 ao.shifts.append(SetShift(ncc, shiftDistance, dataUsed, comment))
 
         # gather deeper chain ROOT cores in this hole and their descendants
-        chainRoots = [root for root in self.getChainRoots() if root.hole == hole] # TODO: omit selectedCore if it's a chain ROOT
+        chainRoots = [root for root in self.getChainRoots() if root.hole == hole]
         for root in chainRoots:
+            if selectedCoreChainRoot and root == selectedCoreChainRoot:
+                continue
             if self.getCCSFDepth(root) > selectedCoreCCSF:
-                rootShiftDistance = self._getSETDistance(root.hole, root.core, value, isPercent, site, _sectionSummary)
-                rootShiftDelta = self.getShiftDelta(root, rootShiftDistance)
-                ao.shifts.append(SetShift(root, rootShiftDistance, dataUsed, comment))
-                # maintain existing ties by adjusting descendants by the difference between
-                # chain root's current shift and new shift distances
-                for cc in self.affine.getDescendants(root):
-                    ao.adjusts.append((cc, rootShiftDelta))
+                self._setShiftTieChain(ao, root, value, isPercent, site, _sectionSummary, dataUsed, comment)
 
         return ao
 

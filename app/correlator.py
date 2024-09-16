@@ -3259,9 +3259,13 @@ class AffineController(object):
         setDacihOp = self.affine.setDeeperAndChainsInHoles(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
 
         proceed = True
-        # TODO: Warnings?
+        if 'chainBreak' in setDacihOp.infoDict:
+            msg = f"Core {setDacihOp.infoDict['chainBreak']} is part of a TIE chain.\n"
+            msg += f"The TIE to {setDacihOp.infoDict['chainBreak']} must be broken to SET it and downstream cores in its chain, if any.\n\n"
+            msg += f"Do you want to proceed with this SET?"
+            proceed = self.parent.OnShowMessage("Confirm Break", msg, 0) == wx.ID_YES
 
-        # TODO: shift of splice intervals?
+        # TODO: shift of splice intervals
 
         if not proceed:
             return
@@ -3273,7 +3277,11 @@ class AffineController(object):
         setDacithOp = self.affine.setDeeperAndChainsInThisHole(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
 
         proceed = True
-        # TODO: Warnings?
+        if 'chainBreak' in setDacithOp.infoDict:
+            msg = f"Core {setDacithOp.infoDict['chainBreak']} is part of a TIE chain.\n"
+            msg += f"The TIE to {setDacithOp.infoDict['chainBreak']} must be broken to SET it and downstream cores in its chain, if any.\n\n"
+            msg += f"Do you want to proceed with this SET?"
+            proceed = self.parent.OnShowMessage("Confirm Break", msg, 0) == wx.ID_YES
 
         # TODO: shift of splice intervals?
 
