@@ -497,7 +497,12 @@ class CompositePanel(object):
         if result == wx.ID_OK:
             isRate = dlg.percentRadio.GetValue()
             value = dlg.outRate if isRate else dlg.outOffset
-            if dlg.coreAndBelow.GetValue(): # SET current core and below
+            if dlg.deeperAndChainsInHoles.GetValue():
+                # coreList = dlg.outCoreList
+                self.parent.affineManager.setDeeperAndChainsInHoles(dlg.outHole, dlg.outCore, value, isRate, dlg.outType, dlg.outComment)
+            elif dlg.deeperAndChainsInThisHole.GetValue():
+                pass
+            elif dlg.coreAndBelow.GetValue(): # SET current core and below
                 coreList = dlg.outCoreList
                 self.parent.affineManager.setAll(dlg.outHole, coreList, value, isRate, dlg.outType, dlg.outComment)
             elif dlg.coreAndChain.GetValue(): # entire chain

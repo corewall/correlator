@@ -1053,7 +1053,10 @@ class SetDialog(wx.Dialog):
         hsz.Add(self.coreChoice, 0, wx.ALL, 5)
         coreSizer.Add(hsz, 0, wx.EXPAND)		
 
-        self.coreAndBelow = wx.RadioButton(self, -1, "Selected core and all untied cores below in this hole", style=wx.RB_GROUP)
+        self.deeperAndChainsInHoles = wx.RadioButton(self, -1, "Shift all deeper cores and chains in all holes", style=wx.RB_GROUP)
+        self.deeperAndChainsInThisHole = wx.RadioButton(self, -1, "Shift all deeper cores and chains in this hole")
+
+        self.coreAndBelow = wx.RadioButton(self, -1, "Selected core and all untied cores below in this hole")
         self.coreOnly = wx.RadioButton(self, -1, "Selected core only")
 
         chainSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1063,7 +1066,9 @@ class SetDialog(wx.Dialog):
         chainSizer.Add(self.coreAndChain, 0, wx.EXPAND | wx.RIGHT, 5)
         chainSizer.Add(self.rootCoreChoice, 0)
 
-        self.coreAndBelow.SetValue(True)
+        self.deeperAndChainsInHoles.SetValue(True)
+        coreSizer.Add(self.deeperAndChainsInHoles, 0, wx.EXPAND | wx.TOP, 5)
+        coreSizer.Add(self.deeperAndChainsInThisHole, 0, wx.EXPAND | wx.TOP, 5)
         coreSizer.Add(self.coreAndBelow, 0, wx.EXPAND | wx.TOP, 5)
         coreSizer.Add(self.coreOnly, 0, wx.EXPAND | wx.TOP, 5)
         coreSizer.Add(chainSizer, 0, wx.EXPAND | wx.TOP, 5)
@@ -1130,7 +1135,10 @@ class SetDialog(wx.Dialog):
             # self.distField is a delta from the current affine shift, but SET
             # logic expects the total shift from its CSF-A (unshifted) depth, thus
             # we return the sum of the current shift and the value of distField.
-            self.outOffset = self.curCoreShift + float(self.distField.GetValue())
+            # self.outOffset = self.curCoreShift + float(self.distField.GetValue())
+            # 9/15/2024 BRG: Nope! We just take the value from the dialog. Clients
+            # can figure out the correct total shift distance.
+            self.outOffset = float(self.distField.GetValue())
         except ValueError:
             self.parent.OnShowMessage("Error", "Invalid distance {}".format(self.distField.GetValue()), 1)
             return
