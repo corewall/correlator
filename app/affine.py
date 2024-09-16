@@ -479,6 +479,11 @@ class AffineBuilder(object):
                 ao.adjusts.append((ci, deltaDistance))
         return ao
     
+    # Shift all deeper cores and chains in all holes.
+    # All individual cores with a top depth CCSF deeper than the top depth CCSF
+    # of the SET core in all holes.
+    # All chains (ROOT and TIE cores) in all holes if the top depth CCSF of the ROOT
+    # core is deeper than the top depth CCSF of SET core.
     def setDeeperAndChainsInHoles(self, hole, core, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
         selectedCore = aci(hole, core)
         selectedCoreCCSF = self.getCCSFDepth(selectedCore)
@@ -512,17 +517,43 @@ class AffineBuilder(object):
 
         return ao
 
-    def setDeeperAndChainsInThisHole(self, hole, coreList, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
-        # TODO
-        # selectedCore = aci(hole, coreList[0])
+    # Shift all deeper cores and chains in this hole
+    # All individual cores with a top depth CCSF deeper than the top depth CCSF
+    # of the SET core in the SET hole only.
+    # All chains (ROOT and TIE cores) if the ROOT core is in SET hole AND the top
+    # depth CCSF of the ROOT core is deeper than the top depth CCSF of SET core.
+    def setDeeperAndChainsInThisHole(self, hole, core, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
+        selectedCore = aci(hole, core)
+        selectedCoreCCSF = self.getCCSFDepth(selectedCore)
+        # TODO: handle selected non-ROOT chain core
         # if self.affine.inChain(selectedCore):
         #     pass
 
-        # find deeper non-chain cores in this hole
+        # shift for selected core
+        ao = AffineOperation()
+        shiftDistance = self._getSETDistance(selectedCore.hole, selectedCore.core, value, isPercent, site, _sectionSummary)
+        ao.shifts.append(SetShift(selectedCore, shiftDistance, dataUsed, comment))
 
-        # find deeper chain ROOT cores in this hole
+        # gather deeper non-chain cores in this hole
+        nonChainCores = [shift.core for shift in self.affine.getAllShifts() if not self.affine.inChain(shift.core)]
+        for ncc in nonChainCores:
+            if ncc.hole == hole and self.getCCSFDepth(ncc) > selectedCoreCCSF:
+                shiftDistance = self._getSETDistance(ncc.hole, ncc.core, value, isPercent, site, _sectionSummary)
+                ao.shifts.append(SetShift(ncc, shiftDistance, dataUsed, comment))
 
-        pass
+        # gather deeper chain ROOT cores in this hole and their descendants
+        chainRoots = [root for root in self.getChainRoots() if root.hole == hole] # TODO: omit selectedCore if it's a chain ROOT
+        for root in chainRoots:
+            if self.getCCSFDepth(root) > selectedCoreCCSF:
+                rootShiftDistance = self._getSETDistance(root.hole, root.core, value, isPercent, site, _sectionSummary)
+                rootShiftDelta = self.getShiftDelta(root, rootShiftDistance)
+                ao.shifts.append(SetShift(root, rootShiftDistance, dataUsed, comment))
+                # maintain existing ties by adjusting descendants by the difference between
+                # chain root's current shift and new shift distances
+                for cc in self.affine.getDescendants(root):
+                    ao.adjusts.append((cc, rootShiftDelta))
+
+        return ao
 
     # Shift core(s) based on a tie between two cores.
     # method: TieShiftMethod

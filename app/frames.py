@@ -501,7 +501,7 @@ class CompositePanel(object):
                 # coreList = dlg.outCoreList
                 self.parent.affineManager.setDeeperAndChainsInHoles(dlg.outHole, dlg.outCore, value, isRate, dlg.outType, dlg.outComment)
             elif dlg.deeperAndChainsInThisHole.GetValue():
-                pass
+                self.parent.affineManager.setDeeperAndChainsInThisHole(dlg.outHole, dlg.outCore, value, isRate, dlg.outType, dlg.outComment)
             elif dlg.coreAndBelow.GetValue(): # SET current core and below
                 coreList = dlg.outCoreList
                 self.parent.affineManager.setAll(dlg.outHole, coreList, value, isRate, dlg.outType, dlg.outComment)

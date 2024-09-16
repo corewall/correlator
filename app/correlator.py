@@ -3268,6 +3268,20 @@ class AffineController(object):
         
         self._execute(setDacihOp)
 
+    def setDeeperAndChainsInThisHole(self, hole, core, value, isPercent, dataUsed="", comment=""):
+        site = self.parent.Window.GetHoleSite(hole)
+        setDacithOp = self.affine.setDeeperAndChainsInThisHole(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
+
+        proceed = True
+        # TODO: Warnings?
+
+        # TODO: shift of splice intervals?
+
+        if not proceed:
+            return
+        
+        self._execute(setDacithOp)
+
             
     # fromDepth - MBSF depth of tie point on fromCore
     # depth - MBSF depth of tie point on core
