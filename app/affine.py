@@ -567,6 +567,24 @@ class AffineBuilder(object):
                 self._setShiftTieChain(ao, root, value, isPercent, site, _sectionSummary, dataUsed, comment)
 
         return ao
+    
+    # Shift a single core or chain.
+    def setCoreOrChain(self, hole, core, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
+        selectedCore = aci(hole, core)
+        ao = AffineOperation()
+
+        if self.affine.inChain(selectedCore):
+            if self.isRoot(selectedCore):
+                self._setShiftTieChain(ao, selectedCore, value, isPercent, site, _sectionSummary, dataUsed, comment)
+            else:
+                ao.infoDict['chainBreak'] = selectedCore
+                self._setShiftTieChain(ao, selectedCore, value, isPercent, site, _sectionSummary, dataUsed, comment)
+        else:
+            shiftDistance = self._getSETDistance(selectedCore.hole, selectedCore.core, value, isPercent, site, _sectionSummary)
+            ao.shifts.append(SetShift(selectedCore, shiftDistance, dataUsed, comment))        
+
+        return ao
+
 
     # Shift core(s) based on a tie between two cores.
     # method: TieShiftMethod

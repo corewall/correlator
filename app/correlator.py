@@ -3256,21 +3256,35 @@ class AffineController(object):
             else:
                 self._execute(setAllOp)
 
+    def _confirmChainBreak(self, setOp):
+        proceed = True
+        if 'chainBreak' in setOp.infoDict:
+            msg = f"Core {setOp.infoDict['chainBreak']} is part of a TIE chain.\n"
+            msg += f"The TIE to {setOp.infoDict['chainBreak']} must be broken to SET it and downstream cores in its chain, if any.\n\n"
+            msg += f"Do you want to proceed with this SET?"
+            proceed = self.parent.OnShowMessage("Confirm Break", msg, 0) == wx.ID_YES
+        return proceed
+
+    def setCoreOrChain(self, hole, core, value, isPercent, dataUsed="", comment=""):
+        site = self.parent.Window.GetHoleSite(hole)
+        setCocOp = self.affine.setCoreOrChain(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
+        proceed = self._confirmChainBreak(setCocOp)
+        if not proceed:
+            return
+        
+        # TODO: shift of splice intervals
+        
+        self._execute(setCocOp)
+
     def setDeeperAndChainsInHoles(self, hole, core, value, isPercent, dataUsed="", comment=""):
         site = self.parent.Window.GetHoleSite(hole)
         setDacihOp = self.affine.setDeeperAndChainsInHoles(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
 
-        proceed = True
-        if 'chainBreak' in setDacihOp.infoDict:
-            msg = f"Core {setDacihOp.infoDict['chainBreak']} is part of a TIE chain.\n"
-            msg += f"The TIE to {setDacihOp.infoDict['chainBreak']} must be broken to SET it and downstream cores in its chain, if any.\n\n"
-            msg += f"Do you want to proceed with this SET?"
-            proceed = self.parent.OnShowMessage("Confirm Break", msg, 0) == wx.ID_YES
-
-        # TODO: shift of splice intervals
-
+        proceed = self._confirmChainBreak(setDacihOp)
         if not proceed:
             return
+
+        # TODO: shift of splice intervals
         
         self._execute(setDacihOp)
 
@@ -3278,17 +3292,11 @@ class AffineController(object):
         site = self.parent.Window.GetHoleSite(hole)
         setDacithOp = self.affine.setDeeperAndChainsInThisHole(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
 
-        proceed = True
-        if 'chainBreak' in setDacithOp.infoDict:
-            msg = f"Core {setDacithOp.infoDict['chainBreak']} is part of a TIE chain.\n"
-            msg += f"The TIE to {setDacithOp.infoDict['chainBreak']} must be broken to SET it and downstream cores in its chain, if any.\n\n"
-            msg += f"Do you want to proceed with this SET?"
-            proceed = self.parent.OnShowMessage("Confirm Break", msg, 0) == wx.ID_YES
-
-        # TODO: shift of splice intervals?
-
+        proceed = self._confirmChainBreak(setDacithOp)
         if not proceed:
             return
+
+        # TODO: shift of splice intervals?
         
         self._execute(setDacithOp)
 
