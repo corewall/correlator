@@ -4116,6 +4116,9 @@ class DataFrame(wx.Panel):
         pd = wx.ProgressDialog("Load Data", "", 100, self, wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
         self.OnLOAD(pd)
         pd.Destroy()
+        
+        # ensure DataCanvas has focus so e.g. shift-click to set a TIE point works immediately
+        self.parent.Window.SetFocus()
 
     # Main loading f'n.
     # - prog: wx.ProgressDialog to update during loading

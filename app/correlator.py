@@ -2557,6 +2557,8 @@ class MainFrame(wx.Frame):
         self.swapButton.SetLabel("Go to Data Manager")
         self.Layout()
         self.UpdateUndoMenuItem()
+        # ensure DataCanvas has focus so e.g. shift-click to set a TIE point works immediately
+        self.Window.SetFocus()
 
     # brg 1/8/2014: move to utils module or the like?
     """ Convert data type string to integer (and non-empty annotation string if data type is user-defined)"""
