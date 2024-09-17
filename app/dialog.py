@@ -1131,22 +1131,18 @@ class SetDialog(wx.Dialog):
 
     def OnApply(self, evt):
         # gather and validate distance/percentage input
-        try:
-            # self.distField is a delta from the current affine shift, but SET
-            # logic expects the total shift from its CSF-A (unshifted) depth, thus
-            # we return the sum of the current shift and the value of distField.
-            # self.outOffset = self.curCoreShift + float(self.distField.GetValue())
-            # 9/15/2024 BRG: Nope! We just take the value from the dialog. Clients
-            # can figure out the correct total shift distance.
-            self.outOffset = float(self.distField.GetValue())
-        except ValueError:
-            self.parent.OnShowMessage("Error", "Invalid distance {}".format(self.distField.GetValue()), 1)
-            return
-        try:
-            self.outRate = float(self.percentField.GetValue())/100.0 + 1.0
-        except ValueError:
-            self.parent.OnShowMessage("Error", "Invalid percentage {}".format(self.percentField.GetValue()), 1)
-            return
+        if self.distRadio.GetValue():
+            try:
+                self.outOffset = float(self.distField.GetValue())
+            except ValueError:
+                self.parent.OnShowMessage("Error", "Invalid distance {}".format(self.distField.GetValue()), 1)
+                return
+        else: # %-based SET
+            try:
+                self.outRate = float(self.percentField.GetValue())/100.0 + 1.0
+            except ValueError:
+                self.parent.OnShowMessage("Error", "Invalid percentage {}".format(self.percentField.GetValue()), 1)
+                return
 
         # str() to convert from type unicode
         if self.coreAndChain.GetValue():
