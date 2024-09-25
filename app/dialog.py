@@ -1057,23 +1057,10 @@ class SetDialog(wx.Dialog):
         self.deeperAndChainsInThisHole = wx.RadioButton(self, -1, "All deeper cores and chains in this hole")
         self.coreOrChain = wx.RadioButton(self, -1, "This core or chain")
 
-        self.coreAndBelow = wx.RadioButton(self, -1, "OLD Selected core and all untied cores below in this hole")
-        self.coreOnly = wx.RadioButton(self, -1, "OLD Selected core only")
-
-        chainSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.coreAndChain = wx.RadioButton(self, -1, "OLD Entire TIE chain starting from core:")
-        self.rootCoreChoice = wx.Choice(self, -1)
-        self.rootCoreChoice.Enable(False)
-        chainSizer.Add(self.coreAndChain, 0, wx.EXPAND | wx.RIGHT, 5)
-        chainSizer.Add(self.rootCoreChoice, 0)
-
         self.deeperAndChainsInHoles.SetValue(True)
         coreSizer.Add(self.deeperAndChainsInHoles, 0, wx.EXPAND | wx.TOP, 5)
         coreSizer.Add(self.deeperAndChainsInThisHole, 0, wx.EXPAND | wx.TOP, 5)
         coreSizer.Add(self.coreOrChain, 0, wx.EXPAND | wx.TOP, 5)
-        coreSizer.Add(self.coreAndBelow, 0, wx.EXPAND | wx.TOP, 5)
-        coreSizer.Add(self.coreOnly, 0, wx.EXPAND | wx.TOP, 5)
-        coreSizer.Add(chainSizer, 0, wx.EXPAND | wx.TOP, 5)
         
         methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Shift by:"), orient=wx.VERTICAL)
         hsz = wx.BoxSizer(wx.HORIZONTAL)
@@ -1118,14 +1105,10 @@ class SetDialog(wx.Dialog):
         self.Fit()
 
         self.InitChoices()
-        self.InitChainRoots()
 
         self.Bind(wx.EVT_CHOICE, self.UpdateCoreChoice, self.holeChoice)
         self.Bind(wx.EVT_CHOICE, self.UpdateData, self.coreChoice)
         self.Bind(wx.EVT_BUTTON, self.OnApply, self.applyButton)
-        self.Bind(wx.EVT_RADIOBUTTON, self.MethodRadioChanged, self.coreAndBelow)
-        self.Bind(wx.EVT_RADIOBUTTON, self.MethodRadioChanged, self.coreAndChain)
-        self.Bind(wx.EVT_RADIOBUTTON, self.MethodRadioChanged, self.coreOnly)
         self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.percentRadio)
         self.Bind(wx.EVT_RADIOBUTTON, self.UpdateData, self.distRadio)
         self.Bind(wx.EVT_TEXT, self.UpdateData, self.percentField)
@@ -1147,22 +1130,8 @@ class SetDialog(wx.Dialog):
                 return
 
         # str() to convert from type unicode
-        if self.coreAndChain.GetValue():
-            hcstr = str(self.rootCoreChoice.GetStringSelection())
-            charNumPattern = "([A-Z]+)([0-9]+)"
-            hc_items = re.match(charNumPattern, hcstr)
-            if hc_items and len(hc_items.groups()) == 2:
-                self.outHole = hc_items.groups()[0]
-                self.outCore = hc_items.groups()[1]
-            else:
-                # In the unlikely event someone got this far with non-standard hole and core naming,
-                # notify and refuse to proceed with this method.
-                errstr = "Couldn't parse hole-core string {}, expected alphabetic hole (A-Z) and numeric core (1+)".format(hcstr)
-                self.parent.OnShowMessage("Error", errstr, 1)
-                return
-        else:
-            self.outHole = str(self.holeChoice.GetStringSelection())
-            self.outCore = str(self.coreChoice.GetStringSelection())
+        self.outHole = str(self.holeChoice.GetStringSelection())
+        self.outCore = str(self.coreChoice.GetStringSelection())
 
         self.outComment = self.commentField.GetValue()
         # self.outType already set
@@ -1204,17 +1173,6 @@ class SetDialog(wx.Dialog):
             self.holeChoice.Select(0)
             self.UpdateCoreChoice()
 
-    # Populate self.rootCoreChoice with TIE chain roots, or disable
-    # chain root controls if no roots exist.
-    def InitChainRoots(self):
-        roots = self.parent.affineManager.getChainRoots()
-        if len(roots) > 0:
-            for crstr in sorted([cr[0] + cr[1] for cr in roots]):
-                self.rootCoreChoice.Append(crstr)
-        else:
-            self.coreAndChain.Enable(False)
-            self.rootCoreChoice.Enable(False)
-
     # Update core dropdown with available cores for currently-selected hole
     def UpdateCoreChoice(self, evt=None):
         curHoleIndex = self.holeChoice.GetSelection()
@@ -1230,47 +1188,14 @@ class SetDialog(wx.Dialog):
             self.coreChoice.Select(0)
             self.UpdateData()
 
-    # Enable/disable controls based on 'Entire TIE chain...' radio state.
-    def MethodRadioChanged(self, evt=None):
-        chainSelected = self.coreAndChain.GetValue()
-        if chainSelected:
-            if self.percentRadio.GetValue():
-                self.distRadio.SetValue(True)
-            self.UpdateData()
-
-        self.rootCoreChoice.Enable(chainSelected) # only enabled if chain radio is selected
-
-        # percent and hole/core dropdowns aren't used in chain SET, disable if selected
-        self.holeText.Enable(not chainSelected)
-        self.holeChoice.Enable(not chainSelected)
-        self.coreText.Enable(not chainSelected)
-        self.coreChoice.Enable(not chainSelected)
-        self.percentRadio.Enable(not chainSelected)
-        self.percentField.Enable(not chainSelected)
-        self.percentLabel.Enable(not chainSelected)
-
     # Based on selected hole/core pair or chain root, udpate current core shift text.
     # For multi-core non-chain root shift, update list of affected cores in self.outCoreList.
     def UpdateData(self, evt=None):
-        if self.coreAndChain.GetValue(): # root of TIE chain selected
-            rootCore = self.rootCoreChoice.GetStringSelection()
-            holeCorePattern = re.compile("([A-Z]+)([0-9]+)")
-            match = holeCorePattern.match(rootCore)
-            curHole, coreName = match.group(1), match.group(2)
-            coreIndex = self.coreChoice.FindString(coreName)
-            curCore = self.coreData[curHole][coreIndex]
-            self.curCoreName = rootCore
-        else:
-            curHole = self.holeChoice.GetStringSelection()
-            coreIndex = self.coreChoice.GetSelection()
-            curCore = self.coreData[curHole][coreIndex]
-            self.curCoreName = curHole + self.coreChoice.GetStringSelection()
+        curHole = self.holeChoice.GetStringSelection()
+        coreIndex = self.coreChoice.GetSelection()
+        curCore = self.coreData[curHole][coreIndex]
+        self.curCoreName = curHole + self.coreChoice.GetStringSelection()
         self.curCoreShift = curCore[2] - curCore[1]
-        
-        if self.coreAndBelow.GetValue(): # outCoreList is unused for single-core and chain root SETs
-            self.outCoreList = []
-            for coreTuple in [ct for ct in self.coreData[curHole] if int(ct[0]) >= int(self.coreChoice.GetStringSelection())]:
-                self.outCoreList.append(coreTuple[0])
 
         self.UpdateCurShiftText()
     
