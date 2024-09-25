@@ -1096,8 +1096,8 @@ class SetDialog(wx.Dialog):
         buttonSizer.Add(self.cancelButton, 0, wx.ALL, 5)
         buttonSizer.Add(self.applyButton, 0, wx.ALL, 5)
 
-        dlgSizer.Add(coreSizer, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND, 5)
-        dlgSizer.Add(methodSizer, 0, wx.ALL | wx.EXPAND, 5)
+        dlgSizer.Add(methodSizer, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND, 5)
+        dlgSizer.Add(coreSizer, 0, wx.ALL | wx.EXPAND, 5)
         dlgSizer.Add(commentSizer, 0, wx.LEFT | wx.RIGHT | wx.TOP | wx.EXPAND, 10)
         dlgSizer.Add(buttonSizer, 0, wx.ALIGN_RIGHT | wx.ALL, border=5)
     
