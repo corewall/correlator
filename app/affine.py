@@ -493,6 +493,18 @@ class AffineBuilder(object):
     # of the SET core in all holes.
     # All chains (ROOT and TIE cores) in all holes if the top depth CCSF of the ROOT
     # core is deeper than the top depth CCSF of SET core.
+    #
+    # Parameters:
+    # hole (str): selected hole for SET operation
+    # core (str): selected core for SET operation
+    # value (float): distance in meters, or percentage from which to shift core from its CCSF depth
+    # isPercent (bool): if True, value param is a percentage, else a distance in meters
+    # site (str): site of hole/core
+    # _sectionSummary (SectionSummary): instance of SectionSummary for this site/hole/core
+    # dataUsed (str): data type used for this SET operation
+    # comment (str): user comment for this SET operation
+    #
+    # Returns a AffineOperation representing the specified SET.
     def setDeeperAndChainsInHoles(self, hole, core, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
         selectedCore = aci(hole, core)
         selectedCoreCCSF = self.getCCSFDepth(selectedCore)
@@ -533,6 +545,18 @@ class AffineBuilder(object):
     # of the SET core in the SET hole only.
     # All chains (ROOT and TIE cores) if the ROOT core is in SET hole AND the top
     # depth CCSF of the ROOT core is deeper than the top depth CCSF of SET core.
+    #
+    # Parameters:
+    # hole (str): selected hole for SET operation
+    # core (str): selected core for SET operation
+    # value (float): distance in meters, or percentage from which to shift core from its CCSF depth
+    # isPercent (bool): if True, value param is a percentage, else a distance in meters
+    # site (str): site of hole/core
+    # _sectionSummary (SectionSummary): instance of SectionSummary for this site/hole/core
+    # dataUsed (str): data type used for this SET operation
+    # comment (str): user comment for this SET operation
+    #
+    # Returns a AffineOperation representing the specified SET.    
     def setDeeperAndChainsInThisHole(self, hole, core, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
         selectedCore = aci(hole, core)
         selectedCoreCCSF = self.getCCSFDepth(selectedCore)
@@ -569,6 +593,18 @@ class AffineBuilder(object):
         return ao
     
     # Shift a single core or chain.
+    #
+    # Parameters:
+    # hole (str): selected hole for SET operation
+    # core (str): selected core for SET operation
+    # value (float): distance in meters, or percentage from which to shift core from its CCSF depth
+    # isPercent (bool): if True, value param is a percentage, else a distance in meters
+    # site (str): site of hole/core
+    # _sectionSummary (SectionSummary): instance of SectionSummary for this site/hole/core
+    # dataUsed (str): data type used for this SET operation
+    # comment (str): user comment for this SET operation
+    #
+    # Returns a AffineOperation representing the specified SET.    
     def setCoreOrChain(self, hole, core, value, isPercent, site, _sectionSummary, dataUsed="", comment=""):
         selectedCore = aci(hole, core)
         ao = AffineOperation()
