@@ -3294,19 +3294,13 @@ class DataCanvas(wxBufferedWindow):
             self.selectedTie = -1
             self.drag = 0
             self.UpdateDrawing()
-        elif opId in [2,3,4,5,6,7]:
+        elif opId in [2,3,4]:
             if opId == 2:
-                shiftMethod = TieShiftMethod.CoreAndAllBelow
-            elif opId == 3:
-                shiftMethod = TieShiftMethod.CoreAndRelatedBelow
-            elif opId == 4:
-                shiftMethod = TieShiftMethod.CoreOnly
-            elif opId == 5:
-                shiftMethod = TieShiftMethod.CoreOrChain
-            elif opId == 6:
                 shiftMethod = TieShiftMethod.TiedAndDeeperInHoles
-            elif opId == 7:
+            elif opId == 3:
                 shiftMethod = TieShiftMethod.TiedAndDeeperInChain
+            elif opId == 4:
+                shiftMethod = TieShiftMethod.CoreOrChain
             self.OnAdjustCore(shiftMethod)
 
     def OnAdjustCore(self, shiftMethod, actionType=1): # tie by default
@@ -3837,12 +3831,9 @@ class DataCanvas(wxBufferedWindow):
                 popupMenu = wx.Menu()
                 popupMenu.Append(1, "&Clear tie point(s)")
                 if tie.fixed == 0: # movable tie
-                    popupMenu.Append(5, "&Shift this core or chain only")
-                    popupMenu.Append(6, "&Shift this core or chain, all deeper chains and deeper cores in all holes")
-                    popupMenu.Append(7, "&Shift this core or chain and all cores below this core or chain")
-                    popupMenu.Append(2, "&Shift this core and all below")
-                    popupMenu.Append(3, "&Shift this core and all related cores below")
-                    popupMenu.Append(4, "&Shift this core only")
+                    popupMenu.Append(2, "&Shift this core or chain, all deeper chains and deeper cores in all holes")
+                    popupMenu.Append(3, "&Shift this core or chain and all cores below this core or chain")
+                    popupMenu.Append(4, "&Shift this core or chain only")
 
                 # brg 11/29/2023: A bit odd to bind to the menu itself, but it works, seems
                 # harmless, and self.parent.Bind(...) breaks the main window's menu handling.

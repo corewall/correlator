@@ -372,12 +372,9 @@ class CompositePanel(object):
 
         sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'TIE Shift Options'), orient=wx.VERTICAL)
         tieShiftScopes = [
-            "This core or chain only",
             "This core or chain, all deeper chains and deeper cores in all holes",
             "This core or chain and cores below this core or chain",
-            "This core and all cores below",
-            "This core and all related cores below",
-            "This core only"            
+            "This core or chain only"
         ]
         self.applyCore = wx.Choice(panel3, -1, choices=tieShiftScopes)
         self.applyCore.SetSelection(0)
@@ -443,17 +440,11 @@ class CompositePanel(object):
     def OnAdjust(self, evt):
         sel = self.applyCore.GetSelection()
         if sel == 0:
-            shiftMethod = TieShiftMethod.CoreOrChain
-        elif sel == 1:
             shiftMethod = TieShiftMethod.TiedAndDeeperInHoles
-        elif sel == 2:
+        elif sel == 1:
             shiftMethod = TieShiftMethod.TiedAndDeeperInChain
-        elif sel == 3:
-            shiftMethod = TieShiftMethod.CoreAndAllBelow
-        elif sel == 4:
-            shiftMethod = TieShiftMethod.CoreAndRelatedBelow
-        elif sel == 5:
-            shiftMethod = TieShiftMethod.CoreOnly
+        elif sel == 2:
+            shiftMethod = TieShiftMethod.CoreOrChain
         self.parent.OnAdjustCore(shiftMethod, self.GetActionType())
 
         self.parent.Window.activeTie = -1
