@@ -3292,9 +3292,9 @@ class DataCanvas(wxBufferedWindow):
         if opId == 1: # Clear Tie
             self.ClearCompositeTies()
             self.selectedTie = -1
-            self.drag = 0 
-            self.UpdateDrawing()			
-        elif opId in [2,3,4,5,6]:
+            self.drag = 0
+            self.UpdateDrawing()
+        elif opId in [2,3,4,5,6,7]:
             if opId == 2:
                 shiftMethod = TieShiftMethod.CoreAndAllBelow
             elif opId == 3:
@@ -3302,8 +3302,10 @@ class DataCanvas(wxBufferedWindow):
             elif opId == 4:
                 shiftMethod = TieShiftMethod.CoreOnly
             elif opId == 5:
-                shiftMethod = TieShiftMethod.TiedAndDeeperInHoles
+                shiftMethod = TieShiftMethod.CoreOrChain
             elif opId == 6:
+                shiftMethod = TieShiftMethod.TiedAndDeeperInHoles
+            elif opId == 7:
                 shiftMethod = TieShiftMethod.TiedAndDeeperInChain
             self.OnAdjustCore(shiftMethod)
 
@@ -3835,8 +3837,9 @@ class DataCanvas(wxBufferedWindow):
                 popupMenu = wx.Menu()
                 popupMenu.Append(1, "&Clear tie point(s)")
                 if tie.fixed == 0: # movable tie
-                    popupMenu.Append(5, "&Shift this core or chain, all deeper chains and deeper cores in all holes")
-                    popupMenu.Append(6, "&Shift this core or chain, and all cores below this core or chain")
+                    popupMenu.Append(5, "&Shift this core or chain only")
+                    popupMenu.Append(6, "&Shift this core or chain, all deeper chains and deeper cores in all holes")
+                    popupMenu.Append(7, "&Shift this core or chain and all cores below this core or chain")
                     popupMenu.Append(2, "&Shift this core and all below")
                     popupMenu.Append(3, "&Shift this core and all related cores below")
                     popupMenu.Append(4, "&Shift this core only")

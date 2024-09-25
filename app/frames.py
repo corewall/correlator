@@ -371,7 +371,15 @@ class CompositePanel(object):
         panel3 = wx.Panel(self.mainPanel, -1)
 
         sizer31 = wx.StaticBoxSizer(wx.StaticBox(panel3, -1, 'TIE Shift Options'), orient=wx.VERTICAL)
-        self.applyCore = wx.Choice(panel3, -1, choices=["This core/chain, all deeper cores/chains in all holes", "This core/chain and cores below this core/chain", "This core and all cores below", "This core and all related cores below", "This core only"])
+        tieShiftScopes = [
+            "This core or chain only",
+            "This core or chain, all deeper chains and deeper cores in all holes",
+            "This core or chain and cores below this core or chain",
+            "This core and all cores below",
+            "This core and all related cores below",
+            "This core only"            
+        ]
+        self.applyCore = wx.Choice(panel3, -1, choices=tieShiftScopes)
         self.applyCore.SetSelection(0)
         sizer31.Add(self.applyCore, 0, wx.EXPAND | wx.BOTTOM, 5)
         
@@ -435,14 +443,16 @@ class CompositePanel(object):
     def OnAdjust(self, evt):
         sel = self.applyCore.GetSelection()
         if sel == 0:
-            shiftMethod = TieShiftMethod.TiedAndDeeperInHoles
+            shiftMethod = TieShiftMethod.CoreOrChain
         elif sel == 1:
-            shiftMethod = TieShiftMethod.TiedAndDeeperInChain
+            shiftMethod = TieShiftMethod.TiedAndDeeperInHoles
         elif sel == 2:
-            shiftMethod = TieShiftMethod.CoreAndAllBelow
+            shiftMethod = TieShiftMethod.TiedAndDeeperInChain
         elif sel == 3:
-            shiftMethod = TieShiftMethod.CoreAndRelatedBelow
+            shiftMethod = TieShiftMethod.CoreAndAllBelow
         elif sel == 4:
+            shiftMethod = TieShiftMethod.CoreAndRelatedBelow
+        elif sel == 5:
             shiftMethod = TieShiftMethod.CoreOnly
         self.parent.OnAdjustCore(shiftMethod, self.GetActionType())
 

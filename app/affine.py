@@ -281,8 +281,9 @@ class TieShiftMethod(Enum):
     CoreOnly = 0
     CoreAndRelatedBelow = 1
     CoreAndAllBelow = 2
-    TiedAndDeeperInHoles = 3
-    TiedAndDeeperInChain = 4
+    CoreOrChain = 3
+    TiedAndDeeperInHoles = 4
+    TiedAndDeeperInChain = 5
 
 
 # Wraps AffineTable in logic that manages inter-core effects of SET and TIE operations
@@ -644,6 +645,12 @@ class AffineBuilder(object):
             ao.shifts.append(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
             for ci in relatedCores:
                 ao.adjusts.append((ci, mcdShiftDistance))
+        elif method == TieShiftMethod.CoreOrChain:
+            ao.shifts.append(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
+            relatedCores = self.gatherCoreOrChain(fromCore, core)
+            ao.infoDict['breaks'] = self.findBreaks(fromCore, core, relatedCores)
+            for ci in relatedCores:
+                ao.adjusts.append((ci, mcdShiftDistance))
         elif method == TieShiftMethod.TiedAndDeeperInHoles:
             ao.shifts.append(TieShift(fromCore, fromDepth, core, depth, totalShiftDistance, dataUsed, comment))
             relatedCores = self.gatherTiedAndDeeperInHoles(fromCore, core)
@@ -705,8 +712,28 @@ class AffineBuilder(object):
     # dummy arguments for fromCore and core.
     def findBreaksForSET(self, movingCores):
         return self.findBreaks(AffineCoreInfo.createBogus(), None, movingCores)
-    
-    # 9/9/2024 new approach #1
+
+    # Shift shiftCore if a single core, or if part of a chain, shiftCore and all downstream
+    # cores in that chain.
+    def gatherCoreOrChain(self, fromCore, shiftCore):
+        cocCores = []
+
+        # If shiftCore is part of a chain C, get all cores in C that can be shifted
+        if self.affine.inChain(shiftCore):
+            chainCores = self.affine.getChainCores(shiftCore)
+            if fromCore in chainCores:
+                # fromCore cannot shift, only shift the descendants of shiftCore in this chain
+                cocCores += [core for core in self.affine.getDescendants(shiftCore)]
+            elif self.affine.getParent(shiftCore):
+                # if shiftCore is already tied from a different core, that core cannot shift,
+                # only shiftCore and descendants should move.
+                if self.affine.getParent(shiftCore).core != fromCore:
+                    cocCores += [core for core in self.affine.getDescendants(shiftCore)]
+            else:
+                cocCores += [core for core in self.affine.getChainCores(shiftCore) if core != shiftCore]
+        
+        return cocCores
+
     # All downstream cores in the SHIFT core chain (if any).
     # All other chain cores (all holes) if the CCSF of the chain ROOT is deeper than CCSF of the SHIFT core.
     # All non-chain cores (all holes) if their CCSF is deeper than CCSF of the SHIFT core.
@@ -758,7 +785,6 @@ class AffineBuilder(object):
         # print(f"gatherTiedAndDeeperInHoles: fromCore = {fromCore}, shiftCore = {shiftCore}:\n{sorted(tadihCores)}")
         return tadihCores
 
-    # 9/9/2024 new approach #2
     # All downstream cores in the SHIFT core chain (if any).
     # All other non-chain cores if a shallower core in the hole is being shifted.
     def gatherTiedAndDeeperInChain(self, fromCore, shiftCore):
@@ -960,6 +986,7 @@ class AffineOperation(object):
 
 
 # Reference to hole and core for affine shifts
+# TODO: Naming. "Info" is horrible and means nothing. "Identity" is at least less horrible.
 class AffineCoreInfo(object):
     def __init__(self, hole, core):
         assert isinstance(hole, str)
