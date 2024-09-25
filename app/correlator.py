@@ -3264,42 +3264,48 @@ class AffineController(object):
             msg += f"Do you want to proceed with this SET?"
             proceed = self.parent.OnShowMessage("Confirm Break", msg, 0) == wx.ID_YES
         return proceed
+    
+    # Perform SET operation if user confirms resulting chain break
+    # and/or splice interval shift warnings, if any.
+    def _executeSetOp(self, setOp):
+        proceed = self._confirmChainBreak(setOp)
+        if not proceed:
+            return        
+        proceed, intervalsAndDeltas = self._confirmShiftSpliceCores(setOp)
+        if proceed:
+            if len(intervalsAndDeltas) > 0:
+                spliceState = copy.deepcopy(self.parent.spliceManager.splice)
+                self.parent.spliceManager.shiftIntervals(intervalsAndDeltas)
+                self._execute(setOp, spliceState)
+            else:
+                self._execute(setOp)     
+
+    # Warn/confirm shift of splice intervals to match affine shifts.
+    # Return user choice to proceed and list of (spliceInterval, shift delta) tuples
+    def _confirmShiftSpliceCores(self, setOp):
+        coresAndDeltas = []
+        for shift in setOp.shifts:
+            cad = (shift.core, self.affine.getShiftDelta(shift.core, shift.distance))
+            coresAndDeltas.append(cad)
+        for adjustCad in setOp.adjusts: # adjusts are in the expected (core, delta) format
+            coresAndDeltas.append(adjustCad)
+
+        return self.confirmShiftCoresInSplice(coresAndDeltas)
 
     def setCoreOrChain(self, hole, core, value, isPercent, dataUsed="", comment=""):
         site = self.parent.Window.GetHoleSite(hole)
         setCocOp = self.affine.setCoreOrChain(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
-        proceed = self._confirmChainBreak(setCocOp)
-        if not proceed:
-            return
-        
-        # TODO: shift of splice intervals
-        
-        self._execute(setCocOp)
+        self._executeSetOp(setCocOp)
 
     def setDeeperAndChainsInHoles(self, hole, core, value, isPercent, dataUsed="", comment=""):
         site = self.parent.Window.GetHoleSite(hole)
         setDacihOp = self.affine.setDeeperAndChainsInHoles(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
-
-        proceed = self._confirmChainBreak(setDacihOp)
-        if not proceed:
-            return
-
-        # TODO: shift of splice intervals
-        
-        self._execute(setDacihOp)
+        self._executeSetOp(setDacihOp)
 
     def setDeeperAndChainsInThisHole(self, hole, core, value, isPercent, dataUsed="", comment=""):
         site = self.parent.Window.GetHoleSite(hole)
         setDacithOp = self.affine.setDeeperAndChainsInThisHole(hole, core, value, isPercent, site, self.parent.sectionSummary, dataUsed, comment)
-
-        proceed = self._confirmChainBreak(setDacithOp)
-        if not proceed:
-            return
-
-        # TODO: shift of splice intervals?
-        
-        self._execute(setDacithOp)
-
+        self._executeSetOp(setDacithOp)
             
     # fromDepth - MBSF depth of tie point on fromCore
     # depth - MBSF depth of tie point on core
