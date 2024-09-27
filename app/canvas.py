@@ -1879,6 +1879,41 @@ class DataCanvas(wxBufferedWindow):
         img_wid = self.GetSpliceAreaImageWidth()
         self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX - img_wid)
 
+    def DrawSpliceIntervalWithDatatype(self, dc, interval, datatype, drawing_start, startX, smoothed):
+        interval.coreinfo.coredata = self.getCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, datatype)
+        if len(interval.coreinfo.coredata) == 0: # data isn't enabled+loaded
+            ypos = self.getSpliceCoord(interval.getTop() + (interval.getBot() - interval.getTop())/2.0) # draw at middle of interval
+            dc.DrawText("[{}{} {} unavailable]".format(interval.coreinfo.hole, interval.coreinfo.holeCore, datatype), startX + 5, ypos)
+            self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX)
+            return
+        
+        rangemin, rangemax = self.GetMINMAX("NaturalGamma" if datatype == "Natural Gamma" else datatype)
+        self._UpdateSpliceRange(rangemin, rangemax)
+        self._SetSpliceRangeCoef(smoothed)
+
+        # gather datapoints within interval range for plotting
+        intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
+        screenPoints = self.GetScreenPointsBuffer(intdata, drawing_start, startX)
+        usScreenPoints = [] # unsmoothed screenpoints 
+        drawUnsmoothed = self.GetSmoothType(datatype) == 2 # 2 == draw both Smooth & Unsmooth data
+        if drawUnsmoothed:
+            smoothdata = self.getCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, datatype, forceUnsmooth=True)
+            smoothdata = [pt for pt in smoothdata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()] # trim to interval
+            usScreenPoints = self.GetScreenPointsBuffer(smoothdata, drawing_start, startX)
+
+        # intervalSelected = (interval == self.parent.spliceManager.getSelectedInterval())
+        self.DrawSpliceIntervalPlot(dc, interval, startX, False, screenPoints, usScreenPoints, drawUnsmoothed) # intervalSelected always False for now
+
+        # if self.parent.sectionSummary and self.layoutManager.getShowImages():
+            # self.DrawSpliceIntervalImages(dc, interval, startX)
+
+        # if intervalSelected:
+        #     for tie in self.parent.spliceManager.getTies():
+        #         self.DrawSpliceIntervalTie(dc, tie) 
+
+        img_wid = self.GetSpliceAreaImageWidth()
+        self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX - img_wid)        
+
     def DrawSpliceIntervalPlot(self, dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed):
         clip_width = self.Width - startX if self.showOutOfRangeData else self.layoutManager.plotWidth
         clip = wx.DCClipper(dc, wx.Rect(startX, self.startDepthPix - 20, clip_width, self.Height - (self.startDepthPix - 20)))
@@ -1962,7 +1997,7 @@ class DataCanvas(wxBufferedWindow):
         dc.DrawText("Leg: " + firstint.coreinfo.site + " Site: " + firstint.coreinfo.leg + " Hole: Splice", rangeMax, 5)
         dc.DrawText("Datatypes: " + ','.join(self.parent.spliceManager.getDataTypes()), rangeMax, 25)
 
-    def DrawSplice(self, dc, hole, smoothed):
+    def DrawSplice(self, dc, hole, smoothed): # TODO: hole and smoothed are always NONE, why pass them at all?
         # vertical dotted line separating splice from splice guide area
         img_wid = self.GetSpliceAreaImageWidth()
         spliceholewidth = self.splicerX + img_wid + self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin
@@ -1992,40 +2027,38 @@ class DataCanvas(wxBufferedWindow):
         else: # draw help text
             ypos = self.getSpliceCoord(self.SPrulerStartDepth)
             dc.DrawText("Drag a core from the left to start a splice.", self.splicerX + 20, ypos + 20)
-                    
-        self.DrawAlternateSplice(dc, hole, smoothed)
         
-    def DrawAlternateSpliceInfo(self, dc):
-        coreinfo = self.parent.spliceManager.getAltInfo()
-        img_wid = self.GetSpliceAreaImageWidth()
-        rangeMax = self.splicerX + img_wid + ((self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin) * 2)
+    def DrawAlternateSpliceHeader(self, dc, altSpliceX, datatype):
         dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-        dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height)))
-        if coreinfo is not None:
-            dc.DrawText("Leg: " + coreinfo.site + " Site: " + coreinfo.leg + " Hole: Alternate Splice", rangeMax, 5)
-            dc.DrawText("Datatype: " + coreinfo.type, rangeMax, 25)
-        else:
-            dc.DrawText("Alternate Splice Area", rangeMax, 5)
-            dc.DrawText("Click 'Select Alternate Splice...'", rangeMax, 25)
+        dc.DrawLines(((altSpliceX, self.startDepthPix - 20), (altSpliceX, self.Height)))
+        dc.DrawText(datatype, altSpliceX, 5)
 
-                    
-    def DrawAlternateSplice(self, dc, hole, smoothed):
+    def DrawAlternateSplices(self, dc, hole, smoothed):
+        if self.parent.spliceManager.count() == 0:
+            return
+
         img_wid = self.GetSpliceAreaImageWidth()
         altSpliceX = self.splicerX + img_wid + ((self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin) * 2)
         
-        # vertical dotted line separating splice from next splice hole (or core to be spliced)
-        dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-        dc.DrawLines(((altSpliceX, self.startDepthPix - 20), (altSpliceX, self.Height)))
-        
-        if self.parent.spliceManager.altSplice.count() > 0:
+        altDatatypesToDraw = []
+        for datatype in self.layoutManager.datatypeOrder:
+            if self.layoutManager.isDatatypeVisible(datatype):
+                altDatatypesToDraw.append(datatype)
+
+        for datatype in altDatatypesToDraw:
+            # vertical dotted line separating splice from next splice hole (or core to be spliced)
+            dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+            dc.DrawLines(((altSpliceX, self.startDepthPix - 20), (altSpliceX, self.Height)))
+
             rangemin, rangemax = self._GetSpliceRange()
             self._UpdateSpliceRange(rangemin, rangemax)
             self._SetSpliceRangeCoef(smoothed)
             drawing_start = self.SPrulerStartDepth - 5.0
-            for si in self.parent.spliceManager.altSplice.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
-                self.DrawSpliceInterval(dc, si, drawing_start, altSpliceX + img_wid, smoothed)
+            for si in self.parent.spliceManager.splice.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
+                self.DrawSpliceIntervalWithDatatype(dc, si, datatype, drawing_start, altSpliceX + img_wid, smoothed)
+            self.DrawAlternateSpliceHeader(dc, altSpliceX + img_wid, f"Splice: {datatype}")
 
-        self.DrawAlternateSpliceInfo(dc)
+            altSpliceX += self.layoutManager.plotWidth
             
     # draw current interval's core in its entirety to the right of the splice
     def DrawSelectedSpliceGuide(self, dc, interval, drawing_start, startX, guide_clip_rect):
@@ -2590,10 +2623,10 @@ class DataCanvas(wxBufferedWindow):
         self.HoleCount = 0
         self.coreCount = 0 
         self.newHoleX = 30.0
-        smooth_flag = 3 
-        holeType = ""
-        if len(self.HoleData) == 0:
-            smooth_flag = 1 
+        # smooth_flag = 3 
+        # holeType = ""
+        # if len(self.HoleData) == 0:
+            # smooth_flag = 1 
             
         self.HoleCount = -2 # hoo boy
         self.DrawRuler(dc)
@@ -2603,39 +2636,11 @@ class DataCanvas(wxBufferedWindow):
             msg = "No Data has been loaded. In Data Manager, right-click on a Site and select Load."
             dc.DrawText(msg, self.compositeX + 10, self.getCoord(self.rulerStartDepth))
 
-        # TODO: clean up, own method
         if self.spliceWindowOn == 1:
-            for data in self.AltSpliceData:
-                for r in data:
-                    hole = r 
-                    self.DrawSplice(dc, hole, 7)
 
-            self.splice_smooth_flag = 0 
-            splice_data = []
-            for r in self.range:
-                if r[0] == 'splice':
-                    self.splice_smooth_flag = r[4] 
-
-            splice_data = []
-            if self.splice_smooth_flag == 1:
-                splice_data = self.SpliceSmoothData
-            else:
-                splice_data = self.SpliceData
-            smooth_flag = 0 
             if self.ShowSplice == True:
                 self.DrawSplice(dc, None, None)
-
-                splice_data = []
-                if self.splice_smooth_flag == 2:
-                    splice_data = self.SpliceSmoothData
-
-                smooth_flag = 1 
-                if len(self.SpliceData) > 0: 
-                    smooth_flag = 2 
-                for data in splice_data:
-                    for r in data:
-                        hole = r 
-                        self.DrawSplice(dc, hole, smooth_flag)
+                self.DrawAlternateSplices(dc, None, None)
 
         if self.HasDragCore():
             self.DrawDragCore(dc)

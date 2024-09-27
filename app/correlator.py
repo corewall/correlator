@@ -3453,7 +3453,6 @@ class SpliceController(object):
     def __init__(self, parent):
         self.parent = parent # MainFrame
         self.splice = SpliceBuilder() # SpliceBuilder for current splice
-        self.altSplice = SpliceBuilder() # SpliceBuilder for alternate splice
         self.currentSpliceFile = None
         
         self.clear() # init selection, file state members
@@ -3483,7 +3482,6 @@ class SpliceController(object):
             
     def clear(self):
         self.splice.clear()
-        self.altSplice.clear()
         self.currentSpliceFile = None
         self.selected = None # selected SpliceInterval's siid
         self.selectedTie = None # selected SpliceIntervalTie
@@ -3499,13 +3497,6 @@ class SpliceController(object):
     
     def getDataTypes(self):
         return self.splice.getDataTypes()
-    
-    # return coreinfo for first interval in alternate splice
-    def getAltInfo(self):
-        info = None
-        if self.altSplice.count() > 0:
-            info = self.altSplice.getIntervalAtIndex(0).coreinfo
-        return info
     
     def getIntervals(self):
         return self.splice.ints
@@ -3770,11 +3761,7 @@ class SpliceController(object):
     def loadSplice(self, filepath, datatype=None):
         self.clear()
         self.load(filepath, self.splice, datatype)
-    
-    def loadAlternateSplice(self, filepath, datatype):
-        self.altSplice.clear()
-        self.load(filepath, self.altSplice, datatype)
-        
+
     def exportData(self, filepath, fileprefix, datatype, siteexp):
         #print "exportData: {}, prefix = {}, datatype = {}".format(filepath, fileprefix, datatype)
         exportRows = []

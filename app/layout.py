@@ -192,6 +192,9 @@ class LayoutManager(object):
             if hc.holeName() == holeName and hc.datatype() == datatype:
                 return True
         return False
+    
+    def isDatatypeVisible(self, datatype):
+        return self.visibleDatatypes[datatype]
 
     def getColumnAtPos(self, x):
         for cur_x, key in self.holePositions:
