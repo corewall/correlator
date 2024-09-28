@@ -2258,7 +2258,7 @@ class DataCanvas(wxBufferedWindow):
 
     # for each section of a core, draw number, top, and bottom boundaries
     def DrawSectionBoundaries(self, dc, x, width, hole, coreno, affine_shift, color=None):
-        clip = wx.DCClipper(dc, wx.Region(x, self.startDepthPix - 20, (self.splicerX - 60) - x, self.Height - (self.startDepthPix - 20)))
+        clip = wx.DCClipper(dc, wx.Region(x-1, self.startDepthPix - 20, (self.splicerX - 60) - x, self.Height - (self.startDepthPix - 20)))
         penColor = self.colorDict['foreground'] if color is None else color
         dc.SetPen(wx.Pen(penColor, 1, style=wx.DOT))
         dc.SetTextForeground(penColor)
