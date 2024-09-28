@@ -761,12 +761,7 @@ class SplicePanel(object):
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnSplice, self.spliceButton)
         self.spliceButton.Enable(False)
         sizer32.Add(self.spliceButton)
-
-        self.altButton = wx.Button(panel3, -1, "Alt. Splice", size =(buttonsize, 30))
-        self.mainPanel.Bind(wx.EVT_BUTTON, self.OnCREATE_ALTSPLICE, self.altButton)
-        self.altButton.Enable(False)
-        sizer32.Add(self.altButton)
-
+        
         self.newButton = wx.Button(panel3, -1, "New Splice", size =(buttonsize, 30))
         self.mainPanel.Bind(wx.EVT_BUTTON, self.OnNEWSPLICE, self.newButton)
         self.newButton.Enable(False)
@@ -863,47 +858,6 @@ class SplicePanel(object):
 
             self.parent.Window.OnInit_SPLICE()
             self.parent.Window.UpdateDrawing()
-
-
-    def OnCREATE_ALTSPLICE(self, event):
-        dlg = dialog.AltSpliceDialog(self.parent)
-        dlg.Centre()
-        ret = dlg.ShowModal()
-        selectedType =  dlg.selectedType
-        selectedSplice = dlg.selectedSplice
-        dlg.Destroy()
-        if ret == wx.ID_OK :
-            type_range = None 
-            alt_splice = None
-            for subr in self.parent.Window.range :
-                if subr[0] == selectedType :
-                    type_range = subr
-                elif subr[0] == "altsplice" :
-                    alt_splice = subr
-
-            #newrange = "altsplice", type_range[1], type_range[2], type_range[3], 0, type_range[5]				
-            #if alt_splice != None :
-            #	self.parent.Window.range.remove(alt_splice)
-            #self.parent.Window.range.append(newrange)
-
-            path = self.parent.DBPath + 'db/' + self.parent.dataFrame.title  + '/'
-            ret = py_correlator.loadAltSpliceFile(path + selectedSplice, selectedType)
-            if ret == "" :
-                self.parent.OnShowMessage("Error", "Could not create Splice Records", 1)
-            else :
-                newrange = "altsplice", type_range[1], type_range[2], type_range[3], 0, type_range[5]				
-                self.parent.Window.altType = selectedType 
-                if alt_splice != None :
-                    self.parent.Window.range.remove(alt_splice)
-                self.parent.Window.range.append(newrange)
-
-                self.parent.Window.AltSpliceData = []
-                self.parent.ParseData(ret, self.parent.Window.AltSpliceData)
-                self.altClearBtn.Enable(True)
-                ret = ""
-            self.parent.Window.UpdateDrawing()
-
-            #print "[DEBUG] selected " + selectedSplice + " " + selectedType
 
     def OnButtonEnable(self, opt, enable):
         if opt == 0 : 
@@ -1264,10 +1218,6 @@ class SpliceIntervalPanel(object):
         tsbox.Add(tieSplitPanel, 1, wx.EXPAND)
         psz.Add(tsbox, 0, wx.EXPAND | wx.TOP, 10)
         
-        self.altSpliceButton = wx.Button(panel, -1, "Select Alternate Splice...")
-        self.altSpliceButton.Bind(wx.EVT_BUTTON, self.OnAltSplice)
-        psz.Add(self.altSpliceButton, 0, wx.EXPAND | wx.ALL, 10)
-        
         self.saveButton = wx.Button(panel, -1, "Save Splice and Affine...")
         self.saveButton.Bind(wx.EVT_BUTTON, self.OnSave)
         psz.Add(self.saveButton, 0, wx.EXPAND | wx.ALL, 10)
@@ -1290,18 +1240,6 @@ class SpliceIntervalPanel(object):
         for row, si in enumerate(self.parent.spliceManager.getIntervals()):
             self._makeIntervalTableRow(row, si)
         self._updateIntervalTableSelection()
-
-    def OnAltSplice(self, event):
-        asd = dialog.AltSpliceDialog(self.parent)
-        if asd.ShowModal() == wx.ID_OK:
-            selectedType =  asd.selectedType
-            selectedSplice = asd.selectedSplice
-            altSplicePath = self.parent.DBPath + "db/" + self.parent.dataFrame.GetSelectedSiteName() + '/' + selectedSplice
-            if self.parent.spliceManager.canApplyAffine(altSplicePath):
-                self.parent.spliceManager.loadAlternateSplice(altSplicePath, selectedType)
-                self.parent.Window.UpdateDrawing()
-            else:
-                self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)
     
     def OnSelectNote(self, event):
         newSel = event.GetSelection()
@@ -1382,7 +1320,6 @@ class SpliceIntervalPanel(object):
         self.delButton.Enable(hasSel)
         hasIntervals = self.parent.spliceManager.count() > 0
         self.saveButton.Enable(hasIntervals)
-        self.altSpliceButton.Enable(hasIntervals)
         if hasSel:
             self.delButton.SetLabel("Delete Interval {}".format(self.parent.spliceManager.getSelectedInterval().getHoleCoreStr()))
             

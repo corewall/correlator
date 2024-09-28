@@ -4412,12 +4412,10 @@ class DataFrame(wx.Panel):
         self.parent.compositePanel.saveButton.Enable(True)
         if self.parent.Window.LogData  == []:
             self.parent.splicePanel.saveButton.Enable(True)
-            self.parent.splicePanel.altButton.Enable(True)
             self.parent.splicePanel.newButton.Enable(True)
         else:
             self.parent.eldPanel.saveButton.Enable(True)
             self.parent.autoPanel.saveButton.Enable(True)
-            self.parent.splicePanel.altButton.Enable(False)
             self.parent.splicePanel.newButton.Enable(False)
             
         #self.parent.Window.PrintHoleSummary()

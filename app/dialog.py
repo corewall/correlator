@@ -953,57 +953,6 @@ class ExportCoreDialog(wx.Dialog):
         self.affine.SetValue(ret)
 
 
-class AltSpliceDialog(wx.Dialog):
-    def __init__(self, parent):
-        wx.Dialog.__init__(self, parent, -1, "View Alternate Splice", size=(360, 200),style=wx.DEFAULT_DIALOG_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE | wx.STAY_ON_TOP)
-        panel = wx.Panel(self, -1, (15, 15), size=(330, 100), style=wx.BORDER)
-        wx.StaticText(panel, -1, 'Data Type', (10, 20))
-        wx.StaticText(panel, -1, 'Splice', (10, 60))
-        self.all = wx.Choice(panel, -1, (90,20), (220,-1))
-        for types in parent.Window.range:
-            if types[0] != "splice" and types[0] != "altsplice":
-                typename = types[0]
-                if typename == "NaturalGamma":
-                    typename = "Natural Gamma"
-                self.all.Append(typename)
-        if self.all.GetCount() > 0:
-            self.all.Select(0)
-
-        self.splice = wx.Choice(panel, -1, (90,60), (220,-1))
-        parent.dataFrame.Update_PROPERTY_ITEM(parent.dataFrame.selectBackup)
-        property = parent.dataFrame.propertyIdx
-        totalcount = parent.dataFrame.tree.GetChildrenCount(property, False)
-        if totalcount > 0:
-            child = parent.dataFrame.tree.GetFirstChild(property)
-            child_item = child[0]
-            if parent.dataFrame.tree.GetItemText(child_item, 1) == "SPLICE":
-                filename = parent.dataFrame.tree.GetItemText(child_item, 8)
-                self.splice.Append(filename)
-            for k in range(1, totalcount):
-                child_item = parent.dataFrame.tree.GetNextSibling(child_item)
-                if parent.dataFrame.tree.GetItemText(child_item, 1) == "SPLICE":
-                    self.splice.Append(parent.dataFrame.tree.GetItemText(child_item, 8))
-        if self.splice.GetCount() > 0:
-            self.splice.Select(0)
-
-        self.selectedType = "" 
-        self.selectedSplice = "" 
-        okBtn = wx.Button(self, -1, "Select", (70, 135))
-        self.Bind(wx.EVT_BUTTON, self.OnSELECT, okBtn)
-        cancelBtn = wx.Button(self, wx.ID_CANCEL, "Cancel", (210, 135))
-        wx.EVT_KEY_UP(self, self.OnCharUp)
-
-    def OnCharUp(self,event):
-        keyid = event.GetKeyCode() 
-        if keyid == wx.WXK_ESCAPE:
-            self.EndModal(wx.ID_CANCEL) 
-
-    def OnSELECT(self, event):
-        self.selectedSplice = self.splice.GetStringSelection()
-        self.selectedType = self.all.GetStringSelection() 
-        self.EndModal(wx.ID_OK) 
-
-
 class CommentTextCtrl(wx.TextCtrl):
     def __init__(self, parent, wxid, value=wx.EmptyString, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0):
         wx.TextCtrl.__init__(self, parent, wxid, value, pos, size, style)
