@@ -1041,27 +1041,6 @@ class SetDialog(wx.Dialog):
         self.SetBackgroundColour(wx.WHITE)
         dlgSizer = wx.BoxSizer(wx.VERTICAL)
 
-        coreSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Apply shift to:"), orient=wx.VERTICAL)
-        hsz = wx.BoxSizer(wx.HORIZONTAL)
-        self.holeText = wx.StaticText(self, -1, "Hole:")
-        hsz.Add(self.holeText, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
-        self.holeChoice = wx.Choice(self, -1, size=(70,-1))
-        hsz.Add(self.holeChoice, 0, wx.ALL, 5)
-        self.coreChoice = wx.Choice(self, -1, size=(70,-1))
-        self.coreText = wx.StaticText(self, -1, "Core:")
-        hsz.Add(self.coreText, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
-        hsz.Add(self.coreChoice, 0, wx.ALL, 5)
-        coreSizer.Add(hsz, 0, wx.EXPAND)
-
-        self.deeperAndChainsInHoles = wx.RadioButton(self, -1, "All deeper cores and chains in all holes", style=wx.RB_GROUP)
-        self.deeperAndChainsInThisHole = wx.RadioButton(self, -1, "All deeper cores and chains in this hole")
-        self.coreOrChain = wx.RadioButton(self, -1, "This core or chain")
-
-        self.deeperAndChainsInHoles.SetValue(True)
-        coreSizer.Add(self.deeperAndChainsInHoles, 0, wx.EXPAND | wx.TOP, 5)
-        coreSizer.Add(self.deeperAndChainsInThisHole, 0, wx.EXPAND | wx.TOP, 5)
-        coreSizer.Add(self.coreOrChain, 0, wx.EXPAND | wx.TOP, 5)
-        
         methodSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Shift by:"), orient=wx.VERTICAL)
         hsz = wx.BoxSizer(wx.HORIZONTAL)
         distSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1080,11 +1059,31 @@ class SetDialog(wx.Dialog):
         pctSizer.Add(self.percentLabel, 0, wx.LEFT, 3)
         methodSizer.Add(hsz, 0, wx.EXPAND | wx.BOTTOM, 5)
         methodSizer.Add(distSizer, 0, wx.BOTTOM, 5)
-        methodSizer.Add(pctSizer, 0)
-        
-        self.currentShiftText = wx.StaticText(self, -1, "Current shift:")
-        methodSizer.Add(self.currentShiftText, 0, wx.EXPAND | wx.TOP, 5)
+        methodSizer.Add(pctSizer, 0)        
 
+        coreSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Apply shift to:"), orient=wx.VERTICAL)
+        hsz = wx.BoxSizer(wx.HORIZONTAL)
+        self.holeText = wx.StaticText(self, -1, "Hole:")
+        hsz.Add(self.holeText, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+        self.holeChoice = wx.Choice(self, -1, size=(70,-1))
+        hsz.Add(self.holeChoice, 0, wx.ALL, 5)
+        self.coreChoice = wx.Choice(self, -1, size=(70,-1))
+        self.coreText = wx.StaticText(self, -1, "Core:")
+        hsz.Add(self.coreText, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsz.Add(self.coreChoice, 0, wx.ALL, 5)
+        coreSizer.Add(hsz, 0, wx.EXPAND)
+        self.currentShiftText = wx.StaticText(self, -1, "Current shift:")
+        coreSizer.Add(self.currentShiftText, 0, wx.EXPAND | wx.TOP, 5)
+
+        self.deeperAndChainsInHoles = wx.RadioButton(self, -1, "All deeper cores and chains in all holes", style=wx.RB_GROUP)
+        self.deeperAndChainsInThisHole = wx.RadioButton(self, -1, "All deeper cores and chains in this hole")
+        self.coreOrChain = wx.RadioButton(self, -1, "This core or chain")
+
+        self.deeperAndChainsInHoles.SetValue(True)
+        coreSizer.Add(self.deeperAndChainsInHoles, 0, wx.EXPAND | wx.TOP, 5)
+        coreSizer.Add(self.deeperAndChainsInThisHole, 0, wx.EXPAND | wx.TOP, 5)
+        coreSizer.Add(self.coreOrChain, 0, wx.EXPAND | wx.TOP, 5)
+        
         commentSizer = wx.BoxSizer(wx.HORIZONTAL)
         commentSizer.Add(wx.StaticText(self, -1, "Comment:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
         self.commentField = CommentTextCtrl(self, -1)
@@ -1201,7 +1200,7 @@ class SetDialog(wx.Dialog):
     
     def UpdateCurShiftText(self):
         if self.curCoreName is not None:
-            self.currentShiftText.SetLabel("Current " + self.curCoreName + " affine shift: " + str(self.curCoreShift))
+            self.currentShiftText.SetLabel(f"Current {self.curCoreName} cumulative offset: {str(self.curCoreShift)}")
 
 
 class CorrParamsDialog(wx.Dialog):
