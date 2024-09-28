@@ -1848,7 +1848,7 @@ class DataCanvas(wxBufferedWindow):
             self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX)
             return
         
-        # set range for interval
+        # set range for interval datatype so plot is drawn within expected bounds
         datatype = interval.coreinfo.type
         if datatype == "Natural Gamma":
             datatype = "NaturalGamma"
@@ -2061,7 +2061,17 @@ class DataCanvas(wxBufferedWindow):
     def DrawSelectedSpliceGuide(self, dc, interval, drawing_start, startX, guide_clip_rect):
         img_wid = self.GetSpliceAreaImageWidth()
         screenpoints = []
-        for pt in interval.coreinfo.coredata:
+
+        # set range for interval datatype so plot is drawn within expected bounds
+        datatype = interval.coreinfo.type
+        if datatype == "Natural Gamma":
+            datatype = "NaturalGamma"
+        rangemin, rangemax = self.GetMINMAX(datatype)
+        self._UpdateSpliceRange(rangemin, rangemax)
+        self._SetSpliceRangeCoef(None)
+        
+        # for pt in interval.coreinfo.coredata:
+        for pt in self.getCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type):
             if pt[0] >= drawing_start and pt[0] <= self.SPrulerEndDepth:
                 y = self.startDepthPix + (pt[0] - self.SPrulerStartDepth) * self.pixPerMeter
                 spliceholewidth = self.splicerX + self.layoutManager.plotLeftMargin + img_wid + self.layoutManager.plotWidth
