@@ -1811,7 +1811,7 @@ class DataCanvas(wxBufferedWindow):
         dc.SetBrush(fgBrush)
         img_wid = self.GetSpliceAreaImageWidth()
         startx = self.splicerX + self.layoutManager.plotLeftMargin + img_wid # beginning of splice plot area
-        endx = startx + (self.layoutManager.plotWidth * 2) + len(self._getSpliceDatatypesToDraw()) * self.layoutManager.plotWidth
+        endx = startx + (self.layoutManager.plotWidth * 2) + len(self._getSpliceDatatypesToDraw()) * self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin
         ycoord = self.getSpliceCoord(tie.depth())
         circlex = startx + (old_div(self.layoutManager.plotWidth, 2))
         namestr = tie.getName()
