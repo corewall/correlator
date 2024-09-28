@@ -644,7 +644,7 @@ class MainFrame(wx.Frame):
     def UPDATESCROLL(self):
         self.ScaleScrollbar("MovableSkin", -self.Window.ScrollSize - 5, None)
         self.ScaleScrollbar("Skin", -self.Window.ScrollSize, None)
-        self.ScaleScrollbar("HScroll", None, -self.Window.ScrollSize, horizontal=True)
+        self.ScaleScrollbar("CompositeScroll", None, -self.Window.ScrollSize, horizontal=True)
 
     # 1/15/2019 hiding these menu items				
     # def OnDisableMenu(self, type, enable):
@@ -3029,7 +3029,7 @@ class MainFrame(wx.Frame):
         img = load_image_resource("images/vscrollbutton1.jpg")
         img.Rescale(img.GetWidth(), self.Window.ScrollSize)
         bmp = img.ConvertToBitmap()
-        DrawData["HScroll"] = (bmp, self.Window.compositeX, -self.Window.ScrollSize)
+        DrawData["CompositeScroll"] = (bmp, self.Window.compositeX, -self.Window.ScrollSize)
 
         splice_scroll_thumb = load_image_resource("images/vscrollbutton1.jpg")
         splice_scroll_thumb.Rescale(splice_scroll_thumb.GetWidth(), self.Window.ScrollSize)

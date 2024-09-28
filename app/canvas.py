@@ -2489,7 +2489,7 @@ class DataCanvas(wxBufferedWindow):
             if key == "Skin": # draw composite area scrollbar thumb
                 bmp, x, y = data
                 dc.DrawBitmap(bmp, self.Width + x - 1, y, 1)
-            elif key == "HScroll": # draw horizontal scrollbar thumb
+            elif key == "CompositeScroll": # draw horizontal scrollbar thumb
                 bmp, x, y = data
                 dc.DrawBitmap(bmp, x, self.Height + y, 1)
             elif key == "SpliceScroll": # draw splice scrollbar thumb
@@ -3967,7 +3967,7 @@ class DataCanvas(wxBufferedWindow):
                 if reg.Contains(wx.Point(pos[0], pos[1])):
                     print(f"selectScroll MovableSkin new position {x}")
                     self.selectScroll = 1
-            elif key == "HScroll":
+            elif key == "CompositeScroll":
                 bmp, x, y = data
                 y = self.Height + y
                 w, h = bmp.GetWidth(), bmp.GetHeight()
@@ -4543,8 +4543,8 @@ class DataCanvas(wxBufferedWindow):
         if scroll_x > scroll_width:
             scroll_x = scroll_width
 
-        bmp, x, y = self.DrawData["HScroll"]
-        self.DrawData["HScroll"] = (bmp, scroll_x, y)
+        bmp, x, y = self.DrawData["CompositeScroll"]
+        self.DrawData["CompositeScroll"] = (bmp, scroll_x, y)
 
         scroll_width = scroll_width - scroll_start
         rate = old_div((scroll_x - scroll_start), (scroll_width * 1.0))
@@ -4764,19 +4764,18 @@ class DataCanvas(wxBufferedWindow):
 
         # Dragging composite/splice area divider scrollbar?
         if self.selectScroll == 1 and self.grabScrollA == 0 and not self.dragCompositeScroll:
-            print(f"Moving composite/splice divider scrollbar, mouse xpos = {pos[0]}")
             if pos[0] >= 180 and pos[0] <= (self.Width - 100):
                 scroll_widthA = self.splicerX - (self.startDepthPix * 2.3) - self.compositeX 
                 scroll_widthB = self.Width - (self.startDepthPix * 1.6) - self.splicerX 
                 temp_splicex = self.splicerX
                 self.splicerX = pos[0]
 
-                bmp, x, y = self.DrawData["HScroll"]
+                bmp, x, y = self.DrawData["CompositeScroll"]
                 scroll_rate = old_div((x - self.compositeX), (scroll_widthA * 1.0))
                 scroll_widthA = self.splicerX - (self.startDepthPix * 2.3) - self.compositeX 
                 scroll_x = scroll_widthA * scroll_rate
                 scroll_x += self.compositeX
-                self.DrawData["HScroll"] = (bmp, scroll_x, y)
+                self.DrawData["CompositeScroll"] = (bmp, scroll_x, y)
 
         # store data needed to draw "ghost" of core being dragged:
         # x is the current mouse x, y is the offset between current and original mouse y
