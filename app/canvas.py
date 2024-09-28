@@ -1811,7 +1811,7 @@ class DataCanvas(wxBufferedWindow):
         dc.SetBrush(fgBrush)
         img_wid = self.GetSpliceAreaImageWidth()
         startx = self.splicerX + self.layoutManager.plotLeftMargin + img_wid # beginning of splice plot area
-        endx = startx + (self.layoutManager.plotWidth * 2)
+        endx = startx + (self.layoutManager.plotWidth * 2) + len(self._getSpliceDatatypesToDraw()) * self.layoutManager.plotWidth
         ycoord = self.getSpliceCoord(tie.depth())
         circlex = startx + (old_div(self.layoutManager.plotWidth, 2))
         namestr = tie.getName()
@@ -2028,19 +2028,21 @@ class DataCanvas(wxBufferedWindow):
         dc.DrawLines(((altSpliceX, self.startDepthPix - 20), (altSpliceX, self.Height)))
         dc.DrawText(datatype, altSpliceX, 5)
 
+    def _getSpliceDatatypesToDraw(self):
+        altDatatypesToDraw = []
+        for datatype in self.layoutManager.datatypeOrder:
+            if datatype != ImageDatatypeStr and self.layoutManager.isDatatypeVisible(datatype):
+                altDatatypesToDraw.append(datatype)
+        return altDatatypesToDraw
+
     def DrawAlternateSplices(self, dc, hole, smoothed):
         if self.parent.spliceManager.count() == 0:
             return
 
         img_wid = self.GetSpliceAreaImageWidth()
         altSpliceX = self.splicerX + img_wid + ((self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin) * 2)
-        
-        altDatatypesToDraw = []
-        for datatype in self.layoutManager.datatypeOrder:
-            if datatype != ImageDatatypeStr and self.layoutManager.isDatatypeVisible(datatype):
-                altDatatypesToDraw.append(datatype)
 
-        for datatype in altDatatypesToDraw:
+        for datatype in self._getSpliceDatatypesToDraw():
             # vertical dotted line separating splice from next splice hole (or core to be spliced)
             dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
             dc.DrawLines(((altSpliceX, self.startDepthPix - 20), (altSpliceX, self.Height)))
