@@ -1901,9 +1901,7 @@ class DataCanvas(wxBufferedWindow):
             usScreenPoints = self.GetScreenPointsBuffer(smoothdata, drawing_start, startX)
 
         self.DrawSpliceIntervalPlot(dc, interval, startX, screenPoints, usScreenPoints, drawUnsmoothed, self.colorDict['foreground'])
-
-        img_wid = self.GetSpliceAreaImageWidth()
-        self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX - img_wid)        
+        self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX)
 
     def DrawSpliceIntervalPlot(self, dc, interval, startX, screenPoints, usScreenPoints, drawUnsmoothed, drawColor=None):
         clip_width = self.Width - startX if self.showOutOfRangeData else self.layoutManager.plotWidth
@@ -2039,7 +2037,7 @@ class DataCanvas(wxBufferedWindow):
         
         altDatatypesToDraw = []
         for datatype in self.layoutManager.datatypeOrder:
-            if self.layoutManager.isDatatypeVisible(datatype):
+            if datatype != ImageDatatypeStr and self.layoutManager.isDatatypeVisible(datatype):
                 altDatatypesToDraw.append(datatype)
 
         for datatype in altDatatypesToDraw:
@@ -2052,8 +2050,8 @@ class DataCanvas(wxBufferedWindow):
             self._SetSpliceRangeCoef(smoothed)
             drawing_start = self.SPrulerStartDepth - 5.0
             for si in self.parent.spliceManager.splice.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
-                self.DrawSpliceIntervalWithDatatype(dc, si, datatype, drawing_start, altSpliceX + img_wid, smoothed)
-            self.DrawAlternateSpliceHeader(dc, altSpliceX + img_wid, f"{datatype} splice")
+                self.DrawSpliceIntervalWithDatatype(dc, si, datatype, drawing_start, altSpliceX, smoothed)
+            self.DrawAlternateSpliceHeader(dc, altSpliceX, f"{datatype} splice")
 
             altSpliceX += self.layoutManager.plotWidth
             
