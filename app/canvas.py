@@ -1985,12 +1985,14 @@ class DataCanvas(wxBufferedWindow):
     
     # draw info header above splice hole column
     def DrawSpliceHeader(self, dc):
+        dc.SetFont(self.holeInfoFont)
         firstint = self.parent.spliceManager.getIntervalAtIndex(0)
         rangeMax = self.splicerX + self.layoutManager.plotLeftMargin
         dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
         dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height)))
         dc.DrawText("Leg: " + firstint.coreinfo.site + " Site: " + firstint.coreinfo.leg + " Hole: Splice", rangeMax, 5)
         dc.DrawText("Datatypes: " + ','.join(self.parent.spliceManager.getDataTypes()), rangeMax, 25)
+        dc.SetFont(self.stdFont) # restore standard font
 
     def DrawSplice(self, dc, hole, smoothed): # TODO: hole and smoothed are always NONE, why pass them at all?
         # vertical dotted line separating splice from splice guide area
@@ -2024,9 +2026,11 @@ class DataCanvas(wxBufferedWindow):
             dc.DrawText("Drag a core from the left to start a splice.", self.splicerX + 20, ypos + 20)
         
     def DrawAlternateSpliceHeader(self, dc, altSpliceX, datatype):
+        dc.SetFont(self.holeInfoFont)
         dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
         dc.DrawLines(((altSpliceX, self.startDepthPix - 20), (altSpliceX, self.Height)))
         dc.DrawText(datatype, altSpliceX, 5)
+        dc.SetFont(self.stdFont) # restore standard font
 
     def _getSpliceDatatypesToDraw(self):
         altDatatypesToDraw = []
