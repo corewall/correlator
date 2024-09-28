@@ -2056,7 +2056,7 @@ class DataCanvas(wxBufferedWindow):
             drawing_start = self.SPrulerStartDepth - 5.0
             for si in self.parent.spliceManager.splice.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
                 self.DrawSpliceIntervalWithDatatype(dc, si, datatype, drawing_start, altSpliceX + img_wid, smoothed)
-            self.DrawAlternateSpliceHeader(dc, altSpliceX + img_wid, f"Splice: {datatype}")
+            self.DrawAlternateSpliceHeader(dc, altSpliceX + img_wid, f"{datatype} splice")
 
             altSpliceX += self.layoutManager.plotWidth
             
