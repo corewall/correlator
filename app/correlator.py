@@ -3556,6 +3556,9 @@ class SpliceController(object):
     def getSelectedInterval(self):
         return self.splice.getIntervalById(self.selected)
     
+    def isSelectedInterval(self, interval):
+        return interval == self.splice.getIntervalById(self.selected)
+    
     def getSelectedIndex(self):
         if self.hasSelection():
             interval = self.splice.getIntervalById(self.selected)

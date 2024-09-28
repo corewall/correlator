@@ -1866,15 +1866,14 @@ class DataCanvas(wxBufferedWindow):
             smoothdata = [pt for pt in smoothdata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()] # trim to interval
             usScreenPoints = self.GetScreenPointsBuffer(smoothdata, drawing_start, startX)
 
-        intervalSelected = (interval == self.parent.spliceManager.getSelectedInterval())
-        self.DrawSpliceIntervalPlot(dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed)
+        self.DrawSpliceIntervalPlot(dc, interval, startX, screenPoints, usScreenPoints, drawUnsmoothed)
 
         if self.parent.sectionSummary and self.layoutManager.getShowImages():
             self.DrawSpliceIntervalImages(dc, interval, startX)
 
-        if intervalSelected:
+        if self.parent.spliceManager.isSelectedInterval(interval):
             for tie in self.parent.spliceManager.getTies():
-                self.DrawSpliceIntervalTie(dc, tie) 
+                self.DrawSpliceIntervalTie(dc, tie)
 
         img_wid = self.GetSpliceAreaImageWidth()
         self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX - img_wid)
@@ -1901,26 +1900,24 @@ class DataCanvas(wxBufferedWindow):
             smoothdata = [pt for pt in smoothdata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()] # trim to interval
             usScreenPoints = self.GetScreenPointsBuffer(smoothdata, drawing_start, startX)
 
-        # intervalSelected = (interval == self.parent.spliceManager.getSelectedInterval())
-        self.DrawSpliceIntervalPlot(dc, interval, startX, False, screenPoints, usScreenPoints, drawUnsmoothed) # intervalSelected always False for now
-
-        # if self.parent.sectionSummary and self.layoutManager.getShowImages():
-            # self.DrawSpliceIntervalImages(dc, interval, startX)
-
-        # if intervalSelected:
-        #     for tie in self.parent.spliceManager.getTies():
-        #         self.DrawSpliceIntervalTie(dc, tie) 
+        self.DrawSpliceIntervalPlot(dc, interval, startX, screenPoints, usScreenPoints, drawUnsmoothed, self.colorDict['foreground'])
 
         img_wid = self.GetSpliceAreaImageWidth()
         self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX - img_wid)        
 
-    def DrawSpliceIntervalPlot(self, dc, interval, startX, intervalSelected, screenPoints, usScreenPoints, drawUnsmoothed):
+    def DrawSpliceIntervalPlot(self, dc, interval, startX, screenPoints, usScreenPoints, drawUnsmoothed, drawColor=None):
         clip_width = self.Width - startX if self.showOutOfRangeData else self.layoutManager.plotWidth
         clip = wx.DCClipper(dc, wx.Rect(startX, self.startDepthPix - 20, clip_width, self.Height - (self.startDepthPix - 20)))
 
         if len(screenPoints) >= 2:
-            color = self.colorDict['spliceSel'] if intervalSelected else self.colorDict['splice']
-            lineWidth = 2 if intervalSelected else 1
+            lineWidth = 1
+            if drawColor:
+                color = drawColor
+            else:
+                intervalSelected = self.parent.spliceManager.isSelectedInterval(interval)
+                color = self.colorDict['spliceSel'] if intervalSelected else self.colorDict['splice']
+                if intervalSelected:
+                    lineWidth = 2
             dc.SetPen(wx.Pen(color, lineWidth))
             if len(screenPoints) >= 4:
                 dc.DrawLinesFromBuffer(screenPoints)
@@ -1934,11 +1931,11 @@ class DataCanvas(wxBufferedWindow):
             
         if drawUnsmoothed:
             if len(usScreenPoints) >= 2:
-                dc.SetPen(wx.Pen(wx.WHITE, 1))
+                dc.SetPen(wx.Pen(color, 1))
                 if len(usScreenPoints) >= 4:
                     dc.DrawLinesFromBuffer(usScreenPoints)
                 else:
-                    dc.SetBrush(wx.Brush(wx.WHITE))
+                    dc.SetBrush(wx.Brush(color))
                     dc.DrawCircle(usScreenPoints[0], usScreenPoints[1], radius=2)
             else:
                 print("Can't draw unsmoothed {} data over smoothed, it contains 0 points".format(interval.coreinfo.getName()))
