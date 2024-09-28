@@ -3973,7 +3973,7 @@ class DataCanvas(wxBufferedWindow):
                 w, h = bmp.GetWidth(), bmp.GetHeight()
                 reg = wx.Rect(x, y, w, h)
                 if reg.Contains(wx.Point(pos[0], pos[1])):
-                    print("grab scroll C")			 
+                    print("Begin composite scroll drag")
                     self.dragCompositeScroll = True
             elif key == "SpliceScroll":
                 bmp, x, y = data
@@ -4361,14 +4361,9 @@ class DataCanvas(wxBufferedWindow):
 
         if self.dragSpliceScroll:
             print(f"End drag splice scroll at mouse xpos {pos[0]}")
-
-            # clamp splice scroll position to left edge of splice area
-            splice_scroll_start = self.splicerX
-            splice_scroll_x = splice_scroll_start if pos[0] < splice_scroll_start else pos[0]
-
-            # splice_scroll_width
-
+            self.UpdateSpliceScroll(pos[0])
             self.dragSpliceScroll = False
+            self.UpdateDrawing()
             return
 
         if pos[0] >= self.splicerX:
@@ -4548,7 +4543,24 @@ class DataCanvas(wxBufferedWindow):
 
         scroll_width = scroll_width - scroll_start
         rate = old_div((scroll_x - scroll_start), (scroll_width * 1.0))
-        self.minScrollRange = int(self.parent.HScrollMax * rate) 
+        self.minScrollRange = int(self.parent.HScrollMax * rate)
+
+    def UpdateSpliceScroll(self, mousePosX):
+        # clamp splice scroll position to left edge of splice area
+        splice_scroll_start = self.splicerX
+        splice_scroll_x = splice_scroll_start if mousePosX < splice_scroll_start else mousePosX
+
+        bmp, x, y = self.DrawData["SpliceScroll"]
+
+        splice_scroll_width = self.Width - bmp.GetWidth()
+        if splice_scroll_x > splice_scroll_width:
+            splice_scroll_x = splice_scroll_width
+
+        self.DrawData["SpliceScroll"] = (bmp, splice_scroll_x, y)
+
+        splice_scroll_width -= splice_scroll_start
+        splice_scroll_rate = old_div((splice_scroll_x - splice_scroll_start), splice_scroll_width)
+        self.minSpliceScrollRange = int(self.parent.HScrollMax * splice_scroll_rate)
 
     def OnUpdateTie(self, tieType):
         tieData = None
@@ -4641,7 +4653,8 @@ class DataCanvas(wxBufferedWindow):
             return
         
         if self.dragSpliceScroll:
-            print(f"Dragging splice scroll thumb, mouse xpos = {pos[0]}")
+            self.UpdateSpliceScroll(pos[0])
+            self.UpdateDrawing()
             return
 
         self.OnMainMotion(event)
@@ -4766,16 +4779,25 @@ class DataCanvas(wxBufferedWindow):
         if self.selectScroll == 1 and self.grabScrollA == 0 and not self.dragCompositeScroll:
             if pos[0] >= 180 and pos[0] <= (self.Width - 100):
                 scroll_widthA = self.splicerX - (self.startDepthPix * 2.3) - self.compositeX 
-                scroll_widthB = self.Width - (self.startDepthPix * 1.6) - self.splicerX 
-                temp_splicex = self.splicerX
+                originalSplicerX = self.splicerX
                 self.splicerX = pos[0]
 
+                # update position of scrollbar thumbs to reflect changing scroll area widths
                 bmp, x, y = self.DrawData["CompositeScroll"]
                 scroll_rate = old_div((x - self.compositeX), (scroll_widthA * 1.0))
                 scroll_widthA = self.splicerX - (self.startDepthPix * 2.3) - self.compositeX 
                 scroll_x = scroll_widthA * scroll_rate
                 scroll_x += self.compositeX
                 self.DrawData["CompositeScroll"] = (bmp, scroll_x, y)
+
+                bmp, x, y = self.DrawData["SpliceScroll"]
+                original_splice_width = self.Width - bmp.GetWidth() - originalSplicerX
+                new_splice_width = self.Width - bmp.GetWidth() - self.splicerX
+                relative_thumb_pos = (x - originalSplicerX) / original_splice_width
+                new_thumb_pos = int(relative_thumb_pos * new_splice_width)
+                splice_scroll_x = self.splicerX + new_thumb_pos
+
+                self.DrawData["SpliceScroll"] = (bmp, splice_scroll_x, y)
 
         # store data needed to draw "ghost" of core being dragged:
         # x is the current mouse x, y is the offset between current and original mouse y
