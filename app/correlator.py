@@ -3026,10 +3026,15 @@ class MainFrame(wx.Frame):
         bmp = img.ConvertToBitmap()			
         DrawData["Skin"] = (bmp, -self.Window.ScrollSize, scroll_start)
 
-        img =load_image_resource("images/vscrollbutton1.jpg")
+        img = load_image_resource("images/vscrollbutton1.jpg")
         img.Rescale(img.GetWidth(), self.Window.ScrollSize)
         bmp = img.ConvertToBitmap()
         DrawData["HScroll"] = (bmp, self.Window.compositeX, -self.Window.ScrollSize)
+
+        splice_scroll_thumb = load_image_resource("images/vscrollbutton1.jpg")
+        splice_scroll_thumb.Rescale(splice_scroll_thumb.GetWidth(), self.Window.ScrollSize)
+        sst_bmp = splice_scroll_thumb.ConvertToBitmap()
+        DrawData["SpliceScroll"] = (sst_bmp, self.Window.splicerX, -self.Window.ScrollSize)
 
         self.half = -self.Window.ScrollSize - 5
 

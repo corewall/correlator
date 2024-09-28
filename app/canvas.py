@@ -371,6 +371,7 @@ class DataCanvas(wxBufferedWindow):
         self.WidthsControl = []
         self.HoleColumns = [] # list of HoleColumn objects to potentially draw
         self.minScrollRange = 0
+        self.minSpliceScrollRange = 0
         self.smooth_id = 0
         self.selectedType = ""
         self.ScrollSize = 15
@@ -620,7 +621,8 @@ class DataCanvas(wxBufferedWindow):
         self.currentStartX = 0
         self.grabScrollA = 0 
         self.grabScrollB = 0 
-        self.grabScrollC = 0 
+        self.dragCompositeScroll = False
+        self.dragSpliceScroll = False
         self.Lock = False
         self.draw_count = 0
 
@@ -739,6 +741,7 @@ class DataCanvas(wxBufferedWindow):
         self.saganDepth = -1
         self.ShiftTieList = []
         self.minScrollRange = 0
+        self.minSpliceScrollRange = 0
         self.selectedHoleType = "" 
         self.selectedStartX = 0 
         self.selectedCount = 0
@@ -2489,6 +2492,9 @@ class DataCanvas(wxBufferedWindow):
             elif key == "HScroll": # draw horizontal scrollbar thumb
                 bmp, x, y = data
                 dc.DrawBitmap(bmp, x, self.Height + y, 1)
+            elif key == "SpliceScroll": # draw splice scrollbar thumb
+                bmp, x, y = data
+                dc.DrawBitmap(bmp, x, self.Height + y, 1)
             elif key == "CoreImage":
                 bmp, x, y = data
                 dc.DrawBitmap(bmp, x, y, 1)
@@ -3952,14 +3958,14 @@ class DataCanvas(wxBufferedWindow):
                     # print("grab scroll A MovableInterface")
                     self.grabScrollA = 1	
                     self.UpdateDrawing()
-            elif key == "MovableSkin" and self.spliceWindowOn == 1:
+            elif key == "MovableSkin" and self.spliceWindowOn == 1: # dragging comp/splice separating scrollbar
                 bmp, x, y = data
                 x = x + self.splicerX - 40
                 w, h = bmp.GetWidth(), bmp.GetHeight()
                 w = self.ScrollSize
                 reg = wx.Rect(x, pos[1], w, h)
                 if reg.Contains(wx.Point(pos[0], pos[1])):
-                    print("selectScroll MovableSkin")
+                    print(f"selectScroll MovableSkin new position {x}")
                     self.selectScroll = 1
             elif key == "HScroll":
                 bmp, x, y = data
@@ -3968,7 +3974,16 @@ class DataCanvas(wxBufferedWindow):
                 reg = wx.Rect(x, y, w, h)
                 if reg.Contains(wx.Point(pos[0], pos[1])):
                     print("grab scroll C")			 
-                    self.grabScrollC = 1
+                    self.dragCompositeScroll = True
+            elif key == "SpliceScroll":
+                bmp, x, y = data
+                y = self.Height + y
+                w, h = bmp.GetWidth(), bmp.GetHeight()
+                reg = wx.Rect(x, y, w, h)
+                if reg.Contains(wx.Point(pos[0], pos[1])):
+                    print("Began splice scroll drag")
+                    self.dragSpliceScroll = True
+
         self.OnMainLMouse(event)
 
     def OnMainLMouse(self, event):
@@ -4029,7 +4044,7 @@ class DataCanvas(wxBufferedWindow):
 
         # Drag core from composite to splice area to add to splice.
         # Disable while scrolling or when there are active composite ties.
-        if len(self.TieData) == 0 and self.selectScroll == 0 and self.grabScrollA == 0 and self.grabScrollC == 0:
+        if len(self.TieData) == 0 and self.selectScroll == 0 and self.grabScrollA == 0 and not self.dragCompositeScroll:
             if pos[0] <= self.splicerX:
                 for area in self.DrawData["CoreArea"]:
                     coreInfo, rect, hole_idx = area
@@ -4037,7 +4052,7 @@ class DataCanvas(wxBufferedWindow):
                         self.dragCore = coreInfo.core
 
         # Toggle between fixed depth line and following mouse cursor
-        if self.showDepthLine and self.selectScroll == 0 and self.grabScrollA == 0 and self.grabScrollC == 0:
+        if self.showDepthLine and self.selectScroll == 0 and self.grabScrollA == 0 and not self.dragCompositeScroll:
             if self.depthLinePos is None:
                 self.depthLinePos = self.getDepth(pos[1])
             else:
@@ -4312,7 +4327,7 @@ class DataCanvas(wxBufferedWindow):
             self.UpdateDrawing()
             return
 
-         # scrollB is unused - was related to the now-removed ability to independently
+        # scrollB is unused - was related to the now-removed ability to independently
         # scroll composite and splice areas
         if self.grabScrollB == 1:
             scroll_start = self.startDepthPix * 0.7
@@ -4338,27 +4353,23 @@ class DataCanvas(wxBufferedWindow):
             return 
 
         # scrollC is the horizontal scrollbar at the bottom of the composite area
-        if self.grabScrollC == 1:
-            scroll_start = self.compositeX
-            scroll_x = pos[0]
-            if scroll_x < scroll_start:
-                scroll_x = scroll_start
-
-            # brgtodo 5/12/2014 unclear how startDepth is related to horizontal positioning
-            scroll_width = self.splicerX - (self.startDepthPix * 2.3)
-            if scroll_x > scroll_width:
-                scroll_x = scroll_width
-
-            bmp, x, y = self.DrawData["HScroll"]
-            self.DrawData["HScroll"] = (bmp, scroll_x, y)
-
-            scroll_width = scroll_width - scroll_start 
-            rate = old_div((scroll_x - scroll_start), (scroll_width * 1.0))
-            self.minScrollRange = int(self.parent.HScrollMax * rate)
-
-            self.grabScrollC = 0
+        if self.dragCompositeScroll:
+            self.UpdateCompositeScroll(pos[0])
+            self.dragCompositeScroll = False
             self.UpdateDrawing()
-            return 
+            return
+
+        if self.dragSpliceScroll:
+            print(f"End drag splice scroll at mouse xpos {pos[0]}")
+
+            # clamp splice scroll position to left edge of splice area
+            splice_scroll_start = self.splicerX
+            splice_scroll_x = splice_scroll_start if pos[0] < splice_scroll_start else pos[0]
+
+            # splice_scroll_width
+
+            self.dragSpliceScroll = False
+            return
 
         if pos[0] >= self.splicerX:
             if self.HasDragCore(): # dragged core was dropped in splice area, add to splice
@@ -4465,7 +4476,8 @@ class DataCanvas(wxBufferedWindow):
         self.mouseY = 0
         self.grabScrollA = 0
         self.grabScrollB = 0
-        self.grabScrollC = 0
+        self.dragCompositeScroll = False
+        self.dragSpliceScroll = False
         self.UpdateDrawing()
 
     # scrollA = vertical scrolling of the CoreArea (leftmost) region *and* the splice
@@ -4506,6 +4518,37 @@ class DataCanvas(wxBufferedWindow):
             self.DrawData["Skin"] = (bmp, x, scroll_y)
 
             self.SPrulerStartDepth = int(self.parent.ScrollMax * rate * 100.0) / 100.0
+
+    def UpdateCompositeScroll(self, mousePosX):
+        scroll_start = self.compositeX
+        scroll_x = mousePosX
+        if scroll_x < scroll_start:
+            scroll_x = scroll_start
+
+        # brg 9/28/2024:
+        # After some experimentation, I have a better guess as to what's happening here.
+        #
+        # TL;DR: self.startDepthPix * 2.3 = 149.5. It seems to be an approximation of the horizontal
+        # distance (in pixels) from the left edge of the horizontal scroll thumb to the start of the splice
+        # plot area, when the thumb is at its rightmost limit in the scrollbar.
+        #
+        # startDepthPix was related to font size back in the day, but we've removed
+        # the ability to adjust font size so startDepthPix will always be 65.0.
+        # It is the vertical distance from the top of the client area to depth 0m in the plot area
+        # if scrollbar A (depth scrolling) is at its upper limit. Because it's related to font size,
+        # it sort of makes sense that startDepthPix also has horizontal meaning, as growing fonts would
+        # also make the interface (e.g. depth scale ruler) wider. I remain utterly mystified by the 2.3
+        # fudge factor's origin, but it works well enough.
+        scroll_width = self.splicerX - (self.startDepthPix * 2.3) 
+        if scroll_x > scroll_width:
+            scroll_x = scroll_width
+
+        bmp, x, y = self.DrawData["HScroll"]
+        self.DrawData["HScroll"] = (bmp, scroll_x, y)
+
+        scroll_width = scroll_width - scroll_start
+        rate = old_div((scroll_x - scroll_start), (scroll_width * 1.0))
+        self.minScrollRange = int(self.parent.HScrollMax * rate) 
 
     def OnUpdateTie(self, tieType):
         tieData = None
@@ -4592,24 +4635,14 @@ class DataCanvas(wxBufferedWindow):
             self.UpdateDrawing()
             return 
 
-        if self.grabScrollC == 1:
-            scroll_start = self.compositeX
-            scroll_x = pos[0] 
-            if scroll_x < scroll_start:
-                scroll_x = scroll_start
-            scroll_width = self.splicerX - (self.startDepthPix * 2.3) 
-            if scroll_x > scroll_width:
-                scroll_x = scroll_width
-
-            bmp, x, y = self.DrawData["HScroll"]
-            self.DrawData["HScroll"] = (bmp, scroll_x, y)
-
-            scroll_width = scroll_width - scroll_start
-            rate = old_div((scroll_x - scroll_start), (scroll_width * 1.0))
-            self.minScrollRange = int(self.parent.HScrollMax * rate)
-
+        if self.dragCompositeScroll:
+            self.UpdateCompositeScroll(pos[0])
             self.UpdateDrawing()
-            return 
+            return
+        
+        if self.dragSpliceScroll:
+            print(f"Dragging splice scroll thumb, mouse xpos = {pos[0]}")
+            return
 
         self.OnMainMotion(event)
 
@@ -4729,7 +4762,9 @@ class DataCanvas(wxBufferedWindow):
             self.OnDrawGuide()
             got = 1
 
-        if self.selectScroll == 1 and self.grabScrollA == 0 and self.grabScrollC == 0:
+        # Dragging composite/splice area divider scrollbar?
+        if self.selectScroll == 1 and self.grabScrollA == 0 and not self.dragCompositeScroll:
+            print(f"Moving composite/splice divider scrollbar, mouse xpos = {pos[0]}")
             if pos[0] >= 180 and pos[0] <= (self.Width - 100):
                 scroll_widthA = self.splicerX - (self.startDepthPix * 2.3) - self.compositeX 
                 scroll_widthB = self.Width - (self.startDepthPix * 1.6) - self.splicerX 
