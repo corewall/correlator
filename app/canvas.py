@@ -322,8 +322,11 @@ class DataCanvas(wxBufferedWindow):
         stdFontSize = 9 if platform_name[0] == "Windows" else 12 # 12 point too large on Windows, just right on Mac
         self.stdFont = wx.Font(stdFontSize, wx.SWISS, wx.NORMAL, wx.BOLD)
         self.ageFont = wx.Font(9, wx.SWISS, wx.NORMAL, wx.BOLD) # used only for drawing label in age depth model points
-        holeInfoFontSize = 8 if platform_name[0] == "Windows" else 11
-        self.holeInfoFont = wx.Font(holeInfoFontSize, wx.SWISS, wx.NORMAL, wx.BOLD) # used for info above each hole plot
+        
+        self.headerY = 5 # vertical position for first line of a header
+        headerFontSize = 8 if platform_name[0] == "Windows" else 11
+        self.headerFont = wx.Font(headerFontSize, wx.SWISS, wx.NORMAL, wx.BOLD) # used for info above each hole plot
+        self.headerLineSpacing = 13
                     
         self.parent = parent
         self.DrawData = {}
@@ -1361,7 +1364,7 @@ class DataCanvas(wxBufferedWindow):
         dc.SetPen(wx.Pen(self.colorDict['foreground'], 1))
         dc.SetTextBackground(self.colorDict['background'])
         dc.SetTextForeground(self.colorDict['foreground'])
-        dc.SetFont(self.holeInfoFont)
+        dc.SetFont(self.headerFont)
 
         rulerUnitsStr = " (" + self.GetRulerUnitsStr() + ")"
         if self.timeseries_flag == False:
@@ -1470,19 +1473,16 @@ class DataCanvas(wxBufferedWindow):
         dc.SetPen(wx.Pen(self.colorDict['foreground'], 1)) # restore pen
 
     # Draw hole info above image/plot area. Three lines: hole ID, hole datatype, and hole data range.
-    # Uses self.holeInfoFont, which is slightly smaller than self.stdFont to accommodate three lines
+    # Uses self.headerFont, which is slightly smaller than self.stdFont to accommodate three lines
     # in available space.
-    def DrawHoleHeader(self, dc, startX, holeColumn, clipRegion):
-        dc.SetFont(self.holeInfoFont)
-        holeInfo_x = startX
-        holeInfo_y = 3
-        hiLineSpacing = 13 # fudge factor, looks good on Win and Mac
+    def DrawHoleHeader(self, dc, headerX, holeColumn, clipRegion):
+        dc.SetFont(self.headerFont)
         clip = wx.DCClipper(dc, clipRegion)
-        dc.DrawText(holeColumn.fullHoleName(), holeInfo_x, holeInfo_y)
-        dc.DrawText(holeColumn.datatype(), holeInfo_x, holeInfo_y + hiLineSpacing) # hole datatype
+        dc.DrawText(holeColumn.fullHoleName(), headerX, self.headerY)
+        dc.DrawText(holeColumn.datatype(), headerX, self.headerY + self.headerLineSpacing) # hole datatype
         if holeColumn.hasPlot():
             rangeStr = "Range: {} : {}".format(str(holeColumn.minData()), str(holeColumn.maxData()))
-            dc.DrawText(rangeStr, holeInfo_x, holeInfo_y + hiLineSpacing * 2) # range
+            dc.DrawText(rangeStr, headerX, self.headerY +  self.headerLineSpacing * 2) # range
         dc.SetFont(self.stdFont) # reset to standard font
 
     def DrawHoleColumn(self, dc, holeColumn):
@@ -1991,13 +1991,14 @@ class DataCanvas(wxBufferedWindow):
     
     # draw info header above splice hole column
     def DrawSpliceHeader(self, dc):
-        dc.SetFont(self.holeInfoFont)
+        dc.SetFont(self.headerFont)
         firstint = self.parent.spliceManager.getIntervalAtIndex(0)
         rangeMax = self.splicerX + self.layoutManager.plotLeftMargin - self.minSpliceScrollRange
         dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
         dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height)))
-        dc.DrawText("Leg: " + firstint.coreinfo.site + " Site: " + firstint.coreinfo.leg + " Hole: Splice", rangeMax, 5)
-        dc.DrawText("Datatypes: " + ','.join(self.parent.spliceManager.getDataTypes()), rangeMax, 25)
+        dc.DrawText(f"{firstint.coreinfo.site}-{firstint.coreinfo.leg} Splice", rangeMax, self.headerY)
+        dc.DrawText("Datatypes used:", rangeMax, self.headerY + self.headerLineSpacing)
+        dc.DrawText(','.join(self.parent.spliceManager.getDataTypes()), rangeMax, self.headerY + self.headerLineSpacing * 2)
         dc.SetFont(self.stdFont) # restore standard font
 
     def DrawSplice(self, dc, hole, smoothed): # TODO: hole and smoothed are always NONE, why pass them at all?
@@ -2038,10 +2039,11 @@ class DataCanvas(wxBufferedWindow):
             dc.DrawText("Drag a core from the left to start a splice.", self.splicerX + 20, ypos + 20)
         
     def DrawAlternateSpliceHeader(self, dc, altSpliceX, datatype):
-        dc.SetFont(self.holeInfoFont)
+        dc.SetFont(self.headerFont)
         dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
         dc.DrawLines(((altSpliceX, self.startDepthPix - 20), (altSpliceX, self.Height)))
-        dc.DrawText(datatype, altSpliceX, 5)
+        dc.DrawText("Splice", altSpliceX, self.headerY)
+        dc.DrawText(datatype, altSpliceX, self.headerY + self.headerLineSpacing)
         dc.SetFont(self.stdFont) # restore standard font
 
     def _getSpliceDatatypesToDraw(self):
@@ -2070,7 +2072,7 @@ class DataCanvas(wxBufferedWindow):
             drawing_start = self.SPrulerStartDepth - 5.0
             for si in self.parent.spliceManager.splice.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
                 self.DrawSpliceIntervalWithDatatype(dc, si, datatype, drawing_start, altSpliceX, smoothed)
-            self.DrawAlternateSpliceHeader(dc, altSpliceX, f"{datatype} splice")
+            self.DrawAlternateSpliceHeader(dc, altSpliceX, datatype)
 
             altSpliceX += self.layoutManager.plotWidth
             
