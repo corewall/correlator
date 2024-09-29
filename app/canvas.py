@@ -3638,8 +3638,8 @@ class DataCanvas(wxBufferedWindow):
                 self.minScrollRange = 0
         elif keyid == wx.WXK_RIGHT:
             self.minScrollRange = self.minScrollRange + 15 
-            if self.minScrollRange > self.parent.HScrollMax:
-                self.minScrollRange = self.parent.HScrollMax 
+            if self.minScrollRange > self.parent.CompositeScrollMax:
+                self.minScrollRange = self.parent.CompositeScrollMax 
         else:
             eventCaught = False
             event.Skip()
@@ -4543,7 +4543,7 @@ class DataCanvas(wxBufferedWindow):
 
         scroll_width = scroll_width - scroll_start
         rate = old_div((scroll_x - scroll_start), (scroll_width * 1.0))
-        self.minScrollRange = int(self.parent.HScrollMax * rate)
+        self.minScrollRange = int(self.parent.CompositeScrollMax * rate)
 
     def UpdateSpliceScroll(self, mousePosX):
         # clamp splice scroll position to left edge of splice area

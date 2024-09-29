@@ -91,10 +91,10 @@ class MainFrame(wx.Frame):
 
         self.RawData = ""
         self.SmoothData = ""
-        self.CoreStart =0
-        self.CoreLast =0
-        self.ScrollMax =0
-        self.HScrollMax =0
+        self.CoreStart = 0
+        self.CoreLast = 0
+        self.ScrollMax = 0
+        self.CompositeScrollMax = 0
         self.CoreNo = 0
         self.depthStep = 0.11
         self.minDepthStep = 0.11
@@ -125,7 +125,7 @@ class MainFrame(wx.Frame):
         self.showReportPanel = 1
         self.spliceDepthA = None
         self.spliceDepthB = None
-        self.fulls =0
+        self.fulls = 0
         self.selectedColumn = 0
         self.compositePanel = "" 
         self.splicePanel = ""
@@ -2281,7 +2281,7 @@ class MainFrame(wx.Frame):
             #	self.min = 999
             #	self.max = -999
 
-            self.HScrollMax = 30.0 + (len(self.Window.HoleData) * self.Window.holeWidth)
+            self.CompositeScrollMax = 30.0 + (len(self.Window.HoleData) * self.Window.holeWidth)
 
     # 1/29/2014 brgtodo: unreachable statements
     def UpdateMinMax(self):
