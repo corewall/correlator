@@ -2283,8 +2283,6 @@ class MainFrame(wx.Frame):
             #	self.min = 999
             #	self.max = -999
 
-            self.CompositeScrollMax = 30.0 + (len(self.Window.HoleData) * self.Window.holeWidth)
-
     # 1/29/2014 brgtodo: unreachable statements
     def UpdateMinMax(self):
         #pass

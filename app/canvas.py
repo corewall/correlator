@@ -2587,6 +2587,7 @@ class DataCanvas(wxBufferedWindow):
         self.layoutManager.layout(self.HoleData, self.SmoothData, self.HolesWithImages, columnSpaceX, self.layoutManager.plotLeftMargin)
         self.HoleColumns = self.layoutManager.holeColumns
         self.WidthsControl = self.layoutManager.holePositions
+        self.parent.CompositeScrollMax = self.layoutManager.getLayoutWidth()
 
     # Disable controls in CompositePanel and FilterPanel that require loaded data to
     # function and aren't otherwise en/disabled by their respective panel's logic (e.g.

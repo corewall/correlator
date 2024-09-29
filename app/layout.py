@@ -217,6 +217,9 @@ class LayoutManager(object):
             return False
         else:
             return self.visibleDatatypes[ImageDatatypeStr]
+        
+    def getLayoutWidth(self):
+        return sum([hc.width() for hc in self.holeColumns])
 
     def _holeHasImages(self, holeName):
         return holeName in self.holesWithImages
