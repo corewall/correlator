@@ -1118,6 +1118,7 @@ class DataCanvas(wxBufferedWindow):
         #self.logPanel.Hide()
         #self.helpPanel.Hide()
 
+        originalWidth = self.Width
         if note_id == 0:
             if self.CLOSEFLAG == 0:
                 self.parent.showCompositePanel = 0 
@@ -1133,6 +1134,7 @@ class DataCanvas(wxBufferedWindow):
                 self._Buffer = wx.Bitmap(self.Width, self.Height)
                 if self.spliceWindowOn == 0:
                     self.splicerX = self.Width + 45
+                self.UpdateSpliceScrollThumb(self.splicerX, originalWidth)
                 self.UpdateDrawing()
         else:
             if self.CLOSEFLAG == 1:
@@ -1145,6 +1147,7 @@ class DataCanvas(wxBufferedWindow):
                 self._Buffer = wx.Bitmap(self.Width, self.Height)
                 if self.spliceWindowOn == 0:
                     self.splicerX = self.Width + 45
+                self.UpdateSpliceScrollThumb(self.splicerX, originalWidth)
                 self.UpdateDrawing()
 
         if note_id == 1:
@@ -2492,7 +2495,7 @@ class DataCanvas(wxBufferedWindow):
             elif key == "CompositeScroll": # draw horizontal scrollbar thumb
                 bmp, x, y = data
                 dc.DrawBitmap(bmp, x, self.Height + y, 1)
-            elif key == "SpliceScroll": # draw splice scrollbar thumb
+            elif key == "SpliceScroll" and self.spliceWindowOn: # draw splice scrollbar thumb
                 bmp, x, y = data
                 dc.DrawBitmap(bmp, x, self.Height + y, 1)
             elif key == "CoreImage":
@@ -4560,7 +4563,20 @@ class DataCanvas(wxBufferedWindow):
 
         splice_scroll_width -= splice_scroll_start
         splice_scroll_rate = old_div((splice_scroll_x - splice_scroll_start), splice_scroll_width)
-        self.minSpliceScrollRange = int(self.parent.HScrollMax * splice_scroll_rate)
+        self.minSpliceScrollRange = int(self.parent.CompositeScrollMax * splice_scroll_rate)
+
+    def UpdateSpliceScrollThumb(self, originalSplicerX, originalWidth):
+        # Due to Correlator's horrific spaghetti initialization process, this method
+        # can sometimes be called before DrawData is init'd, guard against errors.
+        if "SpliceScroll" not in self.DrawData:
+            return
+        bmp, x, y = self.DrawData["SpliceScroll"]
+        original_splice_width = originalWidth - bmp.GetWidth() - originalSplicerX
+        new_splice_width = self.Width - bmp.GetWidth() - self.splicerX
+        relative_thumb_pos = (x - originalSplicerX) / original_splice_width
+        new_thumb_pos = int(relative_thumb_pos * new_splice_width)
+        splice_scroll_x = self.splicerX + new_thumb_pos
+        self.DrawData["SpliceScroll"] = (bmp, splice_scroll_x, y)
 
     def OnUpdateTie(self, tieType):
         tieData = None
@@ -4790,14 +4806,7 @@ class DataCanvas(wxBufferedWindow):
                 scroll_x += self.compositeX
                 self.DrawData["CompositeScroll"] = (bmp, scroll_x, y)
 
-                bmp, x, y = self.DrawData["SpliceScroll"]
-                original_splice_width = self.Width - bmp.GetWidth() - originalSplicerX
-                new_splice_width = self.Width - bmp.GetWidth() - self.splicerX
-                relative_thumb_pos = (x - originalSplicerX) / original_splice_width
-                new_thumb_pos = int(relative_thumb_pos * new_splice_width)
-                splice_scroll_x = self.splicerX + new_thumb_pos
-
-                self.DrawData["SpliceScroll"] = (bmp, splice_scroll_x, y)
+                self.UpdateSpliceScrollThumb(originalSplicerX, self.Width)
 
         # store data needed to draw "ghost" of core being dragged:
         # x is the current mouse x, y is the offset between current and original mouse y
