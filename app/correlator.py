@@ -95,6 +95,7 @@ class MainFrame(wx.Frame):
         self.CoreLast = 0
         self.ScrollMax = 0
         self.CompositeScrollMax = 0
+        self.SpliceScrollMax = 0
         self.CoreNo = 0
         self.depthStep = 0.11
         self.minDepthStep = 0.11

@@ -1816,7 +1816,7 @@ class DataCanvas(wxBufferedWindow):
         dc.SetPen(fgPen)
         dc.SetBrush(fgBrush)
         img_wid = self.GetSpliceAreaImageWidth()
-        startx = self.splicerX + self.layoutManager.plotLeftMargin + img_wid # beginning of splice plot area
+        startx = self.splicerX + self.layoutManager.plotLeftMargin + img_wid - self.minSpliceScrollRange # beginning of splice plot area
         endx = startx + (self.layoutManager.plotWidth * 2) + len(self._getSpliceDatatypesToDraw()) * self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin
         ycoord = self.getSpliceCoord(tie.depth())
         circlex = startx + (old_div(self.layoutManager.plotWidth, 2))
@@ -1993,7 +1993,7 @@ class DataCanvas(wxBufferedWindow):
     def DrawSpliceHeader(self, dc):
         dc.SetFont(self.holeInfoFont)
         firstint = self.parent.spliceManager.getIntervalAtIndex(0)
-        rangeMax = self.splicerX + self.layoutManager.plotLeftMargin
+        rangeMax = self.splicerX + self.layoutManager.plotLeftMargin - self.minSpliceScrollRange
         dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
         dc.DrawLines(((rangeMax, self.startDepthPix - 20), (rangeMax, self.Height)))
         dc.DrawText("Leg: " + firstint.coreinfo.site + " Site: " + firstint.coreinfo.leg + " Hole: Splice", rangeMax, 5)
@@ -2001,20 +2001,22 @@ class DataCanvas(wxBufferedWindow):
         dc.SetFont(self.stdFont) # restore standard font
 
     def DrawSplice(self, dc, hole, smoothed): # TODO: hole and smoothed are always NONE, why pass them at all?
-        # vertical dotted line separating splice from splice guide area
-        img_wid = self.GetSpliceAreaImageWidth()
-        spliceholewidth = self.splicerX + img_wid + self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin
-        dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
-        dc.DrawLines(((spliceholewidth, self.startDepthPix - 20), (spliceholewidth, self.Height)))
+        clip = wx.DCClipper(dc, wx.Region(self.splicerX, 0, self.Width - self.splicerX, self.Height))
         
         if self.parent.spliceManager.count() > 0:
+            # vertical dotted line separating splice from splice guide area
+            img_wid = self.GetSpliceAreaImageWidth()
+            spliceholewidth = self.splicerX + img_wid + self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin - self.minSpliceScrollRange
+            dc.SetPen(wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT))
+            dc.DrawLines(((spliceholewidth, self.startDepthPix - 20), (spliceholewidth, self.Height)))
+
             rangemin, rangemax = self._GetSpliceRange()
             self._UpdateSpliceRange(rangemin, rangemax)
             self._SetSpliceRangeCoef(smoothed)
             self.DrawSpliceHeader(dc)
             
             drawing_start = self.SPrulerStartDepth - 5.0
-            startX = self.splicerX + self.layoutManager.plotLeftMargin + img_wid
+            startX = self.splicerX + self.layoutManager.plotLeftMargin + img_wid - self.minSpliceScrollRange
             clip_y = self.startDepthPix - 20
             clip_height = self.Height - clip_y
             for si in self.parent.spliceManager.getIntervalsInRange(drawing_start, self.SPrulerEndDepth):
@@ -2027,6 +2029,10 @@ class DataCanvas(wxBufferedWindow):
                 # dc.DrawLine(selected_x + self.layoutManager.plotWidth, clip_y, selected_x + self.layoutManager.plotWidth, clip_y + clip_height)
                 guide_clip_rect = wx.Rect(x=selected_x, y=clip_y, width=self.layoutManager.plotWidth, height=clip_height)
                 self.DrawSelectedSpliceGuide(dc, self.parent.spliceManager.getSelectedInterval(), drawing_start, startX, guide_clip_rect)
+
+            spliceAreaWidth = img_wid + ((self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin) * 2)
+            spliceAreaWidth += len(self._getSpliceDatatypesToDraw()) * self.layoutManager.plotWidth
+            self.parent.SpliceScrollMax = spliceAreaWidth
         else: # draw help text
             ypos = self.getSpliceCoord(self.SPrulerStartDepth)
             dc.DrawText("Drag a core from the left to start a splice.", self.splicerX + 20, ypos + 20)
@@ -2049,8 +2055,9 @@ class DataCanvas(wxBufferedWindow):
         if self.parent.spliceManager.count() == 0:
             return
 
+        clip = wx.DCClipper(dc, wx.Region(self.splicerX, 0, self.Width - self.splicerX, self.Height))
         img_wid = self.GetSpliceAreaImageWidth()
-        altSpliceX = self.splicerX + img_wid + ((self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin) * 2)
+        altSpliceX = self.splicerX + img_wid + ((self.layoutManager.plotWidth + self.layoutManager.plotLeftMargin) * 2) - self.minSpliceScrollRange
 
         for datatype in self._getSpliceDatatypesToDraw():
             # vertical dotted line separating splice from next splice hole (or core to be spliced)
@@ -2084,7 +2091,7 @@ class DataCanvas(wxBufferedWindow):
         for pt in self.getCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type):
             if pt[0] >= drawing_start and pt[0] <= self.SPrulerEndDepth:
                 y = self.startDepthPix + (pt[0] - self.SPrulerStartDepth) * self.pixPerMeter
-                spliceholewidth = self.splicerX + self.layoutManager.plotLeftMargin + img_wid + self.layoutManager.plotWidth
+                spliceholewidth = self.splicerX + self.layoutManager.plotLeftMargin + img_wid + self.layoutManager.plotWidth - self.minSpliceScrollRange
                 x = (pt[1] - self.minRange) * self.coefRangeSplice + spliceholewidth
                 screenpoints.append(numpy.intc(x))
                 screenpoints.append(numpy.intc(y))
@@ -3989,6 +3996,12 @@ class DataCanvas(wxBufferedWindow):
 
         self.OnMainLMouse(event)
 
+    def _clickInSpliceIntervalArea(self, clickPos):
+        horzRangeMax = self.splicerX + self.GetSpliceAreaImageWidth() + (self.layoutManager.plotLeftMargin * 2) + self.layoutManager.plotWidth
+        inHorzRange = clickPos[0] >= self.splicerX and clickPos[0] < horzRangeMax
+        inVertRange = clickPos[1] >= self.startDepthPix and clickPos[1] < self.Height - self.ScrollSize
+        return inHorzRange and inVertRange
+
     def OnMainLMouse(self, event):
         # check left or right
         pos = event.GetPosition().Get()
@@ -4017,7 +4030,7 @@ class DataCanvas(wxBufferedWindow):
         # check for click on SpliceIntervalTie - is user starting to drag?
         img_wid = self.GetSpliceAreaImageWidth()
         for siTie in self.parent.spliceManager.getTies():
-            basex = self.splicerX + self.layoutManager.plotLeftMargin + img_wid + (old_div(self.layoutManager.plotWidth, 2))
+            basex = self.splicerX + self.layoutManager.plotLeftMargin + img_wid + (old_div(self.layoutManager.plotWidth, 2)) - self.minSpliceScrollRange
             basey = self.getSpliceCoord(siTie.depth())
             rect = wx.Rect(basex - 8, basey - 8, 16, 16)
             if rect.Contains(wx.Point(pos[0], pos[1])):
@@ -4026,7 +4039,7 @@ class DataCanvas(wxBufferedWindow):
                 return
         
         # select SpliceInterval at click depth
-        if pos[0] >= self.splicerX and pos[0] < self.splicerX + img_wid + (self.layoutManager.plotLeftMargin * 2) + self.layoutManager.plotWidth:
+        if self._clickInSpliceIntervalArea(pos):
             depth = self.getSpliceDepth(pos[1])
             if not self.parent.spliceManager.select(depth):
                 self.parent.OnShowMessage("Error", self.parent.spliceManager.getErrorMsg(), 1)
@@ -4562,8 +4575,8 @@ class DataCanvas(wxBufferedWindow):
         self.DrawData["SpliceScroll"] = (bmp, splice_scroll_x, y)
 
         splice_scroll_width -= splice_scroll_start
-        splice_scroll_rate = old_div((splice_scroll_x - splice_scroll_start), splice_scroll_width)
-        self.minSpliceScrollRange = int(self.parent.CompositeScrollMax * splice_scroll_rate)
+        splice_scroll_rate = old_div((splice_scroll_x - splice_scroll_start), splice_scroll_width * 1.0)
+        self.minSpliceScrollRange = int(self.parent.SpliceScrollMax * splice_scroll_rate)
 
     def InitSpliceScrollThumbPosition(self):
         if "SpliceScroll" not in self.DrawData:
