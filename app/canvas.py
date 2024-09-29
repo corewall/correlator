@@ -3976,7 +3976,6 @@ class DataCanvas(wxBufferedWindow):
                 w = self.ScrollSize
                 reg = wx.Rect(x, pos[1], w, h)
                 if reg.Contains(wx.Point(pos[0], pos[1])):
-                    print(f"selectScroll MovableSkin new position {x}")
                     self.selectScroll = 1
             elif key == "CompositeScroll":
                 bmp, x, y = data
@@ -3984,7 +3983,6 @@ class DataCanvas(wxBufferedWindow):
                 w, h = bmp.GetWidth(), bmp.GetHeight()
                 reg = wx.Rect(x, y, w, h)
                 if reg.Contains(wx.Point(pos[0], pos[1])):
-                    print("Begin composite scroll drag")
                     self.dragCompositeScroll = True
             elif key == "SpliceScroll":
                 bmp, x, y = data
@@ -3992,7 +3990,6 @@ class DataCanvas(wxBufferedWindow):
                 w, h = bmp.GetWidth(), bmp.GetHeight()
                 reg = wx.Rect(x, y, w, h)
                 if reg.Contains(wx.Point(pos[0], pos[1])):
-                    print("Began splice scroll drag")
                     self.dragSpliceScroll = True
 
         self.OnMainLMouse(event)
@@ -4377,7 +4374,6 @@ class DataCanvas(wxBufferedWindow):
             return
 
         if self.dragSpliceScroll:
-            print(f"End drag splice scroll at mouse xpos {pos[0]}")
             self.UpdateSpliceScroll(pos[0])
             self.dragSpliceScroll = False
             self.UpdateDrawing()
