@@ -4565,6 +4565,14 @@ class DataCanvas(wxBufferedWindow):
         splice_scroll_rate = old_div((splice_scroll_x - splice_scroll_start), splice_scroll_width)
         self.minSpliceScrollRange = int(self.parent.CompositeScrollMax * splice_scroll_rate)
 
+    def InitSpliceScrollThumbPosition(self):
+        if "SpliceScroll" not in self.DrawData:
+            return
+        bmp, x, y = self.DrawData["SpliceScroll"]
+        if x > self.splicerX:
+            x = self.splicerX
+            self.DrawData["SpliceScroll"] = (bmp, x, y)
+
     def UpdateSpliceScrollThumb(self, originalSplicerX, originalWidth):
         # Due to Correlator's horrific spaghetti initialization process, this method
         # can sometimes be called before DrawData is init'd, guard against errors.

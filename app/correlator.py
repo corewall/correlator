@@ -274,7 +274,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.SetTIE_WIDTHDOWN, self.mitiewidthDown)
 
         menuView.AppendSeparator()
-        self.misecond = menuView.AppendCheckItem(-1, "Show Splice Window", "Splice Window")#Splice/Log Window", "Splice/Log window")
+        self.misecond = menuView.AppendCheckItem(-1, "Show Splice Window", "Splice Window")
         self.misecond.Check(True)
         self.Bind(wx.EVT_MENU, self.SHOWSplice, self.misecond)
 
@@ -895,6 +895,7 @@ class MainFrame(wx.Frame):
             self.Window.spliceWindowOn = 1
             self.Window.splicerX = self.Window.splicerBackX
             self.optPanel.showSpliceWindow.SetValue(True)
+            self.Window.InitSpliceScrollThumbPosition()
             # self.optPanel.indSpliceScroll.Enable(True)
         self.Window.UpdateDrawing()
 
