@@ -349,6 +349,7 @@ class DataCanvas(wxBufferedWindow):
         self.showDepthLine = False # draw line at mouse depth; click to lock/unlock position
         self.depthLinePos = None
         self.showPlotOverlays = False # overlay all plots of the same datatype on the first hole in alphabetical order
+        self.drawSpliceInHoleColors = True # draw splice intervals in the color of their core's parent hole
         
         # debug options
         self.showBounds = False
@@ -1571,7 +1572,7 @@ class DataCanvas(wxBufferedWindow):
                     if self.parent.sectionSummary and self.showSectionDepths:
                         drawBoundariesFunc(dc, colStartX, width, holeColumn.holeName(), cmd.coreName(), cmd.affineOffset())
                 else:
-                    assert false, f"Unexpected column type {columnType}"
+                    assert False, f"Unexpected column type {columnType}"
 
                 colStartX += width
 
@@ -1868,14 +1869,15 @@ class DataCanvas(wxBufferedWindow):
         # gather datapoints within interval range for plotting
         intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
         screenPoints = self.GetScreenPointsBuffer(intdata, drawing_start, startX)
-        usScreenPoints = [] # unsmoothed screenpoints 
-        drawUnsmoothed = self.GetSmoothType(datatype) == 2 # 2 == draw both Smooth & Unsmooth data
+        usScreenPoints = [] # unsmoothed screenpoints
+        smoothType = self.GetSmoothType(datatype)
+        drawUnsmoothed = smoothType == 2 # 2 == draw both Smooth & Unsmooth data
         if drawUnsmoothed:
             smoothdata = self.getCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, interval.coreinfo.type, forceUnsmooth=True)
             smoothdata = [pt for pt in smoothdata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()] # trim to interval
             usScreenPoints = self.GetScreenPointsBuffer(smoothdata, drawing_start, startX)
 
-        self.DrawSpliceIntervalPlot(dc, interval, startX, screenPoints, usScreenPoints, drawUnsmoothed)
+        self.DrawSpliceIntervalPlot(dc, interval, startX, screenPoints, smoothType,usScreenPoints, drawUnsmoothed, isMainSplice=True)
 
         if self.parent.sectionSummary and self.layoutManager.getShowImages():
             self.DrawSpliceIntervalImages(dc, interval, startX)
@@ -1887,6 +1889,7 @@ class DataCanvas(wxBufferedWindow):
         img_wid = self.GetSpliceAreaImageWidth()
         self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX - img_wid)
 
+    # TODO: Mostly duplicative of DrawSpliceInterval()
     def DrawSpliceIntervalWithDatatype(self, dc, interval, datatype, drawing_start, startX, smoothed):
         interval.coreinfo.coredata = self.getCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, datatype)
         if len(interval.coreinfo.coredata) == 0: # data isn't enabled+loaded
@@ -1903,28 +1906,39 @@ class DataCanvas(wxBufferedWindow):
         intdata = [pt for pt in interval.coreinfo.coredata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()]
         screenPoints = self.GetScreenPointsBuffer(intdata, drawing_start, startX)
         usScreenPoints = [] # unsmoothed screenpoints 
-        drawUnsmoothed = self.GetSmoothType(datatype) == 2 # 2 == draw both Smooth & Unsmooth data
+        smoothType = self.GetSmoothType(datatype)
+        drawUnsmoothed = smoothType == 2 # 2 == draw both Smooth & Unsmooth data
         if drawUnsmoothed:
             smoothdata = self.getCorePointData(interval.coreinfo.hole, interval.coreinfo.holeCore, datatype, forceUnsmooth=True)
             smoothdata = [pt for pt in smoothdata if pt[0] >= interval.getTop() and pt[0] <= interval.getBot()] # trim to interval
             usScreenPoints = self.GetScreenPointsBuffer(smoothdata, drawing_start, startX)
 
-        self.DrawSpliceIntervalPlot(dc, interval, startX, screenPoints, usScreenPoints, drawUnsmoothed, self.colorDict['foreground'])
+        self.DrawSpliceIntervalPlot(dc, interval, startX, screenPoints, smoothType, usScreenPoints, drawUnsmoothed, isMainSplice=False)
         self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX, drawDatatype=False)
 
-    def DrawSpliceIntervalPlot(self, dc, interval, startX, screenPoints, usScreenPoints, drawUnsmoothed, drawColor=None):
+    def DrawSpliceIntervalPlot(self, dc, interval, startX, screenPoints, smoothType, usScreenPoints, drawUnsmoothed, isMainSplice=True):
         clip_width = self.Width - startX if self.showOutOfRangeData else self.layoutManager.plotWidth
         clip = wx.DCClipper(dc, wx.Rect(startX, self.startDepthPix - 20, clip_width, self.Height - (self.startDepthPix - 20)))
 
-        if len(screenPoints) >= 2:
-            lineWidth = 1
-            if drawColor:
-                color = drawColor
+        color = self.getHoleColor(interval.coreinfo.hole, smoothType in [1,2])
+        unsmoothedColor = self.getHoleColor(interval.coreinfo.hole, False)
+        lineWidth = 1
+        if isMainSplice:
+            if self.parent.spliceManager.isSelectedInterval(interval):
+                lineWidth = 2
+                if not self.drawSpliceInHoleColors:
+                    color = self.colorDict['spliceSel']
+                    unsmoothedColor = color
             else:
-                intervalSelected = self.parent.spliceManager.isSelectedInterval(interval)
-                color = self.colorDict['spliceSel'] if intervalSelected else self.colorDict['splice']
-                if intervalSelected:
-                    lineWidth = 2
+                if not self.drawSpliceInHoleColors:
+                    color = self.colorDict['splice']
+                    unsmoothedColor = color
+        else:
+            if not self.drawSpliceInHoleColors:
+                color = self.colorDict['foreground']
+                unsmoothedColor = color
+
+        if len(screenPoints) >= 2:
             dc.SetPen(wx.Pen(color, lineWidth))
             if len(screenPoints) >= 4:
                 dc.DrawLinesFromBuffer(screenPoints)
@@ -1938,7 +1952,7 @@ class DataCanvas(wxBufferedWindow):
             
         if drawUnsmoothed:
             if len(usScreenPoints) >= 2:
-                dc.SetPen(wx.Pen(color, 1))
+                dc.SetPen(wx.Pen(unsmoothedColor, 1))
                 if len(usScreenPoints) >= 4:
                     dc.DrawLinesFromBuffer(usScreenPoints)
                 else:
