@@ -41,5 +41,5 @@ app = BUNDLE(
     name='Correlator.app',
     icon='icons/correlator.icns',
     bundle_identifier=None,
-    version='4.5.9'
+    version='4.5.10'
 )
