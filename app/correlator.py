@@ -4036,14 +4036,14 @@ class CorrelatorApp(wx.App):
         # If success.txt doesn't contain 'close', it means the previous launch of
         # Correlator didn't end normally. But reverting the configuration back to
         # defaults whenever that happens seems like overkill. TODO?
-        if problemFlag == True:
-            defaultTempFile = open(os.path.join(myTempPath, "default.cfg"), "r+")
-            #print "[DEBUG] Configuration file is regenerated."
-            line = defaultTempFile.read()
-            defaultTempFile.close()
-            defaultFile = open(os.path.join(myPath, "default.cfg"), "w+")
-            defaultFile.write(line)
-            defaultFile.close()
+        # if problemFlag == True:
+        #     defaultTempFile = open(os.path.join(myTempPath, "default.cfg"), "r+")
+        #     #print "[DEBUG] Configuration file is regenerated."
+        #     line = defaultTempFile.read()
+        #     defaultTempFile.close()
+        #     defaultFile = open(os.path.join(myPath, "default.cfg"), "w+")
+        #     defaultFile.write(line)
+        #     defaultFile.close()
 
         startlogFile = open(os.path.join(myTempPath, "success.txt"), "w+")
         startlogFile.write("start\n")
