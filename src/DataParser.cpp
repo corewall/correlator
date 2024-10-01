@@ -705,11 +705,22 @@ int ReadCoreFormat(FILE *fptr, Data* dataptr, int datatype, char* annotation)
 		strcpy(section, token);
 		if ((token[0] >= '0') && (token[0] <= '9'))
 		{
+			// brg 9/30/2024: This is why we don't load data for core catcher
+			// sections ("CC") even if present in the core data file. The
+			// Section class can only handle ints.
 			section_index = atoi(token);
-		} else 
-		{
+		} else if (strcmp(token, "CC") == 0) {
+			// brg 9/30/2024: Giving CC sections the number 999 seems to work.
+			// Their data is loaded and plots correctly in Correlator. But more
+			// testing is required before this makes it into an official release.
+			// Leaving commented code to revisit.
+			// cout << "Found CC section, fun!" << endl;
+			// section_index = 999;
+			token_num = 0;
+			continue;
+		} else {
 #ifdef DEBUG		
-			cout << "[DataManager] section number is not integer : " << token << endl;
+			cout << "[DataManager] section number is not integer or CC: " << token << endl;
 #endif
 			token_num = 0;
 			continue;		

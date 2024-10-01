@@ -261,8 +261,9 @@ Data* DataManager::load( const char* filename, Data* dataptr, char* annotation )
 	int	ret = 0;
 	switch (format)
 	{
+	// brg 9/30/2024: INTERNAL_REPORT is core measurement data
 	case INTERNAL_REPORT:
-		//cout << "INTERNAL_REPORT " << endl;
+		// cout << "INTERNAL_REPORT " << endl;
 		dataptr->setDataFormat(format); 	
 		ret = ReadCoreFormat(fptr, dataptr, m_coretype, annotation);	
 		break;
