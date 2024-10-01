@@ -1798,7 +1798,7 @@ class DataCanvas(wxBufferedWindow):
                 rangemax = datamax
         return rangemin, rangemax
         
-    def DrawIntervalEdgeAndName(self, dc, interval, drawing_start, startX):
+    def DrawIntervalEdgeAndName(self, dc, interval, drawing_start, startX, drawDatatype=True):
         liney = self.startDepthPix + (interval.getBot() - self.SPrulerStartDepth) * self.pixPerMeter
         if liney < self.startDepthPix - 20:
             return # don't bother drawing if line is above top of plot area
@@ -1807,8 +1807,11 @@ class DataCanvas(wxBufferedWindow):
         dc.DrawLine(startX - 20, liney, startX, liney)
         
         dc.SetTextForeground(self.colorDict['foreground'])
-        coreName = "{}{}".format(interval.coreinfo.hole, interval.coreinfo.holeCore)
+        coreName = f"{interval.coreinfo.hole}{interval.coreinfo.holeCore}"
         dc.DrawText(coreName, startX - (dc.GetTextExtent(coreName)[0] + 2), liney - (dc.GetCharHeight() + 2))
+        if drawDatatype:
+            datatype = interval.coreinfo.type[:5]
+            dc.DrawText(datatype, startX - (dc.GetTextExtent(datatype)[0] + 2), liney - (dc.GetCharHeight() + 2) - self.headerLineSpacing)
         
     def DrawSpliceIntervalTie(self, dc, tie):
         fgPen = wx.Pen(self.colorDict['foreground'], 1, style=wx.DOT)
@@ -1907,7 +1910,7 @@ class DataCanvas(wxBufferedWindow):
             usScreenPoints = self.GetScreenPointsBuffer(smoothdata, drawing_start, startX)
 
         self.DrawSpliceIntervalPlot(dc, interval, startX, screenPoints, usScreenPoints, drawUnsmoothed, self.colorDict['foreground'])
-        self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX)
+        self.DrawIntervalEdgeAndName(dc, interval, drawing_start, startX, drawDatatype=False)
 
     def DrawSpliceIntervalPlot(self, dc, interval, startX, screenPoints, usScreenPoints, drawUnsmoothed, drawColor=None):
         clip_width = self.Width - startX if self.showOutOfRangeData else self.layoutManager.plotWidth
