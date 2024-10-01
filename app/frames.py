@@ -1139,9 +1139,9 @@ class SpliceIntervalPanel(object):
         psz = wx.BoxSizer(wx.VERTICAL)
         panel.SetSizer(psz)
 
-        self.spliceHoleColor = wx.CheckBox(panel, -1, "Splice interval colors by hole")
-        self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnSpliceHoleColor, self.spliceHoleColor)
-        psz.Add(self.spliceHoleColor, 0, wx.ALL, 10)
+        self.spliceHoleColors = wx.CheckBox(panel, -1, "Splice interval colors by hole")
+        self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnSpliceHoleColor, self.spliceHoleColors)
+        psz.Add(self.spliceHoleColors, 0, wx.ALL, 10)
 
         # interval table, evaluation graph tabs
         self.note = wx.Notebook(panel, -1)
@@ -1437,9 +1437,9 @@ class SpliceIntervalPanel(object):
             self.parent.Window.UpdateDrawing()
 
     def OnSpliceHoleColor(self, event):
-        checked = self.spliceHoleColor.IsChecked()
+        checked = self.spliceHoleColors.IsChecked()
         self.parent.Window.drawSpliceInHoleColors = checked
-        self.parent.optPanel.spliceHoleColor.SetValue(checked)
+        self.parent.optPanel.spliceHoleColors.SetValue(checked)
         self.parent.Window.UpdateDrawing()
 
     # wrappers for EvalPlotPanel
@@ -3472,9 +3472,9 @@ class PreferencesPanel(object):
         self.parent.Window.UpdateDrawing()
 
     def OnSpliceHoleColor(self, event):
-        checked = self.spliceHoleColor.IsChecked()
+        checked = self.spliceHoleColors.IsChecked()
         self.parent.Window.drawSpliceInHoleColors = checked
-        self.parent.spliceIntervalPanel.spliceHoleColor.SetValue(checked)
+        self.parent.spliceIntervalPanel.spliceHoleColors.SetValue(checked)
         self.parent.Window.UpdateDrawing()
 
     # Enable color legend checkbox based on affine shift strips state.
@@ -3699,8 +3699,8 @@ class PreferencesPanel(object):
         self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowAffineShiftStrips, self.showAffineShiftStrips)
         self.showColorLegend = wx.CheckBox(viewPanel, -1, "Show shift type color legend")
         self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnShowColorLegend, self.showColorLegend)
-        self.spliceHoleColor = wx.CheckBox(viewPanel, -1, "Splice interval colors by hole")
-        self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnSpliceHoleColor, self.spliceHoleColor)
+        self.spliceHoleColors = wx.CheckBox(viewPanel, -1, "Splice interval colors by hole")
+        self.mainPanel.Bind(wx.EVT_CHECKBOX, self.OnSpliceHoleColor, self.spliceHoleColors)
 
         viewSizer.Add(self.showAffineShiftInfo, 0, wx.BOTTOM, 5)
         viewSizer.Add(tiesSizer, 0, wx.BOTTOM, 5)
@@ -3710,7 +3710,7 @@ class PreferencesPanel(object):
         viewSizer.Add(self.showDepthLine, 0, wx.BOTTOM, 5)
         viewSizer.Add(self.showAffineShiftStrips, 0, wx.BOTTOM, 5)
         viewSizer.Add(self.showColorLegend, 0, wx.BOTTOM, 5)
-        viewSizer.Add(self.spliceHoleColor, 0, wx.BOTTOM, 10)
+        viewSizer.Add(self.spliceHoleColors, 0, wx.BOTTOM, 10)
 
         # Color Set
         colorButton = wx.Button(viewPanel, -1, "Set colors...")

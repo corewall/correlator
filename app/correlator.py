@@ -1574,6 +1574,9 @@ class MainFrame(wx.Frame):
         spoInt = int(self.Window.showPlotOverlays)
         self.WritePreferenceItem("showPlotOverlays", spoInt, f)
 
+        spliceHoleColors = int(self.Window.drawSpliceInHoleColors)
+        self.WritePreferenceItem("spliceHoleColors", spliceHoleColors, f)
+
         groupByDatatype = int(self.optPanel.dtRadio.GetValue())
         self.WritePreferenceItem("groupByDatatype", groupByDatatype, f)
 
@@ -2818,6 +2821,14 @@ class MainFrame(wx.Frame):
                 spo = (str_temp == '1')
                 self.Window.showPlotOverlays = spo
                 self.optPanel.showPlotOverlays.SetValue(spo)
+
+        if self.config.has_option("applications", "spliceHoleColors"):
+            str_temp = self.config.get("applications", "spliceHoleColors")
+            if len(str_temp) > 0:
+                shc = (str_temp == '1')
+                self.Window.drawSpliceInHoleColors = shc
+                self.optPanel.spliceHoleColors.SetValue(shc)
+                self.spliceIntervalPanel.spliceHoleColors.SetValue(shc)
 
         if self.config.has_option("applications", "groupByDatatype"):
             str_temp = self.config.get("applications", "groupByDatatype")
