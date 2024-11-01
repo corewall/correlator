@@ -4,6 +4,7 @@
 *.[ao]
 *.pyc
 *~
+*.bak
 .project
 .pydevproject
 libcore.dylib
@@ -11,6 +12,8 @@ py_correlator.so
 
 # ignored directories
 .vscode/
+ve_py2/
+ve_py3*/
 app/.vscode/
 app/.eggs/
 app/build/
