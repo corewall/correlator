@@ -4,7 +4,7 @@
 #	
 COMPILER=g++
 #MYFLAGS=-I../include -g -m64 -DCORRELATOR_MACOSX -DDEBUG
-MYFLAGS=-I../include -m64 -DCORRELATOR_MACOSX
+MYFLAGS=-I../include -m64 -DCORRELATOR_MACOSX -mmacosx-version-min=10.10
 # MYFLAGS=-mmacosx-version-min=10.4 -I../include -I/Users/julian/dev/EVL/corelyzer/branches/required/mac/src/xerces-c-src_2_8_0/include -arch i386 
 
 LIBS = -m64
